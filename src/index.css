@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html, body {
+    @apply bg-ink-950 text-ink-100 antialiased;
+    font-family: "Geist", system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(16, 185, 129, 0.04), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(124, 179, 66, 0.03), transparent 45%);
+    min-height: 100vh;
+  }
+
+  ::selection {
+    @apply bg-brand/30 text-ink-50;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-ink-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-600 rounded-full;
+    border: 2px solid theme("colors.ink.900");
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-500;
+  }
+}
+
+@layer components {
+  /* Grid overlay deseni — klinik/teknik atmosfer */
+  .grid-overlay {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* Monitör tarzı dijital rakam kutusu */
+  .vital-display {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+
+  /* Kart zemini */
+  .panel {
+    @apply bg-ink-800/70 backdrop-blur-sm border border-ink-600 rounded-lg;
+  }
+
+  .panel-inset {
+    @apply bg-ink-900/80 border border-ink-700 rounded-md;
+  }
+
+  /* Buton — primary */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-md
+           bg-brand hover:bg-brand-light text-ink-950 font-medium
+           transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-brand/40
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* Buton — ghost */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-md
+           bg-transparent hover:bg-ink-700 text-ink-100
+           border border-ink-600
+           transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-ink-500;
+  }
+
+  /* Buton — danger */
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-md
+           bg-clinical-critical/20 hover:bg-clinical-critical/30
+           text-clinical-critical border border-clinical-critical/40
+           transition-all duration-150;
+  }
+
+  /* Etiket */
+  .tag {
+    @apply inline-flex items-center px-2 py-0.5 rounded-sm
+           text-xs font-mono uppercase tracking-wider
+           bg-ink-700 text-ink-200 border border-ink-600;
+  }
+
+  .tag-brand {
+    @apply bg-brand/15 text-brand-light border-brand/30;
+  }
+
+  .tag-critical {
+    @apply bg-clinical-critical/15 text-clinical-critical border-clinical-critical/40;
+  }
+
+  /* Kalp atışı pulse noktası */
+  .pulse-dot {
+    @apply relative inline-block w-2 h-2 rounded-full bg-clinical-stable;
+  }
+  .pulse-dot::after {
+    content: "";
+    @apply absolute inset-0 rounded-full bg-clinical-stable animate-ping opacity-60;
+  }
+}
