@@ -1,5 +1,7 @@
 # MediSim TR
 
+**GitHub:** https://github.com/aliyilik02/medisim-tr
+
 **Türkiye'ye özel, web tabanlı sanal hasta simülasyon platformu.**
 Tıp öğrencileri, hemşireler, acil sağlık personeli ve saha sağlıkçıları için
 senaryo tabanlı klinik eğitim.
