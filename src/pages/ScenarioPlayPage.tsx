@@ -23,6 +23,7 @@ import {
   administerMedication,
 } from "@/engine/pharmacology/engine";
 import { getMedication } from "@/data/medications";
+import { useVitalsTick } from "@/hooks/useVitalsTick";
 import { PatientCard } from "@/components/PatientCard";
 import { VitalsMonitor } from "@/components/VitalsMonitor";
 import { InventoryPanel } from "@/components/InventoryPanel";
@@ -60,6 +61,16 @@ export function ScenarioPlayPage() {
     useState<CriticalContraindicationInfo | null>(null);
 
   const { feedback, show, clear } = useFeedback();
+
+  // Canlı monitör tick — farmakoloji motorunu her X ms'de bir tetikler,
+  // baseline + pharma delta formülüyle vitalleri günceller.
+  // Kritik modal açıkken duraklat (kullanıcı karar vermek zorunda olmalı).
+  useVitalsTick({
+    scenario,
+    session,
+    setSession,
+    paused: criticalInfo !== null,
+  });
 
   // Kritik süre dolduğunda — senaryoyu başarısız bitir
   const handleCriticalExpired = useCallback(() => {
@@ -182,15 +193,23 @@ export function ScenarioPlayPage() {
           }
         }
 
-        // Aktif ilaç listesine ekle (farmakoloji tick motoru ileride)
+        // Aktif ilaç listesine ekle — tam ActiveMedication objesi
+        // (tick motoru instance_id, administered_at, effective_vitals,
+        //  timing, expires_at bilgilerine ihtiyaç duyar)
         if (result.active_instance) {
+          const newActive = result.active_instance;
           setSession((s) =>
             s
               ? {
                   ...s,
+                  active_medications: [
+                    ...(s.active_medications ?? []),
+                    newActive,
+                  ],
+                  // Eski alan da senkron tutulsun (geriye dönük uyum)
                   active_medication_ids: [
                     ...(s.active_medication_ids ?? []),
-                    result.active_instance!.medication_id,
+                    newActive.medication_id,
                   ],
                 }
               : s
@@ -232,10 +251,19 @@ export function ScenarioPlayPage() {
       setCriticalErrorsThisStep((c) => c + 1);
     }
 
-    // Vital güncellemesi (statik — farmakoloji tick Parça B'de)
+    // Vital güncellemesi — outcome'dan gelen statik değişim
+    // ÖNEMLİ: Canlı monitör baseline + pharma delta formülüyle çalışır.
+    // Statik değişimi sadece `vitals`'a uygularsak, bir sonraki tick
+    // baseline + delta hesaplayıp değişikliği siler. Bu yüzden her ikisine de
+    // uyguluyoruz — baseline kaydı da değişmiş olur, tick bir sonraki sefer
+    // yeni baseline'dan hesaplar.
     if (evaluation.vitals_change && session) {
       setSession({
         ...session,
+        baseline_vitals: applyVitalsChange(
+          session.baseline_vitals,
+          evaluation.vitals_change
+        ),
         vitals: applyVitalsChange(session.vitals, evaluation.vitals_change),
       });
     }
@@ -407,7 +435,11 @@ export function ScenarioPlayPage() {
           {/* Left — patient & vitals */}
           <aside className="space-y-4 order-2 lg:order-1">
             <PatientCard patient={scenario.patient} />
-            <VitalsMonitor vitals={session.vitals} />
+            <VitalsMonitor
+              vitals={session.vitals}
+              baseline={session.baseline_vitals}
+              activeMedCount={session.active_medications?.length ?? 0}
+            />
           </aside>
 
           {/* Center — current step */}

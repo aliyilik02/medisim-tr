@@ -23,7 +23,7 @@ export interface CriticalContraindicationInfo {
 
 export function CriticalContraindicationModal({
   info,
-  onResolved,
+  onResolved: _onResolved,
   onExpired,
   onDismiss,
   showGuidance,

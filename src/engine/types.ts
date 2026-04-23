@@ -1,226 +1,335 @@
 // ============================================================
-// MediSim TR — Farmakoloji Motoru Tipleri
+// MediSim TR — Senaryo Motoru Tipleri
 // ============================================================
-// Bu dosya ilaç etkileri motorunun veri şemasıdır.
-// Ana types.ts'deki Medication tipi burada ExtendedMedication ile
-// zenginleştirilir. Senaryolar yine sadece medication id'si kullanır;
-// motor çalışma anında bu şemayı okur.
+// Bu dosya projenin kalbi. Her senaryo bu şemaya uymak zorunda.
+// Şemayı değiştirmek = tüm senaryoları etkilemek. Dikkat.
+//
+// NOT (23 Nisan 2026): Bu dosya ve pharmacology/types.ts içerikleri
+// daha önce YER DEĞİŞTİRMİŞTİ (prod build kırıktı). 23 Nisan
+// güncellemesinde düzeltildi + canlı monitör için SessionState'e
+// baseline_vitals ve active_medications eklendi.
 // ============================================================
 
-import type { PatientVitals, PatientModifiers, Difficulty } from "../types";
+export type Specialty =
+  | "kardiyoloji"
+  | "dahiliye"
+  | "acil"
+  | "pediatri"
+  | "cerrahi"
+  | "anestezi"
+  | "kadin_dogum"
+  | "hemsirelik"
+  | "askeri_tccc";
+
+export type Difficulty = 1 | 2 | 3 | 4 | 5;
+
+export type PlayMode = "egitim" | "sinav";
+
+// Senaryo iki şekilde oynanabilir — listede ikisi de olmalı
+export type ScenarioMode = "quiz" | "interactive_3d";
 
 // ------------------------------------------------------------
-// Vital Delta — motorun vital üzerine etki vektörü
+// Hasta
 // ------------------------------------------------------------
-// Her sayı iki eleman dizisi: [min, max] aralık. Motor rastgele seçer
-// veya varsayılan olarak ortayı alır. Negatif = düşürür.
 
-export type Range = [number, number];
+export interface PatientVitals {
+  hr: number;              // Kalp hızı /dk
+  bp_systolic: number;     // Sistolik kan basıncı mmHg
+  bp_diastolic: number;    // Diyastolik kan basıncı mmHg
+  spo2: number;            // Oksijen satürasyonu %
+  temp: number;            // Vücut ısısı °C
+  rr: number;              // Solunum sayısı /dk
+  pain?: number;           // 0-10 ağrı skoru
+  glucose?: number;        // mg/dL
+  gcs?: number;            // 3-15 Glasgow
+}
 
-export interface VitalDelta {
-  hr_range?: Range;             // +20..+40 beats/dk
-  sbp_range?: Range;            // Sistolik
-  dbp_range?: Range;            // Diyastolik
-  spo2_range?: Range;           // SpO2 % (genelde küçük)
-  rr_range?: Range;             // Solunum /dk
-  temp_range?: Range;           // °C (genelde küçük, antipiretik için)
-  glucose_range?: Range;        // mg/dL (insülin, dekstroz)
-  pain_range?: Range;           // 0-10 (analjezik = negatif)
-  gcs_range?: Range;            // Sedatif = negatif
+// Farmakoloji motorunun ilaç etkisini modifiye ederken kullandığı hasta özellikleri.
+// Her çarpan bir veya birden fazla ilacı etkiler. 'gebelik' özel: çarpan değil, kontrendikasyon tetikleyicisi olabilir.
+export interface PatientModifiers {
+  beta_blocker?: boolean;    // Hasta kronik beta-bloker altında mı?
+  karaciger_yetm?: boolean;
+  bobrek_yetm?: boolean;
+  gebelik?: boolean;
+  // Yaş grubu türetilir (age alanından), ama ilaç motoru için hazır flag de tutabiliriz:
+  // yasli_70plus, pediatrik — runtime'da hesaplanır.
+}
+
+export interface Patient {
+  age: number;
+  sex: "M" | "F";
+  weight_kg: number;
+  height_cm?: number;
+  avatar_id?: string;
+  chief_complaint: string;
+  history_items: string[];
+  allergies: string[];
+  current_medications?: string[];
+  modifiers?: PatientModifiers;  // Farmakoloji çarpanları için
 }
 
 // ------------------------------------------------------------
-// Zaman parametreleri (saniye/dakika)
+// Envanter (İlaç & Ekipman)
 // ------------------------------------------------------------
-// Farmakokinetik: onset → peak → duration eğrisi.
-// Motor bu 3 değeri kullanarak tick başına etki yüzdesini hesaplar.
+// NOT: İlaç için farmakoloji verileri (preset, band, modifier, kontrendikasyon)
+// src/engine/pharmacology/types.ts içinde tanımlı. Burada temel kimlik bilgileri.
+// Genişletilmiş tip: ExtendedMedication (pharmacology/types.ts).
 
-export interface PharmacokineticTiming {
-  onset_sec: number;     // İlaç etkisi başlayana kadar geçen süre
-  peak_min: number;      // Etkinin tepeye ulaştığı süre (dakika)
-  duration_min: number;  // Toplam etki süresi (dakika)
+export interface Medication {
+  id: string;
+  name_tr: string;
+  name_en?: string;
+  category: "kardiyak" | "antibiyotik" | "analjezik" | "sedatif"
+           | "antikoagulan" | "antiaritmik" | "sıvı" | "diğer";
+  default_dose?: string;        // Gösterim için ("1 mg IV push")
+  contraindications?: string[]; // Basit metin — detaylı şema için ExtendedMedication
+}
+
+export interface Equipment {
+  id: string;
+  name_tr: string;
+  icon?: string;
+  category: "monitorizasyon" | "havayolu" | "damar_yolu"
+           | "defibrilasyon" | "cerrahi" | "koruyucu" | "diğer";
 }
 
 // ------------------------------------------------------------
-// Farmakoloji Preset — tıkla-doldur şablonları
+// Aksiyonlar — öğrencinin yapabileceği şeyler
 // ------------------------------------------------------------
 
-export interface PharmacologyPreset extends VitalDelta, PharmacokineticTiming {
-  id: string;           // 'sempatomimetik-guclu'
-  label: string;        // Gösterim — senaryo editörü için
-  description?: string;
+export type ActionType =
+  | "give_medication"       // İlaç uygula
+  | "use_equipment"         // Ekipman kullan
+  | "examine"               // Fizik muayene
+  | "order_test"            // Tetkik iste
+  | "consult"               // Konsültasyon iste
+  | "decision"              // Karar (çoktan seçmeli)
+  | "procedure"             // Prosedür uygula (3D'de dokunarak)
+  | "communicate";          // Hasta/yakınıyla iletişim
+
+export interface ActionRef {
+  type: ActionType;
+  target_id: string;        // İlaç id, ekipman id, vb.
+  dose?: string;            // İlaçlar için
+  site?: string;            // Prosedür lokasyonu (örn. "sol_uyluk")
+}
+
+// Bir adımda aksiyonun değerlendirilmesi
+export interface ActionOutcome {
+  action: ActionRef;
+  points: number;           // + puan = doğru, - = hatalı
+  unlocks?: string[];       // Hangi adımları açar
+  feedback: string;         // Öğrenciye gösterilecek açıklama
+  critical?: boolean;       // Kritik hata mı? (örn. alerjik ilaç)
+  vitals_change?: Partial<PatientVitals>; // Aksiyondan sonra vitaller değişir mi (statik; dinamik için farmakoloji motoru)
+  min_difficulty?: Difficulty;  // Bu seçenek hangi seviyeden itibaren görünür/değerlendirilir
+  max_difficulty?: Difficulty;  // Opsiyonel: yalnızca X seviyesine kadar (örn. "basit puan" seviye 2'de biter)
 }
 
 // ------------------------------------------------------------
-// Doz bandı — doğru/hatalı sınırı
+// Adım (Step) — senaryo bir adımlar DAG'ı
 // ------------------------------------------------------------
 
-export interface MedicationDoseBand {
-  default_dose: number;     // Standart doz (sayısal)
-  dose_unit: DoseUnit;
-  dose_route: DoseRoute;
-  // Kiloya göre hesaplanıyorsa (çocuklar ve kritik ilaçlar için):
-  weight_based?: boolean;   // true ise default_dose aslında mg/kg
-  max_single_dose?: number; // Mutlak tavan (örn. heparin 60 IU/kg ama max 4000)
-  // Band
-  band_lower_pct: number;   // 0.8 varsayılan
-  band_upper_pct: number;   // 1.2 varsayılan
-  // Bandın dışı için ceza (default_wrong_penalty ile uyumlu)
-  under_dose_penalty?: number;
-  over_dose_penalty?: number;
+export interface DecisionOption {
+  id: string;
+  text: string;
+  correct: boolean;
+  points: number;
+  feedback: string;
+  min_difficulty?: Difficulty;  // Bu seçenek hangi seviyeden itibaren görünür
+  max_difficulty?: Difficulty;
 }
 
-export type DoseUnit = "mg" | "mcg" | "g" | "IU" | "mL" | "mEq" | "mmol";
-
-export type DoseRoute =
-  | "IV_push"       // IV bolus
-  | "IV_infusion"   // IV perfüzyon
-  | "IM"
-  | "SC"
-  | "PO"
-  | "SL"            // Sublingual
-  | "nebul"         // Nebülizatör
-  | "inhalasyon"
-  | "rektal"
-  | "topikal";
-
-// ------------------------------------------------------------
-// Hasta çarpanları — modifier sistemi
-// ------------------------------------------------------------
-// Her ilaç için opsiyonel. Motor çarpan zincirini uygular:
-// gercek_etki = temel_etki × (beta_blocker ? X : 1) × (karaciger ? Y : 1) × ...
-
-export interface MedicationModifiers {
-  // Çarpan: 0 = hiç etki yok, 1 = tam etki, >1 = artmış etki
-  beta_blocker?: number;       // örn. adrenalin: 0.4
-  karaciger_yetm?: number;
-  bobrek_yetm?: number;
-  gebelik?: number;            // Sayı: çarpan. 'kontrendike' ise contraindications'a koy.
-  yasli_70plus?: number;       // Age ≥ 70 ise uygulanır
-  pediatrik?: number;          // Age < 18 ise uygulanır
+export interface StepBase {
+  id: string;
+  title: string;
+  prompt: string;              // Öğrenciye sorulan
+  narrative?: string;          // Opsiyonel sahne anlatımı
+  time_limit_sec?: number;
+  min_actions?: number;        // Devam etmek için min. aksiyon
+  max_actions?: number;        // Üst sınır (sınırsız spam engeli)
+  min_difficulty?: Difficulty; // Bu adım hangi seviyeden itibaren görünür (altındaysa atlanır)
+  max_difficulty?: Difficulty; // Üst sınır (nadir: "sadece başlangıç seviyesi için ekstra açıklama adımı")
 }
 
-// ------------------------------------------------------------
-// Kontrendikasyon şeması
-// ------------------------------------------------------------
-
-export type ContraindicationSeverity = "uyari" | "orta" | "kritik";
-
-export type ContraindicationTrigger =
-  // Hasta modifier'ı tetikler (gebelik, beta_blocker altında, vb.)
-  | { kind: "modifier"; modifier: keyof PatientModifiers }
-  // Geçmiş/özgeçmiş anahtar kelime (astim, koah, vb.)
-  | { kind: "history"; keyword: string }
-  // Alerji
-  | { kind: "allergy"; keyword: string }
-  // Eşzamanlı başka ilaç varsa (örn. MAOi + meperidin)
-  | { kind: "concurrent_med"; medication_id: string }
-  // Vital eşiği (örn. SBP < 90 → nitrat verme)
-  | { kind: "vital"; param: keyof PatientVitals; op: "<" | ">" | "<=" | ">="; value: number };
-
-export interface Contraindication {
-  trigger: ContraindicationTrigger;
-  severity: ContraindicationSeverity;
-  effect: string;                        // 'bronkospazm', 'hipotansiyon', 'solunum_depresyonu'
-  effect_vitals?: VitalDelta;            // Vital üzerine anlık etki (orta/kritik için)
-  grace_sec?: number;                    // Kritik: düzeltme süresi (örn. 60)
-  penalty: number;                       // Puan cezası
-  message: string;                       // Öğrenciye gösterilecek uyarı/popup metni
-  feedback: string;                      // Debrief notu
-  // Düzeltici aksiyonlar (kritik şiddette grace_sec içinde yapılırsa ceza azalır)
-  antidotes?: string[];                  // Medication id'leri (örn. naloksan)
+export interface ActionStep extends StepBase {
+  kind: "action";
+  expected_outcomes: ActionOutcome[];
+  // Bunun dışındaki her aksiyon "uygun değil" olarak puan alır
+  default_wrong_penalty?: number;
+  default_wrong_feedback?: string;
 }
 
-// ------------------------------------------------------------
-// Genişletilmiş İlaç — farmakoloji motorunun kullandığı tam tip
-// ------------------------------------------------------------
-// NOT: Temel Medication tipi (types.ts) yalnızca kimlik ve kategori içerir.
-// Motor bu ExtendedMedication'u ayrı kataloğundan okur:
-// src/data/medications.ts → id bazlı.
-
-export interface ExtendedMedication {
-  id: string;                            // Medication.id ile eşleşir
-  // Farmakokinetik
-  preset?: string;                       // 'sempatomimetik-guclu' — PHARMACOLOGY_PRESETS
-  vitals?: VitalDelta;                   // Preset override / preset yoksa tek kaynak
-  timing?: PharmacokineticTiming;        // Preset override / preset yoksa tek kaynak
-  // Dozaj
-  dose_band: MedicationDoseBand;
-  // Hasta özelliğine göre modifiye
-  modifiers?: MedicationModifiers;
-  // Kontrendikasyonlar — çoklu
-  contraindications?: Contraindication[];
-}
-
-// ------------------------------------------------------------
-// Aktif İlaç — runtime state (hasta sisteminde dolaşan ilaçlar)
-// ------------------------------------------------------------
-
-export interface ActiveMedication {
-  instance_id: string;             // Uygulanan spesifik doz (uuid)
-  medication_id: string;
-  administered_at: number;         // timestamp (ms)
-  dose_given: number;              // Verilen gerçek doz
-  dose_unit: DoseUnit;
-  // Hesaplanmış (hasta modifier'ları uygulanmış) etki
-  effective_vitals: VitalDelta;    // Bu örnek için nihai delta
-  // Farmakokinetik
-  timing: PharmacokineticTiming;
-  // Bitiş zamanı (administered_at + duration_min). Motor bunu geçince ilaç listeden düşer.
-  expires_at: number;
-  // Doz band durumu
-  dose_evaluation: "correct" | "under_dose" | "over_dose";
-  // Bu uygulama hangi adımdan yapıldı? (izlenebilirlik için)
-  source_step_id?: string;
-}
-
-// ------------------------------------------------------------
-// Motor tick çıktısı
-// ------------------------------------------------------------
-// Her tick'te: aktif ilaçların vital üzerine kümülatif etkisini hesapla.
-
-export interface PharmacologyTickResult {
-  vitals_delta: Partial<PatientVitals>; // Bu tick'te eklenecek/çıkarılacak
-  expired_instance_ids: string[];       // Bu tick'te biten ilaçlar
-  active_count: number;
-}
-
-// ------------------------------------------------------------
-// Uygulama sonucu — öğrenci ilaç verdiğinde motor bunu döner
-// ------------------------------------------------------------
-
-export interface MedicationAdministrationResult {
-  success: boolean;                      // Triage: verildi mi, yoksa kritik kontrendikasyonla bloklandı mı
-  active_instance?: ActiveMedication;    // Başarılıysa oluşan aktif kayıt
-  dose_evaluation: "correct" | "under_dose" | "over_dose";
-  triggered_contraindications: Contraindication[]; // Tetiklenen uyarı/orta/kritik
-  points_delta: number;                  // Bu uygulamanın puan etkisi (band + kontrendikasyon)
-  requires_correction?: {                // Kritik kontrendikasyon varsa
-    grace_sec: number;
-    expected_antidotes: string[];
-    expires_at: number;
+export interface DecisionStep extends StepBase {
+  kind: "decision";
+  options: DecisionOption[];
+  display?: {
+    type: "image" | "ecg" | "lab" | "imaging";
+    asset: string;
+    caption?: string;
   };
 }
 
-// ------------------------------------------------------------
-// Zaman ölçek yardımcısı
-// ------------------------------------------------------------
-
-export interface TimeScaleConfig {
-  egitim: number;  // Varsayılan 3.0
-  sinav: number;   // Varsayılan 1.0
+export interface InfoStep extends StepBase {
+  kind: "info";               // Sadece bilgi gösterir, ilerle
+  content: string;
 }
 
-export const DEFAULT_TIME_SCALE: TimeScaleConfig = {
-  egitim: 3.0,
-  sinav: 1.0,
-};
+export type Step = ActionStep | DecisionStep | InfoStep;
 
 // ------------------------------------------------------------
-// Zorluk filtresi yardımcı tipi (Step/Outcome filtrelemede kullanılır)
+// Puanlama & Debrief
 // ------------------------------------------------------------
 
-export interface DifficultyFilterable {
-  min_difficulty?: Difficulty;
-  max_difficulty?: Difficulty;
+export interface ScoringConfig {
+  max_points: number;
+  passing_score: number;
+  grade_bands: {
+    A: number;
+    B: number;
+    C: number;
+    D: number;
+  };
+  time_bonus?: {
+    target_seconds: number;
+    bonus_points: number;
+  };
+}
+
+export interface Debrief {
+  key_learnings: string[];
+  references: string[];
+  red_flags?: string[];       // Bu senaryoda dikkat edilmesi gereken kritik noktalar
+  next_scenarios?: string[];  // Önerilen sonraki senaryolar
+}
+
+// ------------------------------------------------------------
+// 3D Sahne Tanımı (ileride dolacak)
+// ------------------------------------------------------------
+
+export interface Hotspot {
+  id: string;
+  label: string;
+  position: { x: number; y: number; z: number };
+  available_actions: ActionType[];
+  associated_step_ids?: string[];
+}
+
+export interface SceneConfig {
+  background: string;           // örn. "hospital_er" | "battlefield"
+  patient_position: "supine" | "sitting" | "standing";
+  hotspots: Hotspot[];
+}
+
+// ------------------------------------------------------------
+// Zaman ölçeği — eğitim/sınav modu arası hız farkı
+// ------------------------------------------------------------
+
+export interface TimeScaleOverride {
+  egitim?: number;   // Varsayılan 3.0 (3x hızlı)
+  sinav?: number;    // Varsayılan 1.0 (gerçek zaman)
+}
+
+// ------------------------------------------------------------
+// Hasta varyantı — aynı senaryo, farklı klinik tablo
+// ------------------------------------------------------------
+// Faz 1 sonunda aktifleşecek. Şimdilik tip iskeleti.
+
+export interface PatientVariant {
+  id: string;                            // "stemi-b-atipik"
+  label: string;                         // Gösterim adı
+  description: string;                   // Öğretici not
+  patient: Partial<Patient>;             // Temel senaryonun patient'ını override eder
+  initial_vitals?: Partial<PatientVitals>;
+  step_overrides?: Record<string, Partial<Step>>; // step_id → değişiklik
+}
+
+// ------------------------------------------------------------
+// Ana Senaryo Tipi
+// ------------------------------------------------------------
+
+export interface Scenario {
+  // Meta
+  id: string;
+  version: string;
+  title: string;
+  description: string;
+  specialty: Specialty;
+  tags: string[];
+  difficulty: Difficulty;              // Senaryonun varsayılan seviyesi
+  supported_difficulties?: Difficulty[]; // Oynanabilir seviyeler — boşsa 1-5 hepsi
+  estimated_minutes: number;
+  modes: ScenarioMode[];
+  language: "tr";
+  author?: string;
+  reviewed_by?: string;
+  last_updated: string;         // ISO date
+
+  // İçerik
+  patient: Patient;
+  initial_vitals: PatientVitals;
+  available_medications: string[];  // Medication id'leri
+  available_equipment: string[];    // Equipment id'leri
+  steps: Step[];
+  start_step_id: string;
+
+  // Sonuç
+  scoring: ScoringConfig;
+  debrief: Debrief;
+
+  // Farmakoloji motoru — zaman ölçeği override (ör. gerçek zaman baskısı önemli senaryolar)
+  time_scale_override?: TimeScaleOverride;
+
+  // Varyantlar (opsiyonel, Faz 1 sonunda)
+  variants?: PatientVariant[];
+
+  // 3D (opsiyonel)
+  scene?: SceneConfig;
+}
+
+// ------------------------------------------------------------
+// Oyun Oturumu (Runtime State)
+// ------------------------------------------------------------
+
+export interface StepResult {
+  step_id: string;
+  actions_taken: ActionRef[];
+  points_earned: number;
+  time_spent_sec: number;
+  critical_errors: number;
+}
+
+export interface SessionState {
+  scenario_id: string;
+  mode: PlayMode;
+  selected_difficulty: Difficulty;     // Kullanıcının seçtiği zorluk — filtrelerde kullanılır
+  variant_id?: string;                 // Seçili varyant (varsa)
+  started_at: number;
+  current_step_id: string | null;
+  completed_step_ids: string[];
+
+  // Baseline = ilaçsız "temel" vitaller. Canlı monitör için referans noktası.
+  // Statik vital değişimleri (evaluateAction outcome'ı) baseline'a işler.
+  // Farmakoloji delta'sı (ilaçların tick etkisi) baseline'ın üstüne eklenir.
+  baseline_vitals: PatientVitals;
+
+  // Gösterilen (canlı) vitaller = baseline + pharmacology tick delta.
+  // useVitalsTick hook her tick'te bunu günceller.
+  vitals: PatientVitals;
+
+  // Farmakoloji motoru — şu an hastanın sisteminde olan ilaçlar.
+  // Tick fonksiyonu bu tam objeler üzerinde çalışır (instance_id, administered_at,
+  // effective_vitals, timing, expires_at). Tipe Pharmacology namespace'inden erişilir:
+  //   import type { Pharmacology } from "@/engine";
+  //   const actives: Pharmacology.ActiveMedication[] = session.active_medications;
+  // Opsiyonel: eski kod hâlâ active_medication_ids kullanıyor olabilir, geçiş için bırakıldı.
+  active_medications?: import("./pharmacology/types").ActiveMedication[];
+  active_medication_ids?: string[];      // @deprecated — active_medications kullan
+
+  // Dinamik olarak açılan adımlar (komplikasyon dalı vb.)
+  unlocked_dynamic_step_ids?: string[];
+  results: StepResult[];
+  total_score: number;
+  finished: boolean;
+  grade?: "A" | "B" | "C" | "D" | "F";
 }

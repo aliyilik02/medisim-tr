@@ -14,7 +14,6 @@
 
 import type {
   PatientVitals,
-  PatientModifiers,
   Patient,
 } from "../types";
 import type {

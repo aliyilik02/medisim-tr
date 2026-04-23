@@ -1,5 +1,17 @@
+// ============================================================
+// VitalsMonitor — Canlı Hasta Monitörü
+// ============================================================
+// baseline = ilaçsız temel vitaller (senaryo statik değişimleri dahil)
+// live     = farmakoloji tick'in hesapladığı anlık vitaller
+// delta    = live - baseline → yön oku + değer gösterimi için
+//
+// Yön okuna göre kullanıcı ilacın etki ettiğini canlı görür.
+// Eşik: |delta| >= minShowDelta (gürültü filtrele)
+// ============================================================
+
 import type { PatientVitals } from "@/engine";
 import { cn } from "@/lib/cn";
+import { ArrowUp, ArrowDown } from "lucide-react";
 
 // Vital normal aralıkları — renk kodlaması için
 function hrStatus(hr: number): "stable" | "warning" | "critical" {
@@ -34,7 +46,17 @@ const STATUS_COLORS: Record<string, string> = {
   critical: "text-clinical-critical",
 };
 
-export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
+interface VitalsMonitorProps {
+  vitals: PatientVitals;        // Canlı (baseline + pharma delta)
+  baseline?: PatientVitals;      // Opsiyonel — delta hesabı için
+  activeMedCount?: number;       // Kaç ilaç aktif — header rozeti
+}
+
+export function VitalsMonitor({
+  vitals,
+  baseline,
+  activeMedCount = 0,
+}: VitalsMonitorProps) {
   return (
     <div className="panel p-5">
       <div className="flex items-center justify-between mb-4">
@@ -45,6 +67,11 @@ export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
           <div className="font-display text-lg text-ink-50">Vital Bulgular</div>
         </div>
         <div className="flex items-center gap-2">
+          {activeMedCount > 0 && (
+            <span className="font-mono text-[9px] uppercase tracking-wider text-brand-light px-1.5 py-0.5 rounded bg-brand/10 border border-brand/30">
+              {activeMedCount} ilaç aktif
+            </span>
+          )}
           <span className="pulse-dot" />
           <span className="font-mono text-[10px] uppercase tracking-wider text-clinical-stable">
             Canlı
@@ -57,38 +84,50 @@ export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
           label="Nabız"
           unit="/dk"
           value={vitals.hr}
+          baselineValue={baseline?.hr}
           status={hrStatus(vitals.hr)}
+          minShowDelta={2}
         />
         <VitalBox
           label="TA"
           unit="mmHg"
           valueText={`${vitals.bp_systolic}/${vitals.bp_diastolic}`}
+          baselineValue={baseline?.bp_systolic}
+          value={vitals.bp_systolic}
           status={bpStatus(vitals.bp_systolic)}
+          minShowDelta={3}
         />
         <VitalBox
           label="SpO₂"
           unit="%"
           value={vitals.spo2}
+          baselineValue={baseline?.spo2}
           status={spo2Status(vitals.spo2)}
+          minShowDelta={1}
         />
         <VitalBox
           label="Solunum"
           unit="/dk"
           value={vitals.rr}
+          baselineValue={baseline?.rr}
           status={rrStatus(vitals.rr)}
+          minShowDelta={1}
         />
         <VitalBox
           label="Ateş"
           unit="°C"
           value={vitals.temp}
+          baselineValue={baseline?.temp}
           decimals={1}
           status={tempStatus(vitals.temp)}
+          minShowDelta={0.2}
         />
         {vitals.glucose !== undefined && (
           <VitalBox
             label="Glukoz"
             unit="mg/dL"
             value={vitals.glucose}
+            baselineValue={baseline?.glucose}
             status={
               vitals.glucose < 70 || vitals.glucose > 250
                 ? "critical"
@@ -96,6 +135,7 @@ export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
                 ? "warning"
                 : "stable"
             }
+            minShowDelta={5}
           />
         )}
         {vitals.pain !== undefined && (
@@ -103,6 +143,7 @@ export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
             label="Ağrı"
             unit="/10"
             value={vitals.pain}
+            baselineValue={baseline?.pain}
             status={
               vitals.pain >= 7
                 ? "critical"
@@ -110,6 +151,7 @@ export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
                 ? "warning"
                 : "stable"
             }
+            minShowDelta={1}
           />
         )}
         {vitals.gcs !== undefined && (
@@ -117,6 +159,7 @@ export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
             label="GKS"
             unit=""
             value={vitals.gcs}
+            baselineValue={baseline?.gcs}
             status={
               vitals.gcs <= 8
                 ? "critical"
@@ -124,6 +167,7 @@ export function VitalsMonitor({ vitals }: { vitals: PatientVitals }) {
                 ? "warning"
                 : "stable"
             }
+            minShowDelta={1}
           />
         )}
       </div>
@@ -136,21 +180,38 @@ function VitalBox({
   unit,
   value,
   valueText,
+  baselineValue,
   status,
   decimals = 0,
+  minShowDelta = 1,
 }: {
   label: string;
   unit: string;
   value?: number;
   valueText?: string;
+  baselineValue?: number;
   status: "stable" | "warning" | "critical";
   decimals?: number;
+  minShowDelta?: number;
 }) {
   const displayValue =
     valueText ??
     (value !== undefined ? value.toFixed(decimals) : "—");
+
+  // Delta hesabı — baseline var ve value var
+  const delta =
+    value !== undefined && baselineValue !== undefined
+      ? value - baselineValue
+      : 0;
+  const showDelta = Math.abs(delta) >= minShowDelta;
+  const deltaDir: "up" | "down" | null = showDelta
+    ? delta > 0
+      ? "up"
+      : "down"
+    : null;
+
   return (
-    <div className="panel-inset p-3">
+    <div className="panel-inset p-3 relative">
       <div className="flex items-center justify-between">
         <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-400">
           {label}
@@ -169,13 +230,32 @@ function VitalBox({
       <div className="flex items-baseline gap-1 mt-1">
         <span
           className={cn(
-            "vital-display text-2xl font-semibold",
+            "vital-display text-2xl font-semibold tabular-nums",
             STATUS_COLORS[status]
           )}
         >
           {displayValue}
         </span>
         <span className="font-mono text-[10px] text-ink-400">{unit}</span>
+
+        {deltaDir && (
+          <span
+            className={cn(
+              "ml-auto flex items-center gap-0.5 font-mono text-[10px]",
+              deltaDir === "up"
+                ? "text-clinical-warning"
+                : "text-clinical-info"
+            )}
+            title={`Baseline: ${baselineValue?.toFixed(decimals)}`}
+          >
+            {deltaDir === "up" ? (
+              <ArrowUp className="w-3 h-3" />
+            ) : (
+              <ArrowDown className="w-3 h-3" />
+            )}
+            {Math.abs(delta).toFixed(decimals)}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -41,6 +41,7 @@ export function startSession(
   difficulty?: Difficulty,
   variantId?: string
 ): SessionState {
+  const initial = { ...scenario.initial_vitals };
   return {
     scenario_id: scenario.id,
     mode,
@@ -49,8 +50,10 @@ export function startSession(
     started_at: Date.now(),
     current_step_id: scenario.start_step_id,
     completed_step_ids: [],
-    vitals: { ...scenario.initial_vitals },
-    active_medication_ids: [],
+    baseline_vitals: { ...initial },  // Canlı monitör referans noktası
+    vitals: initial,
+    active_medications: [],           // Farmakoloji tick'in okuduğu ana liste
+    active_medication_ids: [],        // @deprecated — geçiş için
     unlocked_dynamic_step_ids: [],
     results: [],
     total_score: 0,
