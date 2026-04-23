@@ -4,17 +4,15 @@
 // baseline = ilaçsız temel vitaller (senaryo statik değişimleri dahil)
 // live     = farmakoloji tick'in hesapladığı anlık vitaller
 // delta    = live - baseline → yön oku + değer gösterimi için
-//
-// Yön okuna göre kullanıcı ilacın etki ettiğini canlı görür.
-// Eşik: |delta| >= minShowDelta (gürültü filtrele)
 // ============================================================
 
 import type { PatientVitals } from "@/engine";
 import { cn } from "@/lib/cn";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { MonitorClock } from "./MonitorClock";
+import { VitalsSparkline } from "./VitalsSparkline";
+import { useVitalsHistory } from "@/hooks/useVitalsHistory";
 
-// Vital normal aralıkları — renk kodlaması için
 function hrStatus(hr: number): "stable" | "warning" | "critical" {
   if (hr < 50 || hr > 140) return "critical";
   if (hr < 60 || hr > 100) return "warning";
@@ -62,6 +60,8 @@ export function VitalsMonitor({
   startedAt,
   ecgPattern: _ecgPattern,
 }: VitalsMonitorProps) {
+  const history = useVitalsHistory(vitals);
+
   return (
     <div className="panel p-5">
       <div className="flex items-center justify-between mb-4">
@@ -97,6 +97,7 @@ export function VitalsMonitor({
           baselineValue={baseline?.hr}
           status={hrStatus(vitals.hr)}
           minShowDelta={2}
+          sparklineData={history.hr}
         />
         <VitalBox
           label="TA"
@@ -106,6 +107,7 @@ export function VitalsMonitor({
           value={vitals.bp_systolic}
           status={bpStatus(vitals.bp_systolic)}
           minShowDelta={3}
+          sparklineData={history.sbp}
         />
         <VitalBox
           label="SpO₂"
@@ -114,6 +116,7 @@ export function VitalsMonitor({
           baselineValue={baseline?.spo2}
           status={spo2Status(vitals.spo2)}
           minShowDelta={1}
+          sparklineData={history.spo2}
         />
         <VitalBox
           label="Solunum"
@@ -122,6 +125,7 @@ export function VitalsMonitor({
           baselineValue={baseline?.rr}
           status={rrStatus(vitals.rr)}
           minShowDelta={1}
+          sparklineData={history.rr}
         />
         <VitalBox
           label="Ateş"
@@ -194,6 +198,7 @@ function VitalBox({
   status,
   decimals = 0,
   minShowDelta = 1,
+  sparklineData,
 }: {
   label: string;
   unit: string;
@@ -203,12 +208,12 @@ function VitalBox({
   status: "stable" | "warning" | "critical";
   decimals?: number;
   minShowDelta?: number;
+  sparklineData?: number[];
 }) {
   const displayValue =
     valueText ??
     (value !== undefined ? value.toFixed(decimals) : "—");
 
-  // Delta hesabı — baseline var ve value var
   const delta =
     value !== undefined && baselineValue !== undefined
       ? value - baselineValue
@@ -267,6 +272,12 @@ function VitalBox({
           </span>
         )}
       </div>
+
+      {sparklineData && sparklineData.length >= 2 && (
+        <div className="mt-1.5">
+          <VitalsSparkline data={sparklineData} status={status} width={80} height={18} />
+        </div>
+      )}
     </div>
   );
 }
