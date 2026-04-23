@@ -1060,6 +1060,890 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
       },
     ],
   },
+
+  // ========================================================
+  // HAFTA 2 — KARDİYO-DIŞI İLAÇLAR (30)
+  // ========================================================
+  // Ref: UpToDate, Katzung 15e, GINA 2024 (astım), GOLD 2024 (KOAH),
+  // ADA 2024 (DKA), Surviving Sepsis 2021, BSAC/IDSA antibiyotik rehberleri
+  // ========================================================
+
+  // ---------- SOLUNUM (5) ----------
+  salbutamol: {
+    id: "salbutamol",
+    preset: "bronkodilator",
+    dose_band: {
+      default_dose: 2.5,
+      dose_unit: "mg",
+      dose_route: "nebul",
+      band_lower_pct: 0.8,
+      band_upper_pct: 2.0,  // 5 mg hâlâ normal aralıkta
+      under_dose_penalty: -2,
+      over_dose_penalty: -3,
+    },
+    modifiers: {
+      beta_blocker: 0.5,  // beta-bloker altında etkinlik azalır
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "salbutamol" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -20,
+        message: "Salbutamol alerjisi — ipratropium bromür al.",
+        feedback: "Beta-2 agonist alerjisi nadir ama kritik. Antikolinerjik alternatif.",
+      },
+      {
+        trigger: { kind: "vital", param: "hr", op: ">=", value: 150 },
+        severity: "orta",
+        effect: "taşiaritmi",
+        effect_vitals: { hr_range: [10, 20] },
+        penalty: -8,
+        message: "Taşikardi var — salbutamol HR'i daha da artırır.",
+        feedback: "Çok yüksek HR'de beta-2 agonist taşiaritmi riski. Magnezyum veya ipratropium düşün.",
+      },
+    ],
+  },
+
+  ipratropium: {
+    id: "ipratropium",
+    preset: "bronkodilator",
+    vitals: {
+      hr_range: [2, 5],     // Antikolinerjik, HR'i biraz artırır
+      spo2_range: [2, 4],
+    },
+    timing: { onset_sec: 900, peak_min: 30, duration_min: 240 },  // Daha yavaş
+    dose_band: {
+      default_dose: 0.5,
+      dose_unit: "mg",
+      dose_route: "nebul",
+      band_lower_pct: 0.5,  // 0.25 mg da kabul
+      band_upper_pct: 1.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -3,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "atropin" },
+        severity: "orta",
+        effect: "alerjik_reaksiyon",
+        penalty: -10,
+        message: "Atropin alerjisi — ipratropium çapraz alerjiyle kontrendike.",
+        feedback: "İpratropium atropin türevi; çapraz reaktivite olabilir.",
+      },
+      {
+        trigger: { kind: "history", keyword: "glokom" },
+        severity: "uyari",
+        effect: "göz içi basınç artışı",
+        penalty: -3,
+        message: "Dar açılı glokomda maskeden nebülizasyon dikkat — gözlere kaçmamalı.",
+        feedback: "Ağız parçası tercih et veya gözlük taktır.",
+      },
+    ],
+  },
+
+  magnezyum_sulfat: {
+    id: "magnezyum_sulfat",
+    vitals: {
+      hr_range: [-5, 0],
+      sbp_range: [-10, -3],
+      spo2_range: [1, 3],   // Bronkodilatasyon etkisi
+    },
+    timing: { onset_sec: 60, peak_min: 20, duration_min: 120 },
+    dose_band: {
+      default_dose: 2,
+      dose_unit: "g",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.8,
+      band_upper_pct: 1.5,
+      under_dose_penalty: -3,
+      over_dose_penalty: -10,  // Aşırı doz — kas güçsüzlüğü, hipotansiyon
+    },
+    modifiers: {
+      bobrek_yetm: 0.5,  // Böbrek atılır — dikkatli, etki artar gibi gelir ama doz azaltmak gerek
+    },
+    contraindications: [
+      {
+        trigger: { kind: "modifier", modifier: "bobrek_yetm" },
+        severity: "orta",
+        effect: "hipermagnezemi",
+        effect_vitals: { hr_range: [-10, -5], sbp_range: [-15, -8] },
+        penalty: -10,
+        message: "Böbrek yetmezliğinde magnezyum birikir — doz azalt, yakın izlem.",
+        feedback: "Hipermagnezemi → kas güçsüzlüğü, aritmi, solunum depresyonu.",
+      },
+      {
+        trigger: { kind: "history", keyword: "miyastenia gravis" },
+        severity: "kritik",
+        effect: "solunum_depresyonu",
+        penalty: -25,
+        grace_sec: 90,
+        message: "Miyastenia gravis + magnezyum = ciddi kas güçsüzlüğü, kontrendike!",
+        feedback: "Nöromusküler bağlantıyı bloke eder. Kalsiyum antidot olabilir.",
+        antidotes: ["kalsiyum_glukonat"],
+      },
+    ],
+  },
+
+  deksametazon: {
+    id: "deksametazon",
+    preset: "kortikosteroid-sistemik",
+    dose_band: {
+      default_dose: 8,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5,  // 4 mg da kabul
+      band_upper_pct: 1.5,
+      under_dose_penalty: -2,
+      over_dose_penalty: -2,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "aktif mantar enfeksiyonu" },
+        severity: "orta",
+        effect: "enfeksiyon_alevlenme",
+        penalty: -8,
+        message: "Sistemik mantar enfeksiyonunda kortikosteroid dikkatli.",
+        feedback: "Kortikosteroid bağışıklığı baskılar, mantar yayılabilir.",
+      },
+      {
+        trigger: { kind: "vital", param: "glucose", op: ">", value: 300 },
+        severity: "uyari",
+        effect: "hiperglisemi_alevlenme",
+        penalty: -3,
+        message: "Zaten yüksek glukoz — kortikosteroid artırır.",
+        feedback: "Hiperglisemi varlığında steroidler kan şekerini daha da yükseltir.",
+      },
+    ],
+  },
+
+  hidrokortizon: {
+    id: "hidrokortizon",
+    preset: "kortikosteroid-sistemik",
+    dose_band: {
+      default_dose: 100,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5,  // Adrenal yetm → 100 mg, sepsis → 50 mg q6h
+      band_upper_pct: 2.0,  // 200 mg da septik şokta kabul
+      under_dose_penalty: -2,
+      over_dose_penalty: -2,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "aktif mantar enfeksiyonu" },
+        severity: "orta",
+        effect: "enfeksiyon_alevlenme",
+        penalty: -8,
+        message: "Sistemik mantar enfeksiyonunda dikkat.",
+        feedback: "Mantar yayılma riski. Fayda-zarar değerlendir.",
+      },
+    ],
+  },
+
+  // ---------- ANALJEZİK + SEDATİF (5) ----------
+  parasetamol: {
+    id: "parasetamol",
+    preset: "nsaid-parenteral",
+    vitals: {
+      temp_range: [-1.0, -0.4],
+      pain_range: [-3, -1],
+    },
+    timing: { onset_sec: 300, peak_min: 30, duration_min: 240 },
+    dose_band: {
+      default_dose: 1000,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,  // 500 mg pediatrik/küçük erişkin
+      band_upper_pct: 1.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -10,  // >4g/gün hepatotoksik
+    },
+    modifiers: {
+      karaciger_yetm: 0.5,  // Karaciğerde metabolize — dikkat
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "karaciger yetmezligi" },
+        severity: "orta",
+        effect: "hepatotoksisite",
+        penalty: -10,
+        message: "Karaciğer yetmezliğinde parasetamol dozu yarıya düşür.",
+        feedback: "Maks günlük 2 g, aralık 6 saat. N-asetilsistein antidot.",
+      },
+      {
+        trigger: { kind: "allergy", keyword: "parasetamol" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -15,
+        message: "Parasetamol alerjisi — ibuprofen veya opioid alternatif.",
+        feedback: "Nadir ama var. Stevens-Johnson riski.",
+      },
+    ],
+  },
+
+  tramadol: {
+    id: "tramadol",
+    preset: "opioid-orta",
+    dose_band: {
+      default_dose: 100,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -5,
+    },
+    modifiers: {
+      karaciger_yetm: 0.6,
+      bobrek_yetm: 0.7,
+      yasli_70plus: 0.7,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "epilepsi" },
+        severity: "orta",
+        effect: "nöbet_eşiği_düşer",
+        penalty: -12,
+        message: "Tramadol nöbet eşiğini düşürür — epilepside dikkat.",
+        feedback: "Serotonerjik etki nedeniyle nöbet riski artar.",
+      },
+      {
+        trigger: { kind: "concurrent_med", medication_id: "ssri_herhangi" },
+        severity: "orta",
+        effect: "serotonin_sendromu",
+        penalty: -10,
+        message: "SSRI ile tramadol → serotonin sendromu riski.",
+        feedback: "Hipertermi, miyokloni, rijidite. Alternatif analjezik seç.",
+      },
+    ],
+  },
+
+  ketamin: {
+    id: "ketamin",
+    vitals: {
+      hr_range: [10, 20],       // Sempatik uyarı
+      sbp_range: [10, 25],
+      pain_range: [-8, -5],
+      gcs_range: [-8, -5],      // Disosiyatif sedasyon
+    },
+    timing: { onset_sec: 30, peak_min: 1, duration_min: 15 },
+    dose_band: {
+      default_dose: 1.5,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      weight_based: true,
+      band_lower_pct: 0.66,  // 1 mg/kg
+      band_upper_pct: 1.33,  // 2 mg/kg
+      under_dose_penalty: -3,
+      over_dose_penalty: -5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "vital", param: "bp_systolic", op: ">", value: 180 },
+        severity: "orta",
+        effect: "hipertansiyon_alevlenme",
+        effect_vitals: { sbp_range: [20, 35] },
+        penalty: -10,
+        message: "Ağır HT'de ketamin kan basıncını daha da yükseltir.",
+        feedback: "Sempatomimetik etki. Etomidate veya propofol daha güvenli.",
+      },
+      {
+        trigger: { kind: "history", keyword: "psikoz" },
+        severity: "orta",
+        effect: "emergence_reaksiyon",
+        penalty: -5,
+        message: "Psikotik bozuklukta ketamin emergence reaksiyon riski artar.",
+        feedback: "Midazolam ile birlikte vermek reaksiyonu azaltabilir.",
+      },
+    ],
+  },
+
+  propofol: {
+    id: "propofol",
+    vitals: {
+      hr_range: [-10, -3],
+      sbp_range: [-25, -10],
+      gcs_range: [-10, -6],
+      rr_range: [-8, -3],
+    },
+    timing: { onset_sec: 30, peak_min: 1, duration_min: 10 },
+    dose_band: {
+      default_dose: 2,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      weight_based: true,
+      band_lower_pct: 0.75,  // 1.5 mg/kg
+      band_upper_pct: 1.25,
+      under_dose_penalty: -3,
+      over_dose_penalty: -8,
+    },
+    modifiers: {
+      yasli_70plus: 0.6,   // Yaşlıda doz azalt
+    },
+    contraindications: [
+      {
+        trigger: { kind: "vital", param: "bp_systolic", op: "<", value: 90 },
+        severity: "kritik",
+        effect: "hipotansiyon_derinlesme",
+        effect_vitals: { sbp_range: [-20, -10] },
+        penalty: -20,
+        grace_sec: 60,
+        message: "Hipotansiyonda propofol = kardiyovasküler kollaps. Ketamin veya etomidate tercih!",
+        feedback: "Vazodilatasyon + miyokardial depresyon. Düşük SBP'de kontrendike.",
+        antidotes: ["adrenalin", "noradrenalin"],
+      },
+      {
+        trigger: { kind: "allergy", keyword: "soya" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -20,
+        grace_sec: 60,
+        message: "Soya/yumurta alerjisi — propofol kontrendike.",
+        feedback: "Propofol emülsiyonu soya yağı ve yumurta lesitini içerir.",
+      },
+    ],
+  },
+
+  etomidate: {
+    id: "etomidate",
+    vitals: {
+      hr_range: [-2, 2],
+      sbp_range: [-5, 3],      // Hemodinamik nötr — bu nedenle şokta tercih
+      gcs_range: [-10, -6],
+    },
+    timing: { onset_sec: 20, peak_min: 1, duration_min: 8 },
+    dose_band: {
+      default_dose: 0.3,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      weight_based: true,
+      band_lower_pct: 0.66,
+      band_upper_pct: 1.33,
+      under_dose_penalty: -3,
+      over_dose_penalty: -5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "adrenal yetmezlik" },
+        severity: "orta",
+        effect: "adrenal_supresyon",
+        penalty: -10,
+        message: "Etomidate adrenal supresyon yapar — adrenal yetm. hastasında dikkat.",
+        feedback: "11-beta-hidroksilazı bloke eder. Septik şokta tek doz bile tartışmalı.",
+      },
+    ],
+  },
+
+  // ---------- METABOLİK (3) ----------
+  insulin_regular: {
+    id: "insulin_regular",
+    preset: "insulin-kisa",
+    dose_band: {
+      default_dose: 0.1,
+      dose_unit: "IU",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.5,   // 0.05 U/kg/saat — de-eskalasyon
+      band_upper_pct: 1.4,   // 0.14 U/kg/saat — ADA 2024 üst
+      under_dose_penalty: -3,
+      over_dose_penalty: -8,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "vital", param: "glucose", op: "<", value: 70 },
+        severity: "kritik",
+        effect: "hipoglisemi_derinlesme",
+        effect_vitals: { glucose_range: [-30, -15] },
+        penalty: -25,
+        grace_sec: 60,
+        message: "DİKKAT: Kan şekeri zaten düşük. Önce dekstroz ver!",
+        feedback: "İnsülini hipoglisemik hastaya verme. Dekstroz %50 25 g IV push.",
+        antidotes: ["dekstroz_50"],
+      },
+      {
+        trigger: { kind: "history", keyword: "hipokalemi" },
+        severity: "kritik",
+        effect: "hipokalemi_aritmi",
+        penalty: -25,
+        grace_sec: 90,
+        message: "K<3.3 mEq/L'de insülin = ölümcül hipokalemi + aritmi. Önce KCl!",
+        feedback: "DKA'da ADA kılavuzu: K>3.3 olmadan insülin başlatma.",
+        antidotes: ["kcl"],
+      },
+    ],
+  },
+
+  dekstroz_50: {
+    id: "dekstroz_50",
+    preset: "dekstroz-hipertonik",
+    dose_band: {
+      default_dose: 25,
+      dose_unit: "g",
+      dose_route: "IV_push",
+      band_lower_pct: 0.4,
+      band_upper_pct: 2.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -2,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "alkolizm kronik" },
+        severity: "uyari",
+        effect: "Wernicke_riski",
+        penalty: -3,
+        message: "Kronik alkolikde dekstroz önce tiamin olmadan Wernicke tetikleyebilir.",
+        feedback: "Önce 100 mg tiamin IV, sonra dekstroz.",
+        antidotes: ["tiamin"],
+      },
+    ],
+  },
+
+  bikarbonat: {
+    id: "bikarbonat",
+    vitals: {
+      sbp_range: [-3, 3],
+      spo2_range: [-1, 0],
+    },
+    timing: { onset_sec: 60, peak_min: 5, duration_min: 30 },
+    dose_band: {
+      default_dose: 1,
+      dose_unit: "mEq",
+      dose_route: "IV_push",
+      weight_based: true,
+      band_lower_pct: 0.5,
+      band_upper_pct: 2.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "metabolik alkaloz" },
+        severity: "kritik",
+        effect: "alkaloz_derinlesme",
+        penalty: -20,
+        grace_sec: 60,
+        message: "Alkalozda bikarbonat = paradoksik durum, kontrendike!",
+        feedback: "pH > 7.45 ise asla verme.",
+      },
+      {
+        trigger: { kind: "history", keyword: "dka pH yuksek" },
+        severity: "orta",
+        effect: "paradoksik_asidoz",
+        penalty: -10,
+        message: "DKA'da rutin bikarbonat ÖNERİLMİYOR — sadece pH<6.9 ve hemodinamik kollaps.",
+        feedback: "ADA 2024: serebral ödem riski artar, hiperkapniye yol açabilir.",
+      },
+    ],
+  },
+
+  kalsiyum_glukonat: {
+    id: "kalsiyum_glukonat",
+    vitals: {
+      hr_range: [-5, -2],
+      sbp_range: [3, 8],
+    },
+    timing: { onset_sec: 30, peak_min: 5, duration_min: 30 },
+    dose_band: {
+      default_dose: 1,
+      dose_unit: "g",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 2.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "concurrent_med", medication_id: "digoksin" },
+        severity: "kritik",
+        effect: "digitalis_toksisite_alevlenme",
+        penalty: -25,
+        grace_sec: 90,
+        message: "Digoksin altında IV kalsiyum = ölümcül aritmi (stone heart).",
+        feedback: "Digitalis toksisitesinde kalsiyum kardiyak kontraktilite durabilir.",
+      },
+      {
+        trigger: { kind: "history", keyword: "hiperkalsemi" },
+        severity: "kritik",
+        effect: "hiperkalsemi_kriz",
+        penalty: -20,
+        message: "Zaten yüksek kalsiyum — daha fazla verme!",
+        feedback: "Böbrek yetm, aritmi, koma riski.",
+      },
+    ],
+  },
+
+  // ---------- ANTİBİYOTİK (4) ----------
+  // NOT: Antibiyotiklerin doğrudan vital etkisi yoktur (yavaş: enfeksiyon
+  // kontrolü saatler sürer). Motor için vitals boş, sadece kontrendikasyon.
+  seftriakson: {
+    id: "seftriakson",
+    dose_band: {
+      default_dose: 2000,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,   // 1 g da kabul (pediatrik/hafif)
+      band_upper_pct: 1.0,
+      under_dose_penalty: -3,
+      over_dose_penalty: -2,
+    },
+    timing: { onset_sec: 1800, peak_min: 60, duration_min: 1440 }, // 24 saat
+    vitals: {},
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "penisilin" },
+        severity: "orta",
+        effect: "çapraz_alerji",
+        penalty: -10,
+        message: "Penisilin alerjisinde sefalosporinler %5-10 çapraz reaktivite — dikkat.",
+        feedback: "Anaflaktik öyküde kaçın. Aztreonam veya kinolon alternatif.",
+      },
+      {
+        trigger: { kind: "allergy", keyword: "sefalosporin" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Sefalosporin alerjisi — kontrendike!",
+        feedback: "Meropenem dikkatli, aztreonam güvenli alternatif.",
+        antidotes: ["adrenalin", "difenhidramin", "hidrokortizon"],
+      },
+    ],
+  },
+
+  piperasilin_tazobaktam: {
+    id: "piperasilin_tazobaktam",
+    dose_band: {
+      default_dose: 4500,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.7,  // 3.375 g minimum
+      band_upper_pct: 1.0,
+      under_dose_penalty: -3,
+      over_dose_penalty: -2,
+    },
+    timing: { onset_sec: 1800, peak_min: 30, duration_min: 360 }, // 6 saat
+    vitals: {},
+    modifiers: {
+      bobrek_yetm: 0.5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "penisilin" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Penisilin alerjisi — piperasilin kontrendike!",
+        feedback: "Meropenem veya sefepim düşün (çapraz reaktivite düşük).",
+        antidotes: ["adrenalin", "difenhidramin", "hidrokortizon"],
+      },
+    ],
+  },
+
+  vankomisin: {
+    id: "vankomisin",
+    dose_band: {
+      default_dose: 15,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.8,
+      band_upper_pct: 1.4,  // 20 mg/kg
+      under_dose_penalty: -3,
+      over_dose_penalty: -5,
+    },
+    timing: { onset_sec: 3600, peak_min: 60, duration_min: 720 }, // 12 saat
+    vitals: {},
+    modifiers: {
+      bobrek_yetm: 0.4,  // Nefrotoksik, doz azaltılmalı
+    },
+    contraindications: [
+      {
+        trigger: { kind: "modifier", modifier: "bobrek_yetm" },
+        severity: "orta",
+        effect: "nefrotoksisite",
+        penalty: -10,
+        message: "Böbrek yetmezliğinde vankomisin doz ayarı şart.",
+        feedback: "GFR'ye göre doz + trough düzeyi izle (hedef 15-20).",
+      },
+      {
+        trigger: { kind: "allergy", keyword: "vankomisin" },
+        severity: "orta",
+        effect: "red_man_sendromu",
+        effect_vitals: { sbp_range: [-15, -5], hr_range: [10, 20] },
+        penalty: -8,
+        message: "Hızlı infüzyon → red man sendromu. Min 60 dk sürede ver.",
+        feedback: "Histamin salınımı. Yavaşlat + difenhidramin.",
+      },
+    ],
+  },
+
+  meropenem: {
+    id: "meropenem",
+    dose_band: {
+      default_dose: 1000,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,   // 500 mg hafif
+      band_upper_pct: 2.0,   // 2 g menenjit/ağır
+      under_dose_penalty: -3,
+      over_dose_penalty: -2,
+    },
+    timing: { onset_sec: 1800, peak_min: 30, duration_min: 480 }, // 8 saat
+    vitals: {},
+    modifiers: {
+      bobrek_yetm: 0.5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "karbapenem" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Karbapenem alerjisi — kontrendike.",
+        feedback: "Aztreonam güvenli alternatif, sefepim dikkatli.",
+        antidotes: ["adrenalin", "difenhidramin", "hidrokortizon"],
+      },
+      {
+        trigger: { kind: "history", keyword: "epilepsi" },
+        severity: "uyari",
+        effect: "nöbet_eşiği_düşer",
+        penalty: -5,
+        message: "Karbapenemler nöbet eşiğini düşürebilir — epilepside izlem.",
+        feedback: "Özellikle böbrek yetm + yüksek doz + SSS enfeksiyonu riskli.",
+      },
+    ],
+  },
+
+  // ---------- ANTİEMETİK + ANTİALERJİK (3) ----------
+  ondansetron: {
+    id: "ondansetron",
+    vitals: {},
+    timing: { onset_sec: 120, peak_min: 10, duration_min: 240 },
+    dose_band: {
+      default_dose: 4,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5,
+      band_upper_pct: 2.0,  // 8 mg ağır emezi
+      under_dose_penalty: -2,
+      over_dose_penalty: -3,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "uzun QT" },
+        severity: "orta",
+        effect: "QT_uzamasi",
+        penalty: -10,
+        message: "Uzun QT sendromu — ondansetron kontrendike (Torsades riski).",
+        feedback: "Metoklopramid de QT uzatır. Alternatif: haloperidol düşük doz.",
+      },
+    ],
+  },
+
+  metoklopramid: {
+    id: "metoklopramid",
+    vitals: {},
+    timing: { onset_sec: 120, peak_min: 15, duration_min: 120 },
+    dose_band: {
+      default_dose: 10,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5,
+      band_upper_pct: 2.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -3,
+    },
+    modifiers: {
+      yasli_70plus: 0.7,  // Ekstrapiramidal yan etki riski
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "parkinson" },
+        severity: "orta",
+        effect: "ekstrapiramidal",
+        penalty: -12,
+        message: "Parkinson'da metoklopramid = motor bozulma.",
+        feedback: "Dopamin antagonisti. Ondansetron kullan.",
+      },
+      {
+        trigger: { kind: "history", keyword: "bağırsak obstrüksiyonu" },
+        severity: "kritik",
+        effect: "perforasyon_riski",
+        penalty: -20,
+        message: "Obstrüksiyonda prokinetik = perforasyon. Kontrendike!",
+        feedback: "Önce mekanik obstrüksiyon dışlanmalı.",
+      },
+    ],
+  },
+
+  difenhidramin: {
+    id: "difenhidramin",
+    vitals: {
+      hr_range: [2, 8],     // Antikolinerjik → HR biraz artar
+      gcs_range: [-2, 0],   // Sedasyon
+    },
+    timing: { onset_sec: 60, peak_min: 30, duration_min: 240 },
+    dose_band: {
+      default_dose: 50,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.0,
+      under_dose_penalty: -2,
+      over_dose_penalty: -5,
+    },
+    modifiers: {
+      yasli_70plus: 0.5,  // Deliryum riski
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "dar açılı glokom" },
+        severity: "orta",
+        effect: "göz_içi_basınç_artışı",
+        penalty: -8,
+        message: "Dar açılı glokom — antikolinerjik etki kontrendike.",
+        feedback: "Feniramin IV daha az antikolinerjik.",
+      },
+      {
+        trigger: { kind: "history", keyword: "prostat hipertrofisi" },
+        severity: "uyari",
+        effect: "üriner_retansiyon",
+        penalty: -3,
+        message: "BPH'da antikolinerjik üriner retansiyona neden olabilir.",
+        feedback: "Kısa süreli kullanım nispeten güvenli.",
+      },
+    ],
+  },
+
+  // ---------- ANTİDOT + DİĞER KRİTİK (5) ----------
+  naloksan: {
+    id: "naloksan",
+    preset: "naloksan",
+    dose_band: {
+      default_dose: 0.4,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.25,  // 0.1 mg — hassas titrasyon (opioid bağımlısında)
+      band_upper_pct: 5.0,   // 2 mg'e kadar kabul
+      under_dose_penalty: -1,
+      over_dose_penalty: -2,  // Aşırı doz → abrupt withdrawal, ajitasyon
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "kronik opioid" },
+        severity: "uyari",
+        effect: "akut_withdrawal",
+        penalty: -3,
+        message: "Kronik opioid kullanıcısında tam doz naloksan → ajitasyon.",
+        feedback: "Küçük dozlarla titre et (0.1 mg). Amaç RR düzeltmek, bilinç değil.",
+      },
+    ],
+  },
+
+  flumazenil: {
+    id: "flumazenil",
+    preset: "flumazenil",
+    dose_band: {
+      default_dose: 0.2,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5,
+      band_upper_pct: 5.0,  // 1 mg da kabul
+      under_dose_penalty: -2,
+      over_dose_penalty: -3,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "kronik benzo" },
+        severity: "kritik",
+        effect: "withdrawal_nobeti",
+        penalty: -20,
+        grace_sec: 60,
+        message: "Kronik benzo kullanıcısında flumazenil = nöbet riski!",
+        feedback: "Sadece iyatrojenik overdoz veya net tek doz alımında kullan.",
+      },
+      {
+        trigger: { kind: "concurrent_med", medication_id: "trisiklik_antidepresan" },
+        severity: "kritik",
+        effect: "nobet",
+        penalty: -20,
+        grace_sec: 60,
+        message: "TCA koingestion + flumazenil = ciddi nöbet + aritmi.",
+        feedback: "Mikst intoksikasyonda kaçın.",
+      },
+    ],
+  },
+
+  mannitol: {
+    id: "mannitol",
+    vitals: {
+      sbp_range: [-5, 0],   // Başlangıçta geçici SBP artışı, sonra diürez ile düşüş
+    },
+    timing: { onset_sec: 900, peak_min: 60, duration_min: 240 },
+    dose_band: {
+      default_dose: 0.5,
+      dose_unit: "g",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.5,
+      band_upper_pct: 2.0,  // 1 g/kg da kabul
+      under_dose_penalty: -3,
+      over_dose_penalty: -5,
+    },
+    modifiers: {
+      bobrek_yetm: 0.3,  // Ağır böbrek yetm → etki azalır, yük artar
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "anuri" },
+        severity: "kritik",
+        effect: "sıvı_yüklenme",
+        penalty: -25,
+        grace_sec: 90,
+        message: "Anürik hastada mannitol = pulmoner ödem, kontrendike!",
+        feedback: "İşe yaramaz çünkü atılamıyor. Hipertonik salin alternatif.",
+      },
+      {
+        trigger: { kind: "history", keyword: "kalp yetmezligi" },
+        severity: "orta",
+        effect: "dekompanzasyon",
+        penalty: -10,
+        message: "Kalp yetmezliğinde mannitol → geçici preload artışı, dekompanzasyon.",
+        feedback: "Hipertonik salin %3 daha güvenli alternatif.",
+      },
+    ],
+  },
+
+  tiamin: {
+    id: "tiamin",
+    vitals: {},
+    timing: { onset_sec: 300, peak_min: 30, duration_min: 720 },
+    dose_band: {
+      default_dose: 100,
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5,
+      band_upper_pct: 5.0,  // 500 mg Wernicke tedavisi
+      under_dose_penalty: -1,
+      over_dose_penalty: -1,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "tiamin" },
+        severity: "kritik",
+        effect: "anafilaksi",
+        penalty: -15,
+        grace_sec: 60,
+        message: "Tiamin alerjisi nadir ama anafilaksi yapabilir.",
+        feedback: "Özellikle hızlı IV'de. Yavaş infüzyon daha güvenli.",
+        antidotes: ["adrenalin"],
+      },
+    ],
+  },
 };
 
 // ------------------------------------------------------------

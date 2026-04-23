@@ -23,7 +23,7 @@ export type Specialty =
 
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
 
-export type PlayMode = "egitim" | "sinav";
+export type PlayMode = "egitim" | "klinik" | "sinav";
 
 // Senaryo iki şekilde oynanabilir — listede ikisi de olmalı
 export type ScenarioMode = "quiz" | "interactive_3d";
@@ -226,8 +226,22 @@ export interface SceneConfig {
 // ------------------------------------------------------------
 
 export interface TimeScaleOverride {
-  egitim?: number;   // Varsayılan 3.0 (3x hızlı)
+  egitim?: number;   // Varsayılan 8.0 (hızlı öğrenme)
+  klinik?: number;   // Varsayılan 3.0 (gerçekçi hissi, hızlandırılmış)
   sinav?: number;    // Varsayılan 1.0 (gerçek zaman)
+}
+
+// ------------------------------------------------------------
+// İlaç zamanlama override — senaryo bazlı
+// ------------------------------------------------------------
+// Bu senaryoda belirli bir ilacın farmakokinetik süresini değiştir.
+// Örn: insülin normalde onset_sec=300 (5 dk), ama demo senaryosunda
+// onset_sec=10 (10 saniyede etki başlasın) diyebilirsin.
+// Ayarlanmayan alanlar ilacın kendi değerini kullanır.
+export interface MedicationTimingOverride {
+  onset_sec?: number;
+  peak_min?: number;
+  duration_min?: number;
 }
 
 // ------------------------------------------------------------
@@ -279,6 +293,12 @@ export interface Scenario {
 
   // Farmakoloji motoru — zaman ölçeği override (ör. gerçek zaman baskısı önemli senaryolar)
   time_scale_override?: TimeScaleOverride;
+
+  // İlaç bazlı zamanlama override — senaryo yazarı bu senaryoda
+  // belirli ilaçların onset/peak/duration sürelerini değiştirebilir.
+  // Anahtar: medication_id (örn. "insulin_regular").
+  // Kullanım: "Normalde 15 dk etki eden insülin bu senaryoda 45 sn'de etki etsin"
+  medication_timing_overrides?: Record<string, MedicationTimingOverride>;
 
   // Varyantlar (opsiyonel, Faz 1 sonunda)
   variants?: PatientVariant[];

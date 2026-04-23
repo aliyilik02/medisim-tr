@@ -328,6 +328,198 @@ export const MEDICATIONS: Record<string, Medication> = {
     category: "diğer",
     default_dose: "10-20 mEq/saat IV",
   },
+
+  // ========================================================
+  // SOLUNUM SİSTEMİ (5) — Hafta 2 eklendi
+  // ========================================================
+  salbutamol: {
+    id: "salbutamol",
+    name_tr: "Salbutamol",
+    name_en: "Salbutamol",
+    category: "diğer",
+    default_dose: "2.5-5 mg nebülizasyonla",
+  },
+  ipratropium: {
+    id: "ipratropium",
+    name_tr: "İpratropium Bromür",
+    name_en: "Ipratropium",
+    category: "diğer",
+    default_dose: "0.5 mg nebülizasyonla",
+  },
+  magnezyum_sulfat: {
+    id: "magnezyum_sulfat",
+    name_tr: "Magnezyum Sülfat",
+    name_en: "Magnesium Sulfate",
+    category: "diğer",
+    default_dose: "2 g IV (20 dk infüzyon)",
+  },
+  deksametazon: {
+    id: "deksametazon",
+    name_tr: "Deksametazon",
+    name_en: "Dexamethasone",
+    category: "diğer",
+    default_dose: "8-10 mg IV",
+  },
+  hidrokortizon: {
+    id: "hidrokortizon",
+    name_tr: "Hidrokortizon Sodyum Süksinat",
+    name_en: "Hydrocortisone",
+    category: "diğer",
+    default_dose: "100 mg IV (adrenal yetm.) / 200 mg/gün (septik şok)",
+  },
+
+  // ========================================================
+  // ANALJEZİK + SEDATİF (5) — Hafta 2 eklendi
+  // ========================================================
+  parasetamol: {
+    id: "parasetamol",
+    name_tr: "Parasetamol",
+    name_en: "Paracetamol",
+    category: "analjezik",
+    default_dose: "1 g IV (15 dk infüzyon)",
+  },
+  tramadol: {
+    id: "tramadol",
+    name_tr: "Tramadol",
+    name_en: "Tramadol",
+    category: "analjezik",
+    default_dose: "50-100 mg IV yavaş",
+  },
+  ketamin: {
+    id: "ketamin",
+    name_tr: "Ketamin",
+    name_en: "Ketamine",
+    category: "sedatif",
+    default_dose: "1-2 mg/kg IV (indüksiyon)",
+  },
+  propofol: {
+    id: "propofol",
+    name_tr: "Propofol",
+    name_en: "Propofol",
+    category: "sedatif",
+    default_dose: "1.5-2.5 mg/kg IV (indüksiyon)",
+  },
+  etomidate: {
+    id: "etomidate",
+    name_tr: "Etomidat",
+    name_en: "Etomidate",
+    category: "sedatif",
+    default_dose: "0.3 mg/kg IV",
+  },
+
+  // ========================================================
+  // METABOLİK (3) — Hafta 2 eklendi
+  // ========================================================
+  dekstroz_50: {
+    id: "dekstroz_50",
+    name_tr: "Dekstroz %50",
+    name_en: "Dextrose 50%",
+    category: "sıvı",
+    default_dose: "25 g (50 mL) IV push",
+  },
+  bikarbonat: {
+    id: "bikarbonat",
+    name_tr: "Sodyum Bikarbonat %8.4",
+    name_en: "Sodium Bicarbonate",
+    category: "diğer",
+    default_dose: "1 mEq/kg IV (sadece pH<6.9)",
+  },
+  kalsiyum_glukonat: {
+    id: "kalsiyum_glukonat",
+    name_tr: "Kalsiyum Glukonat %10",
+    name_en: "Calcium Gluconate",
+    category: "diğer",
+    default_dose: "10 mL (1 g) IV yavaş",
+  },
+
+  // ========================================================
+  // ANTİBİYOTİK (4) — Hafta 2 eklendi
+  // ========================================================
+  piperasilin_tazobaktam: {
+    id: "piperasilin_tazobaktam",
+    name_tr: "Piperasilin-Tazobaktam",
+    name_en: "Piperacillin-Tazobactam",
+    category: "antibiyotik",
+    default_dose: "4.5 g IV (30 dk)",
+  },
+  vankomisin: {
+    id: "vankomisin",
+    name_tr: "Vankomisin",
+    name_en: "Vancomycin",
+    category: "antibiyotik",
+    default_dose: "15-20 mg/kg IV (60 dk)",
+  },
+  meropenem: {
+    id: "meropenem",
+    name_tr: "Meropenem",
+    name_en: "Meropenem",
+    category: "antibiyotik",
+    default_dose: "1 g IV (30 dk)",
+  },
+  siprofloksasin: {
+    id: "siprofloksasin",
+    name_tr: "Siprofloksasin",
+    name_en: "Ciprofloxacin",
+    category: "antibiyotik",
+    default_dose: "400 mg IV (60 dk)",
+  },
+
+  // ========================================================
+  // ANTİEMETİK + ANTİALERJİK (3) — Hafta 2 eklendi
+  // ========================================================
+  ondansetron: {
+    id: "ondansetron",
+    name_tr: "Ondansetron",
+    name_en: "Ondansetron",
+    category: "diğer",
+    default_dose: "4-8 mg IV yavaş",
+  },
+  metoklopramid: {
+    id: "metoklopramid",
+    name_tr: "Metoklopramid",
+    name_en: "Metoclopramide",
+    category: "diğer",
+    default_dose: "10 mg IV yavaş",
+  },
+  difenhidramin: {
+    id: "difenhidramin",
+    name_tr: "Difenhidramin",
+    name_en: "Diphenhydramine",
+    category: "diğer",
+    default_dose: "25-50 mg IV/IM",
+  },
+
+  // ========================================================
+  // ANTİDOTLAR + DİĞER KRİTİK (4) — Hafta 2 eklendi
+  // ========================================================
+  naloksan: {
+    id: "naloksan",
+    name_tr: "Naloksan (Narkan)",
+    name_en: "Naloxone",
+    category: "diğer",
+    default_dose: "0.4 mg IV, 2-3 dk tekrar",
+  },
+  flumazenil: {
+    id: "flumazenil",
+    name_tr: "Flumazenil",
+    name_en: "Flumazenil",
+    category: "diğer",
+    default_dose: "0.2 mg IV, 1 dk tekrar (max 3 mg)",
+  },
+  mannitol: {
+    id: "mannitol",
+    name_tr: "Mannitol %20",
+    name_en: "Mannitol",
+    category: "diğer",
+    default_dose: "0.5-1 g/kg IV (20 dk)",
+  },
+  tiamin: {
+    id: "tiamin",
+    name_tr: "Tiamin (B1 Vitamini)",
+    name_en: "Thiamine",
+    category: "diğer",
+    default_dose: "100 mg IV/IM",
+  },
 };
 
 export function getMedication(id: string): Medication | undefined {

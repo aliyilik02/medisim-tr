@@ -4,7 +4,7 @@ import { ChevronRight, AlertCircle, FileImage } from "lucide-react";
 
 interface Props {
   step: Step;
-  mode: "egitim" | "sinav";
+  mode: "egitim" | "klinik" | "sinav";
   actionsThisStep: number;
   onDecisionSelect?: (option: DecisionOption) => void;
   onInfoContinue?: () => void;
@@ -143,7 +143,7 @@ export function StepDisplay({
                   <div className="flex-1 text-ink-100">{opt.text}</div>
                 </div>
 
-                {mode === "egitim" && showResult && isAnswered && (
+                {mode !== "sinav" && showResult && isAnswered && (
                   <div className="mt-3 pt-3 border-t border-ink-700/50 text-sm text-ink-300 leading-relaxed">
                     {opt.feedback}
                   </div>

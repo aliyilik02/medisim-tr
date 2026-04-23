@@ -210,13 +210,15 @@ export interface MedicationAdministrationResult {
 // ------------------------------------------------------------
 
 export interface TimeScaleConfig {
-  egitim: number;  // Varsayılan 3.0
-  sinav: number;   // Varsayılan 1.0
+  egitim: number;  // Varsayılan 8.0 — hızlı öğrenme modu
+  klinik: number;  // Varsayılan 3.0 — gerçekçi hissi, hızlandırılmış (YENİ)
+  sinav: number;   // Varsayılan 1.0 — gerçek zaman, sınav modu
 }
 
 export const DEFAULT_TIME_SCALE: TimeScaleConfig = {
-  egitim: 3.0,
-  sinav: 1.0,
+  egitim: 8.0,   // 8x daha hızlı — kavram pekiştirme için
+  klinik: 3.0,   // 3x — "hasta başındayım ama demo" hissi
+  sinav: 1.0,    // Gerçek zaman
 };
 
 // ------------------------------------------------------------

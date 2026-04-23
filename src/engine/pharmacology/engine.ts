@@ -28,6 +28,7 @@ import type {
   Range,
   MedicationDoseBand,
 } from "./types";
+import type { MedicationTimingOverride } from "../types";
 import { PHARMACOLOGY_PRESETS } from "./presets";
 
 // ============================================================
@@ -234,6 +235,9 @@ export function administerMedication(params: {
   activeMedicationIds: string[];
   sourceStepId?: string;
   now?: number;
+  // Senaryo yazarının bu ilaç için belirlediği timing override.
+  // Null/undefined ise ilacın kendi timing değerleri kullanılır.
+  timingOverride?: MedicationTimingOverride;
 }): MedicationAdministrationResult {
   const {
     medication,
@@ -243,6 +247,7 @@ export function administerMedication(params: {
     activeMedicationIds,
     sourceStepId,
     now = Date.now(),
+    timingOverride,
   } = params;
 
   // 1. Doz değerlendirme
@@ -265,7 +270,14 @@ export function administerMedication(params: {
   const criticalContra = triggered.find((c) => c.severity === "kritik");
 
   // 3. Farmakokinetik verileri hazırla (preset veya direct)
-  const { vitalsDelta, timing } = resolveEffects(medication);
+  const resolved = resolveEffects(medication);
+  const vitalsDelta = resolved.vitalsDelta;
+  // Senaryo override varsa timing üzerine yaz (verilen alanlar geçersiz kılar)
+  const timing: PharmacokineticTiming = {
+    onset_sec: timingOverride?.onset_sec ?? resolved.timing.onset_sec,
+    peak_min: timingOverride?.peak_min ?? resolved.timing.peak_min,
+    duration_min: timingOverride?.duration_min ?? resolved.timing.duration_min,
+  };
 
   // 4. Modifier zinciri uygula
   const multiplier = computeEffectMultiplier(medication, patient);
@@ -481,10 +493,10 @@ export function computeLiveVitals(
  */
 export function getTickIntervalMs(
   baseIntervalMs: number,
-  mode: "egitim" | "sinav",
-  override?: { egitim?: number; sinav?: number }
+  mode: "egitim" | "klinik" | "sinav",
+  override?: { egitim?: number; klinik?: number; sinav?: number }
 ): number {
-  const defaultScale = { egitim: 3.0, sinav: 1.0 };
+  const defaultScale = { egitim: 8.0, klinik: 3.0, sinav: 1.0 };
   const scale =
     (override?.[mode] ?? defaultScale[mode]);
   return baseIntervalMs / scale;

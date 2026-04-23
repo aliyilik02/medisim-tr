@@ -171,6 +171,9 @@ export function ScenarioPlayPage() {
           vitals: session.vitals,
           activeMedicationIds: session.active_medication_ids ?? [],
           sourceStepId: currentStep.id,
+          // Senaryo yazarı bu ilaç için özel timing tanımlamışsa kullan.
+          // Ayarlanmayan alanlar ilacın kendi değerlerine fallback.
+          timingOverride: scenario.medication_timing_overrides?.[extended.id],
         });
 
         pharmaPoints = result.points_delta;
@@ -393,6 +396,11 @@ export function ScenarioPlayPage() {
                   <GraduationCap className="w-3 h-3 mr-1 inline" />
                   Eğitim
                 </>
+              ) : session.mode === "klinik" ? (
+                <>
+                  <ActivityIcon className="w-3 h-3 mr-1 inline" />
+                  Klinik
+                </>
               ) : (
                 <>
                   <Timer className="w-3 h-3 mr-1 inline" />
@@ -490,7 +498,7 @@ export function ScenarioPlayPage() {
 
       <CriticalContraindicationModal
         info={criticalInfo}
-        showGuidance={session.mode === "egitim"}
+        showGuidance={session.mode !== "sinav"}
         onResolved={() => setCriticalInfo(null)}
         onExpired={handleCriticalExpired}
         onDismiss={() => setCriticalInfo(null)}
@@ -558,41 +566,57 @@ function ModeSelector({
           Oyun Modu
         </div>
 
-        <div className="grid md:grid-cols-2 gap-3">
+        <div className="grid md:grid-cols-3 gap-3">
           <button
             onClick={() => onStart("egitim", selectedDifficulty)}
-            className="panel-inset p-6 text-left hover:border-brand/40 transition group"
+            className="panel-inset p-5 text-left hover:border-brand/40 transition group"
           >
-            <div className="flex items-center gap-3 mb-3">
-              <GraduationCap className="w-6 h-6 text-brand-light" />
-              <h3 className="font-display text-xl text-ink-50">Eğitim Modu</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <GraduationCap className="w-5 h-5 text-brand-light" />
+              <h3 className="font-display text-lg text-ink-50">Eğitim</h3>
             </div>
             <p className="text-sm text-ink-300 leading-relaxed mb-3">
-              Her aksiyonda anında feedback alırsın. Yanlışlar açıklanır,
-              doğrular pekiştirilir. Pratik için ideal.
+              Anında feedback. Hızlı öğrenme, tekrar oynanabilirlik. Kavram pekiştirme için.
             </p>
             <ul className="text-xs text-ink-400 space-y-1">
               <li>· Anında açıklama</li>
-              <li>· Süre baskısı yok (3× hızlı)</li>
+              <li>· 8× hızlandırılmış</li>
               <li>· Öğrenmeye odaklı</li>
             </ul>
           </button>
 
           <button
-            onClick={() => onStart("sinav", selectedDifficulty)}
-            className="panel-inset p-6 text-left hover:border-clinical-warning/40 transition group"
+            onClick={() => onStart("klinik", selectedDifficulty)}
+            className="panel-inset p-5 text-left hover:border-clinical-info/40 transition group"
           >
-            <div className="flex items-center gap-3 mb-3">
-              <Timer className="w-6 h-6 text-clinical-warning" />
-              <h3 className="font-display text-xl text-ink-50">Sınav Modu</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <ActivityIcon className="w-5 h-5 text-clinical-info" />
+              <h3 className="font-display text-lg text-ink-50">Klinik</h3>
             </div>
             <p className="text-sm text-ink-300 leading-relaxed mb-3">
-              Feedback gizlenir, sadece puan değişimi görünür. Sonunda harf notu
-              ve detaylı debrief. Değerlendirme için.
+              Hasta başındaymış gibi. Monitör gerçekçi çalışır ama bekleme yok. Vaka tartışması için.
+            </p>
+            <ul className="text-xs text-ink-400 space-y-1">
+              <li>· Anında feedback</li>
+              <li>· 3× gerçekçi hız</li>
+              <li>· Hasta başı hissi</li>
+            </ul>
+          </button>
+
+          <button
+            onClick={() => onStart("sinav", selectedDifficulty)}
+            className="panel-inset p-5 text-left hover:border-clinical-warning/40 transition group"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Timer className="w-5 h-5 text-clinical-warning" />
+              <h3 className="font-display text-lg text-ink-50">Sınav</h3>
+            </div>
+            <p className="text-sm text-ink-300 leading-relaxed mb-3">
+              Feedback gizli, sadece puan. Sonunda harf notu ve debrief. Değerlendirme için.
             </p>
             <ul className="text-xs text-ink-400 space-y-1">
               <li>· Feedback debrief'te</li>
-              <li>· Gerçek zamanlı (1× hız)</li>
+              <li>· Gerçek zaman (1×)</li>
               <li>· Harf notu (A-F)</li>
             </ul>
           </button>

@@ -26,7 +26,7 @@ export function FeedbackToast({
   onClose,
 }: {
   feedback: Feedback | null;
-  mode: "egitim" | "sinav";
+  mode: "egitim" | "klinik" | "sinav";
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -38,7 +38,8 @@ export function FeedbackToast({
   if (!feedback) return null;
 
   // Sınav modunda içeriği gizle — sadece puan değişimini göster
-  const showFullFeedback = mode === "egitim";
+  // Eğitim + Klinik modlarında tam feedback görünür
+  const showFullFeedback = mode !== "sinav";
 
   return (
     <div
