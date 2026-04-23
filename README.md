@@ -19,6 +19,7 @@ senaryo tabanlı klinik eğitim.
 - [Mimari](./docs/MIMARI.md)
 - [Senaryo yazım rehberi](./docs/SENARYO-YAZIM-REHBERI.md)
 - [Yol haritası](./docs/YOL-HARITASI.md)
+- [Claude Code ile çalışma](#-claude-code-ile-çalışma)
 
 ---
 
@@ -106,3 +107,43 @@ kararları güncelleniyor. Geri bildirim için issue açabilirsiniz.
 ## Lisans
 
 Henüz belirlenmedi. Ticari kullanım için iletişime geçin.
+
+---
+
+## 🤖 Claude Code ile çalışma
+
+Bu proje **Claude Code otonom ajan** kullanımı için hazırlanmış. Kurulum:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+cd medisim-tr
+claude
+```
+
+Claude Code açılınca `CLAUDE.md`'yi otomatik okur — projenin kurallarını, mimarisini ve mevcut yapılacaklar listesini öğrenir.
+
+### Slash komutları
+
+Proje özel komutlar `.claude/commands/` içinde tanımlı. Claude Code içinde kullan:
+
+| Komut | İşlev |
+|---|---|
+| `/durum` | Projenin güncel durumu + yapılacaklar özeti |
+| `/senaryo-ekle <isim>` | Yeni klinik senaryo iskeleti oluşturur |
+| `/ilac-ekle <id>` | İlaç kataloğuna yeni ilaç ekler (iki dosyaya da) |
+| `/test-calis` | Tip kontrolü + lint + prod build |
+| `/build-kontrol` | Commit öncesi zorunlu kontrol + güvenli commit/push |
+
+### Ayarlar
+
+- `.claude/settings.json` — paylaşılan ayarlar (izinli komutlar). Commit edilir.
+- `.claude/settings.local.json` — kişisel ayarlar (varsa). `.gitignore`'da, commit edilmez.
+
+### Çalışma prensibi
+
+1. Küçük kararları Claude kendi alır (değişken adı, refactor, kütüphane).
+2. Büyük kararlarda durur ve sorar (yeni modül, şema, tıbbi içerik).
+3. Klinik içerikte asla doğaçlama yapmaz — emin değilse işaretler, sorar.
+4. Her anlamlı iş sonrası Türkçe özet + commit atar.
+
+Detaylı ajan talimatları: [`CLAUDE.md`](./CLAUDE.md).

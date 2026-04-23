@@ -25,3 +25,13 @@ build/
 
 # TypeScript
 *.tsbuildinfo
+
+# Claude Code — kullanıcıya özel, commit edilmez
+.claude/settings.local.json
+.claude/cache/
+.claude/history.jsonl
+.claude/projects/
+.claude/backups/
+.claude/shell-snapshots/
+.claude/file-history/
+.claude/plugins/
