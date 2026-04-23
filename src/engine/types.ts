@@ -303,6 +303,11 @@ export interface Scenario {
   // Varyantlar (opsiyonel, Faz 1 sonunda)
   variants?: PatientVariant[];
 
+  // EKG şerit deseni — EcgStrip bileşeni için
+  // Geçerli değerler: "normal" | "stemi" | "vt" | "vf" | "asistoli"
+  // Belirtilmezse "normal" kullanılır
+  ekg_pattern?: string;
+
   // 3D (opsiyonel)
   scene?: SceneConfig;
 }

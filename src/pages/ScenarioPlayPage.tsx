@@ -448,7 +448,7 @@ export function ScenarioPlayPage() {
               baseline={session.baseline_vitals}
               activeMedCount={session.active_medications?.length ?? 0}
               startedAt={session.started_at}
-              ecgPattern={(scenario as { ekg_pattern?: string }).ekg_pattern}
+              ecgPattern={scenario.ekg_pattern}
             />
           </aside>
 

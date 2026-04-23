@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { MonitorClock } from "./MonitorClock";
 import { VitalsSparkline } from "./VitalsSparkline";
+import { EcgStrip } from "./EcgStrip";
 import { useVitalsHistory } from "@/hooks/useVitalsHistory";
 
 function hrStatus(hr: number): "stable" | "warning" | "critical" {
@@ -58,12 +59,18 @@ export function VitalsMonitor({
   baseline,
   activeMedCount = 0,
   startedAt,
-  ecgPattern: _ecgPattern,
+  ecgPattern,
 }: VitalsMonitorProps) {
   const history = useVitalsHistory(vitals);
 
   return (
-    <div className="panel p-5">
+    <div className="panel overflow-hidden">
+      {/* EKG şeridi — full-width, panel içi üst bant */}
+      <div className="bg-ink-900/60 border-b border-ink-700/50 px-1 py-0.5">
+        <EcgStrip hr={vitals.hr} pattern={ecgPattern} />
+      </div>
+
+      <div className="p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
@@ -185,6 +192,7 @@ export function VitalsMonitor({
           />
         )}
       </div>
+      </div> {/* .p-5 content wrapper */}
     </div>
   );
 }
