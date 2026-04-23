@@ -11,6 +11,7 @@ interface Props {
   onActionStepContinue?: () => void;
   canContinue?: boolean;
   decisionAnswered?: { optionId: string; feedback: string } | null;
+  visibleOptions?: DecisionOption[]; // Zorluk filtresiyle filtrelenmiş; verilmezse tümü
 }
 
 export function StepDisplay({
@@ -22,6 +23,7 @@ export function StepDisplay({
   onActionStepContinue,
   canContinue,
   decisionAnswered,
+  visibleOptions,
 }: Props) {
   return (
     <div className="panel p-6 md:p-7">
@@ -98,7 +100,7 @@ export function StepDisplay({
             </div>
           )}
 
-          {step.options.map((opt) => {
+          {(visibleOptions ?? step.options).map((opt) => {
             const isAnswered = decisionAnswered?.optionId === opt.id;
             const showResult = decisionAnswered !== null && decisionAnswered !== undefined;
             return (

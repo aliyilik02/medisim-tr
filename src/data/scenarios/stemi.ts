@@ -1,19 +1,31 @@
 import type { Scenario } from "@/engine";
 
+// ============================================================
+// STEMI Senaryosu — Anterior STEMI, 62y Erkek
+// ============================================================
+// Zorluk seviyeleri 1-5 destekli.
+// S1-2: Temel tanı ve ABCDE, ASA+P2Y12+heparin+PCI
+// S3:   + Aort diseksiyonu ekartasyonu, kapı-balon hesabı, EKG nüansları
+// S4-5: + Tikagrelor/prasugrel seçimi, sağ ventrikül/posterior MI kontrolü,
+//         PCI sonrası yönetim (DAPT, statin, ACEi), komplikasyon dalı
+// ============================================================
+
 export const scenario_stemi: Scenario = {
   id: "kardiyoloji-stemi-001",
-  version: "0.1.0",
-  title: "62 Yaş Erkek — Akut Göğüs Ağrısı",
+  version: "0.2.0", // Yeni motor uyumlu
+  title: "62 Yaş Erkek — Akut Göğüs Ağrısı (STEMI)",
   description:
     "2 saattir süren retrosternal göğüs ağrısı, sol kola yayılan. STEMI yönetimi ve reperfüzyon kararı.",
   specialty: "kardiyoloji",
   tags: ["stemi", "acil", "kardiyak", "ekg", "reperfüzyon"],
   difficulty: 3,
+  supported_difficulties: [1, 2, 3, 4, 5],
   estimated_minutes: 15,
   modes: ["quiz", "interactive_3d"],
   language: "tr",
   author: "MediSim TR Ekibi",
-  last_updated: "2026-04-22",
+  reviewed_by: "ESC 2023, AHA/ACC 2022, TKD 2022 uyumlu",
+  last_updated: "2026-04-23",
 
   patient: {
     age: 62,
@@ -30,6 +42,10 @@ export const scenario_stemi: Scenario = {
     ],
     allergies: [],
     current_medications: ["Metformin 1000 mg 2x1", "Ramipril 5 mg 1x1"],
+    modifiers: {
+      // Farmakoloji motoru için: hasta herhangi bir özel çarpan durumunda değil.
+      // (ACEi kullanımı klasik modifier'a girmez)
+    },
   },
 
   initial_vitals: {
@@ -47,7 +63,10 @@ export const scenario_stemi: Scenario = {
   available_medications: [
     "aspirin",
     "klopidogrel",
+    "tikagrelor",        // S4-5
+    "prasugrel",         // S4-5
     "heparin",
+    "enoksaparin",       // S3+
     "nitrogliserin",
     "metoprolol",
     "morfin",
@@ -55,6 +74,8 @@ export const scenario_stemi: Scenario = {
     "tenecteplase",
     "atropin",
     "adrenalin",
+    "amiodaron",         // VT/VF dalı için
+    "lidokain",          // VT alternatifi
   ],
 
   available_equipment: [
@@ -72,6 +93,9 @@ export const scenario_stemi: Scenario = {
   start_step_id: "s1_ilk_degerlendirme",
 
   steps: [
+    // ========================================================
+    // ADIM 1 — İlk değerlendirme (tüm seviyelerde)
+    // ========================================================
     {
       id: "s1_ilk_degerlendirme",
       kind: "action",
@@ -86,7 +110,8 @@ export const scenario_stemi: Scenario = {
         {
           action: { type: "use_equipment", target_id: "monitor" },
           points: 15,
-          feedback: "Doğru — hasta monitörize edildi. Sürekli ritim takibi başladı.",
+          feedback:
+            "Doğru — hasta monitörize edildi. Sürekli ritim takibi başladı.",
         },
         {
           action: { type: "use_equipment", target_id: "pulse_oksimetre" },
@@ -105,11 +130,35 @@ export const scenario_stemi: Scenario = {
           points: 15,
           feedback: "Doğru — geniş bir damar yolu açıldı.",
         },
+        // SpO2 %94'te oksijen — seviyeye göre iki ayrı outcome
         {
           action: { type: "use_equipment", target_id: "oksijen_maske" },
           points: 5,
           feedback:
-            "SpO₂ 94%, sınırda. O₂ verildi ama rutin değil; hipoksi yoksa gereksiz.",
+            "O₂ verildi. SpO₂ sınırda, başlangıç seviyesinde uygun bir refleks.",
+          max_difficulty: 2,
+        },
+        {
+          action: { type: "use_equipment", target_id: "oksijen_maske" },
+          points: 0,
+          feedback:
+            "SpO₂ 94% — rutin O₂ endike değil (AVOID trial). Hipoksi (<90%) yoksa gereksiz, hatta zararlı olabilir.",
+          min_difficulty: 3,
+        },
+        // Seviye 3+ için aort diseksiyonu ekartasyonu refleksi
+        {
+          action: { type: "examine", target_id: "bilateral_kol_tansiyon" },
+          points: 10,
+          feedback:
+            "Doğru — aort diseksiyonu ekartasyonu için iki kolda TA farkı (>20 mmHg) değerlendirilmeli. STEMI'de de benzer ağrı olabilir.",
+          min_difficulty: 3,
+        },
+        {
+          action: { type: "examine", target_id: "nabiz_muayenesi" },
+          points: 8,
+          feedback:
+            "Doğru — nabız asimetrisi ve radyofemoral gecikme diseksiyon için önemli ipucu.",
+          min_difficulty: 4,
         },
       ],
       default_wrong_penalty: -5,
@@ -117,6 +166,9 @@ export const scenario_stemi: Scenario = {
         "Bu aksiyon ilk 2 dakikanın önceliği değil. Önce A-B-C ve EKG.",
     },
 
+    // ========================================================
+    // ADIM 2 — EKG yorumu (tüm seviyelerde, nüanslar seviyeye göre)
+    // ========================================================
     {
       id: "s2_ekg_yorumu",
       kind: "decision",
@@ -136,6 +188,16 @@ export const scenario_stemi: Scenario = {
           points: 30,
           feedback:
             "Doğru tanı. Anterior STEMI — LAD oklüzyonu muhtemel. Acil reperfüzyon endikasyonu.",
+        },
+        {
+          id: "opt_anterior_stemi_lad_proksimal",
+          text:
+            "Anterior STEMI — proksimal LAD (V1-V4 + aVR ST elevasyonu, I/II resiprok)",
+          correct: true,
+          points: 35,
+          feedback:
+            "Mükemmel — proksimal LAD oklüzyonu daha agresif yaklaşım gerektirir, mortalite yüksek.",
+          min_difficulty: 4,
         },
         {
           id: "opt_nstemi",
@@ -164,6 +226,50 @@ export const scenario_stemi: Scenario = {
       ],
     },
 
+    // ========================================================
+    // ADIM 2b — Ek derivasyon kontrolü (S3+)
+    // ========================================================
+    {
+      id: "s2b_ek_derivasyonlar",
+      kind: "decision",
+      title: "Ek Derivasyon Kontrolü",
+      prompt:
+        "Anterior STEMI tanısı için ek derivasyonlardan hangisini incelersiniz?",
+      narrative:
+        "Anterior STEMI'de sağ ventrikül ve posterior duvar tutulumu mortalite/tedavi stratejisini değiştirir.",
+      min_difficulty: 3,
+      options: [
+        {
+          id: "opt_v4r",
+          text:
+            "V4R (sağ prekordiyal) — sağ ventrikül MI ekartasyonu için",
+          correct: true,
+          points: 15,
+          feedback:
+            "Doğru — özellikle inferior MI + hipotansiyon varsa V4R ST elevasyonu sağ ventrikül tutulumunu gösterir. Anterior MI'da da proksimal LAD'de görülebilir.",
+        },
+        {
+          id: "opt_v7_v9",
+          text: "V7-V9 (posterior) — posterior duvar tutulumu için",
+          correct: true,
+          points: 12,
+          feedback:
+            "Doğru — V1-V3'te ST depresyonu varsa posterior MI şüphesi. V7-V9'da ST elevasyonu tanıyı koyar.",
+        },
+        {
+          id: "opt_hic",
+          text: "Ek derivasyon gerekli değil, tanı net",
+          correct: false,
+          points: -8,
+          feedback:
+            "Yetersiz — tedavi kararı ek derivasyonlara göre değişebilir (sağ ventrikül MI'da nitrat dikkatli, inferior pattern'de RCA/LCX ayrımı için).",
+        },
+      ],
+    },
+
+    // ========================================================
+    // ADIM 3 — İlk tıbbi tedavi
+    // ========================================================
     {
       id: "s3_ilk_tedavi",
       kind: "action",
@@ -172,42 +278,112 @@ export const scenario_stemi: Scenario = {
         "STEMI tanısı kondu. Reperfüzyon öncesi verilecek ilaçları seçin.",
       min_actions: 3,
       expected_outcomes: [
+        // ASA — her seviyede
         {
-          action: { type: "give_medication", target_id: "aspirin" },
+          action: {
+            type: "give_medication",
+            target_id: "aspirin",
+            dose: "300 mg",
+          },
           points: 20,
           feedback:
             "Doğru — 300 mg ASA çiğnetilerek, class I endikasyon (tüm kılavuzlar).",
         },
+        // P2Y12 — Klopidogrel (her seviye) vs tikagrelor/prasugrel (S4-5)
         {
-          action: { type: "give_medication", target_id: "klopidogrel" },
-          points: 20,
-          feedback:
-            "Doğru — ikili antiplatelet için P2Y12 inhibitörü. Yükleme dozu 600 mg PCI planlıysa.",
-        },
-        {
-          action: { type: "give_medication", target_id: "heparin" },
+          action: {
+            type: "give_medication",
+            target_id: "klopidogrel",
+            dose: "600 mg",
+          },
           points: 15,
           feedback:
-            "Doğru — reperfüzyon öncesi antikoagülasyon. Kiloya göre bolus.",
+            "Doğru — P2Y12 inhibitörü. Yükleme 600 mg PCI planlıysa. Seviye 4-5'te tikagrelor/prasugrel de seçenek.",
+          max_difficulty: 3,
         },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "klopidogrel",
+            dose: "600 mg",
+          },
+          points: 10, // Düşürüldü: S4-5'te tikagrelor/prasugrel tercih edilmeli
+          feedback:
+            "Kabul edilebilir ama ESC 2023'te ACS'de tikagrelor veya prasugrel klopidogrele tercih edilir (class I). Klopidogrel: tikagrelor/prasugrel mevcut değilse veya kontrendike ise.",
+          min_difficulty: 4,
+        },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "tikagrelor",
+            dose: "180 mg",
+          },
+          points: 20,
+          feedback:
+            "Doğru — ESC 2023 class I, ACS'de klopidogrele üstün (PLATO). Yükleme 180 mg.",
+          min_difficulty: 4,
+        },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "prasugrel",
+            dose: "60 mg",
+          },
+          points: 20,
+          feedback:
+            "Doğru — primer PCI planlanan STEMI'de tikagrelor ile eşdeğer (class I). DİKKAT: İnme öyküsü veya 75+ yaş → kontrendike/dikkatli.",
+          min_difficulty: 4,
+        },
+        // Antikoagülan
+        {
+          action: {
+            type: "give_medication",
+            target_id: "heparin",
+            dose: "5000 IU",
+          },
+          points: 15,
+          feedback:
+            "Doğru — reperfüzyon öncesi antikoagülasyon. 60 IU/kg bolus (bu hastada 84×60=5040, max 4000 IU; yaklaşık 5000 IU klinik kabul).",
+        },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "enoksaparin",
+          },
+          points: 12,
+          feedback:
+            "Kabul — özellikle tromboliz planlanıyorsa tercih edilebilir. Primer PCI'de heparin daha yaygın.",
+          min_difficulty: 3,
+        },
+        // Nitrogliserin — konteks-bağımlı
         {
           action: { type: "give_medication", target_id: "nitrogliserin" },
           points: 5,
           feedback:
-            "Ağrı için sublingual verilebilir, ancak hipotansiyon varsa kontrendike.",
+            "Ağrı için sublingual verilebilir. Hasta normotansif (SBP 148), güvenli. Sağ ventrikül MI ekarte edilmişse daha güvenli.",
         },
+        // Morfin — koşullu (nitrattan önce: -5; sonrası dirençli ağrı: +5)
+        // Basit versiyon: şimdi -5 (dirençli ağrı kontrolü sonraki adımda)
         {
           action: { type: "give_medication", target_id: "morfin" },
           points: -5,
           feedback:
-            "Rutin önerilmiyor (CRUSADE çalışması). Nitrata rağmen dirençli ağrıda düşünülür. Erken tercih değildir.",
+            "Önce nitrat denenmeli. Rutin morfin önerilmiyor (CRUSADE, mortalite↑). Nitrata dirençli ağrıda ek olarak düşünülür.",
+        },
+        // Metoprolol — erken IV beta-bloker
+        {
+          action: { type: "give_medication", target_id: "metoprolol" },
+          points: -5, // Eskiden -15, kritik değil
+          feedback:
+            "Tartışmalı — hasta stabil (HR 104, SBP 148), mutlak kontrendike değil ama öncelik yok (COMMIT). PCI sonrası oral beta-bloker rutin, erken IV sadece refrakter iskemi/hipertansiyonda.",
+          max_difficulty: 2,
         },
         {
           action: { type: "give_medication", target_id: "metoprolol" },
-          points: -15,
-          critical: true,
+          points: -3,
           feedback:
-            "DİKKAT — STEMI'nin erken fazında IV beta-bloker hemodinamik bozulma riski taşır (COMMIT). Tercihen erken dönemde verilmez.",
+            "Tartışmalı ve zamanlaması önemli. COMMIT: erken IV beta-bloker kardiyojenik şok riskini artırır. Hemodinamik stabilse oral form gün içinde düşünülebilir. Seviye 3+ için: klinik yargı.",
+          min_difficulty: 3,
         },
       ],
       default_wrong_penalty: -5,
@@ -215,6 +391,9 @@ export const scenario_stemi: Scenario = {
         "Reperfüzyon öncesi standart tedavide yer almıyor.",
     },
 
+    // ========================================================
+    // ADIM 4 — Reperfüzyon kararı (tüm seviyelerde)
+    // ========================================================
     {
       id: "s4_reperfuzyon_karari",
       kind: "decision",
@@ -232,12 +411,22 @@ export const scenario_stemi: Scenario = {
             "Doğru — ilk tıbbi temastan PCI'ye <120 dk sağlanabiliyorsa primer PCI tercih edilir (ESC 2023).",
         },
         {
+          id: "opt_pci_hesapla",
+          text:
+            "Kapı-balon süresini hesapla: 45 dk yol + ~30 dk hastane işlemi = 75 dk. <120 dk uygun, PCI için transfer.",
+          correct: true,
+          points: 35,
+          feedback:
+            "Mükemmel — klinik muhakeme doğru. İlk tıbbi temas-balon süresi hedef <120 dk (primer PCI), <180 dk (tromboliz sonrası kurtarma PCI).",
+          min_difficulty: 3,
+        },
+        {
           id: "opt_tromboliz",
           text: "Hemen tromboliz (tenekteplaz) yap",
           correct: false,
           points: 10,
           feedback:
-            "Geçerli bir seçenek — ancak PCI <120 dk sağlanabilirse PCI önceliklidir. Trombolizde puan daha düşük.",
+            "Geçerli bir seçenek — ancak PCI <120 dk sağlanabilirse PCI önceliklidir. PCI mümkün değilse (120+ dk) tromboliz.",
         },
         {
           id: "opt_bekle",
@@ -259,6 +448,9 @@ export const scenario_stemi: Scenario = {
       ],
     },
 
+    // ========================================================
+    // ADIM 5 — Transfer öncesi stabilizasyon
+    // ========================================================
     {
       id: "s5_transfer_oncesi",
       kind: "action",
@@ -282,43 +474,181 @@ export const scenario_stemi: Scenario = {
           points: 10,
           feedback: "Doğru — transfer öncesi son vital kontrolü şart.",
         },
+        {
+          action: { type: "consult", target_id: "kardiyoloji" },
+          points: 10,
+          feedback:
+            "Doğru — PCI merkezine ön bildirim, kapı-balon süresini kısaltır. Hastanede kateter lab önceden hazır olmalı.",
+          min_difficulty: 3,
+        },
       ],
       default_wrong_penalty: -5,
+      default_wrong_feedback: "Transfer öncesi bu aksiyon öncelik değil.",
+    },
+
+    // ========================================================
+    // ADIM 6 — PCI sonrası yönetim (S3+)
+    // ========================================================
+    {
+      id: "s6_pci_sonrasi",
+      kind: "action",
+      title: "PCI Sonrası Yönetim",
+      prompt:
+        "PCI başarılı, LAD'ye stent. Taburculuk öncesi / sonrası hangi tedavileri başlatırsınız?",
+      min_actions: 3,
+      min_difficulty: 3,
+      expected_outcomes: [
+        {
+          action: {
+            type: "decision",
+            target_id: "dapt_1_yil",
+          },
+          points: 15,
+          feedback:
+            "Doğru — ikili antiplatelet (ASA + P2Y12) 12 ay standart. Yüksek kanama riski: 6 aya düşürülebilir. Yüksek iskemik risk: 1 yılın üzerine çıkarılabilir.",
+        },
+        {
+          action: {
+            type: "decision",
+            target_id: "statin_yuksek_doz",
+          },
+          points: 12,
+          feedback:
+            "Doğru — atorvastatin 40-80 mg veya rosuvastatin 20-40 mg; LDL<55 hedefi (ESC 2023, class I).",
+        },
+        {
+          action: {
+            type: "decision",
+            target_id: "acei_arb",
+          },
+          points: 10,
+          feedback:
+            "Doğru — özellikle anterior MI, düşük EF, HT, DM varsa ACEi/ARB mortaliteyi azaltır. Hasta zaten ramipril alıyor.",
+        },
+        {
+          action: {
+            type: "decision",
+            target_id: "oral_beta_bloker",
+          },
+          points: 10,
+          feedback:
+            "Doğru — hemodinamik stabilde oral beta-bloker başlanır (metoprolol süksinat veya bisoprolol).",
+        },
+        {
+          action: {
+            type: "decision",
+            target_id: "mra",
+          },
+          points: 8,
+          feedback:
+            "Doğru (opsiyonel) — EF<%40 + DM veya HF belirtisi varsa spironolakton/eplerenon düşünülür.",
+          min_difficulty: 4,
+        },
+      ],
+      default_wrong_penalty: -3,
       default_wrong_feedback:
-        "Transfer öncesi bu aksiyon öncelik değil.",
+        "PCI sonrası sekonder korumada rutin değil.",
+    },
+
+    // ========================================================
+    // ADIM 7 — Komplikasyon dalı: VT/VF (dinamik, S3+)
+    // ========================================================
+    // Bu adım normal akışta açılmaz. Senaryoda aspirin verilmezse veya
+    // reperfüzyon gecikirse motor tarafından unlock edilmek üzere hazır.
+    // Şimdilik statik olarak flow'a eklemiyoruz; dynamic_unlock sisteminde
+    // konumlandırılacak.
+    {
+      id: "s7_vt_vf_komplikasyonu",
+      kind: "action",
+      title: "Komplikasyon: VT/VF",
+      prompt:
+        "Monitörde geniş QRS taşikardi → VF! Yapılacakları sıralayın.",
+      narrative: "Hasta nabız ve bilinç kaybediyor. Asistoli değil, VF.",
+      min_difficulty: 3,
+      expected_outcomes: [
+        {
+          action: { type: "use_equipment", target_id: "defibrilator" },
+          points: 25,
+          feedback:
+            "Doğru — VF'de ilk ve en önemli müdahale defibrilasyon (200 J bifazik).",
+        },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "adrenalin",
+            dose: "1 mg",
+          },
+          points: 15,
+          feedback:
+            "Doğru — refrakter VF/VT'de 3-5 dk'da bir 1 mg IV (ACLS).",
+        },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "amiodaron",
+            dose: "300 mg",
+          },
+          points: 15,
+          feedback:
+            "Doğru — 3 şoka refrakter VF/VT'de 300 mg IV bolus.",
+        },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "lidokain",
+          },
+          points: 10,
+          feedback:
+            "Kabul — amiodaron yoksa alternatif. ACLS'de ikinci tercih.",
+          min_difficulty: 4,
+        },
+      ],
+      default_wrong_penalty: -10,
+      default_wrong_feedback:
+        "VF yönetiminde öncelik değil. Defib-adrenalin-amiodaron sırası.",
     },
   ],
 
   scoring: {
-    max_points: 200,
-    passing_score: 120,
+    max_points: 280, // Eski 200'den arttı (yeni adımlar)
+    passing_score: 170,
     grade_bands: {
-      A: 170,
-      B: 145,
-      C: 120,
-      D: 95,
+      A: 240,
+      B: 200,
+      C: 170,
+      D: 130,
     },
   },
 
   debrief: {
     key_learnings: [
       "STEMI'de ilk 10 dakikada 12 derivasyonlu EKG zorunludur.",
-      "Anterior STEMI (V1-V4) LAD oklüzyonunu gösterir ve yüksek mortalitelidir.",
+      "Anterior STEMI (V1-V4) LAD oklüzyonunu gösterir; proksimal LAD yüksek mortaliteli.",
       "Kapı-balon süresi <120 dk sağlanabiliyorsa primer PCI tromboliz üzerine tercih edilir.",
       "İkili antiplatelet (ASA + P2Y12) + antikoagülan reperfüzyon öncesi standart.",
-      "Erken dönemde IV beta-bloker hemodinamik olarak stabil olmayan hastalarda riskli.",
-      "Morfin rutin değil — CRUSADE çalışması mortalite artışı göstermiştir.",
+      "P2Y12 seçimi: ESC 2023'te ACS'de tikagrelor/prasugrel klopidogrele tercih edilir (class I).",
+      "Erken IV beta-bloker hemodinamik olarak stabil olmayan hastalarda riskli (COMMIT).",
+      "Morfin rutin değil — CRUSADE mortalite artışı göstermiştir. Nitrata dirençli ağrıda düşünülür.",
+      "SpO₂ ≥90% ise rutin O₂ endike değil (AVOID trial).",
+      "PCI sonrası: DAPT 12 ay + yüksek doz statin + ACEi/ARB + oral beta-bloker.",
     ],
     references: [
-      "ESC 2023 STEMI Yönetim Kılavuzu",
+      "ESC 2023 ACS Yönetim Kılavuzu",
       "TKD Akut Koroner Sendrom Kılavuzu 2022",
       "AHA/ACC 2022 STEMI Guidelines",
+      "PLATO (tikagrelor), TRITON-TIMI 38 (prasugrel)",
+      "COMMIT, CRUSADE, AVOID çalışmaları",
     ],
     red_flags: [
       "Hipotansiyon (sağ ventrikül MI? Kardiyojenik şok?)",
       "Yeni geliştirdiği sol dal bloğu (STEMI eşdeğeri)",
       "VT/VF — hemen defibrilasyon",
+      "V1-V3'te ST depresyonu → posterior MI düşün (V7-V9 çek)",
+      "İki kol arası TA farkı >20 mmHg → aort diseksiyonu ekarte et",
     ],
-    next_scenarios: ["kardiyoloji-kardiyojenik-sok-001"],
+    next_scenarios: [
+      "kardiyoloji-kardiyojenik-sok-001",
+      "kardiyoloji-aritmi-vt-001",
+    ],
   },
 };

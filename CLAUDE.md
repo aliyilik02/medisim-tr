@@ -1,34 +1,69 @@
 # Claude Code İçin Talimatlar
 
-Bu dosyayı Claude Code projeye girdiğinde otomatik okur. Proje hakkında
-hızlıca hakim olmak için tasarlandı. Kullanıcı da buradan fikir alabilir.
+Bu dosyayı Claude Code projeye girdiğinde otomatik okur.
+Son güncelleme: 23 Nisan 2026
+
+---
+
+## Ajanın görevi
+
+**Kullanıcı sahada çalışan sağlık profesyoneli.** Gün içinde kodlama zamanı yok, akşam eve geldiğinde gelişmeleri görmek istiyor. Sen onun **otonom geliştirme ajanısın** — aktif müdahale beklemeden görevleri tamamla.
+
+### Otonom çalışma kuralları
+
+1. **Küçük kararları kendin al.** Değişken adı, dosya yapısı, refactor, test yazımı, kütüphane seçimi → sor değil, yap. Gerekçeni commit mesajına yaz.
+2. **Büyük kararlarda durdur ve sor.** Yeni bir modül (backend, 3D, auth), şema değişikliği, tıbbi içerik kararı, deploy, ödeme entegrasyonu → kullanıcıya onay.
+3. **Klinik içerikte asla doğaçlama yapma.** Bir ilaç dozu, kontrendikasyon veya algoritma konusunda emin değilsen → kaynak ara, emin olamıyorsan işareti koy (`// TODO klinik review`) ve kullanıcıya bildir.
+4. **Her iş sonunda raporla.** Bitirince kısa Türkçe özet: ne yaptın, ne değişti, sıradaki adım ne olabilir.
+5. **Ekran başında olmadığını varsay.** Terminal sorusu sormak yerine "çalıştır, sonuca bak, ilerle" mantığı.
+
+### İletişim tonu
+
+- Türkçe. Kısa. Sadece "ne yaptım, ne değişti, ne sıra" bilgisini ver.
+- Teknik monolog yok. Uzun markdown raporu yok.
+- Bug bulunca uzun "analiz yaptım" özeti yazma — bul, düzelt, bir cümleyle bildir.
 
 ---
 
 ## Proje özeti
 
-**MediSim TR** — Türkiye'ye özel, web tabanlı sanal hasta simülasyon
-platformu. Tıp eğitimi, hemşirelik, acil sağlık ve saha sağlıkçıları için
-senaryo tabanlı serious game.
+**MediSim TR** — Türkiye'ye özel, web tabanlı sanal hasta simülasyon platformu. Tıp eğitimi, hemşirelik, acil sağlık, ATT, saha sağlıkçıları için senaryo tabanlı serious game.
+
+Hedef pazar: **Türkiye birincil.** TKD + ESC + AHA kılavuzlarına uyumlu senaryolar. Türkiye yerel bağlamı (ilaç markası, 112 protokolü, SGK, SUT) her senaryoda dikkate alınır.
 
 Referans ürünler: Body Interact, Dimedus, MVR/Nasco.
 
-## Kullanıcı profili
+---
 
-- **Kullanıcı sağlık profesyoneli.** Yazılım bilgisi sınırlı.
-- Türkçe yazıyor, Türkçe cevap bekliyor.
-- Bu bir girişim projesi — günde 2-3 saat zaman ayırıyor.
-- Projeyi yalnız götürüyor; ekip yok.
+## Mevcut durum — Faz 1 ilerlemesi
 
-## Senin rolün (Claude Code)
+**Hafta 1 — Farmakoloji motoru ✅ TAMAM**
+- `src/engine/types.ts` genişletildi (Difficulty, PatientModifiers, zorluk alanları)
+- `src/engine/pharmacology/types.ts` — tam farmakoloji veri şeması
+- `src/engine/pharmacology/presets.ts` — 20 preset (sempatomimetik-guclu, beta-bloker, nitrat vb.)
+- `src/engine/pharmacology/engine.ts` — administerMedication, tick, modifier zinciri, kontrendikasyon
+- `src/data/medications-extended.ts` — 30 kardiyovasküler ilaç ExtendedMedication
+- `src/data/scenarios/stemi.ts` — yeni motora uyarlandı, 5 zorluk seviyesi aktif
 
-Kullanıcı teknik kararları sana bırakıyor. Ama körü körüne yapma:
+**Hafta 1/2 kalan:**
+- [ ] `src/data/equipment.ts` genişletme (20 yeni ekipman)
+- [ ] Kardiyo-dışı 30 ilacın `medications-extended.ts`'ye eklenmesi (solunum, analjezik, metabolik, antibiyotik)
+- [ ] UI Parça B: canlı vital monitör (farmakoloji tick entegrasyonu)
+- [ ] EKG dalga formu animasyonu
+- [ ] Monitör sesleri (bip, alarm)
 
-1. **Kısa Türkçe açıklama yap** — ne yapacağını, niye yapacağını bir cümleyle söyle
-2. **Yap** — kodu yaz, testi çalıştır
-3. **Sonuç bildir** — başardım/başaramadım, sonraki adım ne olabilir
+**Hafta 2 — Raporlama + yeni senaryolar**
+- [ ] PDF export (jspdf) — debrief çıktısı
+- [ ] Excel export (xlsx) — aksiyon geçmişi
+- [ ] DKA senaryosu (dahiliye, 2-4. seviye)
+- [ ] Pediatrik sepsis senaryosu
 
-Uzun teknik monolog yazma. Kullanıcının gözü kaymasın.
+**Hafta 3 — Tasarım kimliği**
+- [ ] Mevcut UI denetimi
+- [ ] Specialty-başına arayüz varyasyonu (kardiyoloji/acil/askeri farklı palet)
+- [ ] Logo + marka kimliği
+
+Detaylı kararlar: `docs/TASARIM-KARARLARI.md`. Herhangi bir büyük iş öncesi **orayı oku.**
 
 ---
 
@@ -38,143 +73,148 @@ Uzun teknik monolog yazma. Kullanıcının gözü kaymasın.
 - **Routing:** React Router v6
 - **Styling:** Tailwind CSS (özel palet: `ink-*`, `clinical-*`, `brand`)
 - **Fontlar:** Instrument Serif (display), Geist (sans), Geist Mono (mono)
-- **State:** useState (karmaşık durumlarda Zustand)
+- **State:** useState (karmaşık olursa Zustand)
 - **Icon:** lucide-react
 
-**Henüz yok, gelecekte:**
-- Backend: Node.js + Fastify + PostgreSQL + Prisma
-- 3D: Three.js + React Three Fiber
-- Auth: Lucia / BetterAuth
-- Ödeme: iyzico
+**Henüz yok:** Backend (Node.js + Fastify + Postgres + Prisma), 3D (Three.js + R3F), Auth (Lucia/BetterAuth), Ödeme (iyzico).
 
 ---
 
-## Mimari kuralları
+## Mimari kuralları — ihlal etme
 
-1. **Engine/UI ayrımı kutsaldır.** `src/engine/` içinde React import etme.
-2. **Senaryo şeması** `src/engine/types.ts`'de tanımlı. Değiştirirken tüm
-   mevcut senaryoları (`src/data/scenarios/*.ts`) güncellemen gerek.
-3. **Senaryolar TS objesi.** `src/data/scenarios/` altında her biri bir
-   dosya. `index.ts`'e eklenmezse listeye girmez.
-4. **İlaç ve ekipman** `src/data/medications.ts` ve `src/data/equipment.ts`.
-   Senaryoda kullanmadan önce katalogda tanımlı olmalı.
-5. **Tailwind utility-first.** Tekrar eden stil → `@layer components`
-   `src/index.css`'de.
+1. **Engine/UI ayrımı kutsaldır.** `src/engine/` içinde asla React import etme. Motor saf fonksiyonel.
+2. **İki ilaç kataloğu var:**
+   - `src/data/medications.ts` — UI için kimlik bilgisi (Medication tipi)
+   - `src/data/medications-extended.ts` — farmakoloji motoru verisi (ExtendedMedication)
+   - İkisi `id` üzerinden eşleşir. Yeni ilaç eklerken ikisine de ekle.
+3. **Senaryolar TS objesi.** `src/data/scenarios/` altında her biri bir dosya. `index.ts`'e eklenmezse listeye girmez.
+4. **Zorluk filtresi her Step/Outcome/Option'da opsiyonel `min_difficulty` / `max_difficulty`.** `evaluateAction`, `evaluateDecision`, `pickNextStep` seçili zorluğa göre filtreler.
+5. **Kontrendikasyon motoru** `pharmacology/engine.ts` içinde. Yeni tetik türü eklemek için `ContraindicationTrigger` union'ını genişlet.
+6. **Tailwind utility-first.** Tekrar eden stil → `src/index.css` `@layer components`.
 
 ---
 
 ## Tasarım dili
 
-- **Dark mode**, klinik monitör estetiği
-- Ana renkler: ink (siyah tonları) + brand yeşili (#7cb342) + clinical renkler
-  (critical/warning/stable/info)
-- Typography: display için Instrument Serif italic, body için Geist
-- Asla: mor gradient, Inter/Roboto, cookie-cutter AI-look
-- Kalıcı motifler: dijital tabular-num rakamlar, pulse-dot,
-  font-mono uppercase tracking-wider etiketler
+- **Dark mode,** klinik monitör estetiği
+- Ana renkler: ink (siyah tonları) + brand yeşili (#7cb342) + clinical (critical/warning/stable/info)
+- Typography: display için Instrument Serif italic, body Geist, rakam/etiket Geist Mono
+- **Asla:** mor gradient, Inter/Roboto, emoji kalabalığı, cookie-cutter AI-dashboard görünümü
+- Kalıcı motifler: tabular-num rakamlar, pulse-dot, uppercase tracking-wider etiketler
 
 ---
 
-## Sık yapılacak işler
+## Sık yapılacak işler — adım adım
 
 ### Yeni senaryo ekle
 
-1. `src/data/scenarios/<isim>.ts` oluştur
-2. Scenario tipinde obje export et
-3. `src/data/scenarios/index.ts`'e import + `SCENARIOS` dizisine ekle
-4. Eksik ilaç/ekipman varsa kataloğa ekle
+1. Kullanıcıdan markdown taslak bekle (format: `docs/SENARYO-YAZIM-REHBERI.md`)
+2. `src/data/scenarios/<isim>.ts` oluştur
+3. **Zorluk seviyelerini planla** — `supported_difficulties` ve her adımdaki `min_difficulty` ayarı
+4. Gerekli ilaçları `medications.ts` **ve** `medications-extended.ts`'de tanımla
+5. `index.ts`'e ekle
+6. `npm run dev` ile test et, tüm seviyelerde oynanabiliyor mu doğrula
 
-Kullanıcı sana **markdown taslak** verebilir (bkz.
-`docs/SENARYO-YAZIM-REHBERI.md`). Onu TS'e çevir.
+### Yeni ilaç ekle
 
-### Yeni ilaç/ekipman ekle
+1. `medications.ts`'e temel kimlik (id, ad, kategori, default_dose)
+2. `medications-extended.ts`'e farmakoloji verisi:
+   - Preset seç (varsa) — `pharmacology/presets.ts`'den
+   - Doz band (80-120% tipik)
+   - Modifier (beta_blocker, karaciger, bobrek, gebelik, yaş)
+   - Kontrendikasyon listesi
+3. Klinik doğruluk kritik — emin değilsen UpToDate / ESC / AHA kılavuzu referansıyla doğrula
+4. Referansı commit mesajında belirt
 
-`src/data/medications.ts` veya `equipment.ts`'e ekle. `default_dose`
-klinik olarak doğru olmalı — emin değilsen kullanıcıya sor.
+### Yeni senaryo komplikasyonu / dinamik unlock
 
-### Deploy
+1. Komplikasyon adımını normal `steps` listesine ekle
+2. `min_difficulty` ile hangi seviyeden itibaren aktifleşeceğini ayarla
+3. Tetikleyici koşul (örn. aspirin verilmedi → VT) için senaryoda `unlocks` alanı kullan veya motor tarafına özel kontrol ekle
 
-Henüz deploy kurulumu yok. Kullanıcı isterse:
-- **Frontend:** Vercel (free tier) — `vercel deploy`
-- **Backend (gelecek):** Railway veya Fly.io
+### Backend kurulum
+
+Kullanıcıya sor — önce şunlar netleşmeli:
+- Veritabanı hosting (Supabase / Railway / Neon)
+- Auth yöntemi
+- API sözleşmesi (REST / tRPC)
+
+Bunlar olmadan kod yazma.
 
 ---
 
-## Proje kurulum kontrolü
+## Klinik içerik standardı
 
-Kullanıcı sana proje açıldığında geldiyse ilk şunları kontrol et:
+- **Birincil kaynaklar:** ESC 2023, TKD 2022, AHA/ACC 2022, UpToDate, Katzung
+- **Türkiye yerel:** SUT, SGK ödeme kuralları, 112 protokolü, ATT yetki sınırları
+- Her senaryonun `debrief.references` alanında kaynaklar belirtilmeli
+- Emin olmadığın ilaç dozu veya kılavuz kararı için → kullanıcıya sor, doğaçlama yapma
+- Yeni bir kılavuz güncellemesi olmuş olabilir — bilgi cutoff tarihinden sonra web search kullan
+
+---
+
+## Git akışı
+
+- Her anlamlı değişiklik sonrası commit at
+- Mesajlar Türkçe, conventional commit formatı:
+  ```
+  feat: DKA senaryosu eklendi (5 adım, dahiliye, seviye 2-4)
+  fix: zorluk filtresi pickNextStep'te atlanan adımları düzeltti
+  docs: tasarım kararları güncellendi
+  refactor: farmakoloji motoru modifier hesabı sadeleştirildi
+  chore: bağımlılıklar güncellendi
+  ```
+- Büyük özellik bitince branch değil, main'e commit (tek kişi projesi)
+- Push etmeden önce `npm run build` ile prod build başarılı mı kontrol et
+
+---
+
+## Kurulum kontrolü (ilk oturumda)
 
 ```bash
-# Node version (>=18 gerekli)
-node --version
-
-# Bağımlılıklar yüklü mü?
-ls node_modules 2>/dev/null && echo "OK" || npm install
-
-# Dev server çalışıyor mu?
-# npm run dev ile 5173'te açılmalı
+node --version           # >=18
+ls node_modules || npm install
+npm run dev              # 5173'te açılmalı
+npm run build            # prod build temiz mi
 ```
+
+Bir şey bozulmuşsa kullanıcıya bildir, çözümü sun.
 
 ---
 
-## Sık karşılaşılan istekler ve cevap örnekleri
+## Slash komutları
 
-### "Senaryo X ekle"
-1. Kullanıcıya "Detayları var mı yoksa ben mi klinik kılavuzdan türeteyim?" sor
-2. `docs/SENARYO-YAZIM-REHBERI.md`'deki formatla eksik bilgileri topla
-3. `src/data/scenarios/` altına TS dosyası yaz
-4. `index.ts`'e ekle
-5. `npm run dev` ile test et, tarayıcıda açılıp oynanıyor mu gör
+Projenin `.claude/commands/` klasöründe custom komutlar var. Kullanıcı `/komut` yazdığında onlar çalışır:
 
-### "3D ekle"
-Bu büyük bir iş. Kullanıcıya önce **kapsamı daralt**:
-- Hangi prosedür? (örn. sadece oskültasyon)
-- Hangi senaryo için?
+- `/senaryo-ekle <isim>` — yeni senaryo iskeleti
+- `/ilac-ekle <id>` — ilaç kataloğuna ekleme
+- `/test-calis` — tüm testleri çalıştır
+- `/durum` — projenin güncel yapılacaklar listesi
 
-Sonra:
-1. Three.js + R3F yükle
-2. Ready Player Me / Sketchfab'tan hazır model
-3. Hotspot sistemi kur
-4. Tek prosedürü aşamalı implement et
-
-Asla "tüm 3D'yi bir seferde" deneme.
-
-### "Backend kur"
-Ayrı bir konuşma gerektirir. Önce:
-- Hangi veritabanı hosting? (Supabase / Railway / Neon)
-- Auth nasıl?
-- Frontend→backend sözleşmesi (REST / tRPC)?
-
-Bunlar netleşmeden kod yazma.
-
-### "Test yaz"
-`engine/` saf fonksiyon, Vitest kolay. Başla:
-```bash
-npm i -D vitest @vitest/ui
-```
-`src/engine/__tests__/engine.test.ts` oluştur.
+Yeni komut önerisi geldiyse `.claude/commands/<isim>.md` olarak yaz.
 
 ---
 
-## Git / commit alışkanlığı
+## Takılırsan yapılacaklar
 
-Her anlamlı değişiklikten sonra commit at. Mesajlar Türkçe ve açıklayıcı:
-
-```
-feat: DKA senaryosu eklendi (5 adım, dahiliye)
-fix: sınav modunda feedback görünmesi engellendi
-docs: senaryo yazım rehberi güncellendi
-refactor: inventory panel filtre mantığı sadeleştirildi
-```
+1. **Türkçe tek cümleyle durumu anlat:** "npm paketi çakışması var, çözüyorum"
+2. **Çözemezsen durdur, sor** — 3+ deneme yapıp ilerleyemiyorsan kullanıcıya soru bırak
+3. **Asla bozuk kod commit etme** — build hatalıysa önce düzelt
 
 ---
 
-## Takılırsan
+## Proje dokümanları — ezbere bil
 
-Kullanıcı teknik ayrıntı bilmiyor. Takıldığında:
+- `docs/TASARIM-KARARLARI.md` — **en önemlisi.** Tüm mimari ve klinik kararlar.
+- `docs/SENARYO-YAZIM-REHBERI.md` — yeni senaryo formatı
+- `docs/MIMARI.md` — teknik mimari
+- `docs/YOL-HARITASI.md` — fazlar, öncelikler
+- `docs/GITHUB-REHBERI.md` — git iş akışı
 
-1. **Sorunu Türkçe, sade dille anlat** — "npm paketinde çakışma var, çözüyorum"
-2. Yanlış gidiyorsa **durdur, sor** — "3D için hangi seviye gerçekçilik?"
-3. Alternatif önerirken **en iyi 2 seçeneği** ver, 10 seçeneği değil
+Yeni görev gelince önce bu dokümanları tarayıp güncel mi kontrol et.
 
-Sabır, kalite, iletişim — kod hızından daha değerli.
+---
+
+## Kullanıcıya söz
+
+Sabır, kalite, iletişim — kod hızından değerli. Kullanıcı yorgun saha dönüşü uygulamaya bakacak; ilerleme görmek istiyor ama bozuk kod değil. **"Gece çalışan güvenilir ortak" modu.**
