@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getScenario } from "@/data/scenarios";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/engine/pharmacology/engine";
 import { getMedication } from "@/data/medications";
 import { useVitalsTick } from "@/hooks/useVitalsTick";
+import { useMonitorSounds } from "@/hooks/useMonitorSounds";
 import { PatientCard } from "@/components/PatientCard";
 import { VitalsMonitor } from "@/components/VitalsMonitor";
 import { InventoryPanel } from "@/components/InventoryPanel";
@@ -42,7 +43,11 @@ import {
   Timer,
   Activity as ActivityIcon,
   Gauge,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
+
+const SOUND_STORAGE_KEY = "medisim_sound_enabled";
 
 export function ScenarioPlayPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +55,9 @@ export function ScenarioPlayPage() {
   const scenario = useMemo(() => (id ? getScenario(id) : undefined), [id]);
 
   const [session, setSession] = useState<SessionState | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(
+    () => localStorage.getItem(SOUND_STORAGE_KEY) === "true"
+  );
   const [actionsThisStep, setActionsThisStep] = useState<ActionRef[]>([]);
   const [pointsThisStep, setPointsThisStep] = useState(0);
   const [criticalErrorsThisStep, setCriticalErrorsThisStep] = useState(0);
@@ -70,6 +78,18 @@ export function ScenarioPlayPage() {
     session,
     setSession,
     paused: criticalInfo !== null,
+  });
+
+  // localStorage senkronu — soundEnabled değişince kaydet
+  useEffect(() => {
+    localStorage.setItem(SOUND_STORAGE_KEY, soundEnabled ? "true" : "false");
+  }, [soundEnabled]);
+
+  // Monitör sesleri — HR senkron bip, kritik alarmlar
+  useMonitorSounds({
+    hr: session?.vitals.hr ?? 60,
+    spo2: session?.vitals.spo2 ?? 98,
+    enabled: soundEnabled && session !== null && !session.finished,
   });
 
   // Kritik süre dolduğunda — senaryoyu başarısız bitir
@@ -429,10 +449,23 @@ export function ScenarioPlayPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-sm">
-            <ActivityIcon className="w-4 h-4 text-brand-light" />
-            <span className="text-ink-100">{session.total_score}</span>
-            <span className="text-ink-500">puan</span>
+          <div className="flex items-center gap-3 font-mono text-sm">
+            <button
+              onClick={() => setSoundEnabled((v) => !v)}
+              className="flex items-center text-ink-400 hover:text-ink-100 transition"
+              title={soundEnabled ? "Sesi kapat" : "Sesi aç"}
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4 text-clinical-stable" />
+              ) : (
+                <VolumeX className="w-4 h-4" />
+              )}
+            </button>
+            <div className="flex items-center gap-2">
+              <ActivityIcon className="w-4 h-4 text-brand-light" />
+              <span className="text-ink-100">{session.total_score}</span>
+              <span className="text-ink-500">puan</span>
+            </div>
           </div>
         </div>
       </div>
