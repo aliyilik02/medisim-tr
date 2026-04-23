@@ -12,6 +12,7 @@
 import type { PatientVitals } from "@/engine";
 import { cn } from "@/lib/cn";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { MonitorClock } from "./MonitorClock";
 
 // Vital normal aralıkları — renk kodlaması için
 function hrStatus(hr: number): "stable" | "warning" | "critical" {
@@ -47,15 +48,19 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 interface VitalsMonitorProps {
-  vitals: PatientVitals;        // Canlı (baseline + pharma delta)
-  baseline?: PatientVitals;      // Opsiyonel — delta hesabı için
-  activeMedCount?: number;       // Kaç ilaç aktif — header rozeti
+  vitals: PatientVitals;
+  baseline?: PatientVitals;
+  activeMedCount?: number;
+  startedAt?: number;
+  ecgPattern?: string;
 }
 
 export function VitalsMonitor({
   vitals,
   baseline,
   activeMedCount = 0,
+  startedAt,
+  ecgPattern: _ecgPattern,
 }: VitalsMonitorProps) {
   return (
     <div className="panel p-5">
@@ -64,7 +69,12 @@ export function VitalsMonitor({
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
             Hasta Monitörü
           </div>
-          <div className="font-display text-lg text-ink-50">Vital Bulgular</div>
+          <div className="flex items-center gap-2">
+            <span className="font-display text-lg text-ink-50">Vital Bulgular</span>
+            {startedAt !== undefined && (
+              <MonitorClock startedAt={startedAt} />
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {activeMedCount > 0 && (
