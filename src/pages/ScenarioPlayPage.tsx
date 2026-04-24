@@ -73,6 +73,7 @@ export function ScenarioPlayPage() {
   } | null>(null);
   const [criticalInfo, setCriticalInfo] =
     useState<CriticalContraindicationInfo | null>(null);
+  const [criticalModalHidden, setCriticalModalHidden] = useState(false);
 
   const { feedback, show, clear } = useFeedback();
 
@@ -106,6 +107,7 @@ export function ScenarioPlayPage() {
   const handleCriticalExpired = useCallback(() => {
     if (!session || !resolvedScenario) return;
     setCriticalInfo(null);
+    setCriticalModalHidden(false);
     show({
       text: "Kritik kontrendikasyon düzeltme süresi doldu. Hastada ciddi komplikasyon gelişti.",
       points: -30,
@@ -154,6 +156,7 @@ export function ScenarioPlayPage() {
           setDecisionAnswered(null);
           setDecisionMultiAnswered(null);
           setCriticalInfo(null);
+          setCriticalModalHidden(false);
         }}
       />
     );
@@ -272,7 +275,10 @@ export function ScenarioPlayPage() {
       });
     }
 
-    if (pharmaCritical) setCriticalInfo(pharmaCritical);
+    if (pharmaCritical) {
+      setCriticalInfo(pharmaCritical);
+      setCriticalModalHidden(false);
+    }
 
     if (evaluation.unlocks.length > 0 && !pharmaCritical) {
       setTimeout(() => finishStep(evaluation.unlocks[0]), 1200);
@@ -514,10 +520,11 @@ export function ScenarioPlayPage() {
 
       <CriticalContraindicationModal
         info={criticalInfo}
+        hidden={criticalModalHidden}
         showGuidance={session.mode !== "sinav"}
-        onResolved={() => setCriticalInfo(null)}
+        onResolved={() => { setCriticalInfo(null); setCriticalModalHidden(false); }}
         onExpired={handleCriticalExpired}
-        onDismiss={() => setCriticalInfo(null)}
+        onDismiss={() => setCriticalModalHidden(true)}
       />
     </div>
   );

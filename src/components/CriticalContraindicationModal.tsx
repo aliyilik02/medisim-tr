@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -7,37 +7,40 @@ import { cn } from "@/lib/cn";
 // ============================================================
 // Kritik kontrendikasyon tetiklendiğinde ekranı kaplayan uyarı.
 // - Kırmızı flash + pulsing
-// - Düzeltme süresi geri sayımı
-// - Önerilen antidot listesi (kullanıcı panelden seçebilir)
-// - Sürenin dolması senaryo başarısızlığına yol açar (onExpire)
+// - Düzeltme süresi geri sayımı (hidden=true olsa bile devam eder)
+// - Önerilen antidot listesi
+// - ESC veya "Anladım" ile kapatılır; timer arka planda çalışmaya devam eder
 // ============================================================
 
 export interface CriticalContraindicationInfo {
-  title: string;           // "DİKKAT: KOAH + Morfin"
-  effect: string;          // "solunum_depresyonu"
-  message: string;         // Detaylı mesaj
-  feedback: string;        // Debrief notu (eğitim modunda göster)
+  title: string;
+  effect: string;
+  message: string;
+  feedback: string;
   graceSec: number;
-  expectedAntidotes?: string[]; // Medication id listesi (UI eşleştirmesi için)
+  expectedAntidotes?: string[];
 }
 
 export function CriticalContraindicationModal({
   info,
+  hidden = false,
   onResolved: _onResolved,
   onExpired,
   onDismiss,
   showGuidance,
 }: {
   info: CriticalContraindicationInfo | null;
-  onResolved: () => void; // Doğru antidot verildiğinde ScenarioPlayPage çağırır
-  onExpired: () => void;  // Süre dolduğunda
-  onDismiss?: () => void; // Sadece bilgilendirme; süre yoksa kapat
-  showGuidance: boolean;  // Eğitim modu: antidot önerileri görünür
+  hidden?: boolean;      // Popup UI'ı gizle ama sayaç arka planda devam eder
+  onResolved: () => void;
+  onExpired: () => void;
+  onDismiss?: () => void;
+  showGuidance: boolean;
 }) {
-  const [remaining, setRemaining] = useState<number>(
-    info?.graceSec ?? 0
-  );
+  const [remaining, setRemaining] = useState<number>(info?.graceSec ?? 0);
+  const modalRef   = useRef<HTMLDivElement>(null);
+  const prevFocusRef = useRef<Element | null>(null);
 
+  // Sayaç — hidden olsa bile çalışmaya devam eder
   useEffect(() => {
     if (!info) return;
     setRemaining(info.graceSec);
@@ -57,10 +60,49 @@ export function CriticalContraindicationModal({
     return () => clearInterval(interval);
   }, [info, onExpired]);
 
-  if (!info) return null;
+  // Focus yönetimi — popup açılınca önceki odaklanılan elemanı sakla, kapanınca geri ver
+  useEffect(() => {
+    if (!info || hidden) return;
+    prevFocusRef.current = document.activeElement;
+    const firstBtn = modalRef.current?.querySelector("button");
+    firstBtn?.focus();
+    return () => {
+      (prevFocusRef.current as HTMLElement)?.focus?.();
+    };
+  }, [info, hidden]);
 
-  const progress =
-    info.graceSec > 0 ? (remaining / info.graceSec) * 100 : 0;
+  // ESC + Tab trap
+  useEffect(() => {
+    if (!info || hidden) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onDismiss?.();
+        return;
+      }
+      if (e.key === "Tab") {
+        const focusables = modalRef.current?.querySelectorAll<HTMLElement>(
+          "button, [tabindex]:not([tabindex='-1'])"
+        );
+        if (!focusables?.length) return;
+        const first = focusables[0];
+        const last  = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [info, hidden, onDismiss]);
+
+  if (!info) return null;
+  if (hidden) return null;   // UI yok, sayaç yukarıdaki useEffect'te çalışıyor
+
+  const progress = info.graceSec > 0 ? (remaining / info.graceSec) * 100 : 0;
   const timeoutLevel: "high" | "mid" | "low" =
     progress > 66 ? "high" : progress > 33 ? "mid" : "low";
 
@@ -71,10 +113,11 @@ export function CriticalContraindicationModal({
       aria-modal="true"
       aria-labelledby="critical-title"
     >
-      {/* Red flash pulse layer */}
+      {/* Kırmızı flash arka planı */}
       <div className="absolute inset-0 bg-clinical-critical/10 animate-pulse pointer-events-none" />
 
       <div
+        ref={modalRef}
         className={cn(
           "relative panel max-w-lg w-full border-2 border-clinical-critical/60 bg-ink-900/95",
           "shadow-[0_0_40px_rgba(239,68,68,0.4)]"
@@ -96,18 +139,19 @@ export function CriticalContraindicationModal({
               {info.title}
             </h2>
           </div>
-          {onDismiss && info.graceSec <= 0 && (
+          {/* X her zaman görünür */}
+          {onDismiss && (
             <button
               onClick={onDismiss}
-              className="text-ink-400 hover:text-ink-100"
-              aria-label="Kapat"
+              className="flex-shrink-0 text-ink-400 hover:text-ink-100 transition-colors p-1 rounded"
+              aria-label="Uyarıyı kapat"
             >
               <X className="w-5 h-5" />
             </button>
           )}
         </div>
 
-        {/* Body */}
+        {/* Gövde */}
         <div className="p-5 space-y-4">
           <p className="text-sm text-ink-100 leading-relaxed">{info.message}</p>
 
@@ -120,7 +164,7 @@ export function CriticalContraindicationModal({
             </div>
           )}
 
-          {/* Countdown */}
+          {/* Sayaç */}
           {info.graceSec > 0 && (
             <div>
               <div className="flex items-center justify-between font-mono text-xs mb-1.5">
@@ -152,7 +196,7 @@ export function CriticalContraindicationModal({
             </div>
           )}
 
-          {/* Antidot önerileri — yalnızca eğitim modunda */}
+          {/* Antidot önerileri */}
           {showGuidance &&
             info.expectedAntidotes &&
             info.expectedAntidotes.length > 0 && (
@@ -180,13 +224,34 @@ export function CriticalContraindicationModal({
           )}
         </div>
 
-        {/* Success indicator (opsiyonel, parent set eder) */}
+        {/* Footer — Kapat butonları */}
+        {onDismiss && (
+          <div className="px-5 pb-5 space-y-2">
+            <div className="flex gap-2">
+              <button
+                onClick={onDismiss}
+                className="flex-1 px-4 py-2 text-sm font-mono text-ink-400 hover:text-ink-200 border border-ink-700 hover:border-ink-500 rounded transition-colors"
+              >
+                Geç
+              </button>
+              <button
+                onClick={onDismiss}
+                className="flex-1 px-4 py-2 text-sm font-mono font-bold bg-clinical-critical/20 hover:bg-clinical-critical/30 text-clinical-critical border border-clinical-critical/40 rounded transition-colors"
+                autoFocus
+              >
+                Anladım, devam et
+              </button>
+            </div>
+            <p className="text-center text-[10px] font-mono text-ink-500">
+              Uyarıyı kapatmak penaltıyı kaldırmaz
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Dışarıya bir helper export edelim — ScenarioPlayPage çözüldü diye çağırır
 export function buildCriticalInfo(params: {
   medicationName: string;
   effect: string;
