@@ -34,6 +34,26 @@ export default {
           dark: "#0f766e",
           light: "#2dd4bf",
         },
+        // Specialty aksan renkleri — her uzmanlık kendi kimliğiyle
+        specialty: {
+          kardiyoloji: "#10b981",
+          acil:        "#ef4444",
+          pediatri:    "#3b82f6",
+          dahiliye:    "#8b5cf6",
+          askeri:      "#84cc16",
+          anestezi:    "#06b6d4",
+          cerrahi:     "#f59e0b",
+          hemsirelik:  "#ec4899",
+          kadin_dogum: "#f97316",
+        },
+        // Klinik durum renkleri — mutlak anlamlar
+        status: {
+          stable:   "#22c55e",
+          warning:  "#eab308",
+          critical: "#ef4444",
+          info:     "#3b82f6",
+          neutral:  "#6b7280",
+        },
       },
       animation: {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
@@ -53,6 +73,13 @@ export default {
         slideUp: {
           from: { opacity: "0", transform: "translateY(12px)" },
           to: { opacity: "1", transform: "translateY(0)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-3px)" },
+        },
+        ping: {
+          "75%, 100%": { transform: "scale(2)", opacity: "0" },
         },
       },
     },

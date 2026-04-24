@@ -116,6 +116,24 @@
            focus:outline-none focus:border-brand/60 transition;
   }
 
+  /* ── Tipografi hiyerarşisi ──────────────────────────────── */
+  .t-display  { @apply font-display text-4xl leading-tight tracking-tight; }
+  .t-title    { @apply font-display text-2xl leading-snug; }
+  .t-heading  { @apply font-sans text-lg font-semibold leading-snug; }
+  .t-body     { @apply font-sans text-sm leading-relaxed; }
+  .t-caption  { @apply font-sans text-xs leading-normal; }
+  .t-data     { @apply font-mono text-sm tabular-nums tracking-tight; }
+  .t-data-lg  { @apply font-mono text-xl tabular-nums tracking-tight font-medium; }
+  .t-data-xl  { @apply font-mono text-4xl tabular-nums tracking-tight font-light; }
+  .t-label    { @apply font-sans text-[10px] uppercase tracking-[0.15em] font-medium; }
+  .t-label-sm { @apply font-sans text-[9px] uppercase tracking-[0.2em] font-medium opacity-60; }
+
+  /* Specialty kart sol kenar vurgusu */
+  .specialty-border-l {
+    border-left-width: 2px;
+    border-left-style: solid;
+  }
+
   /* Kalp atışı pulse noktası */
   .pulse-dot {
     @apply relative inline-block w-2 h-2 rounded-full bg-clinical-stable;
