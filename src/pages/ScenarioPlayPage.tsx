@@ -39,6 +39,11 @@ import {
 } from "@/components/CriticalContraindicationModal";
 import { cn } from "@/lib/cn";
 import {
+  applySpecialtyTheme,
+  resetSpecialtyTheme,
+  getSpecialtyTheme,
+} from "@/hooks/useSpecialtyTheme";
+import {
   ArrowLeft,
   GraduationCap,
   Timer,
@@ -103,6 +108,13 @@ export function ScenarioPlayPage() {
     spo2: session?.vitals.spo2 ?? 98,
     enabled: soundEnabled && session !== null && !session.finished,
   });
+
+  // Specialty tema — mount'ta CSS değişkenleri inject et, unmount'ta temizle
+  useEffect(() => {
+    if (!scenario) return;
+    applySpecialtyTheme(scenario.specialty);
+    return () => resetSpecialtyTheme();
+  }, [scenario?.specialty]);
 
   const handleCriticalExpired = useCallback(() => {
     if (!session || !resolvedScenario) return;
@@ -385,10 +397,14 @@ export function ScenarioPlayPage() {
   const stepIndex = visibleSteps.findIndex((s) => s.id === currentStep.id);
   const stepCount = visibleSteps.length;
 
+  const specialtyTheme = getSpecialtyTheme(rs.specialty);
+
   return (
     <div className="min-h-screen">
       {/* Top bar */}
       <div className="sticky top-0 z-30 bg-ink-950/95 backdrop-blur-md border-b border-ink-700/50">
+        {/* Specialty accent stripe */}
+        <div className="h-0.5 w-full" style={{ background: specialtyTheme.accent, opacity: 0.7 }} />
         <div className="max-w-7xl mx-auto px-5 py-3 flex items-center gap-4">
           <button
             onClick={() => {
@@ -434,8 +450,11 @@ export function ScenarioPlayPage() {
 
           <div className="flex-1 mx-4 h-1 bg-ink-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand transition-all duration-500"
-              style={{ width: `${((stepIndex + 1) / stepCount) * 100}%` }}
+              className="h-full transition-all duration-500"
+              style={{
+                width: `${((stepIndex + 1) / stepCount) * 100}%`,
+                background: specialtyTheme.accent,
+              }}
             />
           </div>
 
