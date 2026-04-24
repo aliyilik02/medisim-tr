@@ -1,8 +1,13 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Stethoscope, Shield, Brain, Target, PenLine } from "lucide-react";
+import { ArrowRight, Stethoscope, Shield, Brain, Target, PenLine, BarChart2 } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
+import { getStats } from "@/storage/sessionHistory";
+import { specialtyLabel } from "@/utils/export/helpers";
 
 export function HomePage() {
+  const stats = useMemo(() => getStats(), []);
+
   return (
     <div className="max-w-7xl mx-auto px-6 pt-16 pb-24">
       {/* Hero */}
@@ -31,6 +36,52 @@ export function HomePage() {
           </a>
         </div>
       </section>
+
+      {/* Oturum istatistik kartı — sadece oturum varsa */}
+      {stats && (
+        <section className="mt-12 animate-fade-in">
+          <Link
+            to="/gecmis"
+            className="panel p-5 flex items-center justify-between gap-4 hover:border-brand/40 transition group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-9 h-9 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center text-brand-light shrink-0">
+                <BarChart2 className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 mb-0.5">
+                  Performans özeti
+                </div>
+                <div className="text-sm text-ink-100">
+                  Son 7 günde{" "}
+                  <b className="text-ink-50">{stats.sessions_last_7d}</b> oturum,
+                  ortalama{" "}
+                  <b className="text-ink-50">%{stats.avg_score_pct}</b>
+                  {stats.last_session && (
+                    <>
+                      {" · Son: "}
+                      <span className="text-brand-light">{stats.last_session.scenario_title.split("—")[0].trim()}</span>
+                      {" "}
+                      <span className={
+                        stats.last_session.grade === "A" ? "text-clinical-stable"
+                        : stats.last_session.grade === "F" ? "text-clinical-critical"
+                        : "text-clinical-warning"
+                      }>({stats.last_session.grade})</span>
+                    </>
+                  )}
+                </div>
+                <div className="font-mono text-[10px] text-ink-500 mt-0.5">
+                  Favori uzmanlık: {specialtyLabel(stats.favorite_specialty)} · En iyi not: {stats.best_grade}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs font-mono text-brand-light group-hover:translate-x-1 transition">
+              Tümünü gör
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
+        </section>
+      )}
 
       {/* Stat cards */}
       <section className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-3">

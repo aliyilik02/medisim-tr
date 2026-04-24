@@ -3,6 +3,7 @@ import { HomePage } from "@/pages/HomePage";
 import { ScenarioListPage } from "@/pages/ScenarioListPage";
 import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
 import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
+import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
 import { Activity } from "lucide-react";
 
 export function App() {
@@ -20,6 +21,7 @@ export function App() {
           <Route path="/oyna/:id" element={<ScenarioPlayPage />} />
           <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
           <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
+          <Route path="/gecmis" element={<SessionHistoryPage />} />
         </Routes>
       </main>
       {!isPlayPage && !isEditorPage && <Footer />}
@@ -57,6 +59,12 @@ function Header() {
             className="px-3 py-1.5 rounded text-ink-200 hover:text-ink-50 hover:bg-ink-800 transition"
           >
             Senaryolar
+          </Link>
+          <Link
+            to="/gecmis"
+            className="px-3 py-1.5 rounded text-ink-200 hover:text-ink-50 hover:bg-ink-800 transition"
+          >
+            Geçmiş
           </Link>
           <Link
             to="/senaryo-editor"

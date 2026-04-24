@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Scenario, SessionState } from "@/engine";
 import {
   BookOpen,
@@ -10,10 +10,12 @@ import {
   CheckCircle2,
   XCircle,
   MinusCircle,
+  Save,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { AIDebriefPanel } from "@/components/AIDebriefPanel";
+import { saveSession } from "@/storage/sessionHistory";
 
 interface Props {
   scenario: Scenario;
@@ -205,9 +207,27 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
     minute: "2-digit",
   });
 
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfLoading, setPdfLoading]   = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportError, setExportError]  = useState<string | null>(null);
+  const [saveStatus, setSaveStatus]    = useState<"idle" | "saved" | "error">("idle");
+  const savedRef = useRef(false);
+
+  // Tek seferlik otomatik kayıt
+  useEffect(() => {
+    if (savedRef.current) return;
+    savedRef.current = true;
+    try {
+      const result = saveSession(session, scenario);
+      setSaveStatus(result ? "saved" : "idle");
+    } catch {
+      setSaveStatus("error");
+    }
+    // Toast 3 sn sonra kaybolur
+    const t = setTimeout(() => setSaveStatus("idle"), 3000);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleDownloadPdf() {
     setPdfLoading(true);
@@ -408,6 +428,14 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
             ))}
           </ul>
         </div>
+
+        {/* ── Kayıt toast ── */}
+        {saveStatus === "saved" && (
+          <div className="flex items-center gap-2 text-xs font-mono text-clinical-stable animate-fade-in">
+            <Save className="w-3 h-3" />
+            <span>Oturum kaydedildi · <Link to="/gecmis" className="underline hover:text-brand-light">Geçmişe git</Link></span>
+          </div>
+        )}
 
         {/* ── Export hata bildirimi ── */}
         {exportError && (
