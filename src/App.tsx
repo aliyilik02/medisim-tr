@@ -2,23 +2,27 @@ import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { HomePage } from "@/pages/HomePage";
 import { ScenarioListPage } from "@/pages/ScenarioListPage";
 import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
+import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
 import { Activity } from "lucide-react";
 
 export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
+  const isEditorPage = location.pathname.startsWith("/senaryo-editor");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && <Header />}
+      {!isPlayPage && !isEditorPage && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/senaryolar" element={<ScenarioListPage />} />
           <Route path="/oyna/:id" element={<ScenarioPlayPage />} />
+          <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
+          <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
         </Routes>
       </main>
-      {!isPlayPage && <Footer />}
+      {!isPlayPage && !isEditorPage && <Footer />}
     </div>
   );
 }

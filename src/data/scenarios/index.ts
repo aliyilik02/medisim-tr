@@ -3,6 +3,7 @@ import { scenario_stemi } from "./stemi";
 import { scenario_anaflaksi } from "./anaflaksi";
 import { scenario_dka } from "./dka";
 import { scenario_pediatrik_sepsis } from "./pediatrik-sepsis";
+import { getLocalScenario } from "@/storage/scenarioStorage";
 
 export const SCENARIOS: Scenario[] = [
   scenario_stemi,
@@ -12,7 +13,7 @@ export const SCENARIOS: Scenario[] = [
 ];
 
 export function getScenario(id: string): Scenario | undefined {
-  return SCENARIOS.find((s) => s.id === id);
+  return SCENARIOS.find((s) => s.id === id) ?? getLocalScenario(id);
 }
 
 export function getScenariosBySpecialty(specialty: string): Scenario[] {
