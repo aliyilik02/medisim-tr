@@ -105,6 +105,17 @@
     @apply bg-clinical-critical/15 text-clinical-critical border-clinical-critical/40;
   }
 
+  /* Form elements — editor bileşenlerinde tekrar eden stil */
+  .field-label {
+    @apply block font-mono text-[10px] uppercase tracking-wider text-ink-400 mb-1;
+  }
+
+  .field-input {
+    @apply w-full bg-ink-800 border border-ink-700 rounded-md px-3 py-2
+           text-sm text-ink-100 placeholder:text-ink-500
+           focus:outline-none focus:border-brand/60 transition;
+  }
+
   /* Kalp atışı pulse noktası */
   .pulse-dot {
     @apply relative inline-block w-2 h-2 rounded-full bg-clinical-stable;

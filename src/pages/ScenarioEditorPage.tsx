@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { EditorLayout } from "@/components/editor/EditorLayout";
 import { Step1Patient, DEFAULT_VITALS, DEFAULT_PATIENT } from "@/components/editor/Step1Patient";
 import { Step2Library } from "@/components/editor/Step2Library";
-import { Step3Steps } from "@/components/editor/Step3Steps";
+import { Step3Steps, validateSteps } from "@/components/editor/Step3Steps";
 import { Step4Scoring } from "@/components/editor/Step4Scoring";
 import { Step5Preview } from "@/components/editor/Step5Preview";
 import { useEditorDraft } from "@/hooks/useEditorDraft";
@@ -90,7 +90,10 @@ export function ScenarioEditorPage() {
 
   const canGoForward = (() => {
     if (currentStep === 1) return !!(draft.title?.trim());
-    // Adım 2-5 placeholder — ileri geçilebilir (henüz kısıtlama yok)
+    if (currentStep === 2)
+      return (draft.available_medications?.length ?? 0) >= 3 &&
+             (draft.available_equipment?.length ?? 0) >= 2;
+    if (currentStep === 3) return validateSteps(draft).length === 0;
     return true;
   })();
 
@@ -99,9 +102,9 @@ export function ScenarioEditorPage() {
       case 1:
         return <Step1Patient draft={draft} onChange={updateDraft} />;
       case 2:
-        return <Step2Library />;
+        return <Step2Library draft={draft} onChange={updateDraft} />;
       case 3:
-        return <Step3Steps />;
+        return <Step3Steps draft={draft} onChange={updateDraft} />;
       case 4:
         return <Step4Scoring />;
       case 5:
