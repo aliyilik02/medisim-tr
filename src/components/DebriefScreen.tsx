@@ -137,7 +137,8 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
       const { exportToPdf, pdfFilename } = await import("@/utils/export/exportPdf");
       const blob = await exportToPdf(session, scenario);
       triggerDownload(blob, pdfFilename(session, scenario));
-    } catch {
+    } catch (err) {
+      console.error("[MediSim] PDF export error:", err);
       setExportError("PDF oluşturulamadı. Lütfen tekrar deneyin.");
     } finally {
       setPdfLoading(false);
@@ -151,7 +152,8 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
       const { exportToExcel, excelFilename } = await import("@/utils/export/exportExcel");
       const blob = exportToExcel(session, scenario);
       triggerDownload(blob, excelFilename(session, scenario));
-    } catch {
+    } catch (err) {
+      console.error("[MediSim] Excel export error:", err);
       setExportError("Excel oluşturulamadı. Lütfen tekrar deneyin.");
     } finally {
       setExcelLoading(false);

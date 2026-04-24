@@ -218,18 +218,17 @@ export async function exportToPdf(
     margin: { left: ML, right: MR },
     tableWidth: CW,
     styles: {
-      font: fontName,
       fontSize: 8,
       cellPadding: 2.5,
       textColor: C.dark,
-      lineColor: [215, 218, 228],
+      lineColor: [215, 218, 228] as [number, number, number],
       lineWidth: 0.2,
+      font: "Helvetica",   // Helvetica always has normal+bold — safe for header rows
     },
     headStyles: {
       fillColor: C.brand,
       textColor: C.white,
       fontSize: 7.5,
-      fontStyle: "bold",
     },
     columnStyles: {
       0: { cellWidth: 10, halign: "center" },
