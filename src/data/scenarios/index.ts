@@ -7,6 +7,7 @@ import { scenario_hipoglisemi } from "./hipoglisemi";
 import { scenario_iskemik_inme } from "./iskemik-inme";
 import { scenario_bronsiyolit } from "./bronsiyolit";
 import { scenario_kardiyojenik_sok } from "./kardiyojenik-sok";
+import { scenario_pulmoner_emboli } from "./pulmoner-emboli";
 
 export const SCENARIOS: Scenario[] = [
   scenario_stemi,
@@ -17,6 +18,7 @@ export const SCENARIOS: Scenario[] = [
   scenario_iskemik_inme,
   scenario_bronsiyolit,
   scenario_kardiyojenik_sok,
+  scenario_pulmoner_emboli,
 ];
 
 export function getScenario(id: string): Scenario | undefined {
