@@ -109,17 +109,18 @@ function sampleEcg(
     sampleP = QRS_S + frac * origLen;
   }
 
-  // QT uzama/kısalma: T bölgesinden itibaren faz kaydır
-  const tStart = T_S - Math.min(0, qtDeltaFrac);
-  if (qtDeltaFrac !== 0 && p >= tStart) {
-    sampleP = Math.max(0, p - qtDeltaFrac);
+  // QT uzama/kısalma: QRS'deki gibi stretch remap — T şablonunu gerer/sıkıştırır
+  const tEnd = T_E + qtDeltaFrac;
+  if (qtDeltaFrac !== 0 && p >= T_S && p < tEnd) {
+    const frac = (p - T_S) / (tEnd - T_S);
+    sampleP = T_S + frac * (T_E - T_S);
   }
 
   let y = sampleEcgBase(sampleP, pattern);
 
   // ST elevasyon/depresyon (negatif = yukarı = canvas'ta düşük y)
   const stShift = (params.st_elevation_mv ?? 0) * -0.08;
-  const inStT = p >= 0.38 && p < T_E + qtDeltaFrac;
+  const inStT = p >= 0.38 && p < tEnd;
   if (inStT) y += stShift;
 
   // QRS genliği ölçekleme
@@ -129,7 +130,7 @@ function sampleEcg(
   }
 
   // T genliği ölçekleme (ST'ye gore kaydırılmış baz etrafında)
-  const inT = p >= tStart && p < T_E + qtDeltaFrac;
+  const inT = p >= T_S && p < tEnd;
   if (inT && params.t_amplitude_pct !== undefined) {
     const tBase = 0.5 + stShift;
     y = tBase + (y - tBase) * params.t_amplitude_pct;
