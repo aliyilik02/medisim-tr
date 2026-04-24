@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Trash2, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, AlertCircle, Sparkles } from "lucide-react";
+import { AIStepAssist } from "@/components/editor/AIStepAssist";
 import type {
   Step,
   ActionStep,
@@ -97,6 +98,7 @@ export function Step3Steps({ draft, onChange }: Props) {
   const steps = draft.steps ?? [];
   const [selectedId, setSelectedId] = useState<string | null>(steps[0]?.id ?? null);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showAI, setShowAI] = useState(false);
 
   const errors = validateSteps(draft);
   const selectedStep = steps.find((s) => s.id === selectedId) ?? null;
@@ -134,11 +136,37 @@ export function Step3Steps({ draft, onChange }: Props) {
   const updateStep = (updated: Step) =>
     updateSteps(steps.map((s) => (s.id === updated.id ? updated : s)));
 
+  const handleAIAdd = (step: Step) => {
+    const next = [...steps, step];
+    const patch: Partial<Draft> = { steps: next };
+    if (next.length === 1) patch.start_step_id = step.id;
+    onChange(patch);
+    setSelectedId(step.id);
+  };
+
   return (
     <div className="space-y-4 animate-fade-in">
-      <div>
-        <div className="font-mono text-xs uppercase tracking-[0.15em] text-ink-400 mb-1">Adım 3</div>
-        <h2 className="font-display text-3xl text-ink-50">Vaka Akışı Editörü</h2>
+      {showAI && (
+        <AIStepAssist
+          draft={draft}
+          onClose={() => setShowAI(false)}
+          onAddStep={handleAIAdd}
+        />
+      )}
+
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[0.15em] text-ink-400 mb-1">Adım 3</div>
+          <h2 className="font-display text-3xl text-ink-50">Vaka Akışı Editörü</h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAI(true)}
+          className="btn-ghost gap-2 text-sm shrink-0 mt-1 border-brand/40 text-brand-light hover:bg-brand/10"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          AI Yardım
+        </button>
       </div>
 
       {errors.length > 0 && (
