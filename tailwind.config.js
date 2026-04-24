@@ -30,9 +30,9 @@ export default {
           neutral: "#8a8a85",
         },
         brand: {
-          DEFAULT: "#7cb342",
-          dark: "#558b2f",
-          light: "#aed581",
+          DEFAULT: "#0d9488",
+          dark: "#0f766e",
+          light: "#2dd4bf",
         },
       },
       animation: {

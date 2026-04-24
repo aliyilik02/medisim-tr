@@ -857,7 +857,7 @@ function DecisionStepEditor({
                     type="checkbox"
                     checked={opt.correct}
                     onChange={(e) => updateOption(idx, { correct: e.target.checked })}
-                    className="accent-[#7cb342]"
+                    className="accent-[#0d9488]"
                   />
                   <span className="font-mono text-[9px] text-ink-400">Doğru</span>
                 </label>

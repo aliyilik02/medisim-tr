@@ -261,7 +261,7 @@ export function Step2Library({ draft, onChange }: Props) {
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleMed(m.id)}
-                      className="mt-0.5 accent-[#7cb342] shrink-0"
+                      className="mt-0.5 accent-[#0d9488] shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{m.name_tr}</div>
@@ -332,7 +332,7 @@ export function Step2Library({ draft, onChange }: Props) {
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleEq(e.id)}
-                      className="accent-[#7cb342] shrink-0"
+                      className="accent-[#0d9488] shrink-0"
                     />
                     <div className="text-sm font-medium flex-1 min-w-0 truncate">{e.name_tr}</div>
                   </label>
