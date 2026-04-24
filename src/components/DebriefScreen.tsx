@@ -321,22 +321,24 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
                 })()}
               </div>
 
-              {/* Not — küçük, sağ üst */}
+              {/* Not — büyük, sağ üst */}
               <div className="text-right shrink-0">
-                <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 mb-0.5">
+                <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 mb-1">
                   Sonuç
                 </div>
                 <div
                   className={cn(
-                    "font-display text-5xl leading-none tabular-nums select-none",
+                    "font-display text-7xl leading-none tabular-nums select-none",
                     GRADE_COLORS[grade]
                   )}
                 >
                   {grade}
                 </div>
-                <div className="font-mono text-[10px] text-ink-500 mt-1 tabular-nums">
+                <div className="font-mono text-[10px] text-ink-500 mt-1.5 tabular-nums">
                   %{percent}
                 </div>
+                {/* A–F bant göstergesi */}
+                <GradeBandBar grade={grade} />
               </div>
             </div>
 
@@ -478,6 +480,43 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+// ── GradeBandBar ──────────────────────────────────────────────
+
+const GRADE_BAND_DATA = [
+  { letter: "A", color: "#22c55e" },
+  { letter: "B", color: "#0d9488" },
+  { letter: "C", color: "#eab308" },
+  { letter: "D", color: "#f97316" },
+  { letter: "F", color: "#ef4444" },
+];
+
+function GradeBandBar({ grade }: { grade: string }) {
+  return (
+    <div className="flex items-center gap-0.5 mt-2 justify-end">
+      {GRADE_BAND_DATA.map(({ letter, color }) => (
+        <div
+          key={letter}
+          className="flex flex-col items-center gap-0.5"
+        >
+          <div
+            className="w-4 h-1.5 rounded-sm transition-opacity"
+            style={{
+              background: color,
+              opacity: grade === letter ? 1 : 0.15,
+            }}
+          />
+          <span
+            className="font-mono text-[8px]"
+            style={{ color: grade === letter ? color : "rgba(255,255,255,0.2)" }}
+          >
+            {letter}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

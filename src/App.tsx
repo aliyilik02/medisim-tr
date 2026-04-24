@@ -1,10 +1,11 @@
-import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Link, NavLink, useLocation } from "react-router-dom";
 import { HomePage } from "@/pages/HomePage";
 import { ScenarioListPage } from "@/pages/ScenarioListPage";
 import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
 import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
 import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
 import { Activity } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 export function App() {
   const location = useLocation();
@@ -31,48 +32,58 @@ export function App() {
 
 function Header() {
   return (
-    <header className="border-b border-ink-700/50 bg-ink-950/80 backdrop-blur-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
+    <header className="border-b border-ink-700/50 bg-ink-950/90 backdrop-blur-md sticky top-0 z-40 h-14">
+      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3 group shrink-0">
           <div className="relative">
-            <Activity className="w-6 h-6 text-brand" strokeWidth={2.5} />
-            <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-clinical-stable rounded-full animate-heartbeat" />
+            <Activity className="w-5 h-5 text-brand" strokeWidth={2.5} />
+            <div className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-clinical-stable rounded-full animate-heartbeat" />
           </div>
           <div>
-            <div className="font-display text-xl leading-none">
+            <div className="font-display text-lg leading-none">
               MediSim <span className="text-brand">TR</span>
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400 mt-0.5">
+            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-500 mt-0.5 hidden sm:block">
               Sanal Hasta Platformu
             </div>
           </div>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
-          <Link
-            to="/"
-            className="px-3 py-1.5 rounded text-ink-200 hover:text-ink-50 hover:bg-ink-800 transition"
-          >
-            Ana Sayfa
-          </Link>
-          <Link
-            to="/senaryolar"
-            className="px-3 py-1.5 rounded text-ink-200 hover:text-ink-50 hover:bg-ink-800 transition"
-          >
-            Senaryolar
-          </Link>
-          <Link
-            to="/gecmis"
-            className="px-3 py-1.5 rounded text-ink-200 hover:text-ink-50 hover:bg-ink-800 transition"
-          >
-            Geçmiş
-          </Link>
+
+        <nav className="flex items-center gap-0.5 text-sm">
+          {[
+            { to: "/", label: "Ana Sayfa", exact: true },
+            { to: "/senaryolar", label: "Senaryolar" },
+            { to: "/gecmis", label: "Geçmiş" },
+          ].map(({ to, label, exact }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={exact}
+              className={({ isActive }) =>
+                cn(
+                  "relative px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] transition",
+                  isActive
+                    ? "text-ink-50"
+                    : "text-ink-400 hover:text-ink-200 hover:bg-ink-800"
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {label}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-3 right-3 h-px bg-brand rounded-full" />
+                  )}
+                </>
+              )}
+            </NavLink>
+          ))}
           <Link
             to="/senaryo-editor"
-            className="px-3 py-1.5 rounded text-brand-light hover:text-brand hover:bg-brand/10 transition"
+            className="ml-2 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] text-brand-light border border-brand/25 hover:bg-brand/10 transition"
           >
-            Senaryo Oluştur
+            + Senaryo
           </Link>
-          <span className="tag ml-3">v0.1 · alpha</span>
         </nav>
       </div>
     </header>

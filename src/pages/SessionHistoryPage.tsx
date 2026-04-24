@@ -10,6 +10,8 @@ import {
   type SavedSession,
 } from "@/storage/sessionHistory";
 import { specialtyLabel } from "@/utils/export/helpers";
+import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
+import type { Specialty } from "@/engine/types";
 
 // ── Yardımcı ─────────────────────────────────────────────────────
 
@@ -54,8 +56,8 @@ function triggerDownload(blob: Blob, filename: string) {
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="panel p-4">
-      <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 mb-1">{label}</div>
-      <div className="font-display text-2xl text-ink-50">{value}</div>
+      <div className="t-label text-ink-500 mb-1">{label}</div>
+      <div className="t-data-lg text-ink-50">{value}</div>
       {sub && <div className="font-mono text-[10px] text-ink-500 mt-0.5">{sub}</div>}
     </div>
   );
@@ -75,6 +77,7 @@ function SessionRow({
   const [xlLoading, setXlLoad]    = useState(false);
 
   const pct = Math.round((saved.total_score / saved.max_points) * 100);
+  const theme = getSpecialtyTheme((saved.scenario_specialty as Specialty) ?? "dahiliye");
 
   async function downloadPdf() {
     setPdfLoad(true);
@@ -101,7 +104,10 @@ function SessionRow({
   }
 
   return (
-    <div className="border border-ink-700/50 rounded-md overflow-hidden">
+    <div
+      className="border border-ink-700/50 rounded-md overflow-hidden"
+      style={{ borderLeftColor: theme.accent, borderLeftWidth: 2 }}
+    >
       {/* Ana satır */}
       <button
         onClick={() => setExpanded(!expanded)}
