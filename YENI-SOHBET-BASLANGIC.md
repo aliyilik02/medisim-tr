@@ -48,26 +48,23 @@ Ondan sonra benim ne yapacağımı söyleyeceğim.
 
 ### Sıradaki — önceliğe göre
 
-**Öncelik 1: UI Parça B — Canlı monitör (kullanıcının en çok istediği)**
-Amaç: Vital'ler anlık değil yavaş yavaş değişsin, gerçek hasta monitörü hissi.
+**Öncelik 1: UI Parça B — Canlı monitör ✅ TAMAM**
 
-- [ ] Farmakoloji tick motoruna React hook (useEffect + setInterval)
-- [ ] SessionState'e baseline_vitals eklenmesi
-- [ ] VitalsMonitor'da baseline vs live ayrımı + yön okları (↑↓)
-- [ ] Trend mini-chart (son 60 sn SVG path)
-- [ ] EKG dalga formu animasyonu (SVG path animate)
-- [ ] Monitör bip sesi (HR'ye senkron Web Audio API)
-- [ ] Alarm sesleri (SpO2 düşük vb.)
-- [ ] Zaman damgası dijital saat
-- [ ] Eğitim modu 3x hız / sınav modu 1x hız entegrasyonu tick'e
+- [x] Farmakoloji tick motoruna React hook (`useVitalsTick.ts`)
+- [x] SessionState'e baseline_vitals eklenmesi
+- [x] VitalsMonitor'da baseline vs live ayrımı + yön okları (↑↓)
+- [x] Trend mini-chart — `VitalsSparkline.tsx` + `useVitalsHistory.ts` (60 nokta)
+- [x] EKG dalga formu animasyonu — `EcgStrip.tsx` canvas (normal/stemi/vt/vf/asistoli)
+- [x] Monitör bip sesi (HR'ye senkron Web Audio API)
+- [x] Alarm sesleri (SpO2 düşük, HR kritik)
+- [x] Zaman damgası dijital saat — `MonitorClock.tsx`
+- [x] Eğitim 8x / Klinik 3x / Sınav 1x hız entegrasyonu
 
 **Öncelik 2: Claude Code otonom ajan kurulumu**
 - [x] CLAUDE.md güncellendi (otonom çalışma talimatları + güncel durum)
 - [ ] `.claude/commands/` klasörü oluştur
 - [ ] Slash komutları: /senaryo-ekle, /ilac-ekle, /test-calis, /durum, /build-kontrol
 - [ ] .claude/settings.local.json — izinli araçlar listesi
-- [ ] Git hooks — commit öncesi build kontrolü
-- [ ] README'ye "Claude Code ile çalışma" bölümü
 
 **Öncelik 3: İçerik genişletme**
 - [ ] equipment.ts — 20 yeni ekipman

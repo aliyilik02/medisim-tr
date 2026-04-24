@@ -1978,6 +1978,236 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
       },
     ],
   },
+
+  // ========================================================
+  // SIVI / ELEKTROLİT — DKA, Sepsis, Anaflaksi senaryoları için
+  // Kaynak: UpToDate 2024, JBDS DKA 2023, SSC Pediatri 2020
+  // ========================================================
+
+  salin_09: {
+    id: "salin_09",
+    preset: "sivi-kristaloid-bolus",
+    dose_band: {
+      default_dose: 1000,   // 1000 mL standart bolus
+      dose_unit: "mL",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.25, // 250 mL de kabul — devre dışı değil
+      band_upper_pct: 2.0,  // 2 L max tek seferde
+      under_dose_penalty: -3,
+      over_dose_penalty: -5, // Aşırı SF → hiperkloremik asidoz (özellikle DKA'da)
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "hipertonik hipernatremi" },
+        severity: "uyari",
+        effect: "sodyum_yukselmesi",
+        penalty: -5,
+        message: "Hipernatremi varsa izotonik SF ile dikkatli.",
+        feedback: "Hipernatremi durumunda hipotonik sıvı veya Ringer Laktat daha uygun.",
+      },
+    ],
+  },
+
+  ringer_laktat: {
+    id: "ringer_laktat",
+    preset: "sivi-kristaloid-bolus",
+    dose_band: {
+      default_dose: 1000,
+      dose_unit: "mL",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.25,
+      band_upper_pct: 2.0,
+      under_dose_penalty: -3,
+      over_dose_penalty: -3,
+    },
+    contraindications: [
+      // Laktat: karaciğer yetmezliğinde metabolize edilemez
+      {
+        trigger: { kind: "history", keyword: "karaciğer yetmezliği" },
+        severity: "uyari",
+        effect: "laktat_birikimi",
+        penalty: -5,
+        message: "Ağır karaciğer yetmezliğinde laktat birikebilir.",
+        feedback: "Karaciğer yetmezliğinde SF tercih edilir, Ringer Laktat'ta laktat metabolize edilemeyebilir.",
+      },
+    ],
+  },
+
+  kcl: {
+    id: "kcl",
+    // KCl: Hipokalemi tedavisi — DKA'da zorunlu (insülin öncesi K>3.5 olmalı)
+    // Vital etki: Hipokalemiden kaynaklı taşikardiyi normalize eder
+    // Kaynak: JBDS DKA 2023, UpToDate Hypokalemia
+    vitals: {
+      hr_range: [-8, -2], // Hipokalemiye bağlı taşikardiyi azaltır
+    },
+    timing: { onset_sec: 300, peak_min: 30, duration_min: 120 },
+    dose_band: {
+      default_dose: 20,   // 20 mEq/saat standart infüzyon
+      dose_unit: "mEq",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,  // 10 mEq/saat kabul
+      band_upper_pct: 2.0,  // 40 mEq/saat üstü çok hızlı — ceza
+      under_dose_penalty: -5,
+      over_dose_penalty: -20, // Hızlı KCl → kardiyak arrest
+    },
+    contraindications: [
+      {
+        trigger: { kind: "vital", param: "hr", op: "<", value: 50 },
+        severity: "kritik",
+        effect: "hiperkalsemi_arrest",
+        penalty: -25,
+        grace_sec: 90,
+        message: "DİKKAT: Bradikardi + KCl → Fatal hiperkalemi riski!",
+        feedback: "Bradikardi varlığında KCl infüzyonu kritik aritmiye yol açabilir. EKG monitörizasyonu zorunlu.",
+        antidotes: ["kalsiyum_glukonat"],
+      },
+      {
+        trigger: { kind: "history", keyword: "böbrek yetmezliği" },
+        severity: "orta",
+        effect: "hiperkalemi",
+        penalty: -10,
+        message: "Böbrek yetmezliğinde K atılımı azalmış — hiperkalemi riski.",
+        feedback: "Böbrek yetmezliğinde KCl replasmanı daha düşük hız ve yakın EKG monitörizasyonuyla.",
+      },
+    ],
+  },
+
+  // ========================================================
+  // ANALJEZIK / SEDATİF — eksik kalanlar
+  // ========================================================
+
+  fentanil: {
+    id: "fentanil",
+    preset: "opioid-guclu",
+    dose_band: {
+      default_dose: 100,   // 100 mcg standart yetişkin dozu
+      dose_unit: "mcg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5, // 50 mcg kabul
+      band_upper_pct: 2.0, // 200 mcg üstü overdoz
+      under_dose_penalty: -3,
+      over_dose_penalty: -15,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "fentanil" },
+        severity: "kritik",
+        effect: "anafilaksi",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Fentanil alerjisi!",
+        feedback: "Fentanil alerjisinde alternatif opioid kullanılmalı.",
+        antidotes: ["adrenalin"],
+      },
+      {
+        trigger: { kind: "vital", param: "rr", op: "<", value: 12 },
+        severity: "kritik",
+        effect: "solunum_depresyonu",
+        penalty: -20,
+        grace_sec: 60,
+        message: "DİKKAT: Bradipne + opioid → Solunum durması riski!",
+        feedback: "Solunum hızı düşük hastada opioid kritik solunum depresyonu yapabilir.",
+        antidotes: ["naloksan"],
+      },
+    ],
+  },
+
+  midazolam: {
+    id: "midazolam",
+    preset: "benzodiazepin",
+    dose_band: {
+      default_dose: 2,     // 2 mg IV standart başlangıç
+      dose_unit: "mg",
+      dose_route: "IV_push",
+      band_lower_pct: 0.5, // 1 mg kabul
+      band_upper_pct: 2.5, // 5 mg üstü overdoz sınırı
+      under_dose_penalty: -2,
+      over_dose_penalty: -15,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "vital", param: "rr", op: "<", value: 12 },
+        severity: "kritik",
+        effect: "solunum_depresyonu",
+        penalty: -20,
+        grace_sec: 60,
+        message: "DİKKAT: Bradipne + benzodiazepin → Apne riski!",
+        feedback: "Solunum hızı düşük hastada benzodiazepin apneye yol açabilir.",
+        antidotes: ["flumazenil"],
+      },
+      {
+        trigger: { kind: "allergy", keyword: "benzodiazepin" },
+        severity: "kritik",
+        effect: "anafilaksi",
+        penalty: -20,
+        grace_sec: 60,
+        message: "Benzodiazepin alerjisi!",
+        feedback: "Alternatif sedatif (ketamin, propofol) değerlendir.",
+        antidotes: ["adrenalin"],
+      },
+    ],
+  },
+
+  // ========================================================
+  // ANTİALERJİK / KORTİKOSTEROİD — Anaflaksi senaryosu için
+  // ========================================================
+
+  feniramin: {
+    id: "feniramin",
+    // Antihistaminik: H1 bloker, hafif sedatif
+    // Vital etki minimal — anafilakside yardımcı, ikinci basamak
+    vitals: {
+      hr_range: [-5, 0],
+      sbp_range: [-5, 0],
+    },
+    timing: { onset_sec: 300, peak_min: 20, duration_min: 240 },
+    dose_band: {
+      default_dose: 45.5,  // 1 ampul = 45.5 mg
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.8,
+      band_upper_pct: 1.3,
+      under_dose_penalty: -2,
+      over_dose_penalty: -5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "antihistaminik" },
+        severity: "orta",
+        effect: "alerjik_reaksiyon",
+        penalty: -10,
+        message: "Antihistaminik alerjisi.",
+        feedback: "Alternatif H1 bloker dene.",
+      },
+    ],
+  },
+
+  prednisolon: {
+    id: "prednisolon",
+    // Metilprednizolon olarak kullanılıyor katalogda (id: "prednisolon")
+    // Kortikosteroid — anafilaksi, astım, adrenal yetmezlik
+    preset: "kortikosteroid-sistemik",
+    dose_band: {
+      default_dose: 125,   // 125 mg IV standart anaflaksi dozu
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.4, // 40 mg de kabul (düşük doz)
+      band_upper_pct: 4.0, // 500 mg üstü overdoz
+      under_dose_penalty: -3,
+      over_dose_penalty: -3,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "kortikosteroid" },
+        severity: "orta",
+        effect: "alerjik_reaksiyon",
+        penalty: -10,
+        message: "Kortikosteroid alerjisi.",
+        feedback: "Anafilakside kortikosteroid gereklidir, başka seçenek yoksa izle.",
+      },
+    ],
+  },
 };
 
 // ------------------------------------------------------------
