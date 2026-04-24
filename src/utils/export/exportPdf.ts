@@ -102,7 +102,7 @@ export async function exportToPdf(
 ): Promise<Blob> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
 
-  const fontName = await registerTurkishFont(doc);
+  const fontName = registerTurkishFont(doc);
 
   const setFont = (size: number, color: RGB = C.dark, style: "normal" | "bold" = "normal") => {
     doc.setFont(fontName, style);
