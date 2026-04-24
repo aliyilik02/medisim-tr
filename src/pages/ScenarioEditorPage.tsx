@@ -94,6 +94,21 @@ export function ScenarioEditorPage() {
       return (draft.available_medications?.length ?? 0) >= 3 &&
              (draft.available_equipment?.length ?? 0) >= 2;
     if (currentStep === 3) return validateSteps(draft).length === 0;
+    if (currentStep === 4) {
+      const sc = draft.scoring;
+      const db = draft.debrief;
+      if (!sc || !db) return false;
+      const { max_points, passing_score, grade_bands } = sc;
+      if (!grade_bands) return false;
+      const { A, B, C, D } = grade_bands;
+      return (
+        (db.key_learnings?.length ?? 0) >= 3 &&
+        (db.references?.length ?? 0) >= 1 &&
+        passing_score > 0 &&
+        passing_score < max_points &&
+        D < C && C < B && B < A && A <= max_points
+      );
+    }
     return true;
   })();
 
@@ -106,9 +121,9 @@ export function ScenarioEditorPage() {
       case 3:
         return <Step3Steps draft={draft} onChange={updateDraft} />;
       case 4:
-        return <Step4Scoring />;
+        return <Step4Scoring draft={draft} onChange={updateDraft} />;
       case 5:
-        return <Step5Preview />;
+        return <Step5Preview draft={draft} onChange={updateDraft} onJumpToStep={setCurrentStep} />;
       default:
         return null;
     }

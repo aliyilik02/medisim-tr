@@ -58,6 +58,12 @@ function Header() {
           >
             Senaryolar
           </Link>
+          <Link
+            to="/senaryo-editor"
+            className="px-3 py-1.5 rounded text-brand-light hover:text-brand hover:bg-brand/10 transition"
+          >
+            Senaryo Oluştur
+          </Link>
           <span className="tag ml-3">v0.1 · alpha</span>
         </nav>
       </div>

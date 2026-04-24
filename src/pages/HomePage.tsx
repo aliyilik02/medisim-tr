@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Stethoscope, Shield, Brain, Target } from "lucide-react";
+import { ArrowRight, Stethoscope, Shield, Brain, Target, PenLine } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
 
 export function HomePage() {
@@ -88,6 +88,29 @@ export function HomePage() {
             status="yakında"
           />
         </div>
+      </section>
+
+      {/* Editor CTA */}
+      <section className="mt-16">
+        <Link
+          to="/senaryo-editor"
+          className="panel p-6 flex items-center justify-between gap-6 hover:border-brand/40 transition group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center text-brand-light shrink-0">
+              <PenLine className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-display text-xl text-ink-50 group-hover:text-brand-light transition">
+                Kendi senaryonu yaz
+              </h3>
+              <p className="text-sm text-ink-400 mt-0.5">
+                Editörü kullanarak TypeScript veya JSON senaryo oluştur, doğrula ve dışa aktar.
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="w-5 h-5 text-ink-500 group-hover:text-brand-light group-hover:translate-x-1 transition shrink-0" />
+        </Link>
       </section>
 
       {/* Specialties preview */}

@@ -3,6 +3,7 @@ import { scenario_stemi } from "./stemi";
 import { scenario_anaflaksi } from "./anaflaksi";
 import { scenario_dka } from "./dka";
 import { scenario_pediatrik_sepsis } from "./pediatrik-sepsis";
+import { scenario_hipoglisemi } from "./hipoglisemi";
 import { getLocalScenario } from "@/storage/scenarioStorage";
 
 export const SCENARIOS: Scenario[] = [
@@ -10,6 +11,7 @@ export const SCENARIOS: Scenario[] = [
   scenario_anaflaksi,
   scenario_dka,
   scenario_pediatrik_sepsis,
+  scenario_hipoglisemi,
 ];
 
 export function getScenario(id: string): Scenario | undefined {
