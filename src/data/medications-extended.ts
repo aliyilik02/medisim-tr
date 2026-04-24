@@ -445,6 +445,10 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
   metoprolol: {
     id: "metoprolol",
     preset: "beta-bloker",
+    ecg_effect: {
+      qt_interval_ms: 30,   // Beta-blokaj → QT hafif uzar (HR yavaşlamasıyla)
+      qrs_duration_ms: 5,   // Na kanal yavaşlatma minimal etkisi
+    },
     dose_band: {
       default_dose: 5,
       dose_unit: "mg",
@@ -497,6 +501,9 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
 
   esmolol: {
     id: "esmolol",
+    ecg_effect: {
+      qt_interval_ms: 30,
+    },
     preset: "beta-bloker",
     vitals: {
       // Esmolol daha kısa etki, preset'i override
@@ -570,6 +577,9 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
   diltiazem: {
     id: "diltiazem",
     preset: "kalsiyum-kanal-bloker",
+    ecg_effect: {
+      qt_interval_ms: 30,   // Ca kanal blokajı → PR uzar, QT hafif uzar
+    },
     dose_band: {
       default_dose: 0.25, // mg/kg
       dose_unit: "mg",
@@ -608,6 +618,10 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
   verapamil: {
     id: "verapamil",
     preset: "kalsiyum-kanal-bloker",
+    ecg_effect: {
+      qt_interval_ms: 30,
+      qrs_duration_ms: 5,
+    },
     dose_band: {
       default_dose: 5,
       dose_unit: "mg",
@@ -641,6 +655,10 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
   amiodaron: {
     id: "amiodaron",
     preset: "antiaritmik-amiodaron",
+    ecg_effect: {
+      qt_interval_ms: 60,    // K/Na kanal blokajı → QT uzar (Torsades riski)
+      qrs_duration_ms: 10,   // Na kanal yavaşlatma → QRS hafif genişler
+    },
     dose_band: {
       default_dose: 300,
       dose_unit: "mg",
@@ -666,6 +684,9 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
 
   lidokain: {
     id: "lidokain",
+    ecg_effect: {
+      qrs_duration_ms: -5,  // Na kanal hızlandırma → QRS hafif daralır
+    },
     vitals: {
       hr_range: [-5, 0],
       sbp_range: [-5, 0],
@@ -774,6 +795,10 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
   adrenalin: {
     id: "adrenalin",
     preset: "sempatomimetik-guclu",
+    ecg_effect: {
+      qrs_amplitude_pct: 1.15,  // Yüksek katekolamin → daha sivri R dalgası
+      qt_interval_ms: -20,      // Sempatik aktivasyon QT'yi hafif kısaltır
+    },
     dose_band: {
       // Kardiyak arrest: 1 mg IV. Anafilaksi: 0.3-0.5 mg IM.
       // Motor IV arrest dozunu baz alıyor; anafilaksi senaryoda override ile
@@ -924,6 +949,9 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
 
   digoksin: {
     id: "digoksin",
+    ecg_effect: {
+      st_elevation_mv: -0.5,  // Klasik digoksin etkisi: çukur (scoop) ST depresyonu
+    },
     vitals: {
       hr_range: [-15, -5],
       sbp_range: [0, 5],
@@ -1501,6 +1529,9 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
 
   bikarbonat: {
     id: "bikarbonat",
+    ecg_effect: {
+      t_amplitude_pct: 0.7,  // Alkaloz → T dalgası düzleşir
+    },
     vitals: {
       sbp_range: [-3, 3],
       spo2_range: [-1, 0],
@@ -1539,6 +1570,9 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
 
   kalsiyum_glukonat: {
     id: "kalsiyum_glukonat",
+    ecg_effect: {
+      t_amplitude_pct: 0.85, // Hiperkalemi antidotu: sivri T'yi normalleştirmeye başlar
+    },
     vitals: {
       hr_range: [-5, -2],
       sbp_range: [3, 8],

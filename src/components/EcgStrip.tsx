@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
+import type { EcgEffect } from "@/engine/pharmacology/types";
 
 export type EcgPattern = "normal" | "stemi" | "vt" | "vf" | "asistoli";
 
 interface EcgStripProps {
   hr: number;
-  pattern?: string; // accepts EcgPattern | unknown string → defaults to "normal"
+  pattern?: string;        // EcgPattern | unknown string → defaults to "normal"
+  ecgParams?: EcgEffect;   // İlaç kaynaklı EKG parametre değişimleri
 }
 
 // Piecewise linear ECG template segments.
@@ -12,18 +14,18 @@ interface EcgStripProps {
 // y: 0 = top of canvas (positive deflection), 1 = bottom (negative deflection), 0.5 = baseline
 const SEGMENTS: Record<EcgPattern, [number, number, number, number][]> = {
   normal: [
-    [0.00, 0.10, 0.50, 0.50], // TP baseline
-    [0.10, 0.14, 0.50, 0.40], // P ascent
-    [0.14, 0.18, 0.40, 0.50], // P descent
-    [0.18, 0.25, 0.50, 0.50], // PR segment
-    [0.25, 0.27, 0.50, 0.57], // Q
-    [0.27, 0.30, 0.57, 0.06], // R spike up
-    [0.30, 0.34, 0.06, 0.88], // S spike down
-    [0.34, 0.38, 0.88, 0.50], // S return
-    [0.38, 0.50, 0.50, 0.50], // ST isoelectric
-    [0.50, 0.62, 0.50, 0.36], // T ascent
-    [0.62, 0.75, 0.36, 0.50], // T descent
-    [0.75, 1.00, 0.50, 0.50], // TP baseline
+    [0.00, 0.10, 0.50, 0.50],
+    [0.10, 0.14, 0.50, 0.40],
+    [0.14, 0.18, 0.40, 0.50],
+    [0.18, 0.25, 0.50, 0.50],
+    [0.25, 0.27, 0.50, 0.57],
+    [0.27, 0.30, 0.57, 0.06],
+    [0.30, 0.34, 0.06, 0.88],
+    [0.34, 0.38, 0.88, 0.50],
+    [0.38, 0.50, 0.50, 0.50],
+    [0.50, 0.62, 0.50, 0.36],
+    [0.62, 0.75, 0.36, 0.50],
+    [0.75, 1.00, 0.50, 0.50],
   ],
   stemi: [
     [0.00, 0.10, 0.50, 0.50],
@@ -31,34 +33,32 @@ const SEGMENTS: Record<EcgPattern, [number, number, number, number][]> = {
     [0.14, 0.18, 0.40, 0.50],
     [0.18, 0.25, 0.50, 0.50],
     [0.25, 0.27, 0.50, 0.57],
-    [0.27, 0.30, 0.57, 0.06], // R spike
-    [0.30, 0.36, 0.06, 0.55], // S (less deep — ST elevation starts)
-    [0.36, 0.55, 0.55, 0.26], // Coved ST elevation
-    [0.55, 0.68, 0.26, 0.46], // Elevated T wave
+    [0.27, 0.30, 0.57, 0.06],
+    [0.30, 0.36, 0.06, 0.55],
+    [0.36, 0.55, 0.55, 0.26],
+    [0.55, 0.68, 0.26, 0.46],
     [0.68, 0.75, 0.46, 0.50],
     [0.75, 1.00, 0.50, 0.50],
   ],
   vt: [
     [0.00, 0.05, 0.50, 0.50],
-    [0.05, 0.20, 0.50, 0.14], // broad R ascent
-    [0.20, 0.42, 0.14, 0.86], // broad descent
-    [0.42, 0.58, 0.86, 0.50], // return
+    [0.05, 0.20, 0.50, 0.14],
+    [0.20, 0.42, 0.14, 0.86],
+    [0.42, 0.58, 0.86, 0.50],
     [0.58, 1.00, 0.50, 0.50],
   ],
-  vf: [], // handled separately via math
-  asistoli: [], // handled separately — flat line
+  vf: [],
+  asistoli: [],
 };
 
-function sampleEcg(phase: number, pattern: EcgPattern): number {
+function sampleEcgBase(phase: number, pattern: EcgPattern): number {
   const p = ((phase % 1) + 1) % 1;
 
   if (pattern === "asistoli") {
-    // Flat line with tiny artifact noise
     return 0.5 + 0.008 * Math.sin(p * Math.PI * 47);
   }
 
   if (pattern === "vf") {
-    // Deterministic chaotic waveform via overlapping sinusoids
     return (
       0.5 +
       0.22 * Math.sin(p * Math.PI * 11 + 0.73) +
@@ -77,17 +77,78 @@ function sampleEcg(phase: number, pattern: EcgPattern): number {
   return 0.5;
 }
 
+// Parametrik örnekleme — ecgParams ile dalga formu modifiye edilir.
+// Bölge tanımları normalleştirilmiş faz (0-1) cinsinden:
+//   QRS: 0.25-0.38  |  ST: 0.38-0.50  |  T: 0.50-0.76
+// qrs_duration_ms / qt_interval_ms → faz uzatma/kaydırma (rrMs gerekli)
+function sampleEcg(
+  phase: number,
+  pattern: EcgPattern,
+  rrMs: number,
+  params?: EcgEffect
+): number {
+  const p = ((phase % 1) + 1) % 1;
+
+  if (!params || pattern === "vf" || pattern === "asistoli") {
+    return sampleEcgBase(phase, pattern);
+  }
+
+  // Faz remap için deltalara dönüştür
+  const qrsDeltaFrac = (params.qrs_duration_ms ?? 0) / rrMs;
+  const qtDeltaFrac  = (params.qt_interval_ms ?? 0) / rrMs;
+
+  const QRS_S = 0.25, QRS_E = 0.38;
+  const T_S   = 0.50, T_E   = 0.76;
+
+  // QRS genişleme/daralma: QRS bölgesindeyse iç faz remapla
+  let sampleP = p;
+  if (qrsDeltaFrac !== 0 && p >= QRS_S && p < QRS_E + Math.max(0, qrsDeltaFrac)) {
+    const origLen = QRS_E - QRS_S;
+    const newLen  = Math.max(0.02, origLen + qrsDeltaFrac);
+    const frac    = Math.min(1, (p - QRS_S) / newLen);
+    sampleP = QRS_S + frac * origLen;
+  }
+
+  // QT uzama/kısalma: T bölgesinden itibaren faz kaydır
+  const tStart = T_S - Math.min(0, qtDeltaFrac);
+  if (qtDeltaFrac !== 0 && p >= tStart) {
+    sampleP = Math.max(0, p - qtDeltaFrac);
+  }
+
+  let y = sampleEcgBase(sampleP, pattern);
+
+  // ST elevasyon/depresyon (negatif = yukarı = canvas'ta düşük y)
+  const stShift = (params.st_elevation_mv ?? 0) * -0.08;
+  const inStT = p >= 0.38 && p < T_E + qtDeltaFrac;
+  if (inStT) y += stShift;
+
+  // QRS genliği ölçekleme
+  const inQrs = p >= QRS_S && p < QRS_E + Math.max(0, qrsDeltaFrac);
+  if (inQrs && params.qrs_amplitude_pct !== undefined) {
+    y = 0.5 + (y - 0.5) * params.qrs_amplitude_pct;
+  }
+
+  // T genliği ölçekleme (ST'ye gore kaydırılmış baz etrafında)
+  const inT = p >= tStart && p < T_E + qtDeltaFrac;
+  if (inT && params.t_amplitude_pct !== undefined) {
+    const tBase = 0.5 + stShift;
+    y = tBase + (y - tBase) * params.t_amplitude_pct;
+  }
+
+  return Math.max(0, Math.min(1, y));
+}
+
 const PATTERN_COLOR: Record<EcgPattern, string> = {
-  normal: "#10b981",  // clinical-stable
-  stemi: "#f59e0b",   // clinical-warning
-  vt: "#f59e0b",
-  vf: "#ef4444",      // clinical-critical
+  normal:   "#10b981",
+  stemi:    "#f59e0b",
+  vt:       "#f59e0b",
+  vf:       "#ef4444",
   asistoli: "#ef4444",
 };
 
 const SCROLL_PX_PER_SEC = 100;
 
-export function EcgStrip({ hr, pattern = "normal" }: EcgStripProps) {
+export function EcgStrip({ hr, pattern = "normal", ecgParams }: EcgStripProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const validPattern = (
@@ -96,7 +157,10 @@ export function EcgStrip({ hr, pattern = "normal" }: EcgStripProps) {
     ? (pattern as EcgPattern)
     : "normal";
 
-  // Persistent animation state — survives re-renders when deps don't change
+  // ecgParams ref — değişince canvas reset olmaz, sadece sonraki frame alır
+  const ecgParamsRef = useRef(ecgParams);
+  ecgParamsRef.current = ecgParams;
+
   const stateRef = useRef({
     phase: 0,
     lastTime: 0,
@@ -109,13 +173,11 @@ export function EcgStrip({ hr, pattern = "normal" }: EcgStripProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Match internal resolution to rendered CSS width
     const W = canvas.offsetWidth || 800;
-    const H = canvas.height; // 80, set via element attribute
+    const H = canvas.height;
 
     canvas.width = W;
 
-    // Reset buffer on pattern/HR change
     const state = stateRef.current;
     state.buffer = new Float32Array(W).fill(H / 2);
     state.phase = 0;
@@ -130,22 +192,21 @@ export function EcgStrip({ hr, pattern = "normal" }: EcgStripProps) {
       state.lastTime = ts;
 
       const rrSec = 60 / Math.max(20, Math.min(300, hr));
+      const rrMs  = rrSec * 1000;
       const phasePerPixel = 1 / (rrSec * SCROLL_PX_PER_SEC);
       const nPx = Math.round(dt * SCROLL_PX_PER_SEC);
 
       if (nPx > 0 && state.buffer) {
         const buf = state.buffer;
-        buf.copyWithin(0, nPx); // shift left
+        buf.copyWithin(0, nPx);
         for (let i = W - nPx; i < W; i++) {
-          buf[i] = sampleEcg(state.phase, validPattern) * H;
+          buf[i] = sampleEcg(state.phase, validPattern, rrMs, ecgParamsRef.current) * H;
           state.phase = (state.phase + phasePerPixel) % 1;
         }
       }
 
-      // Clear
       ctx.clearRect(0, 0, W, H);
 
-      // Grid — subtle horizontal baseline and vertical beat markers
       ctx.strokeStyle = "rgba(255,255,255,0.04)";
       ctx.lineWidth = 0.5;
       ctx.beginPath();
@@ -159,7 +220,6 @@ export function EcgStrip({ hr, pattern = "normal" }: EcgStripProps) {
         ctx.stroke();
       }
 
-      // ECG trace
       if (!state.buffer) {
         animId = requestAnimationFrame(frame);
         return;
@@ -179,7 +239,6 @@ export function EcgStrip({ hr, pattern = "normal" }: EcgStripProps) {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Scan cursor — thin dark line at the leading edge
       ctx.strokeStyle = "rgba(10,10,11,0.9)";
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -195,7 +254,7 @@ export function EcgStrip({ hr, pattern = "normal" }: EcgStripProps) {
       cancelAnimationFrame(animId);
       state.lastTime = 0;
     };
-  }, [hr, validPattern]);
+  }, [hr, validPattern]); // ecgParams kasıtlı dışarıda — ref üzerinden alınır, reset tetiklemez
 
   return (
     <canvas

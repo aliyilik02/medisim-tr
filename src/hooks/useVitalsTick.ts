@@ -81,6 +81,9 @@ export function useVitalsTick({
         ...s,
         vitals: liveVitals,
         active_medications: stillActive,
+        current_ecg_params: Object.keys(result.ecg_delta).length > 0
+          ? result.ecg_delta
+          : undefined,
       });
     }, intervalMs);
 

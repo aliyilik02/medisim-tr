@@ -482,6 +482,7 @@ export function ScenarioPlayPage() {
               activeMedCount={session.active_medications?.length ?? 0}
               startedAt={session.started_at}
               ecgPattern={scenario.ekg_pattern}
+              ecgParams={session.current_ecg_params}
             />
           </aside>
 

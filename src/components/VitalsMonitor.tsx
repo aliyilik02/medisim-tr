@@ -7,6 +7,7 @@
 // ============================================================
 
 import type { PatientVitals } from "@/engine";
+import type { EcgEffect } from "@/engine/pharmacology/types";
 import { cn } from "@/lib/cn";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { MonitorClock } from "./MonitorClock";
@@ -52,6 +53,7 @@ interface VitalsMonitorProps {
   activeMedCount?: number;
   startedAt?: number;
   ecgPattern?: string;
+  ecgParams?: EcgEffect;
 }
 
 export function VitalsMonitor({
@@ -60,6 +62,7 @@ export function VitalsMonitor({
   activeMedCount = 0,
   startedAt,
   ecgPattern,
+  ecgParams,
 }: VitalsMonitorProps) {
   const history = useVitalsHistory(vitals);
 
@@ -67,7 +70,7 @@ export function VitalsMonitor({
     <div className="panel overflow-hidden">
       {/* EKG şeridi — full-width, panel içi üst bant */}
       <div className="bg-ink-900/60 border-b border-ink-700/50 px-1 py-0.5">
-        <EcgStrip hr={vitals.hr} pattern={ecgPattern} />
+        <EcgStrip hr={vitals.hr} pattern={ecgPattern} ecgParams={ecgParams} />
       </div>
 
       <div className="p-5">

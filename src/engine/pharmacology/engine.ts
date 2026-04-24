@@ -27,6 +27,7 @@ import type {
   PharmacokineticTiming,
   Range,
   MedicationDoseBand,
+  EcgEffect,
 } from "./types";
 import type { MedicationTimingOverride } from "../types";
 import { PHARMACOLOGY_PRESETS } from "./presets";
@@ -308,6 +309,7 @@ export function administerMedication(params: {
     dose_given: doseGiven,
     dose_unit: medication.dose_band.dose_unit,
     effective_vitals: effectiveDelta,
+    effective_ecg: medication.ecg_effect,
     timing,
     expires_at: expiresAt,
     dose_evaluation: doseEval,
@@ -431,6 +433,13 @@ export function tick(params: {
   const expiredIds: string[] = [];
   let activeCount = 0;
 
+  // EKG kümülatif etki: pct alanları 1.0 baz, additive delta biriktirir
+  let ecgQrsAmpDelta = 0;   // (pct - 1.0) * progress toplamı
+  let ecgTAmpDelta = 0;
+  let ecgStElev = 0;
+  let ecgQtDelta = 0;
+  let ecgQrsDur = 0;
+
   for (const med of activeMedications) {
     if (now >= med.expires_at) {
       expiredIds.push(med.instance_id);
@@ -445,10 +454,28 @@ export function tick(params: {
     activeCount++;
     const contribution = deltaAtProgress(med.effective_vitals, progress);
     addToCumulative(cumulativeDelta, contribution);
+
+    // EKG etkisi — progress ile ağırlıklandırılmış katkı
+    if (med.effective_ecg) {
+      const e = med.effective_ecg;
+      if (e.qrs_amplitude_pct !== undefined) ecgQrsAmpDelta += (e.qrs_amplitude_pct - 1.0) * progress;
+      if (e.t_amplitude_pct   !== undefined) ecgTAmpDelta   += (e.t_amplitude_pct   - 1.0) * progress;
+      if (e.st_elevation_mv   !== undefined) ecgStElev      += e.st_elevation_mv   * progress;
+      if (e.qt_interval_ms    !== undefined) ecgQtDelta     += e.qt_interval_ms    * progress;
+      if (e.qrs_duration_ms   !== undefined) ecgQrsDur      += e.qrs_duration_ms   * progress;
+    }
   }
+
+  const ecgDelta: EcgEffect = {};
+  if (ecgQrsAmpDelta !== 0) ecgDelta.qrs_amplitude_pct = 1.0 + ecgQrsAmpDelta;
+  if (ecgTAmpDelta   !== 0) ecgDelta.t_amplitude_pct   = 1.0 + ecgTAmpDelta;
+  if (ecgStElev      !== 0) ecgDelta.st_elevation_mv   = ecgStElev;
+  if (ecgQtDelta     !== 0) ecgDelta.qt_interval_ms    = ecgQtDelta;
+  if (ecgQrsDur      !== 0) ecgDelta.qrs_duration_ms   = ecgQrsDur;
 
   return {
     vitals_delta: cumulativeDelta,
+    ecg_delta: ecgDelta,
     expired_instance_ids: expiredIds,
     active_count: activeCount,
   };

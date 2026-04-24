@@ -351,6 +351,10 @@ export interface SessionState {
   active_medications?: import("./pharmacology/types").ActiveMedication[];
   active_medication_ids?: string[];      // @deprecated — active_medications kullan
 
+  // Aktif ilaçların kümülatif EKG etkisi — useVitalsTick hook her tick'te günceller.
+  // EcgStrip bileşenine iletilerek dalga formu ilaç tepkisi verir.
+  current_ecg_params?: import("./pharmacology/types").EcgEffect;
+
   // Dinamik olarak açılan adımlar (komplikasyon dalı vb.)
   unlocked_dynamic_step_ids?: string[];
   results: StepResult[];

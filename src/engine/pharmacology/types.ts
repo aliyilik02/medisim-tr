@@ -13,6 +13,21 @@
 import type { PatientVitals, PatientModifiers, Difficulty } from "../types";
 
 // ------------------------------------------------------------
+// EKG Etki Parametreleri — ilaçların EKG dalga formu üzerindeki etkisi
+// ------------------------------------------------------------
+// Her parametre 0 = baz değer, delta olarak yorumlanır.
+// qrs_amplitude_pct ve t_amplitude_pct için 1.0 = değişmez; örn. 1.15 = %15 artış.
+// Diğer alanlar mv veya ms cinsinden delta.
+
+export interface EcgEffect {
+  qrs_amplitude_pct?: number;   // 1.0 = değişmez, 1.15 = %15 yüksek R dalgası
+  qrs_duration_ms?: number;     // delta ms — pozitif = QRS genişler
+  st_elevation_mv?: number;     // delta mV — pozitif = elevasyon, negatif = depresyon
+  qt_interval_ms?: number;      // delta ms — pozitif = QT uzar
+  t_amplitude_pct?: number;     // 1.0 = değişmez, 1.8 = sivri T (hiperkalemi)
+}
+
+// ------------------------------------------------------------
 // Vital Delta — motorun vital üzerine etki vektörü
 // ------------------------------------------------------------
 // Her sayı iki eleman dizisi: [min, max] aralık. Motor rastgele seçer
@@ -147,6 +162,8 @@ export interface ExtendedMedication {
   preset?: string;                       // 'sempatomimetik-guclu' — PHARMACOLOGY_PRESETS
   vitals?: VitalDelta;                   // Preset override / preset yoksa tek kaynak
   timing?: PharmacokineticTiming;        // Preset override / preset yoksa tek kaynak
+  // EKG etkisi — ilaç aktifken EKG dalga formunu nasıl değiştirir
+  ecg_effect?: EcgEffect;
   // Dozaj
   dose_band: MedicationDoseBand;
   // Hasta özelliğine göre modifiye
@@ -167,6 +184,8 @@ export interface ActiveMedication {
   dose_unit: DoseUnit;
   // Hesaplanmış (hasta modifier'ları uygulanmış) etki
   effective_vitals: VitalDelta;    // Bu örnek için nihai delta
+  // EKG etkisi — ilaç aktifken uygulanacak EKG parametre değişimleri
+  effective_ecg?: EcgEffect;
   // Farmakokinetik
   timing: PharmacokineticTiming;
   // Bitiş zamanı (administered_at + duration_min). Motor bunu geçince ilaç listeden düşer.
@@ -184,6 +203,7 @@ export interface ActiveMedication {
 
 export interface PharmacologyTickResult {
   vitals_delta: Partial<PatientVitals>; // Bu tick'te eklenecek/çıkarılacak
+  ecg_delta: EcgEffect;                 // Aktif ilaçların kümülatif EKG etkisi
   expired_instance_ids: string[];       // Bu tick'te biten ilaçlar
   active_count: number;
 }
