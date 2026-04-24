@@ -289,6 +289,14 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
                   {scenario.patient.age} yaş ·{" "}
                   {scenario.patient.sex === "M" ? "Erkek" : "Kadın"} · "{scenario.patient.chief_complaint}"
                 </div>
+                {session.variant_id && (() => {
+                  const vLabel = scenario.variants?.find(v => v.id === session.variant_id)?.label;
+                  return vLabel ? (
+                    <div className="font-mono text-xs text-brand-light mt-0.5">
+                      Varyant: {vLabel}
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               {/* Not — küçük, sağ üst */}

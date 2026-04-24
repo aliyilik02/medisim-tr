@@ -163,11 +163,21 @@ export interface ActionStep extends StepBase {
 export interface DecisionStep extends StepBase {
   kind: "decision";
   options: DecisionOption[];
+  allow_multiple?: boolean;   // true: checkbox + onay butonu (çoklu seçim)
+  partial_credit?: boolean;   // allow_multiple=true: seçilmeyen correct'ler için %50 ceza
   display?: {
     type: "image" | "ecg" | "lab" | "imaging";
     asset: string;
     caption?: string;
   };
+}
+
+export interface DecisionMultiEvaluation {
+  selected_options: DecisionOption[];
+  missed_correct_options: DecisionOption[];  // allow_multiple: seçilmeyen correct seçenekler
+  points: number;
+  feedback: string;
+  all_correct: boolean;
 }
 
 export interface InfoStep extends StepBase {

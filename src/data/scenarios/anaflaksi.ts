@@ -82,43 +82,55 @@ export const scenario_anaflaksi: Scenario = {
     {
       id: "s1_tani",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Klinik Tanı",
       prompt:
-        "Vitaller ve tablo önünüzde. Çalışma tanınız nedir?",
+        "Vitaller ve tablo önünüzde. Bu tabloyu destekleyen bulgular hangileridir? (Birden fazla seçin)",
       narrative:
         "Yüzde belirgin ödem, dudak şişliği. Oskültasyonda yaygın wheezing. Taşikardik, hipotansif.",
       options: [
         {
-          id: "opt_anaflaksi",
-          text: "Anafilaksi (cilt + solunum + dolaşım tutulumu)",
+          id: "opt_tetikleyici",
+          text: "Tetikleyici (arı sokması) + akut başlangıç",
           correct: true,
-          points: 25,
-          feedback:
-            "Doğru — 2 sistem tutulumu + tetikleyici maruziyet anafilaksi kriterlerini karşılıyor.",
+          points: 8,
+          feedback: "Doğru — tetikleyici maruziyet anafilaksi tanı kriterlerinden biri.",
         },
         {
-          id: "opt_astim",
-          text: "Akut astım atağı",
-          correct: false,
-          points: -15,
-          feedback:
-            "Wheezing var ama yüz ödemi ve hipotansiyon astım ile açıklanmaz. Anafilaksi.",
+          id: "opt_cilt",
+          text: "Cilt/mukoza tutulumu (yüz ödemi, dudak şişliği)",
+          correct: true,
+          points: 8,
+          feedback: "Doğru — cilt tutulumu ≥1 sistem tutulumu anlamına gelir.",
         },
         {
-          id: "opt_sok",
-          text: "Septik şok",
-          correct: false,
-          points: -20,
-          feedback:
-            "Ateş yok, enfeksiyon öyküsü yok, tetikleyici açık (arı sokması). Sepsis değil.",
+          id: "opt_solunum",
+          text: "Solunum yolu tutulumu (wheezing, dispne)",
+          correct: true,
+          points: 8,
+          feedback: "Doğru — bu 2. sistem tutulumu, anafilaksi tanısı tamamlandı.",
         },
         {
-          id: "opt_anjiyoodem",
-          text: "İzole anjiyoödem",
+          id: "opt_hipotansiyon",
+          text: "Hipotansiyon (TA 82/48)",
+          correct: true,
+          points: 6,
+          feedback: "Doğru — dolaşım tutulumu, anafilaksi ciddiyet göstergesi.",
+        },
+        {
+          id: "opt_ates",
+          text: "Ateş yok — enfeksiyon ekarte",
           correct: false,
-          points: -10,
-          feedback:
-            "Yüz ödemi var ama izole değil — hipotansiyon ve wheezing eşlik ediyor. Anafilaksi.",
+          points: -5,
+          feedback: "Bu düşünce doğru ama tanıyı destekleyen bulgu değil; ateş yokluğu negatif bir özellik.",
+        },
+        {
+          id: "opt_egzersiz",
+          text: "Egzersizle tetiklenme öyküsü",
+          correct: false,
+          points: -8,
+          feedback: "Yanlış — bu hastanın öyküsünde egzersiz tetikleyici değil. Arı sokması tetikleyici.",
         },
       ],
     },
@@ -235,13 +247,13 @@ export const scenario_anaflaksi: Scenario = {
   ],
 
   scoring: {
-    max_points: 150,
-    passing_score: 90,
+    max_points: 155,
+    passing_score: 93,
     grade_bands: {
-      A: 130,
-      B: 110,
-      C: 90,
-      D: 70,
+      A: 134,
+      B: 113,
+      C: 93,
+      D: 72,
     },
   },
 

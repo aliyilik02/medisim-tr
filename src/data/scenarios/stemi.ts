@@ -640,6 +640,52 @@ export const scenario_stemi: Scenario = {
     },
   },
 
+  variants: [
+    {
+      id: "stemi-b-atipik",
+      label: "STEMI-B — Atipik Prezentasyon",
+      description:
+        "78 yaş kadın, DM'li — tipik göğüs ağrısı baskın değil, nefes darlığı ve çarpıntı ön planda. Diyabetik hastada atipik MI sunumu.",
+      patient: {
+        age: 78,
+        sex: "F",
+        weight_kg: 68,
+        height_cm: 158,
+        chief_complaint:
+          "Gece başlayan nefes darlığı, çarpıntı ve hafif epigastrik rahatsızlık. Göğüste hafif baskı hissi var.",
+        history_items: [
+          "DM Tip 2 (15 yıl, insülin)",
+          "HT (20 yıl, ilaç kullanıyor)",
+          "7 yıl önce geçirilmiş MI",
+          "50 paket-yıl sigara (bırakmış)",
+        ],
+        allergies: [],
+        current_medications: [
+          "İnsülin glargin 20 IU/gece",
+          "Metformin 500 mg 2x1",
+          "Ramipril 10 mg 1x1",
+          "Atorvastatin 40 mg 1x1",
+        ],
+        modifiers: {
+          beta_blocker: false,
+          karaciger_yetm: false,
+          bobrek_yetm: false,
+        },
+      },
+      initial_vitals: {
+        hr: 96,
+        bp_systolic: 132,
+        bp_diastolic: 78,
+        spo2: 93,
+        temp: 36.8,
+        rr: 24,
+        pain: 3,
+        glucose: 224,
+        gcs: 15,
+      },
+    },
+  ],
+
   debrief: {
     key_learnings: [
       "STEMI'de ilk 10 dakikada 12 derivasyonlu EKG zorunludur.",

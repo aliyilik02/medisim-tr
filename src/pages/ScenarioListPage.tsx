@@ -241,11 +241,16 @@ export function ScenarioListPage() {
             >
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className="tag tag-brand">
                       {SPECIALTY_LABELS[s.specialty] ?? s.specialty}
                     </span>
                     <DifficultyBars level={s.difficulty} />
+                    {(s.variants?.length ?? 0) > 0 && (
+                      <span className="tag">
+                        {s.variants!.length + 1} varyant
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-display text-2xl text-ink-50 group-hover:text-brand-light transition mb-2">
                     {s.title}

@@ -16,7 +16,9 @@ import type {
   PlayMode,
   DecisionOption,
   Difficulty,
+  DecisionMultiEvaluation,
 } from "./types";
+import { resolveScenarioVariant } from "./variant";
 
 // ------------------------------------------------------------
 // Yardımcı: Aksiyon eşleştirme
@@ -41,19 +43,20 @@ export function startSession(
   difficulty?: Difficulty,
   variantId?: string
 ): SessionState {
-  const initial = { ...scenario.initial_vitals };
+  const resolved = resolveScenarioVariant(scenario, variantId);
+  const initial = { ...resolved.initial_vitals };
   return {
     scenario_id: scenario.id,
     mode,
     selected_difficulty: difficulty ?? scenario.difficulty,
     variant_id: variantId,
     started_at: Date.now(),
-    current_step_id: scenario.start_step_id,
+    current_step_id: resolved.start_step_id,
     completed_step_ids: [],
-    baseline_vitals: { ...initial },  // Canlı monitör referans noktası
+    baseline_vitals: { ...initial },
     vitals: initial,
-    active_medications: [],           // Farmakoloji tick'in okuduğu ana liste
-    active_medication_ids: [],        // @deprecated — geçiş için
+    active_medications: [],
+    active_medication_ids: [],
     unlocked_dynamic_step_ids: [],
     results: [],
     total_score: 0,
@@ -323,6 +326,71 @@ export function finalizeSession(
 // Basit mantık: unlocks varsa onu kullan, yoksa steps listesinde
 // sıradaki adımı al. Zorluk filtresine uymayan adımları atlar.
 // Hiçbiri yoksa bitir.
+// ------------------------------------------------------------
+
+// ------------------------------------------------------------
+// Çoklu karar değerlendirme (allow_multiple=true DecisionStep için)
+// ------------------------------------------------------------
+
+export function evaluateDecisionMulti(
+  step: Step,
+  optionIds: string[],
+  difficulty?: Difficulty,
+  scenario?: Scenario
+): DecisionMultiEvaluation | null {
+  if (step.kind !== "decision") return null;
+
+  const selectedDiff: Difficulty = difficulty ?? scenario?.difficulty ?? 3;
+
+  const visibleOptions = step.options.filter((o) =>
+    isVisibleAtDifficulty(o.min_difficulty, o.max_difficulty, selectedDiff)
+  );
+
+  const selected = visibleOptions.filter((o) => optionIds.includes(o.id));
+  const selectedIdSet = new Set(selected.map((o) => o.id));
+
+  let totalPoints = selected.reduce((sum, o) => sum + o.points, 0);
+
+  const correctVisible = visibleOptions.filter((o) => o.correct);
+  const missed = correctVisible.filter((o) => !selectedIdSet.has(o.id));
+
+  if (step.partial_credit && missed.length > 0) {
+    const penalty = missed.reduce(
+      (sum, o) => sum + Math.round(Math.abs(o.points) * 0.5),
+      0
+    );
+    totalPoints -= penalty;
+  }
+
+  const lines: string[] = [];
+  for (const o of selected) {
+    const prefix = o.correct ? "✓" : "✗";
+    lines.push(`${prefix} ${o.text}: ${o.feedback}`);
+  }
+  if (missed.length > 0) {
+    lines.push("");
+    lines.push("Atlanan doğru seçenekler:");
+    for (const o of missed) {
+      lines.push(`– ${o.text}`);
+    }
+  }
+
+  const allCorrect =
+    correctVisible.length > 0 &&
+    correctVisible.every((o) => selectedIdSet.has(o.id)) &&
+    selected.every((o) => o.correct);
+
+  return {
+    selected_options: selected,
+    missed_correct_options: missed,
+    points: totalPoints,
+    feedback: lines.join("\n") || "Seçim değerlendirildi.",
+    all_correct: allCorrect,
+  };
+}
+
+// ------------------------------------------------------------
+// Sonraki adımı bulma
 // ------------------------------------------------------------
 
 export function pickNextStep(

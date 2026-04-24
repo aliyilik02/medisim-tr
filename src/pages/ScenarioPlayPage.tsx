@@ -6,11 +6,13 @@ import {
   getCurrentStep,
   evaluateAction,
   evaluateDecision,
+  evaluateDecisionMulti,
   completeStep,
   finalizeSession,
   applyVitalsChange,
   pickNextStep,
   getVisibleOptions,
+  resolveScenarioVariant,
   type SessionState,
   type ActionRef,
   type DecisionOption,
@@ -19,9 +21,7 @@ import {
   type Scenario,
 } from "@/engine";
 import { getExtendedMedication } from "@/data/medications-extended";
-import {
-  administerMedication,
-} from "@/engine/pharmacology/engine";
+import { administerMedication } from "@/engine/pharmacology/engine";
 import { getMedication } from "@/data/medications";
 import { useVitalsTick } from "@/hooks/useVitalsTick";
 import { useMonitorSounds } from "@/hooks/useMonitorSounds";
@@ -37,6 +37,7 @@ import {
   buildCriticalInfo,
   type CriticalContraindicationInfo,
 } from "@/components/CriticalContraindicationModal";
+import { cn } from "@/lib/cn";
 import {
   ArrowLeft,
   GraduationCap,
@@ -45,6 +46,7 @@ import {
   Gauge,
   Volume2,
   VolumeX,
+  Layers,
 } from "lucide-react";
 
 const SOUND_STORAGE_KEY = "medisim_sound_enabled";
@@ -65,49 +67,56 @@ export function ScenarioPlayPage() {
     optionId: string;
     feedback: string;
   } | null>(null);
+  const [decisionMultiAnswered, setDecisionMultiAnswered] = useState<{
+    optionIds: string[];
+    feedback: string;
+  } | null>(null);
   const [criticalInfo, setCriticalInfo] =
     useState<CriticalContraindicationInfo | null>(null);
 
   const { feedback, show, clear } = useFeedback();
 
-  // Canlı monitör tick — farmakoloji motorunu her X ms'de bir tetikler,
-  // baseline + pharma delta formülüyle vitalleri günceller.
-  // Kritik modal açıkken duraklat (kullanıcı karar vermek zorunda olmalı).
+  // Varyantlı senaryo — session.variant_id uygulanmış hali
+  const resolvedScenario = useMemo(
+    () =>
+      scenario
+        ? resolveScenarioVariant(scenario, session?.variant_id)
+        : undefined,
+    [scenario, session?.variant_id]
+  );
+
+  // Canlı monitör tick
   useVitalsTick({
-    scenario,
+    scenario: resolvedScenario,
     session,
     setSession,
     paused: criticalInfo !== null,
   });
 
-  // localStorage senkronu — soundEnabled değişince kaydet
   useEffect(() => {
     localStorage.setItem(SOUND_STORAGE_KEY, soundEnabled ? "true" : "false");
   }, [soundEnabled]);
 
-  // Monitör sesleri — HR senkron bip, kritik alarmlar
   useMonitorSounds({
     hr: session?.vitals.hr ?? 60,
     spo2: session?.vitals.spo2 ?? 98,
     enabled: soundEnabled && session !== null && !session.finished,
   });
 
-  // Kritik süre dolduğunda — senaryoyu başarısız bitir
   const handleCriticalExpired = useCallback(() => {
-    if (!session || !scenario) return;
+    if (!session || !resolvedScenario) return;
     setCriticalInfo(null);
     show({
-      text:
-        "Kritik kontrendikasyon düzeltme süresi doldu. Hastada ciddi komplikasyon gelişti.",
+      text: "Kritik kontrendikasyon düzeltme süresi doldu. Hastada ciddi komplikasyon gelişti.",
       points: -30,
       type: "critical",
     });
     const finalized = finalizeSession(
       { ...session, total_score: session.total_score - 30 },
-      scenario
+      resolvedScenario
     );
     setSession(finalized);
-  }, [session, scenario, show]);
+  }, [session, resolvedScenario, show]);
 
   if (!scenario) {
     return (
@@ -120,24 +129,22 @@ export function ScenarioPlayPage() {
     );
   }
 
-  // ----- Mode + difficulty selection (oyun başlamadan önce)
   if (!session) {
     return (
       <ModeSelector
         scenario={scenario}
-        onStart={(mode, difficulty) =>
-          setSession(startSession(scenario, mode, difficulty))
+        onStart={(mode, difficulty, variantId) =>
+          setSession(startSession(scenario, mode, difficulty, variantId))
         }
         onBack={() => navigate("/senaryolar")}
       />
     );
   }
 
-  // ----- Finished — show debrief
   if (session.finished) {
     return (
       <DebriefScreen
-        scenario={scenario}
+        scenario={resolvedScenario ?? scenario}
         session={session}
         onRestart={() => {
           setSession(null);
@@ -145,55 +152,50 @@ export function ScenarioPlayPage() {
           setPointsThisStep(0);
           setCriticalErrorsThisStep(0);
           setDecisionAnswered(null);
+          setDecisionMultiAnswered(null);
           setCriticalInfo(null);
         }}
       />
     );
   }
 
-  const currentStep = getCurrentStep(scenario, session);
+  const rs = resolvedScenario ?? scenario;
+  const currentStep = getCurrentStep(rs, session);
   if (!currentStep) {
     return (
       <DebriefScreen
-        scenario={scenario}
-        session={finalizeSession(session, scenario)}
+        scenario={rs}
+        session={finalizeSession(session, rs)}
         onRestart={() => setSession(null)}
       />
     );
   }
 
-  // ----- Action handler (ilaç / ekipman)
+  // ----- Aksiyon handler
   const handleAction = (action: ActionRef) => {
     if (currentStep.kind !== "action") {
-      show({
-        text: "Bu adımda envanter kullanılmıyor.",
-        points: 0,
-        type: "neutral",
-      });
+      show({ text: "Bu adımda envanter kullanılmıyor.", points: 0, type: "neutral" });
       return;
     }
 
-    // Farmakoloji motorunu ilaç aksiyonları için çalıştır
     let pharmaPoints = 0;
     let pharmaCritical: CriticalContraindicationInfo | null = null;
 
     if (action.type === "give_medication") {
       const extended = getExtendedMedication(action.target_id);
       if (extended) {
-        // Verilen doz — senaryo outcome'dan geliyor yoksa default
-        const doseGiven = extended.dose_band.default_dose *
-          (extended.dose_band.weight_based ? scenario.patient.weight_kg : 1);
+        const doseGiven =
+          extended.dose_band.default_dose *
+          (extended.dose_band.weight_based ? rs.patient.weight_kg : 1);
 
         const result = administerMedication({
           medication: extended,
           doseGiven,
-          patient: scenario.patient,
+          patient: rs.patient,
           vitals: session.vitals,
           activeMedicationIds: session.active_medication_ids ?? [],
           sourceStepId: currentStep.id,
-          // Senaryo yazarı bu ilaç için özel timing tanımlamışsa kullan.
-          // Ayarlanmayan alanlar ilacın kendi değerlerine fallback.
-          timingOverride: scenario.medication_timing_overrides?.[extended.id],
+          timingOverride: rs.medication_timing_overrides?.[extended.id],
         });
 
         pharmaPoints = result.points_delta;
@@ -216,20 +218,13 @@ export function ScenarioPlayPage() {
           }
         }
 
-        // Aktif ilaç listesine ekle — tam ActiveMedication objesi
-        // (tick motoru instance_id, administered_at, effective_vitals,
-        //  timing, expires_at bilgilerine ihtiyaç duyar)
         if (result.active_instance) {
           const newActive = result.active_instance;
           setSession((s) =>
             s
               ? {
                   ...s,
-                  active_medications: [
-                    ...(s.active_medications ?? []),
-                    newActive,
-                  ],
-                  // Eski alan da senkron tutulsun (geriye dönük uyum)
+                  active_medications: [...(s.active_medications ?? []), newActive],
                   active_medication_ids: [
                     ...(s.active_medication_ids ?? []),
                     newActive.medication_id,
@@ -241,19 +236,16 @@ export function ScenarioPlayPage() {
       }
     }
 
-    // Senaryo motorunun outcome'ını al (puan + feedback + unlock)
     const evaluation = evaluateAction(
       currentStep,
       action,
-      scenario,
+      rs,
       session.selected_difficulty
     );
 
     const totalPoints = evaluation.points + pharmaPoints;
     const isCritical = evaluation.critical || pharmaCritical !== null;
-    const isPositive = totalPoints > 0;
 
-    // Feedback mesajı — farmakoloji cezası varsa açıkla
     let combinedFeedback = evaluation.feedback;
     if (pharmaPoints !== 0 && !pharmaCritical) {
       combinedFeedback +=
@@ -265,46 +257,29 @@ export function ScenarioPlayPage() {
     show({
       text: combinedFeedback,
       points: totalPoints,
-      type: isCritical ? "critical" : isPositive ? "positive" : "negative",
+      type: isCritical ? "critical" : totalPoints > 0 ? "positive" : "negative",
     });
 
     setActionsThisStep((prev) => [...prev, action]);
     setPointsThisStep((p) => p + totalPoints);
-    if (isCritical) {
-      setCriticalErrorsThisStep((c) => c + 1);
-    }
+    if (isCritical) setCriticalErrorsThisStep((c) => c + 1);
 
-    // Vital güncellemesi — outcome'dan gelen statik değişim
-    // ÖNEMLİ: Canlı monitör baseline + pharma delta formülüyle çalışır.
-    // Statik değişimi sadece `vitals`'a uygularsak, bir sonraki tick
-    // baseline + delta hesaplayıp değişikliği siler. Bu yüzden her ikisine de
-    // uyguluyoruz — baseline kaydı da değişmiş olur, tick bir sonraki sefer
-    // yeni baseline'dan hesaplar.
     if (evaluation.vitals_change && session) {
       setSession({
         ...session,
-        baseline_vitals: applyVitalsChange(
-          session.baseline_vitals,
-          evaluation.vitals_change
-        ),
+        baseline_vitals: applyVitalsChange(session.baseline_vitals, evaluation.vitals_change),
         vitals: applyVitalsChange(session.vitals, evaluation.vitals_change),
       });
     }
 
-    // Kritik modal'ı göster
-    if (pharmaCritical) {
-      setCriticalInfo(pharmaCritical);
-    }
+    if (pharmaCritical) setCriticalInfo(pharmaCritical);
 
-    // Otomatik unlock — sonraki adıma geç
     if (evaluation.unlocks.length > 0 && !pharmaCritical) {
-      setTimeout(() => {
-        finishStep(evaluation.unlocks[0]);
-      }, 1200);
+      setTimeout(() => finishStep(evaluation.unlocks[0]), 1200);
     }
   };
 
-  // ----- Decision handler
+  // ----- Tekli karar handler
   const handleDecision = (option: DecisionOption) => {
     if (currentStep.kind !== "decision" || decisionAnswered) return;
 
@@ -312,39 +287,63 @@ export function ScenarioPlayPage() {
       currentStep,
       option.id,
       session.selected_difficulty,
-      scenario
+      rs
     );
     if (!evaluation) return;
 
-    setDecisionAnswered({
-      optionId: option.id,
-      feedback: option.feedback,
-    });
+    setDecisionAnswered({ optionId: option.id, feedback: option.feedback });
 
-    const isPositive = evaluation.points > 0;
     show({
       text: evaluation.feedback,
       points: evaluation.points,
-      type: isPositive ? "positive" : "negative",
+      type: evaluation.points > 0 ? "positive" : "negative",
     });
 
     setPointsThisStep(evaluation.points);
+    setTimeout(() => finishStep(null), 1800);
+  };
 
-    setTimeout(() => {
-      finishStep(null);
-    }, 1800);
+  // ----- Çoklu karar handler
+  const handleDecisionMulti = (optionIds: string[]) => {
+    if (currentStep.kind !== "decision" || decisionMultiAnswered) return;
+
+    const evaluation = evaluateDecisionMulti(
+      currentStep,
+      optionIds,
+      session.selected_difficulty,
+      rs
+    );
+    if (!evaluation) return;
+
+    setDecisionMultiAnswered({ optionIds, feedback: evaluation.feedback });
+
+    show({
+      text: evaluation.all_correct
+        ? "Mükemmel! Tüm doğrular seçildi."
+        : evaluation.points > 0
+        ? "Kısmi başarı — bazı doğrular eksik."
+        : "Hatalı veya eksik seçim.",
+      points: evaluation.points,
+      type: evaluation.all_correct
+        ? "positive"
+        : evaluation.points > 0
+        ? "positive"
+        : "negative",
+    });
+
+    setPointsThisStep(evaluation.points);
+    setTimeout(() => finishStep(null), 2200);
   };
 
   const handleInfoContinue = () => finishStep(null);
   const handleActionStepContinue = () => finishStep(null);
 
-  // ----- Adım bitirme ortak mantığı
   const finishStep = (unlockId: string | null) => {
     if (!session || !currentStep) return;
 
     const nextStepId =
       unlockId ??
-      pickNextStep(scenario, currentStep.id, [], session.selected_difficulty);
+      pickNextStep(rs, currentStep.id, [], session.selected_difficulty);
 
     let newSession = completeStep(
       session,
@@ -355,31 +354,25 @@ export function ScenarioPlayPage() {
       nextStepId
     );
 
-    if (newSession.finished) {
-      newSession = finalizeSession(newSession, scenario);
-    }
+    if (newSession.finished) newSession = finalizeSession(newSession, rs);
 
     setSession(newSession);
     setActionsThisStep([]);
     setPointsThisStep(0);
     setCriticalErrorsThisStep(0);
     setDecisionAnswered(null);
+    setDecisionMultiAnswered(null);
   };
 
-  // ----- Continue rules
   const canContinue =
     currentStep.kind === "action" &&
     (!currentStep.min_actions ||
       actionsThisStep.length >= currentStep.min_actions);
 
-  // Görünür adım listesini hesapla — sadece zorluğa uygun olanları göster
-  // (useMemo kullanmıyoruz çünkü Rules of Hooks: erken return sonrası hook olamaz)
-  const visibleSteps = scenario.steps.filter((s) => {
-    const min = s.min_difficulty;
-    const max = s.max_difficulty;
+  const visibleSteps = rs.steps.filter((s) => {
     const d = session.selected_difficulty;
-    if (min !== undefined && d < min) return false;
-    if (max !== undefined && d > max) return false;
+    if (s.min_difficulty !== undefined && d < s.min_difficulty) return false;
+    if (s.max_difficulty !== undefined && d > s.max_difficulty) return false;
     return true;
   });
 
@@ -393,11 +386,7 @@ export function ScenarioPlayPage() {
         <div className="max-w-7xl mx-auto px-5 py-3 flex items-center gap-4">
           <button
             onClick={() => {
-              if (
-                confirm(
-                  "Senaryodan çıkmak istediğinden emin misin? İlerleme kaybolacak."
-                )
-              ) {
+              if (confirm("Senaryodan çıkmak istediğinden emin misin? İlerleme kaybolacak.")) {
                 navigate("/senaryolar");
               }
             }}
@@ -412,20 +401,11 @@ export function ScenarioPlayPage() {
           <div className="flex items-center gap-2">
             <span className="tag tag-brand">
               {session.mode === "egitim" ? (
-                <>
-                  <GraduationCap className="w-3 h-3 mr-1 inline" />
-                  Eğitim
-                </>
+                <><GraduationCap className="w-3 h-3 mr-1 inline" />Eğitim</>
               ) : session.mode === "klinik" ? (
-                <>
-                  <ActivityIcon className="w-3 h-3 mr-1 inline" />
-                  Klinik
-                </>
+                <><ActivityIcon className="w-3 h-3 mr-1 inline" />Klinik</>
               ) : (
-                <>
-                  <Timer className="w-3 h-3 mr-1 inline" />
-                  Sınav
-                </>
+                <><Timer className="w-3 h-3 mr-1 inline" />Sınav</>
               )}
             </span>
             <span
@@ -435,6 +415,12 @@ export function ScenarioPlayPage() {
               <Gauge className="w-3 h-3" />
               Seviye {session.selected_difficulty}
             </span>
+            {session.variant_id && (
+              <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-ink-800 text-ink-300 border border-ink-700 flex items-center gap-1">
+                <Layers className="w-3 h-3" />
+                {scenario.variants?.find((v) => v.id === session.variant_id)?.label ?? session.variant_id}
+              </span>
+            )}
             <span className="text-xs font-mono text-ink-400">
               Adım {stepIndex + 1} / {stepCount}
             </span>
@@ -442,10 +428,8 @@ export function ScenarioPlayPage() {
 
           <div className="flex-1 mx-4 h-1 bg-ink-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-brand-dark to-brand-light transition-all duration-500"
-              style={{
-                width: `${((stepIndex + 1) / stepCount) * 100}%`,
-              }}
+              className="h-full bg-brand transition-all duration-500"
+              style={{ width: `${((stepIndex + 1) / stepCount) * 100}%` }}
             />
           </div>
 
@@ -463,7 +447,7 @@ export function ScenarioPlayPage() {
             </button>
             <div className="flex items-center gap-2">
               <ActivityIcon className="w-4 h-4 text-brand-light" />
-              <span className="text-ink-100">{session.total_score}</span>
+              <span className="text-ink-100 tabular-nums">{session.total_score}</span>
               <span className="text-ink-500">puan</span>
             </div>
           </div>
@@ -473,48 +457,44 @@ export function ScenarioPlayPage() {
       {/* Main layout */}
       <div className="max-w-7xl mx-auto px-5 py-6">
         <div className="grid lg:grid-cols-[320px_1fr_320px] gap-4">
-          {/* Left — patient & vitals */}
           <aside className="space-y-4 order-2 lg:order-1">
-            <PatientCard patient={scenario.patient} />
+            <PatientCard patient={rs.patient} />
             <VitalsMonitor
               vitals={session.vitals}
               baseline={session.baseline_vitals}
               activeMedCount={session.active_medications?.length ?? 0}
               startedAt={session.started_at}
-              ecgPattern={scenario.ekg_pattern}
+              ecgPattern={rs.ekg_pattern}
               ecgParams={session.current_ecg_params}
             />
           </aside>
 
-          {/* Center — current step */}
           <section className="order-1 lg:order-2">
             <StepDisplay
               step={currentStep}
               mode={session.mode}
               actionsThisStep={actionsThisStep.length}
               onDecisionSelect={handleDecision}
+              onDecisionMultiConfirm={handleDecisionMulti}
               onInfoContinue={handleInfoContinue}
               onActionStepContinue={handleActionStepContinue}
               canContinue={canContinue}
               decisionAnswered={decisionAnswered}
+              decisionMultiAnswered={decisionMultiAnswered}
               visibleOptions={
                 currentStep.kind === "decision"
-                  ? getVisibleOptions(
-                      currentStep,
-                      session.selected_difficulty
-                    )
+                  ? getVisibleOptions(currentStep, session.selected_difficulty)
                   : undefined
               }
             />
           </section>
 
-          {/* Right — inventory (only for action steps) */}
           <aside className="order-3">
             {currentStep.kind === "action" ? (
               <div className="h-[600px]">
                 <InventoryPanel
-                  availableMedications={scenario.available_medications}
-                  availableEquipment={scenario.available_equipment}
+                  availableMedications={rs.available_medications}
+                  availableEquipment={rs.available_equipment}
                   onAction={handleAction}
                 />
               </div>
@@ -544,7 +524,7 @@ export function ScenarioPlayPage() {
 }
 
 // ============================================================
-// Mode + Difficulty Selector
+// Mode + Difficulty + Variant Selector
 // ============================================================
 
 function ModeSelector({
@@ -553,19 +533,18 @@ function ModeSelector({
   onBack,
 }: {
   scenario: Scenario;
-  onStart: (mode: PlayMode, difficulty: Difficulty) => void;
+  onStart: (mode: PlayMode, difficulty: Difficulty, variantId?: string) => void;
   onBack: () => void;
 }) {
-  const supported: Difficulty[] =
-    scenario.supported_difficulties ?? [1, 2, 3, 4, 5];
-
-  // İlk seçimde senaryonun default difficulty'si (desteklenirse)
+  const supported: Difficulty[] = scenario.supported_difficulties ?? [1, 2, 3, 4, 5];
   const initialDiff: Difficulty = supported.includes(scenario.difficulty)
     ? scenario.difficulty
     : supported[0];
 
-  const [selectedDifficulty, setSelectedDifficulty] =
-    useState<Difficulty>(initialDiff);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(initialDiff);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(undefined);
+
+  const hasVariants = (scenario.variants?.length ?? 0) > 0;
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
@@ -584,11 +563,9 @@ function ModeSelector({
         <h1 className="font-display text-3xl md:text-4xl text-ink-50 mb-3">
           {scenario.title}
         </h1>
-        <p className="text-ink-300 leading-relaxed mb-10">
-          {scenario.description}
-        </p>
+        <p className="text-ink-300 leading-relaxed mb-10">{scenario.description}</p>
 
-        {/* Difficulty selector */}
+        {/* Zorluk seçici */}
         <div className="mb-10">
           <DifficultySelector
             supported={supported}
@@ -597,14 +574,40 @@ function ModeSelector({
           />
         </div>
 
-        {/* Mode selector */}
+        {/* Varyant seçici */}
+        {hasVariants && (
+          <div className="mb-10">
+            <div className="font-mono text-xs uppercase tracking-[0.15em] text-ink-400 mb-4">
+              Hasta Varyantı
+            </div>
+            <div className="grid gap-2">
+              <VariantCard
+                label="Standart Vaka"
+                description={`${scenario.patient.age} yaş, ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"} — ${scenario.patient.chief_complaint}`}
+                selected={selectedVariantId === undefined}
+                onSelect={() => setSelectedVariantId(undefined)}
+              />
+              {scenario.variants!.map((v) => (
+                <VariantCard
+                  key={v.id}
+                  label={v.label}
+                  description={v.description}
+                  selected={selectedVariantId === v.id}
+                  onSelect={() => setSelectedVariantId(v.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mod seçici */}
         <div className="font-mono text-xs uppercase tracking-[0.15em] text-ink-400 mb-4">
           Oyun Modu
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">
           <button
-            onClick={() => onStart("egitim", selectedDifficulty)}
+            onClick={() => onStart("egitim", selectedDifficulty, selectedVariantId)}
             className="panel-inset p-5 text-left hover:border-brand/40 transition group"
           >
             <div className="flex items-center gap-2 mb-3">
@@ -612,7 +615,7 @@ function ModeSelector({
               <h3 className="font-display text-lg text-ink-50">Eğitim</h3>
             </div>
             <p className="text-sm text-ink-300 leading-relaxed mb-3">
-              Anında feedback. Hızlı öğrenme, tekrar oynanabilirlik. Kavram pekiştirme için.
+              Anında feedback. Hızlı öğrenme, tekrar oynanabilirlik.
             </p>
             <ul className="text-xs text-ink-400 space-y-1">
               <li>· Anında açıklama</li>
@@ -622,7 +625,7 @@ function ModeSelector({
           </button>
 
           <button
-            onClick={() => onStart("klinik", selectedDifficulty)}
+            onClick={() => onStart("klinik", selectedDifficulty, selectedVariantId)}
             className="panel-inset p-5 text-left hover:border-clinical-info/40 transition group"
           >
             <div className="flex items-center gap-2 mb-3">
@@ -630,7 +633,7 @@ function ModeSelector({
               <h3 className="font-display text-lg text-ink-50">Klinik</h3>
             </div>
             <p className="text-sm text-ink-300 leading-relaxed mb-3">
-              Hasta başındaymış gibi. Monitör gerçekçi çalışır ama bekleme yok. Vaka tartışması için.
+              Hasta başındaymış gibi. 3× gerçekçi hız.
             </p>
             <ul className="text-xs text-ink-400 space-y-1">
               <li>· Anında feedback</li>
@@ -640,7 +643,7 @@ function ModeSelector({
           </button>
 
           <button
-            onClick={() => onStart("sinav", selectedDifficulty)}
+            onClick={() => onStart("sinav", selectedDifficulty, selectedVariantId)}
             className="panel-inset p-5 text-left hover:border-clinical-warning/40 transition group"
           >
             <div className="flex items-center gap-2 mb-3">
@@ -648,7 +651,7 @@ function ModeSelector({
               <h3 className="font-display text-lg text-ink-50">Sınav</h3>
             </div>
             <p className="text-sm text-ink-300 leading-relaxed mb-3">
-              Feedback gizli, sadece puan. Sonunda harf notu ve debrief. Değerlendirme için.
+              Feedback gizli. Sonunda harf notu ve debrief.
             </p>
             <ul className="text-xs text-ink-400 space-y-1">
               <li>· Feedback debrief'te</li>
@@ -659,5 +662,42 @@ function ModeSelector({
         </div>
       </div>
     </div>
+  );
+}
+
+function VariantCard({
+  label,
+  description,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  description: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      onClick={onSelect}
+      className={cn(
+        "text-left p-4 rounded-md border transition",
+        selected
+          ? "border-brand/50 bg-brand/5"
+          : "border-ink-700 bg-ink-900/50 hover:border-ink-500"
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            "mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 transition",
+            selected ? "border-brand bg-brand" : "border-ink-600"
+          )}
+        />
+        <div>
+          <div className="text-sm font-medium text-ink-100">{label}</div>
+          <div className="text-xs text-ink-400 mt-0.5 leading-snug">{description}</div>
+        </div>
+      </div>
+    </button>
   );
 }
