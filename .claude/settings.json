@@ -73,5 +73,29 @@
   "env": {
     "PROJECT": "MediSim TR",
     "LANG_PREFERENCE": "tr"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const i=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));const p=i.tool_input?.file_path||'';if(p.includes('src/data/scenarios/')&&p.endsWith('.ts')){console.log('[hook] Senaryo değiştirildi: '+p+' — klinik review öneriliyor');}\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const i=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));const cmd=i.tool_input?.command||'';const dangerous=['rm -rf /','rm -rf ~','rm -rf ..','sudo rm','chmod 777','dd if=','mkfs',':(){ :|:& };:'];const hit=dangerous.find(d=>cmd.includes(d));if(hit){console.error('[GUARD] Tehlikeli komut engellendi: '+hit);process.exit(2);}\""
+          }
+        ]
+      }
+    ]
   }
 }

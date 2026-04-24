@@ -136,7 +136,8 @@ export interface DecisionOption {
   correct: boolean;
   points: number;
   feedback: string;
-  min_difficulty?: Difficulty;  // Bu seçenek hangi seviyeden itibaren görünür
+  critical?: boolean;           // true: kritik hata — debrief'te kırmızı uyarı
+  min_difficulty?: Difficulty;
   max_difficulty?: Difficulty;
 }
 
