@@ -64,6 +64,18 @@ export const scenario_anaflaksi: Scenario = {
     "stetoskop",
   ],
 
+  ekg_pattern: "normal",
+
+  medication_timing_overrides: {
+    adrenalin:     { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
+    feniramin:     { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
+    prednisolon:   { onset_sec: 2, peak_min: 0.133, duration_min: 0.5   },
+    salin_09:      { onset_sec: 1, peak_min: 0.083, duration_min: 0.333 },
+    ringer_laktat: { onset_sec: 1, peak_min: 0.083, duration_min: 0.333 },
+    morfin:        { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
+    fentanil:      { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
+  },
+
   start_step_id: "s1_tani",
 
   steps: [

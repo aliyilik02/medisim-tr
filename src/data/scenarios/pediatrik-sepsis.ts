@@ -35,31 +35,12 @@ export const scenario_pediatrik_sepsis: Scenario = {
   // Demo için ilaç zamanlaması — gerçek klinikte sıvı yanıtı dakikalar,
   // adrenalin etkisi 1-2 dk alır. Monitörde canlı görmek için hızlandırılmış.
   medication_timing_overrides: {
-    salin_09: {
-      onset_sec: 8,
-      peak_min: 0.3,
-      duration_min: 3,
-    },
-    ringer_laktat: {
-      onset_sec: 8,
-      peak_min: 0.3,
-      duration_min: 3,
-    },
-    adrenalin: {
-      onset_sec: 5,       // Kardiyak cevap çok hızlı
-      peak_min: 0.5,
-      duration_min: 2,
-    },
-    noradrenalin: {
-      onset_sec: 5,
-      peak_min: 0.5,
-      duration_min: 3,
-    },
-    hidrokortizon: {
-      onset_sec: 30,
-      peak_min: 2,
-      duration_min: 6,
-    },
+    salin_09:      { onset_sec: 1, peak_min: 0.083, duration_min: 0.333 },
+    ringer_laktat: { onset_sec: 1, peak_min: 0.083, duration_min: 0.333 },
+    adrenalin:     { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
+    noradrenalin:  { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
+    hidrokortizon: { onset_sec: 2, peak_min: 0.133, duration_min: 0.5   },
+    dopamin:       { onset_sec: 2, peak_min: 0.133, duration_min: 0.5   },
   },
 
   patient: {

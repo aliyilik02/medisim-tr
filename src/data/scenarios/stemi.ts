@@ -90,6 +90,26 @@ export const scenario_stemi: Scenario = {
     "stetoskop",
   ],
 
+  ekg_pattern: "stemi",
+
+  medication_timing_overrides: {
+    aspirin:       { onset_sec: 3, peak_min: 0.25,  duration_min: 0.75 },
+    klopidogrel:   { onset_sec: 3, peak_min: 0.25,  duration_min: 0.75 },
+    tikagrelor:    { onset_sec: 3, peak_min: 0.25,  duration_min: 0.75 },
+    prasugrel:     { onset_sec: 3, peak_min: 0.25,  duration_min: 0.75 },
+    heparin:       { onset_sec: 3, peak_min: 0.25,  duration_min: 0.75 },
+    enoksaparin:   { onset_sec: 3, peak_min: 0.25,  duration_min: 0.75 },
+    nitrogliserin: { onset_sec: 2, peak_min: 0.133, duration_min: 0.5  },
+    metoprolol:    { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+    morfin:        { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+    fentanil:      { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+    tenecteplase:  { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+    atropin:       { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+    adrenalin:     { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+    amiodaron:     { onset_sec: 2, peak_min: 0.133, duration_min: 0.5  },
+    lidokain:      { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+  },
+
   start_step_id: "s1_ilk_degerlendirme",
 
   steps: [

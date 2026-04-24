@@ -37,26 +37,11 @@ export const scenario_dka: Scenario = {
   // glukoz düşüşünü canlı görmek için hızlandırılmış.
   // Eğitmen istediği ilacın onset_sec/peak_min/duration_min değerlerini ezebilir.
   medication_timing_overrides: {
-    insulin_regular: {
-      onset_sec: 20,      // Normalde ~300 sn (5 dk)
-      peak_min: 1,        // Normalde 10 dk
-      duration_min: 4,    // Normalde 30 dk
-    },
-    salin_09: {
-      onset_sec: 10,      // Sıvı yanıtı hemen hissedilsin
-      peak_min: 0.5,
-      duration_min: 3,
-    },
-    dekstroz_50: {
-      onset_sec: 8,       // Glukoz yükselmesi hemen görünsün
-      peak_min: 0.5,
-      duration_min: 2,
-    },
-    kcl: {
-      onset_sec: 30,
-      peak_min: 2,
-      duration_min: 5,
-    },
+    insulin_regular: { onset_sec: 3, peak_min: 0.25, duration_min: 0.75 },
+    salin_09:        { onset_sec: 1, peak_min: 0.083, duration_min: 0.333 },
+    dekstroz_50:     { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
+    kcl:             { onset_sec: 2, peak_min: 0.133, duration_min: 0.5  },
+    bikarbonat:      { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25 },
   },
 
   patient: {
