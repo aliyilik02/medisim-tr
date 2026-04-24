@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Scenario, SessionState } from "@/engine";
-import { Award, BookOpen, AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { Award, BookOpen, AlertTriangle, RotateCcw, Home, FileText, TableProperties } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { AIDebriefPanel } from "@/components/AIDebriefPanel";
@@ -106,6 +106,16 @@ function StepTimeline({ scenario, session }: { scenario: Scenario; session: Sess
 
 // ── Main ──────────────────────────────────────────────────────
 
+// ── İndirme yardımcısı ──────────────────────────────────────────
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
 export function DebriefScreen({ scenario, session, onRestart }: Props) {
   const percent = Math.round(
     (session.total_score / scenario.scoring.max_points) * 100
@@ -114,6 +124,39 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
   const totalTime = Math.floor((Date.now() - session.started_at) / 1000);
   const totalErrors = session.results.reduce((a, r) => a + r.critical_errors, 0);
   const passed = session.total_score >= scenario.scoring.passing_score;
+
+  // ── Export handlers (lazy-loaded) ────────────────────────────
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [excelLoading, setExcelLoading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  async function handleDownloadPdf() {
+    setPdfLoading(true);
+    setExportError(null);
+    try {
+      const { exportToPdf, pdfFilename } = await import("@/utils/export/exportPdf");
+      const blob = await exportToPdf(session, scenario);
+      triggerDownload(blob, pdfFilename(session, scenario));
+    } catch {
+      setExportError("PDF oluşturulamadı. Lütfen tekrar deneyin.");
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
+  async function handleDownloadExcel() {
+    setExcelLoading(true);
+    setExportError(null);
+    try {
+      const { exportToExcel, excelFilename } = await import("@/utils/export/exportExcel");
+      const blob = exportToExcel(session, scenario);
+      triggerDownload(blob, excelFilename(session, scenario));
+    } catch {
+      setExportError("Excel oluşturulamadı. Lütfen tekrar deneyin.");
+    } finally {
+      setExcelLoading(false);
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12 animate-fade-in">
@@ -272,6 +315,13 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
           </ul>
         </div>
 
+        {/* ── Export hata bildirimi ── */}
+        {exportError && (
+          <div className="panel p-3 border border-clinical-critical/30 bg-clinical-critical/5">
+            <p className="text-sm text-clinical-critical">{exportError}</p>
+          </div>
+        )}
+
         {/* ── Actions ── */}
         <div className="flex flex-wrap gap-3">
           <button onClick={onRestart} className="btn-primary">
@@ -281,6 +331,32 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
           <Link to="/senaryolar" className="btn-ghost">
             Senaryolara Dön
           </Link>
+
+          {/* Export butonları */}
+          <button
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            className={cn(
+              "btn-ghost flex items-center gap-2",
+              pdfLoading && "opacity-60 cursor-not-allowed"
+            )}
+          >
+            <FileText className="w-4 h-4 text-brand-light" />
+            {pdfLoading ? "Hazırlanıyor…" : "PDF İndir"}
+          </button>
+
+          <button
+            onClick={handleDownloadExcel}
+            disabled={excelLoading}
+            className={cn(
+              "btn-ghost flex items-center gap-2",
+              excelLoading && "opacity-60 cursor-not-allowed"
+            )}
+          >
+            <TableProperties className="w-4 h-4 text-brand-light" />
+            {excelLoading ? "Hazırlanıyor…" : "Excel İndir"}
+          </button>
+
           <Link to="/" className="btn-ghost ml-auto">
             <Home className="w-4 h-4" />
             Ana Sayfa
