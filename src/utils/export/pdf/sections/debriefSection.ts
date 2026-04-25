@@ -8,13 +8,16 @@ import type { SectionData } from "../generatePdf";
 export function renderDebriefSection(
   doc: jsPDF, data: SectionData, layout: Layout, fontName: string, y: number
 ): number {
-  const { debrief } = data.scenario;
+  const debrief = data.scenario.debrief ?? { key_learnings: [], references: [] };
+  const keyLearnings = debrief.key_learnings ?? [];
+  const references   = debrief.references ?? [];
+  const redFlags     = debrief.red_flags ?? [];
 
   // ── Temel öğrenim noktaları ─────────────────────────────────────
   y = ensureSpace(doc, y, 22, layout);
   y = sectionHeader(doc, y, "Temel Öğrenim Noktaları", fontName, layout);
 
-  debrief.key_learnings.forEach((item, i) => {
+  keyLearnings.forEach((item, i) => {
     const lines  = doc.splitTextToSize(`      ${item}`, layout.CW - 6) as string[];
     const blockH = lines.length * 4.6 + 6;
     y = ensureSpace(doc, y, blockH, layout);
@@ -36,11 +39,11 @@ export function renderDebriefSection(
   y += 3;
 
   // ── Red flags ──────────────────────────────────────────────────
-  if (debrief.red_flags && debrief.red_flags.length > 0) {
+  if (redFlags.length > 0) {
     y = ensureSpace(doc, y, 22, layout);
     y = sectionHeader(doc, y, "Dikkat Edilmesi Gerekenler", fontName, layout);
 
-    for (const flag of debrief.red_flags) {
+    for (const flag of redFlags) {
       const lines  = doc.splitTextToSize(`     ${flag}`, layout.CW - 6) as string[];
       const blockH = lines.length * 4.6 + 6;
       y = ensureSpace(doc, y, blockH, layout);
@@ -60,7 +63,7 @@ export function renderDebriefSection(
   y = ensureSpace(doc, y, 18, layout);
   y = sectionHeader(doc, y, "Kaynaklar", fontName, layout);
 
-  for (const ref of debrief.references) {
+  for (const ref of references) {
     const lines  = doc.splitTextToSize(`· ${ref}`, layout.CW - 4) as string[];
     const blockH = lines.length * 4.2 + 1;
     y = ensureSpace(doc, y, blockH, layout);

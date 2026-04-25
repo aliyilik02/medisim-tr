@@ -75,19 +75,24 @@ function SessionRow({
   const [expanded, setExpanded]   = useState(false);
   const [pdfLoading, setPdfLoad]  = useState(false);
   const [xlLoading, setXlLoad]    = useState(false);
+  const [exportErr, setExportErr] = useState<string | null>(null);
 
   const pct = Math.round((saved.total_score / saved.max_points) * 100);
   const theme = getSpecialtyTheme((saved.scenario_specialty as Specialty) ?? "dahiliye");
 
   async function downloadPdf() {
     setPdfLoad(true);
+    setExportErr(null);
     try {
       const { generatePdfReport } = await import("@/utils/export/exportPdf");
       const blob = await generatePdfReport(saved);
       const d    = new Date(saved.played_at);
       const fmt  = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,"0")}-${d.getDate().toString().padStart(2,"0")}-${d.getHours().toString().padStart(2,"0")}${d.getMinutes().toString().padStart(2,"0")}`;
       triggerDownload(blob, `medisim-${saved.scenario_id}-${fmt}.pdf`);
-    } catch { /* ignore */ } finally { setPdfLoad(false); }
+    } catch (err) {
+      console.error("[PDF]", err);
+      setExportErr("PDF oluşturulamadı.");
+    } finally { setPdfLoad(false); }
   }
 
   async function downloadExcel() {
@@ -178,6 +183,9 @@ function SessionRow({
               Sil
             </button>
           </div>
+          {exportErr && (
+            <p className="font-mono text-[11px] text-clinical-critical">{exportErr}</p>
+          )}
 
           {/* Kısa adım özeti */}
           {saved.session_snapshot.results.length > 0 && (
