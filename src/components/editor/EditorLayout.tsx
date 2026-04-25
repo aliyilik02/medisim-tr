@@ -8,7 +8,8 @@ const STEPS = [
   { num: 2, label: "Kütüphane" },
   { num: 3, label: "Adımlar" },
   { num: 4, label: "Puanlama" },
-  { num: 5, label: "Önizleme" },
+  { num: 5, label: "Tetkikler" },
+  { num: 6, label: "Önizleme" },
 ] as const;
 
 interface EditorLayoutProps {

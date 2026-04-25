@@ -5,6 +5,7 @@ import { Step1Patient, DEFAULT_VITALS, DEFAULT_PATIENT } from "@/components/edit
 import { Step2Library } from "@/components/editor/Step2Library";
 import { Step3Steps, validateSteps } from "@/components/editor/Step3Steps";
 import { Step4Scoring } from "@/components/editor/Step4Scoring";
+import { Step6Labs } from "@/components/editor/Step6Labs";
 import { Step5Preview } from "@/components/editor/Step5Preview";
 import { useEditorDraft } from "@/hooks/useEditorDraft";
 import {
@@ -73,6 +74,11 @@ export function ScenarioEditorPage() {
       scoring: draft.scoring ?? DEFAULT_SCORING,
       debrief: draft.debrief ?? DEFAULT_DEBRIEF,
 
+      lab_panels: draft.lab_panels,
+      lab_timeline: draft.lab_timeline,
+      result_delay_seconds: draft.result_delay_seconds,
+      imaging_results: draft.imaging_results,
+
       _local: true,
       _createdAt: draft._createdAt ?? now,
       _updatedAt: now,
@@ -109,6 +115,7 @@ export function ScenarioEditorPage() {
         D < C && C < B && B < A && A <= max_points
       );
     }
+    // Step 5 (Tetkikler) is always valid — optional content
     return true;
   })();
 
@@ -123,6 +130,8 @@ export function ScenarioEditorPage() {
       case 4:
         return <Step4Scoring draft={draft} onChange={updateDraft} />;
       case 5:
+        return <Step6Labs draft={draft} onChange={updateDraft} />;
+      case 6:
         return <Step5Preview draft={draft} onChange={updateDraft} onJumpToStep={setCurrentStep} />;
       default:
         return null;

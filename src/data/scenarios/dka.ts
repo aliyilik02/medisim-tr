@@ -632,6 +632,84 @@ export const scenario_dka: Scenario = {
     },
   ],
 
+  lab_panels: {
+    "dka-kan-gazi": {
+      id: "dka-kan-gazi",
+      name_tr: "Arteryel Kan Gazı",
+      results: [
+        { parameter: "pH",     value: 7.08, unit: "",      reference_range: "7.35-7.45",  flag: "LL" },
+        { parameter: "pCO₂",   value: 18,   unit: "mmHg",  reference_range: "35-45",       flag: "LL" },
+        { parameter: "pO₂",    value: 96,   unit: "mmHg",  reference_range: "80-100" },
+        { parameter: "HCO₃⁻",  value: 5.2,  unit: "mEq/L", reference_range: "22-26",       flag: "LL" },
+        { parameter: "BE",     value: -22,  unit: "mEq/L", reference_range: "-2 / +2",     flag: "LL" },
+        { parameter: "Laktat", value: 2.1,  unit: "mmol/L",reference_range: "0.5-2.0",     flag: "H"  },
+      ],
+      comment: "Anyon açığı = 140 - (5.2 + 104) = 30.8 mEq/L (yüksek anyon açıklı metabolik asidoz). Kompansatuvar solunum alkolozası mevcut.",
+    },
+    "dka-biyokimya": {
+      id: "dka-biyokimya",
+      name_tr: "Biyokimya / Elektrolitler",
+      results: [
+        { parameter: "Glukoz",    value: 498,  unit: "mg/dL",  reference_range: "70-100",   flag: "HH" },
+        { parameter: "Kreatinin", value: 1.62, unit: "mg/dL",  reference_range: "0.6-1.1",  flag: "H"  },
+        { parameter: "BUN",       value: 28,   unit: "mg/dL",  reference_range: "7-20",      flag: "H"  },
+        { parameter: "Na⁺",       value: 131,  unit: "mEq/L",  reference_range: "136-145",   flag: "L",
+          interpretation: "Hiperglisemide dilüsyonel hiponatremi beklenir. Düzeltilmiş Na = 131 + 1.6 × (498-100)/100 ≈ 137.4 — normal sınırda." },
+        { parameter: "K⁺",        value: 5.4,  unit: "mEq/L",  reference_range: "3.5-5.0",   flag: "H",
+          interpretation: "Asidozda K⁺ hücreden çıkar → yalancı hiperkalemi. İnsülin ile K⁺ hızla düşecek — potasyum takibi kritik." },
+        { parameter: "Cl⁻",       value: 104,  unit: "mEq/L",  reference_range: "98-107" },
+        { parameter: "Bikarbonat",value: 5,    unit: "mEq/L",  reference_range: "22-29",     flag: "LL" },
+        { parameter: "Fosfor",    value: 1.1,  unit: "mg/dL",  reference_range: "2.5-4.5",   flag: "L"  },
+        { parameter: "Mg²⁺",      value: 1.8,  unit: "mg/dL",  reference_range: "1.7-2.2" },
+      ],
+    },
+    "dka-tks": {
+      id: "dka-tks",
+      name_tr: "Tam Kan Sayımı",
+      results: [
+        { parameter: "WBC",  value: 18.2, unit: "×10³/µL", reference_range: "4.5-11.0", flag: "H",
+          interpretation: "DKA'da stres yanıtı ile WBC yüksekliği infeksiyon olmadan da görülebilir; ateş/klinikle birlikte değerlendirin." },
+        { parameter: "Hgb",  value: 14.8, unit: "g/dL",    reference_range: "12-17" },
+        { parameter: "Hct",  value: 44,   unit: "%",        reference_range: "36-50" },
+        { parameter: "PLT",  value: 298,  unit: "×10³/µL", reference_range: "150-400" },
+      ],
+    },
+    "dka-idrar": {
+      id: "dka-idrar",
+      name_tr: "İdrar Tam Tetkiki",
+      results: [
+        { parameter: "Glukoz",   value: "+++",  unit: "", reference_range: "Negatif", flag: "C" },
+        { parameter: "Keton",    value: "+++",  unit: "", reference_range: "Negatif", flag: "HH" },
+        { parameter: "Protein",  value: "+",    unit: "", reference_range: "Negatif", flag: "C" },
+        { parameter: "pH",       value: 5.0,    unit: "", reference_range: "4.5-8.0" },
+        { parameter: "Dansite",  value: 1.030,  unit: "", reference_range: "1.010-1.025", flag: "H" },
+      ],
+      comment: "Ketonüri ve glukozüri DKA tanısını desteklemektedir.",
+    },
+  },
+
+  result_delay_seconds: {
+    "dka-kan-gazi":  90,
+    "dka-biyokimya": 120,
+    "dka-tks":        60,
+    "dka-idrar":      45,
+  },
+
+  lab_timeline: [
+    {
+      panel_id: "dka-biyokimya",
+      at_minute: 90,
+      results: [
+        { parameter: "Glukoz",    value: 312,  unit: "mg/dL",  reference_range: "70-100",   flag: "HH" },
+        { parameter: "K⁺",        value: 3.2,  unit: "mEq/L",  reference_range: "3.5-5.0",  flag: "L",
+          interpretation: "İnsülin+sıvı tedavisine yanıt olarak K⁺ normalleşmeye başlamış ancak düşük sınırda — hipokalemi riski izle." },
+        { parameter: "Na⁺",       value: 136,  unit: "mEq/L",  reference_range: "136-145" },
+        { parameter: "Bikarbonat",value: 12,   unit: "mEq/L",  reference_range: "22-29",     flag: "L"  },
+        { parameter: "Kreatinin", value: 1.28, unit: "mg/dL",  reference_range: "0.6-1.1",  flag: "H"  },
+      ],
+    },
+  ],
+
   scoring: {
     max_points: 220,
     passing_score: 130,

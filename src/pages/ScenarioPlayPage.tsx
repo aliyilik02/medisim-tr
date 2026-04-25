@@ -25,6 +25,7 @@ import { administerMedication } from "@/engine/pharmacology/engine";
 import { getMedication } from "@/data/medications";
 import { useVitalsTick } from "@/hooks/useVitalsTick";
 import { useMonitorSounds } from "@/hooks/useMonitorSounds";
+import { useLabResults } from "@/hooks/useLabResults";
 import { PatientCard } from "@/components/PatientCard";
 import { VitalsMonitor } from "@/components/VitalsMonitor";
 import { InventoryPanel } from "@/components/InventoryPanel";
@@ -37,6 +38,8 @@ import {
   buildCriticalInfo,
   type CriticalContraindicationInfo,
 } from "@/components/CriticalContraindicationModal";
+import { LabResultsModal } from "@/components/LabResultsModal";
+import { ImagingResultsModal } from "@/components/ImagingResultsModal";
 import { cn } from "@/lib/cn";
 import {
   applySpecialtyTheme,
@@ -79,6 +82,8 @@ export function ScenarioPlayPage() {
   const [criticalInfo, setCriticalInfo] =
     useState<CriticalContraindicationInfo | null>(null);
   const [criticalModalHidden, setCriticalModalHidden] = useState(false);
+  const [openLabPanelId, setOpenLabPanelId] = useState<string | null>(null);
+  const [openImagingId, setOpenImagingId] = useState<string | null>(null);
 
   const { feedback, show, clear } = useFeedback();
 
@@ -90,6 +95,13 @@ export function ScenarioPlayPage() {
         : undefined,
     [scenario, session?.variant_id]
   );
+
+  // Lab / imaging hook
+  const { getLabStatus, orderLab, getReadyPanel, imagingResults } = useLabResults({
+    scenario: resolvedScenario,
+    sessionStartedAt: session?.started_at,
+    sessionMode: session?.mode,
+  });
 
   // Canlı monitör tick
   useVitalsTick({
@@ -539,6 +551,12 @@ export function ScenarioPlayPage() {
                   availableMedications={rs.available_medications}
                   availableEquipment={rs.available_equipment}
                   onAction={handleAction}
+                  labPanels={rs.lab_panels}
+                  imagingResults={imagingResults}
+                  getLabStatus={getLabStatus}
+                  onOrderLab={orderLab}
+                  onViewLab={setOpenLabPanelId}
+                  onViewImaging={setOpenImagingId}
                 />
               </div>
             ) : (
@@ -563,6 +581,32 @@ export function ScenarioPlayPage() {
         onExpired={handleCriticalExpired}
         onDismiss={() => setCriticalModalHidden(true)}
       />
+
+      {/* Lab sonuç modalı */}
+      {openLabPanelId && (() => {
+        const ready = getReadyPanel(openLabPanelId);
+        if (!ready) return null;
+        return (
+          <LabResultsModal
+            panel={ready.panel}
+            history={ready.history}
+            scenarioTimeMin={Math.floor((Date.now() - session.started_at) / 60000)}
+            onClose={() => setOpenLabPanelId(null)}
+          />
+        );
+      })()}
+
+      {/* Görüntüleme modalı */}
+      {openImagingId && (() => {
+        const img = imagingResults.find((r) => r.id === openImagingId);
+        if (!img) return null;
+        return (
+          <ImagingResultsModal
+            result={img}
+            onClose={() => setOpenImagingId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

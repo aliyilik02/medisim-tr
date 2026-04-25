@@ -695,6 +695,45 @@ export const scenario_stemi: Scenario = {
     },
   ],
 
+  imaging_results: {
+    "stemi-cxr": {
+      id: "stemi-cxr",
+      modality: "xray",
+      name_tr: "Akciğer Grafisi (PA)",
+      view: "PA",
+      image_url:
+        "https://upload.wikimedia.org/wikipedia/commons/a/a1/Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg",
+      attribution: "Mikael Häggström, M.D. — CC0 (Wikimedia Commons)",
+      interpretation:
+        "Kardiyak silüet normal sınırlarda. Akciğer alanlarında patolojik opasite izlenmemektedir. Hilus ve mediasten normal görünümde. STEMI tanısında akciğer grafisi aort diseksiyonu ve kardiyomegaliyi ekarte etmek için değerlidir.",
+      findings: [
+        "Normal kardiyotorasik oran (< 0.50)",
+        "Her iki akciğer alanı temiz",
+        "Plevral effüzyon yok",
+        "Normal mediastinal kontur",
+      ],
+      timestamp_min: 5,
+    },
+    "stemi-ekg-12lead": {
+      id: "stemi-ekg-12lead",
+      modality: "ekg",
+      name_tr: "12 Derivasyon EKG",
+      image_url:
+        "https://upload.wikimedia.org/wikipedia/commons/7/76/12_Lead_EKG_ST_Elevation_tracing_color_coded.jpg",
+      attribution: "User 'Displaced' — Public Domain (Wikimedia Commons)",
+      interpretation:
+        "Anterior STEMI paterni: V1-V4'te belirgin ST elevasyonu, II/III/aVF'de karşılıklı ST depresyonu. Sinüs taşikardisi (HR ~105/dk). Anterior fasiküler blok paterni izlenmektedir. Sol anteriyor desendan (LAD) proksimal oklüzyonu ile uyumlu bulgular.",
+      findings: [
+        "V1-V4: ST elevasyonu (Tombstone paterni, 3-5 mm)",
+        "II, III, aVF: Karşılıklı ST depresyonu",
+        "Sinüs taşikardisi (HR ~105/dk)",
+        "Anterior fasikül bloğu: sol aks sapması",
+        "Q dalgası henüz belirgin değil — akut faz",
+      ],
+      timestamp_min: 3,
+    },
+  },
+
   scoring: {
     max_points: 280,
     passing_score: 170,
