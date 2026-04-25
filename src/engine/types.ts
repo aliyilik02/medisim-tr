@@ -42,6 +42,18 @@ export interface PatientVitals {
   pain?: number;           // 0-10 ağrı skoru
   glucose?: number;        // mg/dL
   gcs?: number;            // 3-15 Glasgow
+
+  // Faz 1 — genişletilmiş vitaller
+  etco2?: number;                // mmHg, kapnograf end-tidal CO2
+  map?: number;                  // Ortalama arter basıncı mmHg (hesaplanan veya ölçülen)
+  cvp?: number;                  // Santral venöz basınç cmH2O
+  abp_systolic?: number;         // İnvaziv arteriyel SBP (NIBP'den ayrı)
+  abp_diastolic?: number;        // İnvaziv arteriyel DBP
+  st_elevation_mm?: number;      // ST elevasyon mm (EKG monitörden)
+  pupil_left_mm?: number;        // Sol pupil çapı mm
+  pupil_right_mm?: number;       // Sağ pupil çapı mm
+  pupil_reactive?: boolean;      // Işık refleksi var mı
+  urine_output_ml_hr?: number;   // Saatlik idrar çıkışı mL/saat
 }
 
 // Farmakoloji motorunun ilaç etkisini modifiye ederken kullandığı hasta özellikleri.
@@ -79,8 +91,9 @@ export interface Medication {
   id: string;
   name_tr: string;
   name_en?: string;
-  category: "kardiyak" | "antibiyotik" | "analjezik" | "sedatif"
-           | "antikoagulan" | "antiaritmik" | "sıvı" | "diğer";
+  category: "kardiyak" | "antibiyotik" | "antiviral" | "analjezik" | "sedatif"
+           | "antikoagulan" | "antiaritmik" | "sıvı" | "endokrin"
+           | "antiepileptik" | "antidot" | "diğer";
   default_dose?: string;        // Gösterim için ("1 mg IV push")
   contraindications?: string[]; // Basit metin — detaylı şema için ExtendedMedication
 }
@@ -219,6 +232,68 @@ export interface Debrief {
 }
 
 // ------------------------------------------------------------
+// Monitör Konfigürasyonu (Faz 1)
+// ------------------------------------------------------------
+
+export interface AlarmThresholds {
+  hr_low?: number;
+  hr_high?: number;
+  spo2_low?: number;
+  bp_systolic_low?: number;
+  bp_systolic_high?: number;
+  rr_low?: number;
+  rr_high?: number;
+  etco2_low?: number;
+  etco2_high?: number;
+  glucose_low?: number;
+  glucose_high?: number;
+  urine_output_low?: number;
+}
+
+export interface MonitorConfig {
+  visible_params?: Array<keyof PatientVitals>;
+  visible_modules?: Array<"ekg" | "etco2" | "abp" | "st_trend">;
+  alarm_thresholds?: Partial<AlarmThresholds>;
+}
+
+// ------------------------------------------------------------
+// Laboratuvar / Tetkik Sistemi (Faz 3)
+// ------------------------------------------------------------
+
+export type LabFlag = "L" | "H" | "LL" | "HH" | "C";
+// L=düşük, H=yüksek, LL=kritik düşük, HH=kritik yüksek, C=pozitif/anormal
+
+export interface LabValue {
+  parameter: string;          // "Hgb", "WBC", "pH", "Glukoz"
+  value: string | number;     // Sayı veya semantik ("Pozitif", "+++")
+  unit: string;               // "g/dL", "mg/dL", "/μL", "mmol/L"
+  reference_range?: string;   // "12-16" veya "<5"
+  flag?: LabFlag;
+  interpretation?: string;    // Kısa açıklama (eğitim değeri için)
+}
+
+export interface LabPanel {
+  id: string;                 // Equipment ID ile eşleşmeli (örn. "tam_kan_sayimi")
+  name_tr: string;            // "Tam Kan Sayımı"
+  collected_at_min?: number;  // Senaryo başlangıcına göre kaç dk'da alındı
+  results: LabValue[];
+  comment?: string;           // Lab notu
+}
+
+export interface LabPanelHistory {
+  panel_id: string;
+  snapshots: LabPanel[];      // Zaman içinde tekrar edilen ölçümler
+}
+
+export interface LabTimelineEntry {
+  at_minute: number;          // Senaryo başından kaç dk sonra bu değerler geçerli
+  panel_id: string;
+  results: LabValue[];
+  trigger?: "auto" | "after_step";
+  trigger_step_id?: string;
+}
+
+// ------------------------------------------------------------
 // 3D Sahne Tanımı (ileride dolacak)
 // ------------------------------------------------------------
 
@@ -319,9 +394,18 @@ export interface Scenario {
   variants?: PatientVariant[];
 
   // EKG şerit deseni — EcgStrip bileşeni için
-  // Geçerli değerler: "normal" | "stemi" | "vt" | "vf" | "asistoli"
-  // Belirtilmezse "normal" kullanılır
   ekg_pattern?: string;
+
+  // Faz 1 — Monitör konfigürasyonu (opsiyonel, yoksa default davranış)
+  monitor_config?: MonitorConfig;
+
+  // Faz 3 — Lab/Tetkik sistemi (tümü opsiyonel — eski senaryolar bunlar olmadan çalışır)
+  lab_panels?: Record<string, LabPanel>;
+  // Initial lab değerleri. Key = equipment id → o tetkik istendiğinde döner
+  lab_timeline?: LabTimelineEntry[];
+  // Zamanla değişen lab sonuçları (tedaviye bağlı progresyon)
+  result_delay_seconds?: Record<string, number>;
+  // Tetkik istenince sonuç gelmesi için bekleme süresi (default: 5sn)
 
   // 3D (opsiyonel)
   scene?: SceneConfig;
@@ -371,6 +455,14 @@ export interface SessionState {
   // Aktif ilaçların kümülatif EKG etkisi — useVitalsTick hook her tick'te günceller.
   // EcgStrip bileşenine iletilerek dalga formu ilaç tepkisi verir.
   current_ecg_params?: import("./pharmacology/types").EcgEffect;
+
+  // Faz 3 — Lab order geçmişi
+  ordered_labs?: Array<{
+    panel_id: string;
+    ordered_at_min: number;
+    resolved_at_min?: number;
+    panel?: LabPanel;
+  }>;
 
   // Dinamik olarak açılan adımlar (komplikasyon dalı vb.)
   unlocked_dynamic_step_ids?: string[];

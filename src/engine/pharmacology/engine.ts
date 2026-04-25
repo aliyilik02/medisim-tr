@@ -183,7 +183,7 @@ export function evaluateTrigger(
     }
     case "vital": {
       const value = vitals[trigger.param];
-      if (value === undefined) return false;
+      if (value === undefined || typeof value !== "number") return false;
       switch (trigger.op) {
         case "<":
           return value < trigger.value;
@@ -608,8 +608,8 @@ function addToCumulative(
 ): void {
   for (const key of Object.keys(src) as Array<keyof PatientVitals>) {
     const v = src[key];
-    if (v === undefined) continue;
-    target[key] = (target[key] ?? 0) + v;
+    if (v === undefined || typeof v !== "number") continue;
+    (target as Record<string, number>)[key] = ((target[key] as number | undefined) ?? 0) + v;
   }
 }
 

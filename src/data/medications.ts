@@ -490,6 +490,138 @@ export const MEDICATIONS: Record<string, Medication> = {
   },
 
   // ========================================================
+  // ANTİBİYOTİK — Ek (Hafta 2+, Faz 2)
+  // ========================================================
+  sefepim: {
+    id: "sefepim",
+    name_tr: "Sefepim",
+    name_en: "Cefepime",
+    category: "antibiyotik",
+    default_dose: "2 g IV (30 dk) her 8-12 saatte",
+  },
+  levofloksasin: {
+    id: "levofloksasin",
+    name_tr: "Levofloksasin",
+    name_en: "Levofloxacin",
+    category: "antibiyotik",
+    default_dose: "500 mg IV günde 1 kez",
+  },
+  klindamisin: {
+    id: "klindamisin",
+    name_tr: "Klindamisin",
+    name_en: "Clindamycin",
+    category: "antibiyotik",
+    default_dose: "600-900 mg IV her 8 saatte",
+  },
+  metronidazol: {
+    id: "metronidazol",
+    name_tr: "Metronidazol",
+    name_en: "Metronidazole",
+    category: "antibiyotik",
+    default_dose: "500 mg IV her 8 saatte",
+  },
+  asiklovir: {
+    id: "asiklovir",
+    name_tr: "Asiklovir IV",
+    name_en: "Aciclovir",
+    category: "antiviral",
+    default_dose: "10 mg/kg IV her 8 saatte (30-60 dk)",
+  },
+  oseltamivir: {
+    id: "oseltamivir",
+    name_tr: "Oseltamivir",
+    name_en: "Oseltamivir",
+    category: "antiviral",
+    default_dose: "75 mg PO günde 2 kez (5 gün)",
+  },
+  seftazidim: {
+    id: "seftazidim",
+    name_tr: "Seftazidim",
+    name_en: "Ceftazidime",
+    category: "antibiyotik",
+    default_dose: "2 g IV her 8 saatte",
+  },
+
+  // ========================================================
+  // ENDOKRİN (Faz 2)
+  // ========================================================
+  glukagon: {
+    id: "glukagon",
+    name_tr: "Glukagon",
+    name_en: "Glucagon",
+    category: "endokrin",
+    default_dose: "1 mg IM/SC/IV (hipoglisemi veya BB OD)",
+  },
+  oktreotid: {
+    id: "oktreotid",
+    name_tr: "Oktreotid",
+    name_en: "Octreotide",
+    category: "endokrin",
+    default_dose: "50-100 mcg SC/IV (varisel kanama: 25-50 mcg/saat infüzyon)",
+  },
+
+  // ========================================================
+  // ANTİKOAGÜLAN / ANTİTROMBOTİK — Ek (Faz 2)
+  // ========================================================
+  dalteparin: {
+    id: "dalteparin",
+    name_tr: "Dalteparin",
+    name_en: "Dalteparin",
+    category: "antikoagulan",
+    default_dose: "100 IU/kg SC 2x/gün veya 200 IU/kg SC 1x/gün",
+  },
+  protamin: {
+    id: "protamin",
+    name_tr: "Protamin Sülfat",
+    name_en: "Protamine Sulfate",
+    category: "antidot",
+    default_dose: "1 mg / 100 IU heparin IV yavaş (max 50 mg)",
+  },
+  tdp: {
+    id: "tdp",
+    name_tr: "Taze Donmuş Plazma (TDP)",
+    name_en: "Fresh Frozen Plasma",
+    category: "sıvı",
+    default_dose: "10-15 mL/kg IV",
+  },
+
+  // ========================================================
+  // ANTİEPİLEPTİK (Faz 2)
+  // ========================================================
+  levetirasetam: {
+    id: "levetirasetam",
+    name_tr: "Levetirasetam",
+    name_en: "Levetiracetam",
+    category: "antiepileptik",
+    default_dose: "1000-3000 mg IV (15 dk infüzyon)",
+  },
+  valproat: {
+    id: "valproat",
+    name_tr: "Valproik Asit IV",
+    name_en: "Valproate",
+    category: "antiepileptik",
+    default_dose: "25-40 mg/kg IV (5-10 dk, maks 3 g)",
+  },
+  fenitoin: {
+    id: "fenitoin",
+    name_tr: "Fenitoin",
+    name_en: "Phenytoin",
+    category: "antiepileptik",
+    default_dose: "15-20 mg/kg IV (50 mg/dk'dan yavaş)",
+  },
+
+  // ========================================================
+  // DİĞER KRİTİK (Faz 2)
+  // ========================================================
+  n_asetilsistein: {
+    id: "n_asetilsistein",
+    name_tr: "N-Asetilsistein",
+    name_en: "N-Acetylcysteine",
+    category: "antidot",
+    default_dose: "150 mg/kg IV 15 dk + 50 mg/kg 4 saat + 100 mg/kg 16 saat",
+  },
+
+  // ========================================================
   // ANTİDOTLAR + DİĞER KRİTİK (4) — Hafta 2 eklendi
   // ========================================================
   naloksan: {

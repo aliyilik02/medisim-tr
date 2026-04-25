@@ -2183,6 +2183,554 @@ export const EXTENDED_MEDICATIONS: Record<string, ExtendedMedication> = {
     ],
   },
 
+  // ========================================================
+  // FAZ 2 — SİPROFLOKSASİN Extended (önceden medications.ts'de vardı)
+  // ========================================================
+  siprofloksasin: {
+    id: "siprofloksasin",
+    dose_band: {
+      default_dose: 400,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.25,
+      under_dose_penalty: -3,
+      over_dose_penalty: -3,
+    },
+    timing: { onset_sec: 1800, peak_min: 60, duration_min: 720 },  // 12 saat
+    vitals: {},
+    modifiers: {
+      bobrek_yetm: 0.5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "uzun QT" },
+        severity: "orta",
+        effect: "QT_uzamasi",
+        penalty: -10,
+        message: "Florokinolon + uzun QT → Torsades riski.",
+        feedback: "EKG takibi gerekli. Elektrolit dengesizliği eşlik ediyorsa risk artar.",
+      },
+      {
+        trigger: { kind: "allergy", keyword: "florokinolon" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Florokinolon alerjisi — kontrendike.",
+        feedback: "Sınıf içi çapraz reaktivite olabilir.",
+        antidotes: ["adrenalin"],
+      },
+    ],
+  },
+
+  // ========================================================
+  // FAZ 2 — YENİ İLAÇLAR (17)
+  // Ref: EUCAST/IDSA antibiyotik, UpToDate, ESC, ADA 2024
+  // ========================================================
+
+  // ---------- ANTİBİYOTİK (7) ----------
+  sefepim: {
+    id: "sefepim",
+    dose_band: {
+      default_dose: 2000,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.0,
+      under_dose_penalty: -3,
+      over_dose_penalty: -2,
+    },
+    timing: { onset_sec: 1800, peak_min: 30, duration_min: 480 },  // 8 saat
+    vitals: {},
+    modifiers: { bobrek_yetm: 0.5 },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "sefalosporin" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Sefalosporin alerjisi — sefepim kontrendike.",
+        feedback: "Meropenem güvenli alternatif (düşük çapraz reaktivite).",
+        antidotes: ["adrenalin", "difenhidramin", "hidrokortizon"],
+      },
+      {
+        trigger: { kind: "history", keyword: "epilepsi" },
+        severity: "uyari",
+        effect: "nöbet_eşiği",
+        penalty: -5,
+        message: "Sefepim nöbet eşiğini düşürebilir, özellikle böbrek yetmezliğinde.",
+        feedback: "Doz ayarı yapın, nörolojik izlem artırın.",
+      },
+    ],
+  },
+
+  levofloksasin: {
+    id: "levofloksasin",
+    dose_band: {
+      default_dose: 500,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,  // 250 mg de kabul (hafif)
+      band_upper_pct: 1.5,  // 750 mg de kabul (ağır)
+      under_dose_penalty: -3,
+      over_dose_penalty: -3,
+    },
+    timing: { onset_sec: 1800, peak_min: 60, duration_min: 1440 },  // 24 saat
+    vitals: {},
+    modifiers: { bobrek_yetm: 0.5 },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "uzun QT" },
+        severity: "orta",
+        effect: "QT_uzamasi",
+        penalty: -10,
+        message: "Florokinolon + uzun QT sendromu → Torsades riski.",
+        feedback: "EKG ve elektrolit takibi yapın.",
+      },
+      {
+        trigger: { kind: "modifier", modifier: "gebelik" },
+        severity: "kritik",
+        effect: "fetal_kıkırdak_hasarı",
+        penalty: -20,
+        message: "Florokinolonlar gebelikte kontrendike.",
+        feedback: "Güvenli alternatif: beta-laktam seçin.",
+      },
+    ],
+  },
+
+  klindamisin: {
+    id: "klindamisin",
+    dose_band: {
+      default_dose: 600,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.5,  // 900 mg de kabul
+      under_dose_penalty: -3,
+      over_dose_penalty: -3,
+    },
+    timing: { onset_sec: 1800, peak_min: 30, duration_min: 480 },
+    vitals: {},
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "C. difficile" },
+        severity: "kritik",
+        effect: "kolitis_alevlenme",
+        penalty: -20,
+        grace_sec: 90,
+        message: "C. difficile infeksiyonu öyküsü — klindamisin kontrendike!",
+        feedback: "Klindamisin Clostridioides difficile kolitis riskini dramatik artırır.",
+      },
+    ],
+  },
+
+  metronidazol: {
+    id: "metronidazol",
+    dose_band: {
+      default_dose: 500,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.6,
+      band_upper_pct: 1.0,
+      under_dose_penalty: -3,
+      over_dose_penalty: -3,
+    },
+    timing: { onset_sec: 1800, peak_min: 60, duration_min: 480 },
+    vitals: {},
+    modifiers: { karaciger_yetm: 0.5 },
+    contraindications: [
+      {
+        trigger: { kind: "modifier", modifier: "gebelik" },
+        severity: "orta",
+        effect: "1_trimester_risk",
+        penalty: -10,
+        message: "İlk trimesterde metronidazol dikkatli — teorik teratojenisite.",
+        feedback: "2-3. trimesterde veya hayat kurtarıcı durumda kullanılabilir.",
+      },
+    ],
+  },
+
+  asiklovir: {
+    id: "asiklovir",
+    dose_band: {
+      default_dose: 10,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.5,   // 5 mg/kg immunsüpresyon/Zoster
+      band_upper_pct: 1.0,
+      under_dose_penalty: -5,  // HSV ensefaliti — doz kritik
+      over_dose_penalty: -5,
+    },
+    timing: { onset_sec: 3600, peak_min: 120, duration_min: 480 },  // 8 saat
+    vitals: {},
+    modifiers: { bobrek_yetm: 0.4 },
+    contraindications: [
+      {
+        trigger: { kind: "modifier", modifier: "bobrek_yetm" },
+        severity: "orta",
+        effect: "nefrotoksisite",
+        penalty: -10,
+        message: "Böbrek yetmezliğinde asiklovir kristal nefropati yapabilir.",
+        feedback: "Doz ayarla, hidrasyon sağla (min 100 mL/saat).",
+      },
+    ],
+  },
+
+  oseltamivir: {
+    id: "oseltamivir",
+    dose_band: {
+      default_dose: 75,
+      dose_unit: "mg",
+      dose_route: "PO",
+      band_lower_pct: 0.5,  // pediatrik 30-45 mg de kabul
+      band_upper_pct: 2.0,  // 150 mg ağır/immünosüprese
+      under_dose_penalty: -3,
+      over_dose_penalty: -2,
+    },
+    timing: { onset_sec: 7200, peak_min: 360, duration_min: 720 },
+    vitals: { temp_range: [-0.5, 0] },  // Ateş hafif iner zamanla
+    modifiers: { bobrek_yetm: 0.5 },
+    contraindications: [],
+  },
+
+  seftazidim: {
+    id: "seftazidim",
+    dose_band: {
+      default_dose: 2000,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.0,
+      under_dose_penalty: -3,
+      over_dose_penalty: -2,
+    },
+    timing: { onset_sec: 1800, peak_min: 30, duration_min: 480 },
+    vitals: {},
+    modifiers: { bobrek_yetm: 0.5 },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "sefalosporin" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Sefalosporin alerjisi — kontrendike.",
+        feedback: "Meropenem veya aztreonam alternatif.",
+        antidotes: ["adrenalin", "difenhidramin", "hidrokortizon"],
+      },
+    ],
+  },
+
+  // ---------- ENDOKRİN (2) ----------
+  glukagon: {
+    id: "glukagon",
+    vitals: {
+      hr_range: [10, 20],     // Pozitif inotropik/kronotropik etki
+      sbp_range: [5, 15],
+      glucose_range: [30, 80], // Glukojen yıkımı → glukoz artışı
+    },
+    timing: { onset_sec: 60, peak_min: 10, duration_min: 30 },
+    dose_band: {
+      default_dose: 1,
+      dose_unit: "mg",
+      dose_route: "IM",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.0,
+      under_dose_penalty: -3,
+      over_dose_penalty: -5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "feokromasitoma" },
+        severity: "kritik",
+        effect: "hipertansif_kriz",
+        effect_vitals: { sbp_range: [30, 60] },
+        penalty: -25,
+        grace_sec: 60,
+        message: "Feokromasitomada glukagon = hipertansif kriz riski!",
+        feedback: "Katekolamin salınımını uyarabilir.",
+      },
+      {
+        trigger: { kind: "history", keyword: "insulinoma" },
+        severity: "orta",
+        effect: "rebound_hipoglisemi",
+        penalty: -10,
+        message: "İnsülinomada glukagon: geçici etki, ardından rebound hipoglisemi.",
+        feedback: "Parenteral glukoz replasmanı mutlaka hazır.",
+      },
+    ],
+  },
+
+  oktreotid: {
+    id: "oktreotid",
+    vitals: {
+      hr_range: [-5, -2],
+      sbp_range: [-5, 0],
+    },
+    timing: { onset_sec: 300, peak_min: 30, duration_min: 240 },
+    dose_band: {
+      default_dose: 50,
+      dose_unit: "mcg",
+      dose_route: "SC",
+      band_lower_pct: 0.5,
+      band_upper_pct: 2.0,  // İnfüzyonda 25-50 mcg/saat
+      under_dose_penalty: -3,
+      over_dose_penalty: -5,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "vital", param: "glucose", op: "<", value: 70 },
+        severity: "uyari",
+        effect: "hipoglisemi_uzama",
+        penalty: -5,
+        message: "Oktreotid insülin supresyonu yapar — hipoglisemiyi uzatabilir.",
+        feedback: "Sülfonilüre overdoz dışında hipoglisemide dikkat.",
+      },
+    ],
+  },
+
+  // ---------- ANTİKOAGÜLAN EK (2) ----------
+  dalteparin: {
+    id: "dalteparin",
+    vitals: {},
+    timing: { onset_sec: 3600, peak_min: 240, duration_min: 1440 },  // 24 saat (günde bir)
+    dose_band: {
+      default_dose: 100,
+      dose_unit: "IU",
+      dose_route: "SC",
+      weight_based: true,
+      band_lower_pct: 0.8,
+      band_upper_pct: 2.0,  // 200 IU/kg günde bir
+      under_dose_penalty: -5,
+      over_dose_penalty: -5,
+    },
+    modifiers: {
+      bobrek_yetm: 0.4,
+      yasli_70plus: 0.8,
+    },
+    contraindications: [
+      CONTRA_AKTIF_KANAMA,
+      {
+        trigger: { kind: "modifier", modifier: "bobrek_yetm" },
+        severity: "orta",
+        effect: "birikme_riski",
+        penalty: -10,
+        message: "Böbrek yetmezliğinde LMWH birikim riski — anti-Xa izle.",
+        feedback: "GFR<30'da fraksiyone olmayan heparine geç.",
+      },
+    ],
+  },
+
+  protamin: {
+    id: "protamin",
+    vitals: {
+      hr_range: [-10, 0],
+      sbp_range: [-15, -5],  // Hipotansiyon yapabilir (özellikle hızlı IV'de)
+    },
+    timing: { onset_sec: 60, peak_min: 5, duration_min: 60 },
+    dose_band: {
+      default_dose: 1,   // 1 mg / 100 IU heparin
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.0,
+      under_dose_penalty: -5,  // Yetersiz nötralizasyon
+      over_dose_penalty: -8,   // Paradoksik antikoagulan etki
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "protamin" },
+        severity: "kritik",
+        effect: "anafilaksi",
+        penalty: -25,
+        grace_sec: 60,
+        message: "Protamin alerjisi (balık alerjisi veya önceki maruziyette risk artar).",
+        feedback: "Anafilaktik reaksiyon %2-3 sıklıkta. Adrenalin hazır tut.",
+        antidotes: ["adrenalin"],
+      },
+      {
+        trigger: { kind: "history", keyword: "balık alerjisi" },
+        severity: "orta",
+        effect: "alerjik_reaksiyon",
+        penalty: -10,
+        message: "Balık alerjisi protamin riskini artırır.",
+        feedback: "Yavaş infüzyon + antihistaminik premedikasyon.",
+      },
+    ],
+  },
+
+  // ---------- TDP (kan ürünü olarak sıvı) ----------
+  tdp: {
+    id: "tdp",
+    vitals: {
+      sbp_range: [5, 15],  // Preload artışı
+    },
+    timing: { onset_sec: 1800, peak_min: 60, duration_min: 480 },
+    dose_band: {
+      default_dose: 12,    // 12 mL/kg standart
+      dose_unit: "mL",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.5,
+      under_dose_penalty: -3,
+      over_dose_penalty: -3,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "history", keyword: "kalp yetmezligi" },
+        severity: "orta",
+        effect: "sıvı_yüklenme",
+        penalty: -8,
+        message: "Kalp yetmezliğinde TDP ile sıvı yüklenme riski.",
+        feedback: "Hız kontrolü yapın, diüretik hazır.",
+      },
+    ],
+  },
+
+  // ---------- ANTİEPİLEPTİK (3) ----------
+  levetirasetam: {
+    id: "levetirasetam",
+    vitals: {},
+    timing: { onset_sec: 900, peak_min: 60, duration_min: 720 },  // 12 saat
+    dose_band: {
+      default_dose: 1000,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      band_lower_pct: 0.5,
+      band_upper_pct: 3.0,  // 3000 mg max yükleme
+      under_dose_penalty: -3,
+      over_dose_penalty: -5,
+    },
+    modifiers: { bobrek_yetm: 0.5 },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "levetirasetam" },
+        severity: "kritik",
+        effect: "alerjik_reaksiyon",
+        penalty: -15,
+        message: "Levetirasetam alerjisi.",
+        feedback: "Valproat veya fenitoin alternatif.",
+        antidotes: ["adrenalin"],
+      },
+    ],
+  },
+
+  valproat: {
+    id: "valproat",
+    vitals: {},
+    timing: { onset_sec: 600, peak_min: 30, duration_min: 720 },
+    dose_band: {
+      default_dose: 30,    // 30 mg/kg yükleme
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.5,
+      band_upper_pct: 1.33,  // 40 mg/kg max
+      under_dose_penalty: -3,
+      over_dose_penalty: -8,
+    },
+    modifiers: { karaciger_yetm: 0.4 },
+    contraindications: [
+      {
+        trigger: { kind: "modifier", modifier: "gebelik" },
+        severity: "kritik",
+        effect: "nöral_tüp_defekti",
+        penalty: -20,
+        message: "Gebelikte valproat — nöral tüp defekti, kognitif bozukluk riski.",
+        feedback: "Lamotrijin veya levetirasetam tercih edilmeli.",
+      },
+      {
+        trigger: { kind: "history", keyword: "karaciger yetmezligi" },
+        severity: "kritik",
+        effect: "hepatotoksisite",
+        penalty: -20,
+        message: "Karaciğer yetmezliğinde valproat hepatotoksisite riski!",
+        feedback: "Serum valproat düzeyi + karaciğer enzimleri takip edin.",
+      },
+    ],
+  },
+
+  fenitoin: {
+    id: "fenitoin",
+    ecg_effect: {
+      qrs_duration_ms: 20,   // QRS hafif geniş (kardiyotoksisite işareti)
+      qt_interval_ms: 30,    // QT uzama
+    },
+    vitals: {
+      hr_range: [-10, 0],
+      sbp_range: [-15, -5],  // Hızlı IV'de hipotansiyon
+    },
+    timing: { onset_sec: 600, peak_min: 30, duration_min: 1440 },
+    dose_band: {
+      default_dose: 15,
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.8,
+      band_upper_pct: 1.33,  // 20 mg/kg
+      under_dose_penalty: -5,
+      over_dose_penalty: -10,
+    },
+    modifiers: {
+      karaciger_yetm: 0.5,
+      bobrek_yetm: 0.7,
+      yasli_70plus: 0.7,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "vital", param: "bp_systolic", op: "<", value: 90 },
+        severity: "kritik",
+        effect: "kardiyak_depresyon",
+        effect_vitals: { sbp_range: [-20, -10], hr_range: [-15, -8] },
+        penalty: -20,
+        grace_sec: 60,
+        message: "Hipotansiyonda fenitoin = kardiyak çöküş! Hız azalt vedur.",
+        feedback: "Max 50 mg/dk IV. Hipotansif hastada çok tehlikeli.",
+        antidotes: ["noradrenalin"],
+      },
+      {
+        trigger: { kind: "history", keyword: "WPW" },
+        severity: "kritik",
+        effect: "VT_riski",
+        penalty: -20,
+        message: "WPW sendromunda fenitoin — kontrendike.",
+        feedback: "Aksesuar yolu hızlandırabilir.",
+      },
+    ],
+  },
+
+  // ---------- ANTİDOT EK (1) ----------
+  n_asetilsistein: {
+    id: "n_asetilsistein",
+    vitals: {},
+    timing: { onset_sec: 900, peak_min: 60, duration_min: 1440 },
+    dose_band: {
+      default_dose: 150,   // Yükleme 150 mg/kg 15 dk
+      dose_unit: "mg",
+      dose_route: "IV_infusion",
+      weight_based: true,
+      band_lower_pct: 0.8,
+      band_upper_pct: 1.2,
+      under_dose_penalty: -5,
+      over_dose_penalty: -3,
+    },
+    contraindications: [
+      {
+        trigger: { kind: "allergy", keyword: "n-asetilsistein" },
+        severity: "orta",
+        effect: "anafilaktoid_reaksiyon",
+        effect_vitals: { hr_range: [10, 20], sbp_range: [-10, -5] },
+        penalty: -8,
+        message: "N-Asetilsistein anafilaktoid reaksiyona yol açabilir (özellikle hızlı yükleme).",
+        feedback: "Yükleme dozunu yavaşlat, antihistaminik ver; benefit-risk parasetamol toksisitesinde lehine.",
+      },
+    ],
+  },
+
   prednisolon: {
     id: "prednisolon",
     // Metilprednizolon olarak kullanılıyor katalogda (id: "prednisolon")

@@ -751,7 +751,7 @@ function OutcomeEditor({
                 value={
                   outcome.vitals_change !== undefined &&
                   outcome.vitals_change[k] !== undefined
-                    ? outcome.vitals_change[k]
+                    ? (outcome.vitals_change[k] as number)
                     : ""
                 }
                 onChange={(e) => handleVitalChange(k, e.target.value)}
