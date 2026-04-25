@@ -176,22 +176,6 @@ export const scenario_dka: Scenario = {
             "Doğru — potasyum replasmanı ayrı bir damardan verilirse güvenli (ISPAD önerisi).",
           min_difficulty: 3,
         },
-        // Öglisemik DKA uyarısı — S4
-        {
-          action: { type: "examine", target_id: "sgltz_sorgula" },
-          points: 12,
-          feedback:
-            "Doğru — SGLT2 inhibitörü kullanımı sorgulandı. Öglisemik DKA ayırıcı için kritik.",
-          min_difficulty: 4,
-        },
-        // Ateş ölçümü — USYE tetikleyicisi (S3+)
-        {
-          action: { type: "examine", target_id: "ates_olcum" },
-          points: 6,
-          feedback:
-            "Doğru — ateş 37.8°C, viral USYE öyküsü doğrulanıyor. Tetikleyici taraması gerekecek.",
-          min_difficulty: 3,
-        },
       ],
       default_wrong_penalty: -5,
       default_wrong_feedback:
@@ -504,14 +488,6 @@ export const scenario_dka: Scenario = {
             "HATA — insülini kesmek = ketonlar devam, DKA çözülmez. Dozu azalt, kesme.",
           critical: true,
         },
-        // S4 için serebral ödem uyarısı
-        {
-          action: { type: "examine", target_id: "gks_kontrol" },
-          points: 10,
-          feedback:
-            "Doğru — tedavi sırasında bilinç değişimi serebral ödem işareti olabilir (özellikle pediatride). Mannitol hazır tutulmalı.",
-          min_difficulty: 4,
-        },
         // Glukoz düşüş hızı kontrolü (S4)
         {
           action: { type: "decision", target_id: "glukoz_dusus_hizi_kontrol" },
@@ -711,13 +687,13 @@ export const scenario_dka: Scenario = {
   ],
 
   scoring: {
-    max_points: 220,
-    passing_score: 130,
+    max_points: 192,
+    passing_score: 114,
     grade_bands: {
-      A: 195,
-      B: 165,
-      C: 140,
-      D: 110,
+      A: 170,
+      B: 144,
+      C: 122,
+      D: 96,
     },
   },
 
