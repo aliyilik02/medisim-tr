@@ -369,21 +369,17 @@ export function ScenarioPlayPage() {
   };
 
   // Lab ısmarlandığında: önce skor (eğer bu step'te order_test outcome varsa), sonra timer
-  const handleOrderLab = useCallback(
-    (panelId: string) => {
-      if (
-        currentStep.kind === "action" &&
-        currentStep.expected_outcomes.some(
-          (o) => o.action.type === "order_test" && o.action.target_id === panelId
-        )
-      ) {
-        handleAction({ type: "order_test", target_id: panelId });
-      }
-      orderLab(panelId);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentStep, orderLab]
-  );
+  const handleOrderLab = (panelId: string) => {
+    if (
+      currentStep.kind === "action" &&
+      currentStep.expected_outcomes.some(
+        (o) => o.action.type === "order_test" && o.action.target_id === panelId
+      )
+    ) {
+      handleAction({ type: "order_test", target_id: panelId });
+    }
+    orderLab(panelId);
+  };
 
   const handleInfoContinue = () => finishStep(null);
   const handleActionStepContinue = () => finishStep(null);
