@@ -22,11 +22,11 @@ export function renderHeader(doc: jsPDF, data: SectionData, layout: Layout, font
   doc.setTextColor(200, 240, 238);
   doc.text("OTURUM RAPORU", layout.PW - layout.MR, 7.5, { align: "right" });
 
-  // Specialty accent çizgisi (teal bantın altında)
+  // Specialty accent çizgisi (bant altında)
   const lineY = BAND_H + 0.5;
-  doc.setDrawColor(...C.teal);
-  doc.setLineWidth(0.5);
-  doc.line(layout.ML, lineY, layout.PW - layout.MR, lineY);
+  doc.setDrawColor(...data.specialty_accent);
+  doc.setLineWidth(0.6);
+  doc.line(0, lineY, layout.PW, lineY);
 
   // Tarih / protokol satırı
   doc.setFont(fontName, "normal");

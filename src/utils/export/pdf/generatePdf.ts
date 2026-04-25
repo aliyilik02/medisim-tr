@@ -3,6 +3,7 @@ import type { SavedSession, SessionSnapshot, ScenarioSnapshot } from "@/storage/
 import { PAGE } from "./layout";
 import { registerFont } from "./fonts";
 import { drawPageBg } from "./primitives/page";
+import { specialtyAccent } from "./colors";
 import { renderHeader } from "./sections/headerSection";
 import { renderSummary } from "./sections/summarySection";
 import { renderScore } from "./sections/scoreSection";
@@ -10,6 +11,8 @@ import { renderStepsSummaryTable } from "./sections/stepsSummaryTable";
 import { renderActionsSection } from "./sections/actionsSection";
 import { renderDebriefSection } from "./sections/debriefSection";
 import { renderAllFooters } from "./sections/footerSection";
+import { renderTopInsights } from "./sections/topInsights";
+import { renderPerformanceTimeline } from "./sections/performanceTimeline";
 
 // ── Paylaşılan veri tipi — tüm section fonksiyonlarının argümanı ──
 
@@ -26,6 +29,7 @@ export interface SectionData {
   timeStr:      string;
   selected_difficulty: import("@/engine/types").Difficulty;
   is_abandoned: boolean;
+  specialty_accent: import("./colors").RGB;
 }
 
 function buildSectionData(saved: SavedSession): SectionData {
@@ -64,6 +68,7 @@ function buildSectionData(saved: SavedSession): SectionData {
     timeStr:             `${p(d.getHours())}:${p(d.getMinutes())}`,
     selected_difficulty: session.selected_difficulty,
     is_abandoned:        isAbandoned,
+    specialty_accent:    specialtyAccent(scenario.specialty),
   };
 }
 
@@ -81,11 +86,13 @@ export async function generatePdfReport(savedSession: SavedSession): Promise<Blo
   let y = renderHeader(doc, data, layout, fn);
   y = renderSummary(doc, data, layout, fn, y);
   y = renderScore(doc, data, layout, fn, y);
+  y = renderTopInsights(doc, data, layout, fn, y);
+  y = renderPerformanceTimeline(doc, data, layout, fn, y);
   y = renderStepsSummaryTable(doc, data, layout, fn, y);
   y = renderActionsSection(doc, data, layout, fn, y);
   y = renderDebriefSection(doc, data, layout, fn, y);
 
-  renderAllFooters(doc, layout, fn);
+  renderAllFooters(doc, layout, fn, data.specialty_accent);
 
   return doc.output("blob");
 }

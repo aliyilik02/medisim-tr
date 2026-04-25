@@ -1,14 +1,15 @@
 import type { jsPDF } from "jspdf";
-import { C } from "../colors";
+import { C, type RGB } from "../colors";
 import type { Layout } from "../layout";
 
-export function renderAllFooters(doc: jsPDF, layout: Layout, fontName: string) {
+export function renderAllFooters(doc: jsPDF, layout: Layout, fontName: string, accent?: RGB) {
+  const accentColor = accent ?? C.teal;
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
 
-    // Teal üst çizgi
-    doc.setDrawColor(...C.teal);
+    // Specialty accent üst çizgi
+    doc.setDrawColor(...accentColor);
     doc.setLineWidth(0.3);
     doc.line(layout.ML, layout.PH - 12, layout.PW - layout.MR, layout.PH - 12);
 

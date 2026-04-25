@@ -1,5 +1,21 @@
 export type RGB = [number, number, number];
 
+// Specialty'ye göre PDF header/footer accent rengi
+export function specialtyAccent(specialty: string): RGB {
+  const map: Record<string, RGB> = {
+    kardiyoloji:   [15,  118, 110],  // teal (brand)
+    acil:          [220,  38,  38],  // kırmızı
+    dahiliye:      [8,  145, 178],   // cam göbeği
+    pediatri:      [234, 88,  12],   // turuncu
+    cerrahi:       [107, 114, 128],  // nötr gri
+    anestezi:      [88,  28, 135],   // mor
+    kadin_dogum:   [168,  85, 247],  // lavanta-mor
+    hemsirelik:    [22,  163,  74],  // yeşil
+    askeri_tccc:   [101, 163,  13],  // askeri yeşil
+  };
+  return map[specialty] ?? [15, 118, 110];
+}
+
 export const C = {
   teal:       [15,  118, 110] as RGB,   // #0f766e brand accent
   tealDark:   [10,   79,  73] as RGB,
