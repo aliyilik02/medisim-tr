@@ -81,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/scripts/post-write-notify.cjs"
+            "command": "node .claude/scripts/post-write-notify.js"
           }
         ]
       }
@@ -92,7 +92,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/scripts/pre-bash-guard.cjs"
+            "command": "node .claude/scripts/pre-bash-guard.js"
           }
         ]
       }

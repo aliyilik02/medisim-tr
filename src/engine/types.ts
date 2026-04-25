@@ -293,6 +293,22 @@ export interface LabTimelineEntry {
   trigger_step_id?: string;
 }
 
+// Görüntüleme tetkiki sonucu (röntgen, BT, US, EKO)
+export type ImagingModality = "xray" | "ct" | "mri" | "us" | "echo" | "ekg" | "other";
+
+export interface ImagingResult {
+  id: string;                        // Equipment ID ile eşleşmeli
+  name_tr: string;                   // "PA Akciğer Grafisi"
+  modality: ImagingModality;
+  view?: string;                     // "PA", "Lateral", "Aksiyel T0", vb.
+  image_url?: string;                // Görüntü URL'si (harici veya data URI)
+  thumbnail_url?: string;            // Önizleme için küçük boyut
+  interpretation: string;            // Radyolog/klinisyen yorumu
+  findings?: string[];               // Spesifik bulgular listesi
+  timestamp_min?: number;            // Senaryo başından kaç dk sonra çekildi
+  attribution?: string;              // Görüntü kaynağı (Wikimedia, özel, vb.)
+}
+
 // ------------------------------------------------------------
 // 3D Sahne Tanımı (ileride dolacak)
 // ------------------------------------------------------------
@@ -401,11 +417,10 @@ export interface Scenario {
 
   // Faz 3 — Lab/Tetkik sistemi (tümü opsiyonel — eski senaryolar bunlar olmadan çalışır)
   lab_panels?: Record<string, LabPanel>;
-  // Initial lab değerleri. Key = equipment id → o tetkik istendiğinde döner
   lab_timeline?: LabTimelineEntry[];
-  // Zamanla değişen lab sonuçları (tedaviye bağlı progresyon)
   result_delay_seconds?: Record<string, number>;
-  // Tetkik istenince sonuç gelmesi için bekleme süresi (default: 5sn)
+  // Görüntüleme sonuçları. Key = equipment id → tetkik istendiğinde döner
+  imaging_results?: Record<string, ImagingResult>;
 
   // 3D (opsiyonel)
   scene?: SceneConfig;

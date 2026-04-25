@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// PostToolUse hook — Write/Edit sonrası senaryo dosyası değişikliğini bildirir.
-// stdin'den JSON okur (fd 0 = platform-agnostic), /dev/stdin Windows'ta çalışmaz.
+// PostToolUse — Write/Edit sonrası senaryo değişikliği bildirimi.
+// ES module (package.json "type":"module" uyumlu).
 
-const raw = require("fs").readFileSync(0, "utf8");
+import { readFileSync } from "fs";
+
+const raw = readFileSync(0, "utf8");
 
 let input;
 try {
