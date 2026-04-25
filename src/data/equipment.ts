@@ -1,3 +1,10 @@
+// v2 (2026-04-25) — Katalog genişletme:
+// + 10 laboratuvar item (TKS, CRP, troponin, BNP, BHB vb.)
+// + 4 görüntüleme item (PA grafi, kraniyal BT, toraks CTA, EKO)
+// + 2 havayolu (nazal kanül, HFNC)
+// + 2 damar yolu (22G, 24G)
+// + 2 cerrahi (torasentez, pediatrik LP)
+// Toplam: 51 → 71. Yeni kategoriler: laboratuvar, goruntuleme.
 import type { Equipment } from "@/engine";
 
 export const EQUIPMENT: Record<string, Equipment> = {
@@ -175,6 +182,16 @@ export const EQUIPMENT: Record<string, Equipment> = {
   // ========================================================
 
   // --- Havayolu (ek) ---
+  nazal_kanul: {
+    id: "nazal_kanul",
+    name_tr: "Nazal Kanül (1-6 L/dk)",
+    category: "havayolu",
+  },
+  hfnc: {
+    id: "hfnc",
+    name_tr: "Yüksek Akımlı Nazal Kanül (HFNC)",
+    category: "havayolu",
+  },
   bvm_pediatrik: {
     id: "bvm_pediatrik",
     name_tr: "Pediatrik Balon-Valf-Maske",
@@ -224,6 +241,16 @@ export const EQUIPMENT: Record<string, Equipment> = {
   },
 
   // --- Damar yolu / İnfüzyon ---
+  iv_kateter_22g: {
+    id: "iv_kateter_22g",
+    name_tr: "22G IV Kateter",
+    category: "damar_yolu",
+  },
+  iv_kateter_24g: {
+    id: "iv_kateter_24g",
+    name_tr: "24G IV Kateter (Pediatrik)",
+    category: "damar_yolu",
+  },
   pediatrik_io_seti: {
     id: "pediatrik_io_seti",
     name_tr: "Pediatrik İntraosseöz Seti (EZ-IO)",
@@ -261,6 +288,16 @@ export const EQUIPMENT: Record<string, Equipment> = {
     name_tr: "Lomber Ponksiyon Seti",
     category: "cerrahi",
   },
+  torasentez_seti: {
+    id: "torasentez_seti",
+    name_tr: "Torasentez Seti",
+    category: "cerrahi",
+  },
+  lp_iglesi_pediatrik: {
+    id: "lp_iglesi_pediatrik",
+    name_tr: "Pediatrik Lomber Ponksiyon Seti",
+    category: "cerrahi",
+  },
 
   // --- Elektrofizyoloji / Kardiyak ---
   pediatrik_def_padleri: {
@@ -272,6 +309,80 @@ export const EQUIPMENT: Record<string, Equipment> = {
     id: "transkutan_pacemaker",
     name_tr: "Transkütan Geçici Kalp Pili",
     category: "defibrilasyon",
+  },
+
+  // --- Laboratuvar ---
+  tam_kan_sayimi: {
+    id: "tam_kan_sayimi",
+    name_tr: "Tam Kan Sayımı (TKS)",
+    category: "laboratuvar",
+  },
+  crp: {
+    id: "crp",
+    name_tr: "C-Reaktif Protein (CRP)",
+    category: "laboratuvar",
+  },
+  prokalsitonin: {
+    id: "prokalsitonin",
+    name_tr: "Prokalsitonin (PCT)",
+    category: "laboratuvar",
+  },
+  troponin_i: {
+    id: "troponin_i",
+    name_tr: "Yüksek Duyarlıklı Troponin I (hs-cTnI)",
+    category: "laboratuvar",
+  },
+  bnp: {
+    id: "bnp",
+    name_tr: "NT-proBNP",
+    category: "laboratuvar",
+  },
+  d_dimer: {
+    id: "d_dimer",
+    name_tr: "D-Dimer",
+    category: "laboratuvar",
+  },
+  laktat: {
+    id: "laktat",
+    name_tr: "Kan Laktatı",
+    category: "laboratuvar",
+  },
+  idrar_tahlili: {
+    id: "idrar_tahlili",
+    name_tr: "Tam İdrar Tahlili (TİT)",
+    category: "laboratuvar",
+  },
+  beta_hidroksibutirat: {
+    id: "beta_hidroksibutirat",
+    name_tr: "Kanda β-Hidroksibütirat (BHB)",
+    category: "laboratuvar",
+  },
+  kan_kulturu: {
+    id: "kan_kulturu",
+    name_tr: "Kan Kültürü (Aerobik + Anaerobik)",
+    category: "laboratuvar",
+  },
+
+  // --- Görüntüleme ---
+  akciger_grafisi: {
+    id: "akciger_grafisi",
+    name_tr: "PA Akciğer Grafisi",
+    category: "goruntuleme",
+  },
+  bt_kraniyal: {
+    id: "bt_kraniyal",
+    name_tr: "Kontrastsız Kraniyal BT",
+    category: "goruntuleme",
+  },
+  bt_toraks_anjio: {
+    id: "bt_toraks_anjio",
+    name_tr: "Toraks BT Anjiyografi (CTA)",
+    category: "goruntuleme",
+  },
+  ekokardiyografi: {
+    id: "ekokardiyografi",
+    name_tr: "Yatak Başı Ekokardiyografi (TTE)",
+    category: "goruntuleme",
   },
 
   // --- Termoregülasyon ---

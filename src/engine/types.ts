@@ -90,7 +90,8 @@ export interface Equipment {
   name_tr: string;
   icon?: string;
   category: "monitorizasyon" | "havayolu" | "damar_yolu"
-           | "defibrilasyon" | "cerrahi" | "koruyucu" | "diğer";
+           | "defibrilasyon" | "cerrahi" | "koruyucu"
+           | "laboratuvar" | "goruntuleme" | "diğer";
 }
 
 // ------------------------------------------------------------

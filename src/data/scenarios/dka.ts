@@ -113,8 +113,7 @@ export const scenario_dka: Scenario = {
     "ng_sonda",
     "foley_sonda",
     "stetoskop",
-    // Tetikleyici workup examine hedefleri (S2.5)
-    // equipment.ts'e eklenmedi — engine freeform target_id olarak kabul eder
+    // Tetikleyici workup (S2.5) — laboratuvar + görüntüleme
     "tam_kan_sayimi",
     "crp",
     "idrar_tahlili",
@@ -279,32 +278,32 @@ export const scenario_dka: Scenario = {
       max_actions: 5,
       expected_outcomes: [
         {
-          action: { type: "examine", target_id: "tam_kan_sayimi" },
+          action: { type: "use_equipment", target_id: "tam_kan_sayimi" },
           points: 8,
           feedback:
             "Doğru — DKA'da BK genelde yüksek (stres + dehidratasyon), >25.000 enfeksiyon lehine.",
         },
         {
-          action: { type: "examine", target_id: "idrar_tahlili" },
+          action: { type: "use_equipment", target_id: "idrar_tahlili" },
           points: 8,
           feedback:
             "Doğru — keton (++), nitrit/lökosit kontrolü için. Üriner enfeksiyon DKA'da sık tetikleyici.",
         },
         {
-          action: { type: "examine", target_id: "akciger_grafisi" },
+          action: { type: "use_equipment", target_id: "akciger_grafisi" },
           points: 8,
           feedback:
             "Doğru — pnömoni ekartasyonu, ayrıca ARDS riski (severe DKA).",
         },
         {
-          action: { type: "examine", target_id: "crp" },
+          action: { type: "use_equipment", target_id: "crp" },
           points: 5,
           feedback:
             "Yararlı — CRP yüksekliği bakteriyel enfeksiyon lehine. Ama spesifik değil.",
           min_difficulty: 3,
         },
         {
-          action: { type: "examine", target_id: "beta_hidroksibutirat" },
+          action: { type: "use_equipment", target_id: "beta_hidroksibutirat" },
           points: 10,
           feedback:
             "Doğru — kanda BHB DKA tanısı + izlem altın standardı. >3.0 mmol/L tanısal, hedef <0.6 mmol/L.",
