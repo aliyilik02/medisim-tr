@@ -205,6 +205,9 @@ export interface ScoringConfig {
     target_seconds: number;
     bonus_points: number;
   };
+  // Toplam puanın düşebileceği alt sınır. Varsayılan: sınır yok (undefined).
+  // Yeni senaryolarda 0 koyun — negatif puan öğrenci motivasyonunu bozar.
+  score_floor?: number;
 }
 
 export interface Debrief {
@@ -342,6 +345,8 @@ export interface SessionState {
   variant_id?: string;                 // Seçili varyant (varsa)
   started_at: number;
   current_step_id: string | null;
+  // "in_progress": oynanıyor | "completed": doğal tamamlandı | "abandoned": kullanıcı erken bitirdi
+  completion_status?: "in_progress" | "completed" | "abandoned";
   completed_step_ids: string[];
 
   // Baseline = ilaçsız "temel" vitaller. Canlı monitör için referans noktası.

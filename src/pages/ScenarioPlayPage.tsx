@@ -127,7 +127,8 @@ export function ScenarioPlayPage() {
     });
     const finalized = finalizeSession(
       { ...session, total_score: session.total_score - 30 },
-      resolvedScenario
+      resolvedScenario,
+      "abandoned"
     );
     setSession(finalized);
   }, [session, resolvedScenario, show]);
@@ -318,7 +319,8 @@ export function ScenarioPlayPage() {
     });
 
     setPointsThisStep(evaluation.points);
-    setTimeout(() => finishStep(null), 1800);
+    // overridePoints ile stale closure sorununu önle
+    setTimeout(() => finishStep(null, evaluation.points), 1800);
   };
 
   // ----- Çoklu karar handler
@@ -350,29 +352,33 @@ export function ScenarioPlayPage() {
     });
 
     setPointsThisStep(evaluation.points);
-    setTimeout(() => finishStep(null), 2200);
+    // overridePoints ile stale closure sorununu önle
+    setTimeout(() => finishStep(null, evaluation.points), 2200);
   };
 
   const handleInfoContinue = () => finishStep(null);
   const handleActionStepContinue = () => finishStep(null);
 
-  const finishStep = (unlockId: string | null) => {
+  // overridePoints: decision step setTimeout'larından geçilir — stale closure sorununu önler
+  const finishStep = (unlockId: string | null, overridePoints?: number) => {
     if (!session || !currentStep) return;
 
     const nextStepId =
       unlockId ??
       pickNextStep(rs, currentStep.id, [], session.selected_difficulty);
 
+    const pts = overridePoints !== undefined ? overridePoints : pointsThisStep;
+
     let newSession = completeStep(
       session,
       currentStep.id,
-      pointsThisStep,
+      pts,
       actionsThisStep,
       criticalErrorsThisStep,
       nextStepId
     );
 
-    if (newSession.finished) newSession = finalizeSession(newSession, rs);
+    if (newSession.finished) newSession = finalizeSession(newSession, rs, "completed");
 
     setSession(newSession);
     setActionsThisStep([]);
@@ -475,6 +481,18 @@ export function ScenarioPlayPage() {
               <span className="text-ink-100 tabular-nums">{session.total_score}</span>
               <span className="text-ink-500">puan</span>
             </div>
+            {/* Erken bitir — abandoned olarak finalizeSession */}
+            <button
+              onClick={() => {
+                if (confirm("Senaryoyu şimdi bitir ve sonuçları gör? (Tamamlanmamış adımlar 0 puan alır)")) {
+                  const finalized = finalizeSession(session, rs, "abandoned");
+                  setSession(finalized);
+                }
+              }}
+              className="text-xs text-ink-500 hover:text-clinical-warning border border-ink-700 hover:border-clinical-warning/50 rounded px-2 py-0.5 transition"
+            >
+              Bitir
+            </button>
           </div>
         </div>
       </div>

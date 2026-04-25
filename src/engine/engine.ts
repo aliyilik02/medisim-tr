@@ -61,6 +61,7 @@ export function startSession(
     results: [],
     total_score: 0,
     finished: false,
+    completion_status: "in_progress",
   };
 }
 
@@ -311,12 +312,18 @@ export function calculateGrade(
 
 export function finalizeSession(
   session: SessionState,
-  scenario: Scenario
+  scenario: Scenario,
+  reason: "completed" | "abandoned" = "completed"
 ): SessionState {
+  // score_floor varsa toplam skoru sınırla
+  const floor = scenario.scoring.score_floor ?? -Infinity;
+  const clampedScore = Math.max(floor, session.total_score);
   return {
     ...session,
     finished: true,
-    grade: calculateGrade(session.total_score, scenario.scoring),
+    total_score: clampedScore,
+    grade: calculateGrade(clampedScore, scenario.scoring),
+    completion_status: reason,
   };
 }
 

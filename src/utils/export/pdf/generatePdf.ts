@@ -16,7 +16,7 @@ import { renderAllFooters } from "./sections/footerSection";
 export interface SectionData {
   session:      SessionSnapshot;
   scenario:     ScenarioSnapshot;
-  grade:        "A" | "B" | "C" | "D" | "F";
+  grade:        "A" | "B" | "C" | "D" | "F" | "—";
   percent:      number;
   passed:       boolean;
   totalSeconds: number;
@@ -24,15 +24,20 @@ export interface SectionData {
   protocol:     string;
   dateStr:      string;
   timeStr:      string;
-  // Aksiyon dogruluk tespiti icin zorluk seviyesi
   selected_difficulty: import("@/engine/types").Difficulty;
+  is_abandoned: boolean;
 }
 
 function buildSectionData(saved: SavedSession): SectionData {
   const { session_snapshot: session, scenario_snapshot: scenario } = saved;
 
-  const percent = Math.round((session.total_score / scenario.scoring.max_points) * 100);
-  const passed  = session.total_score >= scenario.scoring.passing_score;
+  const isAbandoned = (session as { completion_status?: string }).completion_status === "abandoned";
+  // Negatif puan yüzdesi 0'a çekilir
+  const safeScore = Math.max(0, session.total_score);
+  const percent = scenario.scoring.max_points > 0
+    ? Math.round((safeScore / scenario.scoring.max_points) * 100)
+    : 0;
+  const passed  = !isAbandoned && session.total_score >= scenario.scoring.passing_score;
   const totalErrors = session.results.reduce((a, r) => a + r.critical_errors, 0);
 
   const totalSeconds = session.results.length > 0
@@ -49,7 +54,7 @@ function buildSectionData(saved: SavedSession): SectionData {
   return {
     session,
     scenario,
-    grade:               saved.grade,
+    grade:               isAbandoned ? "—" : saved.grade,
     percent,
     passed,
     totalSeconds,
@@ -58,6 +63,7 @@ function buildSectionData(saved: SavedSession): SectionData {
     dateStr:             `${dd}.${mm}.${d.getFullYear()}`,
     timeStr:             `${p(d.getHours())}:${p(d.getMinutes())}`,
     selected_difficulty: session.selected_difficulty,
+    is_abandoned:        isAbandoned,
   };
 }
 

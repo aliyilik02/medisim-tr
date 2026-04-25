@@ -29,6 +29,7 @@ const GRADE_COLORS: Record<string, string> = {
   C: "text-clinical-warning",
   D: "text-orange-400",
   F: "text-clinical-critical",
+  "—": "text-ink-500",
 };
 
 const MODE_LABELS: Record<string, string> = {
@@ -191,9 +192,11 @@ function ScoreBar({
 export function DebriefScreen({ scenario, session, onRestart }: Props) {
   const score = session.total_score;
   const max = scenario.scoring.max_points;
-  const percent = Math.round((score / max) * 100);
-  const grade = session.grade ?? "F";
-  const passed = score >= scenario.scoring.passing_score;
+  // Negatif puan yüzdesi göstermez — floor 0
+  const percent = max > 0 ? Math.round((Math.max(0, score) / max) * 100) : 0;
+  const isAbandoned = session.completion_status === "abandoned";
+  const grade = isAbandoned ? "—" : (session.grade ?? "F");
+  const passed = !isAbandoned && score >= scenario.scoring.passing_score;
   const totalTime = Math.floor((Date.now() - session.started_at) / 1000);
   const totalErrors = session.results.reduce((a, r) => a + r.critical_errors, 0);
   const protocol = protocolId(session);
@@ -264,6 +267,14 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 animate-fade-in">
       <div className="space-y-4">
+
+        {/* ── Yarım oturum uyarısı ── */}
+        {isAbandoned && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-clinical-warning/40 bg-clinical-warning/8 text-sm text-clinical-warning animate-fade-in">
+            <span className="font-mono text-[10px] uppercase tracking-widest shrink-0">Yarım</span>
+            <span>Bu oturum tamamlanmadan sonlandırıldı. Skor yalnızca tamamlanan adımları yansıtır. Harf notu hesaplanmadı.</span>
+          </div>
+        )}
 
         {/* ── Protokol başlığı ── */}
         <div className="panel overflow-hidden">
