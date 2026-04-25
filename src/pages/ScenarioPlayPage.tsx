@@ -481,11 +481,11 @@ export function ScenarioPlayPage() {
               <span className="text-ink-100 tabular-nums">{session.total_score}</span>
               <span className="text-ink-500">puan</span>
             </div>
-            {/* Erken bitir — abandoned olarak finalizeSession */}
+            {/* Erken bitir — partial olarak finalizeSession */}
             <button
               onClick={() => {
                 if (confirm("Senaryoyu şimdi bitir ve sonuçları gör? (Tamamlanmamış adımlar 0 puan alır)")) {
-                  const finalized = finalizeSession(session, rs, "abandoned");
+                  const finalized = finalizeSession(session, rs, "partial");
                   setSession(finalized);
                 }
               }}

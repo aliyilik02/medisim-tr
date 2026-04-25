@@ -26,8 +26,10 @@ export interface SessionSnapshot {
   completed_step_ids: string[];
   results: StepResult[];
   total_score: number;
+  floored_score?: number;
   finished: boolean;
   grade?: "A" | "B" | "C" | "D" | "F";
+  completion_status?: "in_progress" | "completed" | "partial" | "abandoned";
 }
 
 export interface ScenarioSnapshot {
@@ -89,8 +91,10 @@ function slimSession(s: SessionState): SessionSnapshot {
     completed_step_ids: s.completed_step_ids,
     results: s.results,
     total_score: s.total_score,
+    floored_score: s.floored_score,
     finished: s.finished,
     grade: s.grade,
+    completion_status: s.completion_status,
   };
 }
 

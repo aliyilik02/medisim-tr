@@ -39,10 +39,11 @@ function collectInsights(data: SectionData): { errors: Insight[]; wins: Insight[
   });
 
   const sorted = [...all].sort((a, b) => a.points - b.points);
-  return {
-    errors: sorted.slice(0, 3).filter(i => i.points < 0),
-    wins:   sorted.reverse().slice(0, 3).filter(i => i.points > 0),
-  };
+  // Sadece gerçek negatifler hata; düşük pozitifler "hata" sayılmaz
+  const errors = sorted.filter(i => i.points < 0).slice(0, 3);
+  // En iyi aksiyonlar: yüksek pozitifler (10+)
+  const wins = [...sorted].reverse().filter(i => i.points >= 10).slice(0, 3);
+  return { errors, wins };
 }
 
 function insightCard(
@@ -101,7 +102,8 @@ export function renderTopInsights(
   const half = (layout.CW - 4) / 2;
 
   if (errors.length > 0) {
-    insightCard(doc, fontName, layout.ML, y, half, "En Büyük Hatalar", errors, "error");
+    const errTitle = errors.some(i => i.points <= -5) ? "En Büyük Hatalar" : "Iyilestirilebilecek Alanlar";
+    insightCard(doc, fontName, layout.ML, y, half, errTitle, errors, "error");
   }
   if (wins.length > 0) {
     insightCard(doc, fontName, layout.ML + half + 4, y, half, "En İyi Aksiyonlar", wins, "win");

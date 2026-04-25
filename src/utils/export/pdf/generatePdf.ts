@@ -35,13 +35,17 @@ export interface SectionData {
 function buildSectionData(saved: SavedSession): SectionData {
   const { session_snapshot: session, scenario_snapshot: scenario } = saved;
 
-  const isAbandoned = (session as { completion_status?: string }).completion_status === "abandoned";
-  // Negatif puan yüzdesi 0'a çekilir
-  const safeScore = Math.max(0, session.total_score);
+  const completionStatus = (session as { completion_status?: string }).completion_status;
+  const isAbandoned  = completionStatus === "abandoned";
+  const isPartial    = completionStatus === "partial";
+  const isIncomplete = isAbandoned || isPartial;
+  // floored_score: eski snapshotlarda olmayabilir — fallback
+  const safeScore = (session as { floored_score?: number }).floored_score
+    ?? Math.max(0, session.total_score);
   const percent = scenario.scoring.max_points > 0
     ? Math.round((safeScore / scenario.scoring.max_points) * 100)
     : 0;
-  const passed  = !isAbandoned && session.total_score >= scenario.scoring.passing_score;
+  const passed = !isIncomplete && safeScore >= scenario.scoring.passing_score;
   const totalErrors = session.results.reduce((a, r) => a + r.critical_errors, 0);
 
   const totalSeconds = session.results.length > 0
@@ -58,7 +62,7 @@ function buildSectionData(saved: SavedSession): SectionData {
   return {
     session,
     scenario,
-    grade:               isAbandoned ? "—" : saved.grade,
+    grade:               isIncomplete ? "—" : saved.grade,
     percent,
     passed,
     totalSeconds,
@@ -67,7 +71,7 @@ function buildSectionData(saved: SavedSession): SectionData {
     dateStr:             `${dd}.${mm}.${d.getFullYear()}`,
     timeStr:             `${p(d.getHours())}:${p(d.getMinutes())}`,
     selected_difficulty: session.selected_difficulty,
-    is_abandoned:        isAbandoned,
+    is_abandoned:        isIncomplete,
     specialty_accent:    specialtyAccent(scenario.specialty),
   };
 }

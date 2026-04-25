@@ -20,8 +20,10 @@ export async function exportToPdf(session: SessionState, scenario: Scenario): Pr
     completed_step_ids:  session.completed_step_ids,
     results:             session.results,
     total_score:         session.total_score,
+    floored_score:       session.floored_score,
     finished:            session.finished,
     grade:               session.grade,
+    completion_status:   session.completion_status,
   };
 
   const scenSnap = {

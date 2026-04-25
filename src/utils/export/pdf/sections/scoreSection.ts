@@ -78,22 +78,36 @@ export function renderScore(
   const cardH    = COCKPIT_H - 6;
   const cardY    = y + 3;
 
-  // Kart 1: Puan
-  const scoreStr = `${data.session.total_score}`;
-  const subScore = `/ ${data.scenario.scoring.max_points}`;
-  metricCard(doc, fontName, cardsX, cardY, cardW, cardH,
-    "Puan", scoreStr, subScore, data.session.total_score >= 0 ? C.inkDark : C.critical);
+  // floored_score: eski snapshotlarda olmayabilir — fallback
+  const displayScore = (data.session as { floored_score?: number }).floored_score
+    ?? Math.max(0, data.session.total_score);
+  const rawScore = data.session.total_score;
+  const floorApplied = rawScore < 0 && displayScore >= 0;
 
-  // Kart 2: Kritik hata / doğru adım
+  // Kart 1: Puan
+  const scoreStr = `${displayScore}`;
+  const subScore = floorApplied
+    ? `ham: ${rawScore}`
+    : `/ ${data.scenario.scoring.max_points}`;
+  metricCard(doc, fontName, cardsX, cardY, cardW, cardH,
+    "Puan", scoreStr, subScore, C.inkDark);
+
+  // Kart 2: Tamamlanan adımlar (pozitif puan alan)
   const stepsDone  = data.session.results.length;
   const stepsOK    = data.session.results.filter(r => r.points_earned > 0).length;
   const critColor  = data.totalErrors > 0 ? C.critical : C.gradeA;
   metricCard(doc, fontName, cardsX + cardW + cardGap, cardY, cardW, cardH,
     "Adimlar", `${stepsOK}/${stepsDone}`, `${data.totalErrors} kritik`, critColor);
 
-  // Kart 3: Süre
-  const passBanner = data.passed ? "GECTI" : (data.is_abandoned ? "YARIM" : "KALDI");
-  const passColor: [number, number, number] = data.passed ? C.gradeA : (data.is_abandoned ? C.inkMid : C.gradeF);
+  // Kart 3: Süre + sonuç
+  const completionStatus = (data.session as { completion_status?: string }).completion_status;
+  const passBanner = data.passed ? "GECTI"
+    : completionStatus === "partial" ? "YARIM"
+    : completionStatus === "abandoned" ? "DOLDU"
+    : "KALDI";
+  const passColor: [number, number, number] = data.passed ? C.gradeA
+    : (completionStatus === "partial" || completionStatus === "abandoned") ? C.inkMid
+    : C.gradeF;
   metricCard(doc, fontName, cardsX + (cardW + cardGap) * 2, cardY, cardW, cardH,
     "Sure", formatTime(data.totalSeconds), passBanner, passColor);
 

@@ -190,13 +190,17 @@ function ScoreBar({
 // ── Main ──────────────────────────────────────────────────────
 
 export function DebriefScreen({ scenario, session, onRestart }: Props) {
-  const score = session.total_score;
+  // floored_score: finalizeSession tarafından hesaplanır; eski sessionlar için fallback
+  const score = session.floored_score ?? Math.max(0, session.total_score);
+  const rawScore = session.total_score;
+  const floorApplied = rawScore < 0 && score >= 0;
   const max = scenario.scoring.max_points;
-  // Negatif puan yüzdesi göstermez — floor 0
-  const percent = max > 0 ? Math.round((Math.max(0, score) / max) * 100) : 0;
+  const percent = max > 0 ? Math.round((score / max) * 100) : 0;
+  const isPartial = session.completion_status === "partial";
   const isAbandoned = session.completion_status === "abandoned";
-  const grade = isAbandoned ? "—" : (session.grade ?? "F");
-  const passed = !isAbandoned && score >= scenario.scoring.passing_score;
+  const isIncomplete = isPartial || isAbandoned;
+  const grade = isIncomplete ? "—" : (session.grade ?? "F");
+  const passed = !isIncomplete && score >= scenario.scoring.passing_score;
   const totalTime = Math.floor((Date.now() - session.started_at) / 1000);
   const totalErrors = session.results.reduce((a, r) => a + r.critical_errors, 0);
   const protocol = protocolId(session);
@@ -268,11 +272,17 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
     <div className="max-w-4xl mx-auto px-6 py-10 animate-fade-in">
       <div className="space-y-4">
 
-        {/* ── Yarım oturum uyarısı ── */}
-        {isAbandoned && (
+        {/* ── Tamamlanmama uyarısı ── */}
+        {isPartial && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-clinical-warning/40 bg-clinical-warning/8 text-sm text-clinical-warning animate-fade-in">
-            <span className="font-mono text-[10px] uppercase tracking-widest shrink-0">Yarım</span>
-            <span>Bu oturum tamamlanmadan sonlandırıldı. Skor yalnızca tamamlanan adımları yansıtır. Harf notu hesaplanmadı.</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest shrink-0">Yarım Tamamlandı</span>
+            <span>Senaryo erken sonlandırıldı. Skor yalnızca tamamlanan adımları yansıtır. Harf notu hesaplanmadı.</span>
+          </div>
+        )}
+        {isAbandoned && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-clinical-critical/40 bg-clinical-critical/8 text-sm text-clinical-critical animate-fade-in">
+            <span className="font-mono text-[10px] uppercase tracking-widest shrink-0">Süre Doldu</span>
+            <span>Kritik kontrendikasyon düzeltilmedi veya süre aşıldı. Harf notu hesaplanmadı.</span>
           </div>
         )}
 
@@ -380,6 +390,11 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
               passing={scenario.scoring.passing_score}
               passed={passed}
             />
+            {floorApplied && (
+              <div className="font-mono text-[10px] text-ink-500 mt-1">
+                ham skor: {rawScore} (floor 0 uygulandı)
+              </div>
+            )}
           </div>
         </div>
 
