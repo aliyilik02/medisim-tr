@@ -121,69 +121,135 @@ export const scenario_stemi: Scenario = {
       kind: "action",
       title: "İlk Değerlendirme",
       prompt:
-        "Hasta acil servise geldi. İlk 2 dakikada yapılması gerekenleri seçin.",
+        "62 yaş erkek, 2 saat önce başlayan göğüs ağrısı. Acile yeni geldi. İlk 5 dakikada ne yapacaksın?",
       narrative:
         "Hasta soluk, terli ve ağrılı görünüyor. Taşikardik. Sağ kolda tansiyon ölçülüyor.",
       min_actions: 3,
-      max_actions: 6,
+      max_actions: 8,
       expected_outcomes: [
+        // ── Yüksek öncelik (monitörizasyon, EKG, damar yolu) ──────────
         {
           action: { type: "use_equipment", target_id: "monitor" },
           points: 15,
           feedback:
-            "Doğru — hasta monitörize edildi. Sürekli ritim takibi başladı.",
+            "✓ Kardiyak monitörizasyon — sürekli ritim ve aritmi takibi şart.",
         },
         {
           action: { type: "use_equipment", target_id: "pulse_oksimetre" },
           points: 10,
-          feedback: "Doğru — SpO₂ sürekli ölçümü açıldı.",
+          feedback: "✓ SpO₂ sürekli ölçümü açıldı.",
         },
         {
           action: { type: "use_equipment", target_id: "ekg_12" },
           points: 20,
           feedback:
-            "Doğru — ilk 10 dakikada 12 derivasyonlu EKG zorunlu (AHA/ESC).",
+            "✓ ESC 2023 Class I — ilk 10 dakikada 12 derivasyonlu EKG zorunlu.",
           unlocks: ["s2_ekg_yorumu"],
         },
         {
           action: { type: "use_equipment", target_id: "iv_kateter_18g" },
           points: 15,
-          feedback: "Doğru — geniş bir damar yolu açıldı.",
+          feedback: "✓ Geniş lümenli IV yol — ilaç ve sıvı için.",
         },
-        // SpO2 %94'te oksijen — seviyeye göre iki ayrı outcome
+        // SpO2 %94 — seviyeye göre iki ayrı outcome
         {
           action: { type: "use_equipment", target_id: "oksijen_maske" },
           points: 5,
           feedback:
-            "O₂ verildi. SpO₂ sınırda, başlangıç seviyesinde uygun bir refleks.",
+            "O₂ verildi. SpO₂ sınırda, başlangıç seviyesinde kabul edilebilir refleks.",
           max_difficulty: 2,
         },
         {
           action: { type: "use_equipment", target_id: "oksijen_maske" },
           points: 0,
           feedback:
-            "SpO₂ 94% — rutin O₂ endike değil (AVOID trial). Hipoksi (<90%) yoksa gereksiz, hatta zararlı olabilir.",
+            "SpO₂ %94 — rutin O₂ endike değil (AVOID trial, ESC 2023). Hipoksi (<90%) yoksa gereksiz, hatta zararlı olabilir.",
           min_difficulty: 3,
         },
-        // Seviye 3+ için aort diseksiyonu ekartasyonu refleksi
+        // Aort diseksiyonu ekartasyonu (S3+)
         {
           action: { type: "examine", target_id: "bilateral_kol_tansiyon" },
           points: 10,
           feedback:
-            "Doğru — aort diseksiyonu ekartasyonu için iki kolda TA farkı (>20 mmHg) değerlendirilmeli. STEMI'de de benzer ağrı olabilir.",
+            "✓ Aort diseksiyonu ekartasyonu için iki kolda TA farkı (>20 mmHg) değerlendirilmeli.",
           min_difficulty: 3,
         },
         {
           action: { type: "examine", target_id: "nabiz_muayenesi" },
           points: 8,
           feedback:
-            "Doğru — nabız asimetrisi ve radyofemoral gecikme diseksiyon için önemli ipucu.",
+            "✓ Nabız asimetrisi ve radyofemoral gecikme diseksiyon için önemli ipucu.",
           min_difficulty: 4,
         },
+        // ── Klinik olarak doğru ama ana adım değil (antiplatelet/antikoagülan) ──
+        {
+          action: { type: "give_medication", target_id: "aspirin" },
+          points: 10,
+          feedback:
+            "✓ ESC 2023 Class I — aspirin 150-300 mg çiğneme STEMI şüphesinde ilk temasta verilir. Erken ama doğru.",
+        },
+        {
+          action: { type: "give_medication", target_id: "klopidogrel" },
+          points: 5,
+          feedback:
+            "✓ P2Y12 yüklemesi reperfüzyon öncesi yapılır. Bu adımda erken ama klinik olarak yanlış değil. (S3-4'te tikagrelor/prasugrel tercih edilir.)",
+        },
+        {
+          action: { type: "give_medication", target_id: "tikagrelor" },
+          points: 5,
+          feedback:
+            "✓ P2Y12 yüklemesi reperfüzyon öncesi yapılır. Bu adımda erken ama klinik olarak yanlış değil.",
+        },
+        {
+          action: { type: "give_medication", target_id: "prasugrel" },
+          points: 5,
+          feedback:
+            "✓ P2Y12 yüklemesi reperfüzyon öncesi yapılır. Bu adımda erken ama klinik olarak yanlış değil. DİKKAT: İnme öyküsü ve 75+ yaşta kontrendike.",
+        },
+        {
+          action: { type: "give_medication", target_id: "heparin" },
+          points: 5,
+          feedback:
+            "✓ Antikoagülan reperfüzyon öncesi standart. Bu adımda erken ama klinik olarak makul.",
+        },
+        {
+          action: { type: "give_medication", target_id: "enoksaparin" },
+          points: 5,
+          feedback:
+            "✓ Antikoagülan reperfüzyon öncesi standart. Bu adımda erken ama klinik olarak makul.",
+        },
+        // ── Klinik olarak yanlış veya zararlı ─────────────────────────
+        {
+          action: { type: "give_medication", target_id: "lidokain" },
+          points: -10,
+          feedback:
+            "✗ STEMI'de profilaktik lidokain ÖNERİLMEZ (ESC 2023). Sadece sürekli VT/VF varlığında — hasta şu an stabil.",
+          critical: true,
+        },
+        {
+          action: { type: "give_medication", target_id: "morfin" },
+          points: -5,
+          feedback:
+            "✗ Morfin rutin değil — CRUSADE: mortalite artışı. Nitrata dirençli ağrıda düşünülür. Henüz nitrat denenmeden erken.",
+        },
+        {
+          action: { type: "give_medication", target_id: "metoprolol" },
+          points: -5,
+          feedback:
+            "✗ Erken IV beta-bloker ilk değerlendirmede öncelik değil. COMMIT: kardiyojenik şok riski. Hemodinamik stabilizasyon sonrası oral form düşünülür.",
+          max_difficulty: 2,
+        },
+        {
+          action: { type: "give_medication", target_id: "metoprolol" },
+          points: -3,
+          feedback:
+            "Erken IV beta-bloker tartışmalı. COMMIT: kardiyojenik şok riskini artırır. İlk değerlendirmede öncelik değil.",
+          min_difficulty: 3,
+        },
       ],
-      default_wrong_penalty: -5,
+      default_wrong_penalty: -3,
       default_wrong_feedback:
-        "Bu aksiyon ilk 2 dakikanın önceliği değil. Önce A-B-C ve EKG.",
+        "Bu adımda klinik öncelik değil. Sıralama önemli — önce monitör, EKG, damar yolu.",
     },
 
     // ========================================================
@@ -630,8 +696,9 @@ export const scenario_stemi: Scenario = {
   ],
 
   scoring: {
-    max_points: 280, // Eski 200'den arttı (yeni adımlar)
+    max_points: 280,
     passing_score: 170,
+    score_floor: 0,
     grade_bands: {
       A: 240,
       B: 200,
