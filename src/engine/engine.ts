@@ -313,16 +313,16 @@ export function calculateGrade(
 export function finalizeSession(
   session: SessionState,
   scenario: Scenario,
-  reason: "completed" | "abandoned" = "completed"
+  reason: "completed" | "partial" | "abandoned" = "completed"
 ): SessionState {
-  // score_floor varsa toplam skoru sınırla
-  const floor = scenario.scoring.score_floor ?? -Infinity;
-  const clampedScore = Math.max(floor, session.total_score);
+  // total_score ham kalır; floored_score display/grade için
+  const floor = scenario.scoring.score_floor ?? 0;
+  const flooredScore = Math.max(floor, session.total_score);
   return {
     ...session,
     finished: true,
-    total_score: clampedScore,
-    grade: calculateGrade(clampedScore, scenario.scoring),
+    floored_score: flooredScore,
+    grade: calculateGrade(flooredScore, scenario.scoring),
     completion_status: reason,
   };
 }

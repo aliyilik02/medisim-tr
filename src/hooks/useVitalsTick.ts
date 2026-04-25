@@ -55,35 +55,34 @@ export function useVitalsTick({
     );
 
     const intervalId = setInterval(() => {
+      // Early-exit optimizasyonu: sessionRef stale olsa bile gereksiz re-render önler
       const s = sessionRef.current;
       if (!s || s.finished) return;
+      if ((s.active_medications ?? []).length === 0) return;
 
-      const actives = s.active_medications ?? [];
-      if (actives.length === 0) return; // Aktif ilaç yoksa tick atmaya gerek yok
+      // Functional update — finishStep'in setSession çağrısını ezmez (race condition fix)
+      setSession((prev) => {
+        if (!prev || prev.finished) return prev;
+        const actives = prev.active_medications ?? [];
+        if (actives.length === 0) return prev;
 
-      const now = Date.now();
-      const result = tick({ activeMedications: actives, now });
+        const now = Date.now();
+        const result = tick({ activeMedications: actives, now });
 
-      // Süresi dolan ilaçları listeden çıkar
-      const stillActive = result.expired_instance_ids.length > 0
-        ? actives.filter(
-            (m) => !result.expired_instance_ids.includes(m.instance_id)
-          )
-        : actives;
+        const stillActive = result.expired_instance_ids.length > 0
+          ? actives.filter((m) => !result.expired_instance_ids.includes(m.instance_id))
+          : actives;
 
-      // Yeni canlı vitaller = baseline + kümülatif delta
-      const liveVitals = computeLiveVitals(
-        s.baseline_vitals,
-        result.vitals_delta
-      );
+        const liveVitals = computeLiveVitals(prev.baseline_vitals, result.vitals_delta);
 
-      setSession({
-        ...s,
-        vitals: liveVitals,
-        active_medications: stillActive,
-        current_ecg_params: Object.keys(result.ecg_delta).length > 0
-          ? result.ecg_delta
-          : undefined,
+        return {
+          ...prev,
+          vitals: liveVitals,
+          active_medications: stillActive,
+          current_ecg_params: Object.keys(result.ecg_delta).length > 0
+            ? result.ecg_delta
+            : undefined,
+        };
       });
     }, intervalMs);
 

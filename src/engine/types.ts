@@ -345,8 +345,8 @@ export interface SessionState {
   variant_id?: string;                 // Seçili varyant (varsa)
   started_at: number;
   current_step_id: string | null;
-  // "in_progress": oynanıyor | "completed": doğal tamamlandı | "abandoned": kullanıcı erken bitirdi
-  completion_status?: "in_progress" | "completed" | "abandoned";
+  // "in_progress": oynanıyor | "completed": doğal tamamlandı | "partial": kullanıcı erken bitirdi | "abandoned": süre doldu/kritik
+  completion_status?: "in_progress" | "completed" | "partial" | "abandoned";
   completed_step_ids: string[];
 
   // Baseline = ilaçsız "temel" vitaller. Canlı monitör için referans noktası.
@@ -375,6 +375,8 @@ export interface SessionState {
   unlocked_dynamic_step_ids?: string[];
   results: StepResult[];
   total_score: number;
+  // max(score_floor, total_score) — finalizeSession tarafından set edilir, display/grade için kullanılır
+  floored_score?: number;
   finished: boolean;
   grade?: "A" | "B" | "C" | "D" | "F";
 }
