@@ -701,8 +701,7 @@ export const scenario_stemi: Scenario = {
       modality: "xray",
       name_tr: "Akciğer Grafisi (PA)",
       view: "PA",
-      image_url:
-        "https://upload.wikimedia.org/wikipedia/commons/a/a1/Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg",
+      image_url: "/images/scenarios/stemi/normal_chest_xray_pa.jpg",
       attribution: "Mikael Häggström, M.D. — CC0 (Wikimedia Commons)",
       interpretation:
         "Kardiyak silüet normal sınırlarda. Akciğer alanlarında patolojik opasite izlenmemektedir. Hilus ve mediasten normal görünümde. STEMI tanısında akciğer grafisi aort diseksiyonu ve kardiyomegaliyi ekarte etmek için değerlidir.",
@@ -718,8 +717,7 @@ export const scenario_stemi: Scenario = {
       id: "stemi-ekg-12lead",
       modality: "ekg",
       name_tr: "12 Derivasyon EKG",
-      image_url:
-        "https://upload.wikimedia.org/wikipedia/commons/7/76/12_Lead_EKG_ST_Elevation_tracing_color_coded.jpg",
+      image_url: "/images/scenarios/stemi/stemi_12lead_ekg.jpg",
       attribution: "User 'Displaced' — Public Domain (Wikimedia Commons)",
       interpretation:
         "Anterior STEMI paterni: V1-V4'te belirgin ST elevasyonu, II/III/aVF'de karşılıklı ST depresyonu. Sinüs taşikardisi (HR ~105/dk). Anterior fasiküler blok paterni izlenmektedir. Sol anteriyor desendan (LAD) proksimal oklüzyonu ile uyumlu bulgular.",
