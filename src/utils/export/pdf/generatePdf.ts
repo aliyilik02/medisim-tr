@@ -24,6 +24,8 @@ export interface SectionData {
   protocol:     string;
   dateStr:      string;
   timeStr:      string;
+  // Aksiyon dogruluk tespiti icin zorluk seviyesi
+  selected_difficulty: import("@/engine/types").Difficulty;
 }
 
 function buildSectionData(saved: SavedSession): SectionData {
@@ -47,14 +49,15 @@ function buildSectionData(saved: SavedSession): SectionData {
   return {
     session,
     scenario,
-    grade:        saved.grade,
+    grade:               saved.grade,
     percent,
     passed,
     totalSeconds,
     totalErrors,
-    protocol:     `MST-${yy}${mm}${dd}-${hhmm}`,
-    dateStr:      `${dd}.${mm}.${d.getFullYear()}`,
-    timeStr:      `${p(d.getHours())}:${p(d.getMinutes())}`,
+    protocol:            `MST-${yy}${mm}${dd}-${hhmm}`,
+    dateStr:             `${dd}.${mm}.${d.getFullYear()}`,
+    timeStr:             `${p(d.getHours())}:${p(d.getMinutes())}`,
+    selected_difficulty: session.selected_difficulty,
   };
 }
 
