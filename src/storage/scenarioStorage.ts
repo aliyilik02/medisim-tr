@@ -23,15 +23,30 @@ export function getLocalScenario(id: string): StoredScenario | undefined {
   return listLocalScenarios().find((s) => s.id === id);
 }
 
+function safeSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    if (e instanceof Error && e.name === "QuotaExceededError") {
+      alert(
+        "Tarayıcı depolama alanı doldu. " +
+          "Eski senaryoları silerek veya daha küçük görseller kullanarak yer açın."
+      );
+      return;
+    }
+    throw e;
+  }
+}
+
 export function saveLocalScenario(s: StoredScenario): void {
   const list = listLocalScenarios().filter((x) => x.id !== s.id);
   list.push({ ...s, _updatedAt: new Date().toISOString() });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  safeSet(STORAGE_KEY, JSON.stringify(list));
 }
 
 export function deleteLocalScenario(id: string): void {
   const list = listLocalScenarios().filter((s) => s.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  safeSet(STORAGE_KEY, JSON.stringify(list));
 }
 
 export function getDraft(): Partial<StoredScenario> | null {
@@ -44,7 +59,7 @@ export function getDraft(): Partial<StoredScenario> | null {
 }
 
 export function saveDraft(partial: Partial<StoredScenario>): void {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(partial));
+  safeSet(DRAFT_KEY, JSON.stringify(partial));
 }
 
 export function clearDraft(): void {
