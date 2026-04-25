@@ -3,6 +3,14 @@ import type { Scenario } from "@/engine";
 // ============================================================
 // DKA Senaryosu — 24y Kadın, Tip 1 DM, Akut DKA
 // ============================================================
+// v0.2.0 (2026-04-25) — Tam revizyon:
+// - Tetikleyici workup adımı (S2.5)
+// - DKA rezolüsyon kriterleri adımı (S6)
+// - SC insülin geçiş adımı (S7) — kritik klinik boşluk
+// - HHS overlap, magnezyum, K<3.3 dallanma seçenekleri
+// - Skor rekalibrasyonu (max 150 → 220)
+// - JBDS-IP 2023 + ISPAD 2022 referansları eklendi
+//
 // Zorluk seviyeleri 2-4 destekli.
 // S2:   Temel DKA tanısı, sıvı-K-insülin sıralaması
 // S3:   + Bikarbonat tartışması (rutin değil), K eşik kontrolü
@@ -10,14 +18,15 @@ import type { Scenario } from "@/engine";
 //         de-eskalasyon (glukoz<250 → dekstroz ekleme + insülin yarıya)
 //
 // Kaynaklar:
-// - ADA/EASD/JBDS/AACE/DTS 2024 Hyperglycemic Crises Consensus
-// - Umpierrez GE et al., Diabetes Care 2024
+// - ADA/EASD/JBDS/AACE/DTS 2024 Hyperglycemic Crises Consensus (Umpierrez 2024)
+// - BSPED 2021 / ISPAD 2022 (pediatrik referans, S4 serebral ödem)
 // - TEMD 2022 Diyabet Kılavuzu (Türkiye yerel)
+// - JBDS-IP 2023 (DKA rezolüsyonu + SC geçiş protokolü)
 // ============================================================
 
 export const scenario_dka: Scenario = {
   id: "dahiliye-dka-001",
-  version: "0.1.0",
+  version: "0.2.0",
   title: "24 Yaş Kadın — Kusma, Karın Ağrısı, Polipne (DKA)",
   description:
     "Tip 1 DM, 3 gündür insülinini aksatan hasta. Acilde DKA tanısı, sıvı-potasyum-insülin sıralaması ve izlem.",
@@ -25,12 +34,12 @@ export const scenario_dka: Scenario = {
   tags: ["dka", "acil", "endokrin", "metabolik", "diyabet"],
   difficulty: 3,
   supported_difficulties: [2, 3, 4],
-  estimated_minutes: 15,
+  estimated_minutes: 20,
   modes: ["quiz"],
   language: "tr",
   author: "MediSim TR Ekibi",
-  reviewed_by: "ADA/EASD 2024, TEMD 2022 uyumlu",
-  last_updated: "2026-04-23",
+  reviewed_by: "ADA/EASD 2024, JBDS-IP 2023, TEMD 2022, ISPAD 2022 uyumlu",
+  last_updated: "2026-04-25",
 
   // Senaryo yazarının demo için ilaç zamanlaması override'ı.
   // Gerçek klinikte insülin onset 15 dk, peak 1 saat. Demo'da hasta monitöründe
@@ -55,6 +64,7 @@ export const scenario_dka: Scenario = {
       "Tip 1 DM (10 yıl, insülin detemir + insülin aspart)",
       "Son 3 günde viral üst solunum yolu enfeksiyonu",
       "İnsülin dozunu hastalık sırasında azaltmış",
+      "Son 24 saatte ateş 38.2°C, öksürük (viral USYE)",
     ],
     allergies: [],
     current_medications: [
@@ -69,7 +79,7 @@ export const scenario_dka: Scenario = {
     bp_systolic: 102,
     bp_diastolic: 64,
     spo2: 98,
-    temp: 37.2,
+    temp: 37.8,
     rr: 28,        // Kussmaul solunumu
     pain: 6,
     glucose: 485,  // Hiperglisemik
@@ -83,9 +93,10 @@ export const scenario_dka: Scenario = {
     "kcl",
     "dekstroz_50",
     "bikarbonat",
-    "ondansetron",     // Kusma için
-    "seftriakson",     // Enfeksiyon tetikleyicisi varsa
-    "tiamin",          // Alkolik DKA ayırıcı (bu vaka değil ama var)
+    "ondansetron",        // Kusma için
+    "seftriakson",        // Enfeksiyon tetikleyicisi varsa
+    "tiamin",             // Alkolik DKA ayırıcı (bu vaka değil ama var)
+    "magnezyum_sulfat",   // Severe DKA + hipoMg birlikteliği (S4)
   ],
 
   available_equipment: [
@@ -102,6 +113,13 @@ export const scenario_dka: Scenario = {
     "ng_sonda",
     "foley_sonda",
     "stetoskop",
+    // Tetikleyici workup examine hedefleri (S2.5)
+    // equipment.ts'e eklenmedi — engine freeform target_id olarak kabul eder
+    "tam_kan_sayimi",
+    "crp",
+    "idrar_tahlili",
+    "akciger_grafisi",
+    "beta_hidroksibutirat",
   ],
 
   start_step_id: "s1_ilk_degerlendirme",
@@ -118,7 +136,7 @@ export const scenario_dka: Scenario = {
         "Hasta dispneik, takipneik, ağzında aseton kokusu var. İlk 5 dakikada ne yaparsın?",
       narrative:
         "GKS 14, derin-hızlı Kussmaul solunumu, ciltte turgor azalmış, mukoz membranlar kuru.",
-      min_actions: 3,
+      min_actions: 4,
       max_actions: 6,
       expected_outcomes: [
         {
@@ -131,7 +149,7 @@ export const scenario_dka: Scenario = {
           points: 15,
           feedback:
             "Doğru — geniş bir damar yolu. Volüm replasmanı için şart.",
-          unlocks: ["s2_lab_degerlendirme"],
+          unlocks: ["s2_lab_degerlendirme", "s2b_tetikleyici_workup"],
         },
         {
           action: { type: "use_equipment", target_id: "glukometre" },
@@ -143,7 +161,7 @@ export const scenario_dka: Scenario = {
           points: 15,
           feedback:
             "Doğru — VKG: pH 7.18, HCO3 10, pCO2 22 → yüksek anyon açığı metabolik asidoz.",
-          unlocks: ["s2_lab_degerlendirme"],
+          unlocks: ["s2_lab_degerlendirme", "s2b_tetikleyici_workup"],
         },
         {
           action: { type: "use_equipment", target_id: "ekg_12" },
@@ -166,6 +184,14 @@ export const scenario_dka: Scenario = {
           feedback:
             "Doğru — SGLT2 inhibitörü kullanımı sorgulandı. Öglisemik DKA ayırıcı için kritik.",
           min_difficulty: 4,
+        },
+        // Ateş ölçümü — USYE tetikleyicisi (S3+)
+        {
+          action: { type: "examine", target_id: "ates_olcum" },
+          points: 6,
+          feedback:
+            "Doğru — ateş 37.8°C, viral USYE öyküsü doğrulanıyor. Tetikleyici taraması gerekecek.",
+          min_difficulty: 3,
         },
       ],
       default_wrong_penalty: -5,
@@ -225,7 +251,82 @@ export const scenario_dka: Scenario = {
             "Bu hastada glukoz 485 — klasik DKA, öglisemik değil. SGLT2 inh. kullansaydı akla gelirdi.",
           min_difficulty: 4,
         },
+        // HHS overlap (Umpierrez 2024)
+        {
+          id: "f",
+          text: "DKA + HHS overlap (mikst tablo)",
+          correct: false,
+          points: -3,
+          feedback:
+            "İlginç düşünce — DKA + HHS overlap vakaların ~%30'unda görülür (Umpierrez 2024). Bu hastada efektif osm <320 mOsm/kg, klasik DKA. Overlap için osm >320 + ciddi mental durum gerekir.",
+          min_difficulty: 4,
+        },
       ],
+    },
+
+    // ========================================================
+    // ADIM 2.5 — Tetikleyici Workup (YENİ)
+    // ========================================================
+    {
+      id: "s2b_tetikleyici_workup",
+      kind: "action",
+      title: "Tetikleyici Araştırma",
+      prompt:
+        "DKA tanısı kondu. Bu epizod neden tetiklendi? Hızlı tarama yap.",
+      narrative:
+        "DKA'nın %75'inde tetikleyici vardır: enfeksiyon (~%40), insülin uyumsuzluğu, MI/CVA (yaşlıda), pankreatit, ilaç (steroid, SGLT2i). Tetikleyiciyi tedavi etmezsen DKA tekrar eder.",
+      min_actions: 2,
+      max_actions: 5,
+      expected_outcomes: [
+        {
+          action: { type: "examine", target_id: "tam_kan_sayimi" },
+          points: 8,
+          feedback:
+            "Doğru — DKA'da BK genelde yüksek (stres + dehidratasyon), >25.000 enfeksiyon lehine.",
+        },
+        {
+          action: { type: "examine", target_id: "idrar_tahlili" },
+          points: 8,
+          feedback:
+            "Doğru — keton (++), nitrit/lökosit kontrolü için. Üriner enfeksiyon DKA'da sık tetikleyici.",
+        },
+        {
+          action: { type: "examine", target_id: "akciger_grafisi" },
+          points: 8,
+          feedback:
+            "Doğru — pnömoni ekartasyonu, ayrıca ARDS riski (severe DKA).",
+        },
+        {
+          action: { type: "examine", target_id: "crp" },
+          points: 5,
+          feedback:
+            "Yararlı — CRP yüksekliği bakteriyel enfeksiyon lehine. Ama spesifik değil.",
+          min_difficulty: 3,
+        },
+        {
+          action: { type: "examine", target_id: "beta_hidroksibutirat" },
+          points: 10,
+          feedback:
+            "Doğru — kanda BHB DKA tanısı + izlem altın standardı. >3.0 mmol/L tanısal, hedef <0.6 mmol/L.",
+          min_difficulty: 3,
+        },
+        {
+          action: { type: "give_medication", target_id: "ondansetron" },
+          points: 6,
+          feedback:
+            "Mantıklı — kusma var, semptomatik tedavi. NG sonda gereksinimini azaltır.",
+        },
+        {
+          action: { type: "use_equipment", target_id: "ekg_12" },
+          points: 5,
+          feedback:
+            "Yararlı — yaşlı hastada DKA tetikleyicisi MI olabilir. 24y kadında düşük olasılık ama tarama doğru.",
+          min_difficulty: 4,
+        },
+      ],
+      default_wrong_penalty: -3,
+      default_wrong_feedback:
+        "Bu adımda öncelik tetikleyici taraması (enfeksiyon, MI, ilaç).",
     },
 
     // ========================================================
@@ -280,6 +381,14 @@ export const scenario_dka: Scenario = {
           feedback:
             "Doğru — idrar çıkışı takibi (>0.5 mL/kg/saat hedef) K replasman güvenliği için önemli.",
           min_difficulty: 3,
+        },
+        // K dallanma — varsayım sorusu (S4)
+        {
+          action: { type: "decision", target_id: "k_dusuk_senaryo" },
+          points: 12,
+          feedback:
+            "Önemli klinik nokta — Bu hastada K 5.4. Eğer K <3.3 olsaydı: insülini BAŞLATMA, önce KCl 20-40 mEq/saat ver, K ≥3.3 olunca insülin başla (ADA 2024 Class I).",
+          min_difficulty: 4,
         },
       ],
       default_wrong_penalty: -5,
@@ -340,6 +449,16 @@ export const scenario_dka: Scenario = {
             "Mükemmel — K 5.0 mEq/L zaten 5.2 eşiğine yakın. İnsülin başlarken K'yı destekleyici dozda eklemek önemli.",
           min_difficulty: 4,
         },
+        // Magnezyum + hipoMg
+        {
+          id: "f",
+          text: "Magnezyum kontrolü iste, hipoMg ise replase et",
+          correct: false,
+          points: 8,
+          feedback:
+            "İyi düşünce — DKA'nın %30-40'ında hipoMg var. Mg <1.5 mg/dL ise 2 g MgSO4 IV. Yine de bu adımda öncelik insülin başlatma.",
+          min_difficulty: 4,
+        },
       ],
     },
 
@@ -362,6 +481,7 @@ export const scenario_dka: Scenario = {
           points: 20,
           feedback:
             "Doğru — glukoz <250 mg/dL olunca dekstroz ekle. Hipoglisemiyi önlerken insülinle keton temizliği devam eder.",
+          unlocks: ["s6_rezolusyon"],
         },
         {
           action: { type: "decision", target_id: "insulin_yariya" },
@@ -393,21 +513,134 @@ export const scenario_dka: Scenario = {
             "Doğru — tedavi sırasında bilinç değişimi serebral ödem işareti olabilir (özellikle pediatride). Mannitol hazır tutulmalı.",
           min_difficulty: 4,
         },
+        // Glukoz düşüş hızı kontrolü (S4)
+        {
+          action: { type: "decision", target_id: "glukoz_dusus_hizi_kontrol" },
+          points: 10,
+          feedback:
+            "Doğru — glukoz düşüş hızı <50-75 mg/dL/saat olmalı (>100 ise serebral ödem riski, özellikle pediatride). Hız fazlaysa insülini azalt + dekstroz erken başla.",
+          min_difficulty: 4,
+        },
       ],
       default_wrong_penalty: -3,
       default_wrong_feedback:
         "Bu aşamada öncelik dekstroz ekleme + insülin titrasyonu.",
     },
+
+    // ========================================================
+    // ADIM 6 — DKA Rezolüsyon Kriterleri (YENİ)
+    // ========================================================
+    {
+      id: "s6_rezolusyon",
+      kind: "decision",
+      title: "DKA Rezolüsyonu — Hangisi Bitiş Kriteri?",
+      prompt:
+        "8. saat. Glukoz 180 mg/dL, pH 7.34, HCO3 17, BHB 0.8 mmol/L, anyon açığı 12. Hasta uyanık, oral alabiliyor. DKA çözüldü mü?",
+      options: [
+        {
+          id: "a",
+          text: "Hayır — pH hâlâ <7.40, asidoz devam",
+          correct: false,
+          points: -5,
+          feedback:
+            "Yanlış kriter — pH 7.30 üzeri rezolüsyon için yeterli. Hedef pH 7.40 değil; hiperkloremik asidoz tedavi sonrası beklenir.",
+        },
+        {
+          id: "b",
+          text: "Evet — sadece glukoz <200 yeterli",
+          correct: false,
+          points: -8,
+          feedback:
+            "HATA — glukoz tek başına yeterli değil. DKA'da glukoz erken düşer ama ketonlar devam edebilir. Anyon açığı + pH + BHB önemli.",
+        },
+        {
+          id: "c",
+          text: "Evet — pH ≥7.30 + HCO3 ≥15 + anyon açığı ≤12 + BHB <0.6",
+          correct: true,
+          points: 25,
+          feedback:
+            "Doğru — ADA/JBDS rezolüsyon kriterleri: 2 kriter yeterli. Hastada AG kapanmış (12), pH normal, HCO3 17. BHB 0.8 → hedefe yakın, devam edilebilir.",
+          min_difficulty: 2,
+        },
+        {
+          id: "d",
+          text: "Evet, sadece BHB <0.6 mmol/L kriteri yeterli",
+          correct: false,
+          points: 5,
+          feedback:
+            "Kısmen doğru — BHB en spesifik kriter, ama tek başına yeterli sayılmaz. Hedef <0.6, hastada 0.8. Bekle, AG ve pH zaten normal — pratikte SC geçiş başlatılabilir.",
+          min_difficulty: 3,
+        },
+        {
+          id: "e",
+          text: "Hayır — hasta saatler boyunca aç kalmalı, sonra değerlendir",
+          correct: false,
+          points: -10,
+          feedback:
+            "HATA — hasta uyanık ve oral alabiliyorsa SC geçiş hazırlığı yapılmalı. Aç bırakmak DKA'yı uzatır.",
+        },
+      ],
+    },
+
+    // ========================================================
+    // ADIM 7 — SC İnsülin Geçişi (YENİ)
+    // ========================================================
+    {
+      id: "s7_sc_gecis",
+      kind: "action",
+      title: "SC İnsülin Geçişi — Köprüleme",
+      prompt:
+        "DKA çözüldü. Hasta öğün almaya hazır. IV insülini nasıl keseceksin?",
+      narrative:
+        "En sık hata: IV insülin direkt kesiliyor → 1-2 saat içinde DKA tekrar başlıyor (ketogenez yeniden tetikleniyor). Bazal SC insülinini IV'den ÖNCE başlat, üst üste bin.",
+      min_actions: 1,
+      max_actions: 3,
+      expected_outcomes: [
+        {
+          action: { type: "decision", target_id: "bazal_once_sc_baslat" },
+          points: 25,
+          feedback:
+            "Doğru — Bazal SC insülini (detemir/glargin) IV insülini kesmeden 1-2 saat ÖNCE başlat. IV insülinin yarı ömrü 7-9 dk, bazal SC absorbsiyonu 1-2 saat sürer. Üst üste binme şart.",
+          min_difficulty: 2,
+        },
+        {
+          action: { type: "decision", target_id: "ogune_gore_bolus_planla" },
+          points: 15,
+          feedback:
+            "Doğru — Hasta detemir + aspart kullanıyor. Detemir 20 IU akşam, aspart öğün öncesi 6-8 IU restart. Karbonhidrat sayımı önerilir.",
+          min_difficulty: 3,
+        },
+        // KRİTİK HATA — direkt IV kesme
+        {
+          action: { type: "decision", target_id: "iv_direkt_kes" },
+          points: -20,
+          feedback:
+            "KRİTİK HATA — IV insülini kesip SC başlatmak DKA rebound'una yol açar. SC absorbsiyonu yavaş, ketogenez dakikalar içinde geri başlar. Asla doğrudan kesme.",
+          critical: true,
+        },
+        // Endokrin konsültasyonu
+        {
+          action: { type: "consult", target_id: "endokrinoloji" },
+          points: 8,
+          feedback:
+            "Yararlı — yeni tanı T1DM'de hasta eğitimi + doz titrasyonu için endokrin konsültasyonu standart. Mevcut hasta bilinen T1DM ama uyum sorunu var, eğitim tekrarı endike.",
+          min_difficulty: 3,
+        },
+      ],
+      default_wrong_penalty: -5,
+      default_wrong_feedback:
+        "Bu adımda öncelik: bazal SC insülin → 1-2 saat bekle → IV kes. Bu sırayla.",
+    },
   ],
 
   scoring: {
-    max_points: 150,
-    passing_score: 90,
+    max_points: 220,
+    passing_score: 130,
     grade_bands: {
-      A: 135,
-      B: 115,
-      C: 95,
-      D: 75,
+      A: 195,
+      B: 165,
+      C: 140,
+      D: 110,
     },
   },
 
@@ -419,11 +652,16 @@ export const scenario_dka: Scenario = {
       "Glukoz <250 mg/dL olduğunda: dekstroz %5-10 EKLE + insülini yarıya düşür. İnsülini KESME.",
       "Yeni kılavuz (ADA 2024): insülin bolusu rutin değil. Doğrudan 0.1 IU/kg/saat infüzyon.",
       "İzlem: kan şekeri 1-2 saatte bir, K 2 saatte bir, VKG 4 saatte bir.",
+      "DKA rezolüsyonu = pH ≥7.30 + HCO3 ≥15 + AG ≤12 + BHB <0.6 (2 kriter yeterli). Glukoz tek başına yetmez.",
+      "SC geçiş: bazal insülini IV kesmeden 1-2 saat önce başlat. Doğrudan kesmek = DKA rebound.",
+      "Tetikleyici araştırması zorunlu: tam kan, idrar, akciğer grafisi, BHB. Tedavi etmezsen DKA tekrar eder.",
     ],
     references: [
       "Umpierrez GE et al. Hyperglycemic Crises in Adults with Diabetes: Consensus Report. Diabetes Care. 2024.",
       "TEMD Diyabet Tanı ve Tedavi Kılavuzu 2022.",
       "ISPAD Clinical Practice Consensus Guidelines 2022 (pediatrik DKA).",
+      "Joint British Diabetes Societies (JBDS-IP) 2023 — DKA Yönetimi ve SC Geçiş Protokolü.",
+      "Kitabchi AE et al. Hyperglycemic Crises in Adults. ADA Position Statement (güncel revize).",
     ],
     red_flags: [
       "K<3.3 mEq/L'de insülin verme",
@@ -431,6 +669,8 @@ export const scenario_dka: Scenario = {
       "pH>6.9'da rutin bikarbonat verme",
       "Glukoz <200-250 olunca dekstroz eklemeyi unutma",
       "Çocuklarda tedavi sırasında bilinç bozulması = serebral ödem (mannitol hazır tut)",
+      "IV insülini SC köprü olmadan direkt kesme — DKA 1-2 saat içinde geri döner.",
+      "Glukoz düşüş hızı >100 mg/dL/saat — serebral ödem riski (özellikle pediatride).",
     ],
     next_scenarios: ["pediatri-sepsis-001"],
   },
