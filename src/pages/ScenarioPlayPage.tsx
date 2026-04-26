@@ -39,6 +39,7 @@ import {
   type CriticalContraindicationInfo,
 } from "@/components/CriticalContraindicationModal";
 import { LabResultsModal } from "@/components/LabResultsModal";
+import { LabOrderCountdownModal } from "@/components/LabOrderCountdownModal";
 import { ImagingResultsModal } from "@/components/ImagingResultsModal";
 import { cn } from "@/lib/cn";
 import {
@@ -46,6 +47,7 @@ import {
   resetSpecialtyTheme,
   getSpecialtyTheme,
 } from "@/hooks/useSpecialtyTheme";
+import { getEffectiveDelaySec } from "@/engine";
 import {
   ArrowLeft,
   GraduationCap,
@@ -84,6 +86,11 @@ export function ScenarioPlayPage() {
   const [criticalModalHidden, setCriticalModalHidden] = useState(false);
   const [openLabPanelId, setOpenLabPanelId] = useState<string | null>(null);
   const [openImagingId, setOpenImagingId] = useState<string | null>(null);
+  const [labCountdownInfo, setLabCountdownInfo] = useState<{
+    panelId: string;
+    panelName: string;
+    delaySec: number;
+  } | null>(null);
 
   const { feedback, show, clear } = useFeedback();
 
@@ -379,6 +386,11 @@ export function ScenarioPlayPage() {
       handleAction({ type: "order_test", target_id: panelId });
     }
     orderLab(panelId);
+    if (rs) {
+      const delaySec = getEffectiveDelaySec(rs, panelId, session?.mode);
+      const panelName = rs.lab_panels?.[panelId]?.name_tr ?? panelId;
+      setLabCountdownInfo({ panelId, panelName, delaySec });
+    }
   };
 
   const handleInfoContinue = () => finishStep(null);
@@ -524,63 +536,70 @@ export function ScenarioPlayPage() {
 
       {/* Main layout */}
       <div className="max-w-7xl mx-auto px-5 py-6">
-        <div className="grid lg:grid-cols-[320px_1fr_320px] gap-4">
-          <aside className="space-y-4 order-2 lg:order-1">
-            <PatientCard patient={rs.patient} />
-            <VitalsMonitor
-              vitals={session.vitals}
-              baseline={session.baseline_vitals}
-              activeMedCount={session.active_medications?.length ?? 0}
-              startedAt={session.started_at}
-              ecgPattern={rs.ekg_pattern}
-              ecgParams={session.current_ecg_params}
-            />
-          </aside>
+        <div className="space-y-4">
+          {/* ÜST BANNER — Hasta + Monitör yan yana */}
+          <div className="grid lg:grid-cols-[280px_1fr] gap-4">
+            <aside className="order-1">
+              <PatientCard patient={rs.patient} />
+            </aside>
+            <aside className="order-2">
+              <VitalsMonitor
+                vitals={session.vitals}
+                baseline={session.baseline_vitals}
+                activeMedCount={session.active_medications?.length ?? 0}
+                startedAt={session.started_at}
+                ecgPattern={rs.ekg_pattern}
+                ecgParams={session.current_ecg_params}
+              />
+            </aside>
+          </div>
 
-          <section className="order-1 lg:order-2">
-            <StepDisplay
-              step={currentStep}
-              mode={session.mode}
-              actionsThisStep={actionsThisStep.length}
-              onDecisionSelect={handleDecision}
-              onDecisionMultiConfirm={handleDecisionMulti}
-              onInfoContinue={handleInfoContinue}
-              onActionStepContinue={handleActionStepContinue}
-              canContinue={canContinue}
-              decisionAnswered={decisionAnswered}
-              decisionMultiAnswered={decisionMultiAnswered}
-              visibleOptions={
-                currentStep.kind === "decision"
-                  ? getVisibleOptions(currentStep, session.selected_difficulty)
-                  : undefined
-              }
-            />
-          </section>
-
-          <aside className="order-3">
-            {currentStep.kind === "action" ? (
-              <div className="h-[600px]">
-                <InventoryPanel
-                  availableMedications={rs.available_medications}
-                  availableEquipment={rs.available_equipment}
-                  onAction={handleAction}
-                  labPanels={rs.lab_panels}
-                  imagingResults={imagingResults}
-                  getLabStatus={getLabStatus}
-                  onOrderLab={handleOrderLab}
-                  onViewLab={setOpenLabPanelId}
-                  onViewImaging={setOpenImagingId}
-                />
-              </div>
-            ) : (
-              <div className="panel p-5 text-center text-sm text-ink-400">
-                <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 mb-2">
-                  Envanter
+          {/* ALT — Adım + Envanter */}
+          <div className="grid lg:grid-cols-[1fr_340px] gap-4">
+            <section className="order-1">
+              <StepDisplay
+                step={currentStep}
+                mode={session.mode}
+                actionsThisStep={actionsThisStep.length}
+                onDecisionSelect={handleDecision}
+                onDecisionMultiConfirm={handleDecisionMulti}
+                onInfoContinue={handleInfoContinue}
+                onActionStepContinue={handleActionStepContinue}
+                canContinue={canContinue}
+                decisionAnswered={decisionAnswered}
+                decisionMultiAnswered={decisionMultiAnswered}
+                visibleOptions={
+                  currentStep.kind === "decision"
+                    ? getVisibleOptions(currentStep, session.selected_difficulty)
+                    : undefined
+                }
+              />
+            </section>
+            <aside className="order-2">
+              {currentStep.kind === "action" ? (
+                <div className="h-[600px]">
+                  <InventoryPanel
+                    availableMedications={rs.available_medications}
+                    availableEquipment={rs.available_equipment}
+                    onAction={handleAction}
+                    labPanels={rs.lab_panels}
+                    imagingResults={imagingResults}
+                    getLabStatus={getLabStatus}
+                    onOrderLab={handleOrderLab}
+                    onViewLab={setOpenLabPanelId}
+                    onViewImaging={setOpenImagingId}
+                  />
                 </div>
-                Bu adımda envanter kullanılmıyor.
-              </div>
-            )}
-          </aside>
+              ) : (
+                <div className="panel p-5 text-center text-sm text-ink-400">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 mb-2">
+                    Envanter
+                  </div>
+                  Bu adımda envanter kullanılmıyor.
+                </div>
+              )}
+            </aside>
+          </div>
         </div>
       </div>
 
@@ -594,6 +613,19 @@ export function ScenarioPlayPage() {
         onExpired={handleCriticalExpired}
         onDismiss={() => setCriticalModalHidden(true)}
       />
+
+      {/* Tetkik geri sayım modalı */}
+      {labCountdownInfo && (
+        <LabOrderCountdownModal
+          panelName={labCountdownInfo.panelName}
+          delaySec={labCountdownInfo.delaySec}
+          onClose={() => setLabCountdownInfo(null)}
+          onCountdownEnd={() => {
+            setOpenLabPanelId(labCountdownInfo.panelId);
+            setLabCountdownInfo(null);
+          }}
+        />
+      )}
 
       {/* Lab sonuç modalı */}
       {openLabPanelId && (() => {

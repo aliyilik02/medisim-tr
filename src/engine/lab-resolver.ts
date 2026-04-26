@@ -67,3 +67,13 @@ export function getLabHistory(
 export function getResultDelaySec(scenario: Scenario, panelId: string): number {
   return scenario.result_delay_seconds?.[panelId] ?? 5;
 }
+
+// Moda göre efektif gecikme: sınav modunda gerçek süre, diğerlerinde sabit 5 sn
+export function getEffectiveDelaySec(
+  scenario: Scenario,
+  panelId: string,
+  mode?: string
+): number {
+  if (mode === "sinav") return getResultDelaySec(scenario, panelId);
+  return 5;
+}

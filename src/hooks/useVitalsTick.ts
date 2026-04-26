@@ -16,7 +16,7 @@
 // Senaryo `time_scale_override` veriyorsa motor onu uygular.
 // ============================================================
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import type { SessionState, Scenario } from "@/engine";
 import {
   tick,
@@ -41,31 +41,19 @@ export function useVitalsTick({
   setSession,
   paused = false,
 }: UseVitalsTickParams) {
-  // Ref kullanıyoruz ki interval callback'i kapattığında stale state görmesin
-  const sessionRef = useRef(session);
-  sessionRef.current = session;
-
   useEffect(() => {
-    if (!scenario || !session || session.finished || paused) return;
+    if (!scenario || paused) return;
 
     const intervalMs = getTickIntervalMs(
       BASE_TICK_MS,
-      session.mode,
+      session?.mode ?? "klinik",
       scenario.time_scale_override
     );
 
     const intervalId = setInterval(() => {
-      // Early-exit optimizasyonu: sessionRef stale olsa bile gereksiz re-render önler
-      const s = sessionRef.current;
-      if (!s || s.finished) return;
-      if ((s.active_medications ?? []).length === 0) return;
-
-      // Functional update — finishStep'in setSession çağrısını ezmez (race condition fix)
-      setSession((prev) => {
-        if (!prev || prev.finished) return prev;
-        const actives = prev.active_medications ?? [];
-        if (actives.length === 0) return prev;
-
+      setSession((s) => {
+        if (!s || s.finished) return s;
+        const actives = s.active_medications ?? [];
         const now = Date.now();
         const result = tick({ activeMedications: actives, now });
 
@@ -73,21 +61,21 @@ export function useVitalsTick({
           ? actives.filter((m) => !result.expired_instance_ids.includes(m.instance_id))
           : actives;
 
-        const liveVitals = computeLiveVitals(prev.baseline_vitals, result.vitals_delta);
+        const liveVitals = computeLiveVitals(s.baseline_vitals, result.vitals_delta);
 
         return {
-          ...prev,
+          ...s,
           vitals: liveVitals,
           active_medications: stillActive,
           current_ecg_params: Object.keys(result.ecg_delta).length > 0
             ? result.ecg_delta
-            : undefined,
+            : stillActive.length > 0
+              ? s.current_ecg_params
+              : undefined,
         };
       });
     }, intervalMs);
 
     return () => clearInterval(intervalId);
-    // scenario, mode, paused, difficulty değişince interval yeniden kurulur
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario, session?.mode, session?.finished, paused, setSession]);
 }

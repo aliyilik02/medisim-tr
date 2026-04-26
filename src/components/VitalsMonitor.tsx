@@ -1,19 +1,11 @@
-// ============================================================
-// VitalsMonitor — Canlı Hasta Monitörü
-// ============================================================
-// baseline = ilaçsız temel vitaller (senaryo statik değişimleri dahil)
-// live     = farmakoloji tick'in hesapladığı anlık vitaller
-// delta    = live - baseline → yön oku + değer gösterimi için
-// ============================================================
-
 import type { PatientVitals } from "@/engine";
 import type { EcgEffect } from "@/engine/pharmacology/types";
 import { cn } from "@/lib/cn";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { MonitorClock } from "./MonitorClock";
-import { VitalsSparkline } from "./VitalsSparkline";
 import { EcgStrip } from "./EcgStrip";
-import { useVitalsHistory } from "@/hooks/useVitalsHistory";
+import { WaveStrip } from "./WaveStrip";
+import { samplePleth, sampleArt, sampleResp } from "@/lib/waveformSamplers";
 
 function hrStatus(hr: number): "stable" | "warning" | "critical" {
   if (hr < 50 || hr > 140) return "critical";
@@ -41,10 +33,10 @@ function tempStatus(t: number): "stable" | "warning" | "critical" {
   return "stable";
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  stable: "text-clinical-stable",
-  warning: "text-clinical-warning",
-  critical: "text-clinical-critical",
+const STATUS_RING: Record<string, string> = {
+  stable: "ring-clinical-stable/30",
+  warning: "ring-clinical-warning/40",
+  critical: "ring-clinical-critical/50 animate-pulse",
 };
 
 interface VitalsMonitorProps {
@@ -64,29 +56,28 @@ export function VitalsMonitor({
   ecgPattern,
   ecgParams,
 }: VitalsMonitorProps) {
-  const history = useVitalsHistory(vitals);
+  const sampleCtx = {
+    hr: vitals.hr,
+    rr: vitals.rr,
+    sbp: vitals.bp_systolic,
+    dbp: vitals.bp_diastolic,
+  };
+
+  const map = Math.round(
+    vitals.bp_diastolic + (vitals.bp_systolic - vitals.bp_diastolic) / 3
+  );
 
   return (
-    <div className="panel overflow-hidden">
-      {/* EKG şeridi — full-width, panel içi üst bant */}
-      <div className="bg-ink-900/60 border-b border-ink-700/50 px-1 py-0.5">
-        <EcgStrip hr={vitals.hr} pattern={ecgPattern} ecgParams={ecgParams} />
-      </div>
-
-      <div className="p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
+    <div className="bg-black rounded-xl border border-ink-700/60 overflow-hidden shadow-[0_0_60px_rgba(0,255,128,0.04)]">
+      {/* ÜST BAR */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-b from-ink-900 to-black border-b border-ink-700/60">
+        <div className="flex items-center gap-3">
+          <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-400">
             Hasta Monitörü
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-display text-lg text-ink-50">Vital Bulgular</span>
-            {startedAt !== undefined && (
-              <MonitorClock startedAt={startedAt} />
-            )}
-          </div>
+          {startedAt !== undefined && <MonitorClock startedAt={startedAt} />}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {activeMedCount > 0 && (
             <span className="font-mono text-[9px] uppercase tracking-wider text-brand-light px-1.5 py-0.5 rounded bg-brand/10 border border-brand/30">
               {activeMedCount} ilaç aktif
@@ -99,196 +90,221 @@ export function VitalsMonitor({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <VitalBox
-          label="Nabız"
-          unit="/dk"
-          value={vitals.hr}
-          baselineValue={baseline?.hr}
-          status={hrStatus(vitals.hr)}
-          minShowDelta={2}
-          sparklineData={history.hr}
+      {/* DALGA ŞERİTLERİ */}
+      <div className="bg-black">
+        <div className="border-b border-ink-800/60">
+          <EcgStrip hr={vitals.hr} pattern={ecgPattern} ecgParams={ecgParams} />
+        </div>
+        <WaveStrip
+          rate={vitals.hr}
+          sampler={samplePleth}
+          color="#22d3ee"
+          label="SpO₂ · PLETH"
+          ctx={sampleCtx}
+          height={52}
         />
-        <VitalBox
-          label="TA"
-          unit="mmHg"
-          valueText={`${vitals.bp_systolic}/${vitals.bp_diastolic}`}
-          baselineValue={baseline?.bp_systolic}
-          value={vitals.bp_systolic}
-          status={bpStatus(vitals.bp_systolic)}
-          minShowDelta={3}
-          sparklineData={history.sbp}
+        <WaveStrip
+          rate={vitals.hr}
+          sampler={sampleArt}
+          color="#ef4444"
+          label="ART"
+          ctx={sampleCtx}
+          height={52}
         />
-        <VitalBox
-          label="SpO₂"
-          unit="%"
-          value={vitals.spo2}
-          baselineValue={baseline?.spo2}
-          status={spo2Status(vitals.spo2)}
-          minShowDelta={1}
-          sparklineData={history.spo2}
+        <WaveStrip
+          rate={vitals.rr}
+          sampler={sampleResp}
+          color="#facc15"
+          label="RESP"
+          ctx={sampleCtx}
+          height={48}
         />
-        <VitalBox
-          label="Solunum"
-          unit="/dk"
-          value={vitals.rr}
-          baselineValue={baseline?.rr}
-          status={rrStatus(vitals.rr)}
-          minShowDelta={1}
-          sparklineData={history.rr}
-        />
-        <VitalBox
-          label="Ateş"
-          unit="°C"
-          value={vitals.temp}
-          baselineValue={baseline?.temp}
-          decimals={1}
-          status={tempStatus(vitals.temp)}
-          minShowDelta={0.2}
-        />
-        {vitals.glucose !== undefined && (
-          <VitalBox
-            label="Glukoz"
-            unit="mg/dL"
-            value={vitals.glucose}
-            baselineValue={baseline?.glucose}
-            status={
-              vitals.glucose < 70 || vitals.glucose > 250
-                ? "critical"
-                : vitals.glucose > 180
-                ? "warning"
-                : "stable"
-            }
-            minShowDelta={5}
-          />
-        )}
-        {vitals.pain !== undefined && (
-          <VitalBox
-            label="Ağrı"
-            unit="/10"
-            value={vitals.pain}
-            baselineValue={baseline?.pain}
-            status={
-              vitals.pain >= 7
-                ? "critical"
-                : vitals.pain >= 4
-                ? "warning"
-                : "stable"
-            }
-            minShowDelta={1}
-          />
-        )}
-        {vitals.gcs !== undefined && (
-          <VitalBox
-            label="GKS"
-            unit=""
-            value={vitals.gcs}
-            baselineValue={baseline?.gcs}
-            status={
-              vitals.gcs <= 8
-                ? "critical"
-                : vitals.gcs <= 12
-                ? "warning"
-                : "stable"
-            }
-            minShowDelta={1}
-          />
-        )}
       </div>
-      </div> {/* .p-5 content wrapper */}
+
+      {/* SAYISAL DEĞERLER */}
+      <div className="bg-black p-4 space-y-3">
+        {/* Birinci satır — HR & SpO2 */}
+        <div className="grid grid-cols-2 gap-3">
+          <NumericTile
+            label="HR"
+            unit="bpm"
+            color="#00ff66"
+            value={vitals.hr}
+            baselineValue={baseline?.hr}
+            status={hrStatus(vitals.hr)}
+            big
+          />
+          <NumericTile
+            label="SpO₂"
+            unit="%"
+            color="#22d3ee"
+            value={vitals.spo2}
+            baselineValue={baseline?.spo2}
+            status={spo2Status(vitals.spo2)}
+            big
+          />
+        </div>
+
+        {/* İkinci satır — NIBP & RR */}
+        <div className="grid grid-cols-2 gap-3">
+          <div
+            className={cn(
+              "rounded-lg bg-ink-950/80 border border-ink-800 px-3 py-2 ring-1",
+              STATUS_RING[bpStatus(vitals.bp_systolic)]
+            )}
+          >
+            <div className="flex items-baseline justify-between">
+              <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-400">
+                NIBP
+              </span>
+              <span className="font-mono text-[9px] text-ink-500">mmHg</span>
+            </div>
+            <div
+              className="font-mono font-bold tabular-nums leading-none mt-1"
+              style={{ color: "#ef4444" }}
+            >
+              <span className="text-3xl">{vitals.bp_systolic}</span>
+              <span className="text-xl text-ink-500 mx-0.5">/</span>
+              <span className="text-2xl">{vitals.bp_diastolic}</span>
+            </div>
+            <div className="font-mono text-[10px] text-ink-400 mt-0.5">
+              MAP <span className="text-ink-200">{map}</span>
+            </div>
+          </div>
+          <NumericTile
+            label="RR"
+            unit="/dk"
+            color="#facc15"
+            value={vitals.rr}
+            baselineValue={baseline?.rr}
+            status={rrStatus(vitals.rr)}
+          />
+        </div>
+
+        {/* Üçüncü satır — Temp + ekstra */}
+        <div className="grid grid-cols-2 gap-3">
+          <NumericTile
+            label="TEMP"
+            unit="°C"
+            color="#ffffff"
+            value={vitals.temp}
+            baselineValue={baseline?.temp}
+            decimals={1}
+            status={tempStatus(vitals.temp)}
+          />
+          {vitals.glucose !== undefined ? (
+            <NumericTile
+              label="GLUKOZ"
+              unit="mg/dL"
+              color="#fb7185"
+              value={vitals.glucose}
+              baselineValue={baseline?.glucose}
+              status={
+                vitals.glucose < 70 || vitals.glucose > 250
+                  ? "critical"
+                  : vitals.glucose > 180
+                  ? "warning"
+                  : "stable"
+              }
+            />
+          ) : vitals.pain !== undefined ? (
+            <NumericTile
+              label="AĞRI"
+              unit="/10"
+              color="#a78bfa"
+              value={vitals.pain}
+              baselineValue={baseline?.pain}
+              status={
+                vitals.pain >= 7
+                  ? "critical"
+                  : vitals.pain >= 4
+                  ? "warning"
+                  : "stable"
+              }
+            />
+          ) : vitals.gcs !== undefined ? (
+            <NumericTile
+              label="GKS"
+              unit=""
+              color="#a78bfa"
+              value={vitals.gcs}
+              baselineValue={baseline?.gcs}
+              status={
+                vitals.gcs <= 8
+                  ? "critical"
+                  : vitals.gcs <= 12
+                  ? "warning"
+                  : "stable"
+              }
+            />
+          ) : (
+            <div />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function VitalBox({
-  label,
-  unit,
-  value,
-  valueText,
-  baselineValue,
-  status,
-  decimals = 0,
-  minShowDelta = 1,
-  sparklineData,
-}: {
+interface NumericTileProps {
   label: string;
   unit: string;
-  value?: number;
-  valueText?: string;
+  color: string;
+  value: number;
   baselineValue?: number;
   status: "stable" | "warning" | "critical";
   decimals?: number;
-  minShowDelta?: number;
-  sparklineData?: number[];
-}) {
-  const displayValue =
-    valueText ??
-    (value !== undefined ? value.toFixed(decimals) : "—");
+  big?: boolean;
+}
 
-  const delta =
-    value !== undefined && baselineValue !== undefined
-      ? value - baselineValue
-      : 0;
-  const showDelta = Math.abs(delta) >= minShowDelta;
-  const deltaDir: "up" | "down" | null = showDelta
-    ? delta > 0
-      ? "up"
-      : "down"
-    : null;
+function NumericTile({
+  label,
+  unit,
+  color,
+  value,
+  baselineValue,
+  status,
+  decimals = 0,
+  big = false,
+}: NumericTileProps) {
+  const formatted = decimals > 0 ? value.toFixed(decimals) : Math.round(value);
+  const delta = baselineValue !== undefined ? value - baselineValue : 0;
+  const showDelta = Math.abs(delta) >= (decimals > 0 ? 0.2 : 1);
 
   return (
-    <div className="panel-inset p-3 relative">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-400">
+    <div
+      className={cn(
+        "rounded-lg bg-ink-950/80 border border-ink-800 px-3 py-2 ring-1",
+        STATUS_RING[status]
+      )}
+    >
+      <div className="flex items-baseline justify-between">
+        <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-400">
           {label}
         </span>
-        {status !== "stable" && (
-          <span
-            className={cn(
-              "font-mono text-[9px] uppercase tracking-wider",
-              STATUS_COLORS[status]
-            )}
-          >
-            {status === "warning" ? "uyarı" : "kritik"}
-          </span>
-        )}
+        <span className="font-mono text-[9px] text-ink-500">{unit}</span>
       </div>
-      <div className="flex items-baseline gap-1 mt-1">
+      <div className="flex items-end justify-between mt-1">
         <span
           className={cn(
-            "vital-display text-2xl font-semibold tabular-nums",
-            STATUS_COLORS[status]
+            "font-mono font-bold tabular-nums leading-none",
+            big ? "text-5xl" : "text-3xl"
           )}
+          style={{ color }}
         >
-          {displayValue}
+          {formatted}
         </span>
-        <span className="font-mono text-[10px] text-ink-400">{unit}</span>
-
-        {deltaDir && (
-          <span
-            className={cn(
-              "ml-auto flex items-center gap-0.5 font-mono text-[10px]",
-              deltaDir === "up"
-                ? "text-clinical-warning"
-                : "text-clinical-info"
-            )}
-            title={`Baseline: ${baselineValue?.toFixed(decimals)}`}
-          >
-            {deltaDir === "up" ? (
-              <ArrowUp className="w-3 h-3" />
+        {showDelta && (
+          <span className="flex items-center gap-0.5 font-mono text-[10px] text-ink-400 mb-0.5">
+            {delta > 0 ? (
+              <ArrowUp className="w-2.5 h-2.5" />
             ) : (
-              <ArrowDown className="w-3 h-3" />
+              <ArrowDown className="w-2.5 h-2.5" />
             )}
             {Math.abs(delta).toFixed(decimals)}
           </span>
         )}
       </div>
-
-      {sparklineData && sparklineData.length >= 2 && (
-        <div className="mt-1.5">
-          <VitalsSparkline data={sparklineData} status={status} width={80} height={18} />
-        </div>
-      )}
     </div>
   );
 }

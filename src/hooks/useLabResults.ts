@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Scenario, LabPanel, ImagingResult } from "@/engine";
-import { resolveLabPanel, getLabHistory, getResultDelaySec } from "@/engine";
+import { resolveLabPanel, getLabHistory, getEffectiveDelaySec } from "@/engine";
 import type { PlayMode } from "@/engine";
 
 export type LabStatus = "idle" | "pending" | "ready";
@@ -48,7 +48,7 @@ export function useLabResults({
       const sc = scenarioRef.current;
       if (!sc) return;
 
-      const delaySec = getResultDelaySec(sc, panelId);
+      const delaySec = getEffectiveDelaySec(sc, panelId, modeRef.current);
       setPendingIds((prev) =>
         prev.includes(panelId) ? prev : [...prev, panelId]
       );
