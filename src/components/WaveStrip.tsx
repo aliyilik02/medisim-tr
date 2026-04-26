@@ -6,7 +6,7 @@ interface WaveStripProps {
   sampler: WaveSampler;
   color: string;
   label: string;
-  unit?: string;
+  valueLabel?: string;
   ctx: SampleContext;
   height?: number;
 }
@@ -18,10 +18,19 @@ export function WaveStrip({
   sampler,
   color,
   label,
-  height = 56,
+  valueLabel,
   ctx,
+  height = 44,
 }: WaveStripProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Tüm değişken veriler ref'te — deps [] kalır, canvas hiç resetlenmez
+  const rateRef = useRef(rate);
+  rateRef.current = rate;
+  const samplerRef = useRef(sampler);
+  samplerRef.current = sampler;
+  const colorRef = useRef(color);
+  colorRef.current = color;
   const ctxRef = useRef(ctx);
   ctxRef.current = ctx;
 
@@ -37,7 +46,7 @@ export function WaveStrip({
     const ctx2d = canvas.getContext("2d");
     if (!ctx2d) return;
 
-    const W = canvas.offsetWidth || 800;
+    const W = canvas.offsetWidth || 320;
     const H = canvas.height;
     canvas.width = W;
 
@@ -52,7 +61,7 @@ export function WaveStrip({
       const dt = Math.min(ts - state.lastTime, 100) / 1000;
       state.lastTime = ts;
 
-      const safeRate = Math.max(4, Math.min(300, rate));
+      const safeRate = Math.max(4, Math.min(300, rateRef.current));
       const cycleSec = 60 / safeRate;
       const phasePerPixel = 1 / (cycleSec * SCROLL_PX_PER_SEC);
       const nPx = Math.round(dt * SCROLL_PX_PER_SEC);
@@ -61,26 +70,20 @@ export function WaveStrip({
         const buf = state.buffer;
         buf.copyWithin(0, nPx);
         for (let i = W - nPx; i < W; i++) {
-          buf[i] = sampler(state.phase, ctxRef.current) * H;
+          buf[i] = samplerRef.current(state.phase, ctxRef.current) * H;
           state.phase = (state.phase + phasePerPixel) % 1;
         }
       }
 
       ctx2d.clearRect(0, 0, W, H);
 
-      // Soluk grid
+      // Soluk grid çizgisi
       ctx2d.strokeStyle = "rgba(255,255,255,0.04)";
       ctx2d.lineWidth = 0.5;
       ctx2d.beginPath();
       ctx2d.moveTo(0, H / 2);
       ctx2d.lineTo(W, H / 2);
       ctx2d.stroke();
-      for (let x = 0; x < W; x += Math.round(cycleSec * SCROLL_PX_PER_SEC)) {
-        ctx2d.beginPath();
-        ctx2d.moveTo(x, 0);
-        ctx2d.lineTo(x, H);
-        ctx2d.stroke();
-      }
 
       if (!state.buffer) {
         animId = requestAnimationFrame(frame);
@@ -88,10 +91,11 @@ export function WaveStrip({
       }
 
       // Dalga + glow
-      ctx2d.strokeStyle = color;
+      const col = colorRef.current;
+      ctx2d.strokeStyle = col;
       ctx2d.lineWidth = 1.5;
-      ctx2d.shadowColor = color;
-      ctx2d.shadowBlur = 5;
+      ctx2d.shadowColor = col;
+      ctx2d.shadowBlur = 4;
       ctx2d.lineJoin = "round";
       ctx2d.lineCap = "round";
       ctx2d.beginPath();
@@ -102,13 +106,9 @@ export function WaveStrip({
       ctx2d.stroke();
       ctx2d.shadowBlur = 0;
 
-      // Sağ kenarda silici şerit (scroll edge)
-      ctx2d.strokeStyle = "rgba(0,0,0,0.9)";
-      ctx2d.lineWidth = 3;
-      ctx2d.beginPath();
-      ctx2d.moveTo(W - 1, 0);
-      ctx2d.lineTo(W - 1, H);
-      ctx2d.stroke();
+      // Sağ kenarda silici şerit
+      ctx2d.fillStyle = "rgba(0,0,0,0.85)";
+      ctx2d.fillRect(W - 4, 0, 4, H);
 
       animId = requestAnimationFrame(frame);
     };
@@ -118,16 +118,24 @@ export function WaveStrip({
       cancelAnimationFrame(animId);
       state.lastTime = 0;
     };
-  }, [rate, sampler, color]);
+  }, []); // boş deps — mount/unmount'ta çalışır, rate/color değişince resetlenmez
 
   return (
-    <div className="relative bg-black border-b border-ink-800/60">
+    <div className="relative bg-black border-b border-ink-800/50">
       <div
-        className="absolute left-2 top-1 font-mono text-[10px] uppercase tracking-[0.18em] z-10"
+        className="absolute left-1.5 top-0.5 font-mono text-[9px] uppercase tracking-[0.15em] z-10 pointer-events-none"
         style={{ color }}
       >
         {label}
       </div>
+      {valueLabel && (
+        <div
+          className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs font-bold tabular-nums z-10 pointer-events-none"
+          style={{ color }}
+        >
+          {valueLabel}
+        </div>
+      )}
       <canvas
         ref={canvasRef}
         height={height}

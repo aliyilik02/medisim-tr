@@ -1,5 +1,5 @@
 // Dalga form sampler'ları — phase ∈ [0,1] tek atım/döngü içinde
-// Dönüş: 0 (üst) ↔ 1 (alt), 0.5 = baseline. EcgStrip ile aynı konvansiyon.
+// Dönüş: 0 (üst) ↔ 1 (alt), 0.5 = baseline.
 
 export type WaveSampler = (phase: number, ctx: SampleContext) => number;
 
@@ -10,7 +10,7 @@ export interface SampleContext {
   dbp: number;
 }
 
-// Pleth (SpO2) — yumuşak sistolik tepe + dikrotik notch
+// Pleth (SpO2) — sistolik tepe + dikrotik notch
 export const samplePleth: WaveSampler = (phase) => {
   const p = phase % 1;
   if (p < 0.05) return 0.50;
@@ -30,11 +30,10 @@ export const samplePleth: WaveSampler = (phase) => {
     const t = (p - 0.42) / 0.43;
     return 0.36 + 0.14 * (1 - Math.exp(-2.5 * t));
   }
-  const t = (p - 0.85) / 0.15;
-  return 0.50 + 0.00 * t;
+  return 0.50;
 };
 
-// Arteriyel basınç — keskin sistolik tepe + belirgin dikrotik çentik
+// Arteriyel basınç — keskin sistolik tepe + dikrotik çentik
 export const sampleArt: WaveSampler = (phase) => {
   const p = phase % 1;
   if (p < 0.04) return 0.60;
@@ -61,7 +60,7 @@ export const sampleArt: WaveSampler = (phase) => {
   return 0.60;
 };
 
-// Solunum — yavaş asimetrik sinüs (inspirasyon hızlı, ekspirasyon yavaş)
+// Solunum — yavaş asimetrik sinüs
 export const sampleResp: WaveSampler = (phase) => {
   const p = phase % 1;
   if (p < 0.40) {
