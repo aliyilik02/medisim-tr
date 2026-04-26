@@ -1,95 +1,80 @@
 import type { Scenario } from "@/engine";
 
 // ============================================================
-// Pediatrik Sepsis Senaryosu — 4y Çocuk, Febril Sepsis → Septik Şok
+// Pediatrik Sepsis — 8 Aylık İnfant, Pnömoni Kaynaklı Septik Şok
 // ============================================================
-// Zorluk seviyeleri 2-4 destekli.
-// S2:   Temel pediatrik sepsis tanıma, sıvı bolus (20 mL/kg), antibiyotik
-// S3:   + Dirençli şok → adrenalin (DOPAMIN DEĞİL), kültür önce AB
-// S4:   + Vazopressin ikinci ajan, hidrokortizon (dirençli vazopressör şokunda),
-//         sıvı yüklenme riski (pulmoner ödem), IO yolu
-//
-// Kaynaklar:
-// - Surviving Sepsis Campaign (SSC) Pediatrik Kılavuzu 2020
-// - AAP Sepsis Clinical Report
-// - TATD Çocuklarda Sepsis ve Septik Şok Protokolü 2018
+// SSC 2020 Pediatric Bundle (sıvı yanıtlı şok)
+// AAP 2024 + IDSA pediatric CAP guidelines uyumlu
+// D2 öğrenci düzeyi — temel sepsis bundle akışı
+// Lab sistemi yeni şablonu test eden ilk senaryo
 // ============================================================
 
 export const scenario_pediatrik_sepsis: Scenario = {
   id: "pediatri-sepsis-001",
-  version: "0.1.0",
-  title: "4 Yaş Erkek — Ateş, Bilinç Bulanıklığı (Septik Şok)",
+  version: "0.2.0",
+  title: "8 Aylık İnfant — Pnömoni Kaynaklı Septik Şok",
   description:
-    "2 gündür ateş, bugün letarjik. Taşikardi, kapiller dolum >3 sn, soğuk ekstremiteler. Septik şok yönetimi.",
+    "3 gündür ateş+öksürük, son 6 saatte halsizlik artmış. Soğuk ekstremite, hipotansiyon, hipoksi. Sıvı yanıtlı septik şok yönetimi (SSC 2020 Pediatric Bundle).",
   specialty: "pediatri",
-  tags: ["sepsis", "sok", "pediatri", "acil", "antibiyotik"],
-  difficulty: 3,
-  supported_difficulties: [2, 3, 4],
-  estimated_minutes: 15,
+  tags: ["sepsis", "pediatri", "pnömoni", "şok", "infant", "bundle"],
+  difficulty: 2,
+  supported_difficulties: [2],
+  estimated_minutes: 12,
   modes: ["quiz"],
   language: "tr",
-  author: "MediSim TR Ekibi",
-  reviewed_by: "SSC Pediatrik 2020, TATD 2018 uyumlu",
-  last_updated: "2026-04-23",
+  author: "MediSim TR",
+  reviewed_by: "SSC 2020 Pediatric, AAP 2024, IDSA pediatric pneumonia",
+  last_updated: "2026-04-26",
 
-  // Demo için ilaç zamanlaması — gerçek klinikte sıvı yanıtı dakikalar,
-  // adrenalin etkisi 1-2 dk alır. Monitörde canlı görmek için hızlandırılmış.
   medication_timing_overrides: {
-    salin_09:      { onset_sec: 1, peak_min: 0.083, duration_min: 0.333 },
-    ringer_laktat: { onset_sec: 1, peak_min: 0.083, duration_min: 0.333 },
-    adrenalin:     { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
-    noradrenalin:  { onset_sec: 1, peak_min: 0.05,  duration_min: 0.25  },
-    hidrokortizon: { onset_sec: 2, peak_min: 0.133, duration_min: 0.5   },
-    dopamin:       { onset_sec: 2, peak_min: 0.133, duration_min: 0.5   },
+    salin_09:      { onset_sec: 1,  peak_min: 0.083, duration_min: 0.5 },
+    ringer_laktat: { onset_sec: 1,  peak_min: 0.083, duration_min: 0.5 },
+    seftriakson:   { onset_sec: 5,  peak_min: 0.5,   duration_min: 8 },
+    parasetamol:   { onset_sec: 30, peak_min: 1,     duration_min: 4 },
   },
 
   patient: {
-    age: 4,
+    age: 0,
     sex: "M",
-    weight_kg: 18,
-    height_cm: 104,
+    weight_kg: 9,
+    height_cm: 70,
     chief_complaint:
-      "2 gündür ateş, bugün uykuya meyilli, az idrar. Beslenmiyor. Annesi ekstremitelerinin soğuk olduğunu söylüyor.",
+      "3 gündür ateş ve öksürük. Son 6 saatte halsizlik, beslenememe. Annesi soğuk el-ayak ve idrar azaldığını söylüyor.",
     history_items: [
-      "Geçen hafta otitis media, amoksisilin almış (3 gün önce bitirdi)",
-      "Aşı takvimi tam",
-      "Kronik hastalık yok",
-      "Son 6 saattir idrar çıkarmamış",
+      "Term doğum, doğumsal hastalık yok",
+      "Aşı takvimi tam (PCV13 dahil)",
+      "Kreşe gidiyor — son 2 haftada akran enfeksiyonu",
+      "Allerjisi yok",
+      "Son 8 saatte beslenmemiş, son 6 saatte idrar yok",
     ],
     allergies: [],
     current_medications: [],
-    modifiers: {
-      // pediatrik: runtime'da age alanından türetilir
-    },
+    modifiers: {},
   },
 
   initial_vitals: {
-    hr: 172,             // Pediatrik taşikardi (4y normal: 80-130)
-    bp_systolic: 82,     // Hipotansif (4y normal SBP: >90)
-    bp_diastolic: 45,
-    spo2: 93,
-    temp: 39.6,
-    rr: 42,              // Takipneik (4y normal: 20-30)
-    pain: 3,
-    glucose: 88,
-    gcs: 12,             // Letarji (V=4, M=5, E=3)
+    hr: 175,
+    bp_systolic: 65,
+    bp_diastolic: 40,
+    spo2: 87,
+    temp: 39.2,
+    rr: 55,
+    pain: 4,
+    glucose: 68,
+    gcs: 13,
   },
+
+  ekg_pattern: "sinus_tach",
 
   available_medications: [
     "salin_09",
     "ringer_laktat",
     "seftriakson",
-    "piperasilin_tazobaktam",
     "vankomisin",
-    "meropenem",
-    "adrenalin",         // Pediatrik septik şokta İLK tercih vazopressör
+    "parasetamol",
+    "dekstroz_50",
+    "adrenalin",
     "noradrenalin",
-    "dopamin",           // Artık 1. tercih DEĞİL
-    "hidrokortizon",     // Dirençli şok
-    "parasetamol",       // Ateş
-    "dekstroz_50",       // Hipoglisemi riskine karşı
-    "midazolam",         // Sedasyon (entübasyon gerekirse)
-    "ketamin",           // Pediatrik entübasyonda hemodinamik nötr
   ],
 
   available_equipment: [
@@ -98,367 +83,468 @@ export const scenario_pediatrik_sepsis: Scenario = {
     "tansiyon_aleti",
     "glukometre",
     "kan_gazi_cihazi",
-    "pediatrik_oksijen_maske",
-    "bvm_pediatrik",
-    "iv_kateter_20g",
+    "iv_kateter_24g",
     "pediatrik_io_seti",
-    "infuzyon_pompasi",
-    "perfuzor",
-    "ekg_12",
-    "pediatrik_def_padleri",
-    "foley_sonda",
-    "ventilator_mekanik",
+    "nazal_kanul",
+    "hfnc",
+    "oksijen_maskesi",
     "stetoskop",
+    "ates_olcer",
   ],
 
-  start_step_id: "s1_ilk_degerlendirme",
+  start_step_id: "s1_triaj",
 
   steps: [
-    // ========================================================
-    // ADIM 1 — İlk değerlendirme
-    // ========================================================
     {
-      id: "s1_ilk_degerlendirme",
-      kind: "action",
-      title: "İlk Değerlendirme (0-5 dk)",
-      prompt:
-        "4 yaşında, 18 kg. HR 172, SBP 82, SpO₂ 93%, GKS 12, kapiller dolum 4 sn. İlk 5 dakikada ne yaparsın?",
+      id: "s1_triaj",
+      kind: "info",
+      title: "Triaj — Vakanın Sunumu",
+      prompt: "Acil servise getirildi. Hızlı değerlendir.",
       narrative:
-        "Çocuk letarjik, cildi benekli, ekstremiteler soğuk. Perfüzyon kötü.",
+        "8 aylık erkek bebek, annesi kucağında. 3 gündür ateş ve öksürük şikâyeti. Son 6 saatte uykuya meyilli, beslenememe, soğuk el-ayak. Triaj nabız 175, SpO₂ 87%, ısı 39.2°C. İlk bakışta letarjik, soluk-grimsi, takipneik, soğuk uçlar.",
+      content:
+        "Pediatrik septik şok tanısı için 'soğuk şok' bulguları: takikardi + uzun kapiller dolum + soğuk ekstremite + letarji. Bu hastada hepsi mevcut. Sıradaki adım: ABC + monitör + IV/IO erişim.",
+    },
+
+    {
+      id: "s2_abc_monitor",
+      kind: "action",
+      title: "ABC + Monitör + Damar Yolu",
+      prompt:
+        "Hastayı izlemeye al ve damar yolu aç. SSC 2020: ilk dakikalarda IV/IO erişim hedef. SpO₂ 87 — oksijen desteği şart.",
       min_actions: 3,
-      max_actions: 6,
       expected_outcomes: [
         {
           action: { type: "use_equipment", target_id: "monitor" },
-          points: 10,
-          feedback: "Doğru — sürekli monitör + EKG ritim izlemi.",
+          points: 8,
+          feedback: "Doğru — monitör ilk basamak. Triaj vitalleri doğrulandı.",
         },
         {
-          action: { type: "use_equipment", target_id: "pediatrik_oksijen_maske" },
+          action: { type: "use_equipment", target_id: "iv_kateter_24g" },
           points: 12,
           feedback:
-            "Doğru — SpO₂ 93% + şok → yüksek akım O₂. Solunum işini destekler.",
+            "Doğru — pediatrik 24G IV kateter. 2 deneme başarısız olursa 90 sn içinde IO'ya geç (SSC 2020).",
         },
-        {
-          action: { type: "use_equipment", target_id: "iv_kateter_20g" },
-          points: 15,
-          feedback:
-            "Doğru — damar yolu hızlıca açıldı. 20G pediatrik için uygun.",
-          unlocks: ["s2_sok_tani"],
-        },
-        // S3+ için IO yolu (damar yolu bulunamadığında)
         {
           action: { type: "use_equipment", target_id: "pediatrik_io_seti" },
-          points: 15,
+          points: 10,
           feedback:
-            "Doğru — pediatrik şokta damar yolu 90 sn'de açılamıyorsa IO endike (SSC 2020). Proksimal tibia.",
-          unlocks: ["s2_sok_tani"],
-          min_difficulty: 3,
+            "Kabul — pediatrik IO direkt başlangıçta da meşru. Tibial proksimal yerleştirme.",
         },
         {
           action: { type: "use_equipment", target_id: "glukometre" },
-          points: 10,
+          points: 6,
           feedback:
-            "Doğru — pediatrik sepsiste hipoglisemi sık (glikojen rezervi az). Sonuç: 88 mg/dL, normal.",
+            "Doğru — sepsiste hipoglisemi sık (özellikle bebeklerde). Glukoz 68 sınırda.",
         },
         {
-          action: { type: "use_equipment", target_id: "kan_gazi_cihazi" },
-          points: 12,
-          feedback:
-            "Doğru — laktat + pH + baz açığı. Sonuç: laktat 4.2 mmol/L, pH 7.28.",
-          min_difficulty: 3,
-        },
-        // Antipiretik — önemli ama öncelik değil
-        {
-          action: { type: "give_medication", target_id: "parasetamol" },
-          points: 3,
-          feedback:
-            "Faydalı ama öncelik değil. Sıvı + antibiyotik daha öncelikli. Ateş için verilebilir.",
-        },
-      ],
-      default_wrong_penalty: -5,
-      default_wrong_feedback:
-        "İlk 5 dakika: monitör + damar yolu + O₂ + glukoz. Antibiyotik ve sıvı sonraki adım.",
-    },
-
-    // ========================================================
-    // ADIM 2 — Şok tanıma
-    // ========================================================
-    {
-      id: "s2_sok_tani",
-      kind: "decision",
-      title: "Tanı",
-      prompt:
-        "HR 172, SBP 82, kapiller dolum 4 sn, laktat 4.2 mmol/L, GKS 12, son 6 saat idrar yok. Tablo?",
-      options: [
-        {
-          id: "a",
-          text: "Dekompanse septik şok (hipotansiyon ile)",
-          correct: true,
-          points: 25,
-          feedback:
-            "Doğru — 4y için SBP <90 hipotansiyon. Hipotansiyon + end-organ hasarı (oligüri, GKS↓, laktat↑) = dekompanse septik şok.",
+          action: { type: "use_equipment", target_id: "stetoskop" },
+          points: 4,
+          feedback: "Doğru — sağ alt zonda krepitan ral duyuluyor. Pnömoni odağı.",
         },
         {
-          id: "b",
-          text: "Kompanse septik şok",
-          correct: false,
-          points: 10,
-          feedback:
-            "Yakın — kompansede SBP normal olur. Bu hastada SBP 82 = dekompanse.",
-        },
-        {
-          id: "c",
-          text: "Menenjit (acile yönlendir)",
-          correct: false,
-          points: 0,
-          feedback:
-            "Menenjit ayrıcı olabilir ama öncelik şokun yönetimi. LP hemodinami stabilleşmeden YAPILMAZ.",
-        },
-        {
-          id: "d",
-          text: "Gastroenterit + dehidratasyon",
-          correct: false,
-          points: -8,
-          feedback:
-            "Hayır — ateş 39.6 + letarji + laktat 4.2 enfeksiyöz şoka uyuyor. GE'de laktat bu kadar yüksek olmaz.",
-        },
-      ],
-    },
-
-    // ========================================================
-    // ADIM 3 — Sıvı resüsitasyonu + antibiyotik
-    // ========================================================
-    {
-      id: "s3_sivi_ab",
-      kind: "action",
-      title: "Resüsitasyon (5-15 dk)",
-      prompt:
-        "Septik şok. İlk saat içinde ne yapmalısın? (SSC 1-saat bundle)",
-      min_actions: 2,
-      max_actions: 5,
-      expected_outcomes: [
-        // Sıvı bolus 20 mL/kg = 360 mL
-        {
-          action: { type: "give_medication", target_id: "salin_09" },
-          points: 25,
-          feedback:
-            "Doğru — 20 mL/kg izotonik bolus (~360 mL) 5-10 dk içinde. SSC 2020: ilk saatte 40-60 mL/kg'e kadar.",
-          unlocks: ["s4_vazopresor"],
-        },
-        {
-          action: { type: "give_medication", target_id: "ringer_laktat" },
-          points: 25,
-          feedback:
-            "Doğru — dengeli kristalloid tercih edilir (hiperkloremik asidoz riski düşük). 20 mL/kg bolus.",
-          unlocks: ["s4_vazopresor"],
-          min_difficulty: 3,
-        },
-        // Antibiyotik — 1 saat içinde KRİTİK
-        {
-          action: { type: "give_medication", target_id: "seftriakson" },
-          points: 20,
-          feedback:
-            "Doğru — geniş spektrum antibiyotik ilk saat içinde. Seftriakson pediatrik sepsiste standart ilk seçim.",
-        },
-        {
-          action: { type: "give_medication", target_id: "vankomisin" },
-          points: 15,
-          feedback:
-            "Doğru — MRSA riski veya ciddi tabloda vankomisin + seftriakson kombinasyonu. Tek başına yetersiz olabilir.",
-          min_difficulty: 3,
-        },
-        {
-          action: { type: "give_medication", target_id: "meropenem" },
-          points: 12,
-          feedback:
-            "Kabul — dirençli organizma şüphesi varsa karbapenem. İlk seçim değil ama kabul edilebilir.",
-          min_difficulty: 3,
-        },
-        // Kültür — AB öncesi
-        {
-          action: { type: "order_test", target_id: "kan_kulturu" },
-          points: 10,
-          feedback:
-            "Doğru — kan kültürü antibiyotik öncesi alınır. AMA antibiyotiği geciktirme (>45 dk olmamalı).",
-          min_difficulty: 3,
-        },
-        // Foley — idrar takibi
-        {
-          action: { type: "use_equipment", target_id: "foley_sonda" },
+          action: { type: "use_equipment", target_id: "hfnc" },
           points: 8,
           feedback:
-            "Doğru — idrar çıkışı (>1 mL/kg/saat hedef) sıvı yanıtının en güvenilir göstergesi.",
+            "Doğru — HFNC pediatrik solunum sıkıntısında ilk tercih. SpO₂ 87→94 hedefle.",
+          vitals_change: { spo2: 94 },
         },
-        // HATA: çok büyük sıvı tek seferde
         {
-          action: { type: "give_medication", target_id: "dopamin" },
-          points: -10,
+          action: { type: "use_equipment", target_id: "oksijen_maskesi" },
+          points: 5,
           feedback:
-            "HATA — pediatrik septik şokta dopamin artık 1. tercih DEĞİL (SSC 2020). Adrenalin tercih edilir. Ama hâlâ sıvı yeterli verilmedi.",
-          critical: true,
+            "Kabul — rezervuarlı maske de çalışır ama HFNC daha konforlu (bebek ajite olmaz).",
+          vitals_change: { spo2: 92 },
+        },
+        {
+          action: { type: "use_equipment", target_id: "nazal_kanul" },
+          points: -3,
+          feedback:
+            "Yetersiz — SpO₂ 87 ve solunum sıkıntısı için nazal kanül 2-3 L/dk yetmez. HFNC veya rezervuarlı maske gerekir.",
         },
       ],
-      default_wrong_penalty: -5,
+      default_wrong_penalty: -2,
       default_wrong_feedback:
-        "1. saat bundle: sıvı 20 mL/kg + antibiyotik + kültür + laktat takibi.",
+        "Bu adımda öncelik: monitör + IV/IO + glukoz + oksijen. Tedavi sonraki adımda.",
     },
 
-    // ========================================================
-    // ADIM 4 — Vazopressör kararı (sıvıya dirençli şok)
-    // ========================================================
     {
-      id: "s4_vazopresor",
-      kind: "decision",
-      title: "Sıvıya Dirençli Şok",
+      id: "s3_tetkik",
+      kind: "action",
+      title: "Lab + Kültür + PA Grafi",
       prompt:
-        "40 mL/kg sıvı verildi (720 mL, 3 bolus). HR hâlâ 158, SBP 84, kapiller dolum 3 sn, akciğerde krepitan raller. Sonraki ajan?",
+        "Antibiyotikten ÖNCE kan kültürü al. Lablar paralel istenir. SSC hedefi: AB ilk 1 saat içinde — kültür AB'yi geciktirmemeli.",
+      narrative: "İdeal sıra: Kan kültürü → Lablar → Antibiyotik. Toplam <30 dk.",
+      min_actions: 3,
+      expected_outcomes: [
+        {
+          action: { type: "order_test", target_id: "psp-kan-kulturu" },
+          points: 15,
+          feedback:
+            "Çok doğru — kültür ABxöncesi alındı. Final 24-48 saat ama tedavi yönlendirmesi için kritik.",
+        },
+        {
+          action: { type: "order_test", target_id: "psp-tks" },
+          points: 8,
+          feedback:
+            "Doğru — sepsis taraması: WBC 22 (sola kayma). Trombositopeni DIC için işaret.",
+        },
+        {
+          action: { type: "order_test", target_id: "psp-crp-pct" },
+          points: 8,
+          feedback:
+            "Doğru — Prokalsitonin 8.4 bakteriyel sepsis için yüksek özgünlük. Viralden ayırır.",
+        },
+        {
+          action: { type: "order_test", target_id: "psp-kan-gazi" },
+          points: 10,
+          feedback:
+            "Doğru — laktat 3.2 hipoperfüzyon işareti. Resüsitasyon yanıtı laktatla takip edilir.",
+        },
+        {
+          action: { type: "order_test", target_id: "psp-biyokimya" },
+          points: 6,
+          feedback:
+            "Doğru — BUN/Cr ile prerenal AKI değerlendirilir. Sodyum/glukoz takibi de önemli.",
+        },
+        {
+          action: { type: "order_test", target_id: "psp-pa-grafi" },
+          points: 8,
+          feedback:
+            "Doğru — sağ alt lob konsolidasyonu görüldü. Pnömoni odağı doğrulandı.",
+        },
+      ],
+      default_wrong_penalty: -2,
+      default_wrong_feedback:
+        "Bu adımda tetkikler ve kültür. Tedavi sonraki adımda.",
+    },
+
+    {
+      id: "s4_tani",
+      kind: "decision",
+      title: "Klinik Tanı",
+      prompt:
+        "Veriler: HR 175, SBP 65, SpO₂ 87, kapiller dolum >3 sn, letarji, laktat 3.2, WBC 22, PCT 8.4, sağ alt lob konsolidasyonu. Tanı?",
       options: [
         {
           id: "a",
-          text: "Adrenalin 0.05-0.3 mcg/kg/dk (periferik veya IO'dan)",
-          correct: true,
-          points: 30,
-          feedback:
-            "Doğru — SSC 2020: pediatrik soğuk şokta (bu vaka) ADRENALİN 1. tercih. Santral yol yoksa periferik/IO başlanabilir.",
-          min_difficulty: 2,
-        },
-        {
-          id: "b",
-          text: "Noradrenalin 0.05-0.1 mcg/kg/dk",
-          correct: true,
-          points: 25,
-          feedback:
-            "Kabul — sıcak şokta (vazoplejik) noradrenalin tercih. Bu vaka soğuk şok (kapiller dolum uzun, ekstremite soğuk) — adrenalin daha uygun ama noradrenalin de kabul.",
-          min_difficulty: 3,
-        },
-        {
-          id: "c",
-          text: "Dopamin 5-10 mcg/kg/dk",
+          text: "Basit pnömoni — IV antibiyotik başla, sıvı sınırlı tut",
           correct: false,
           points: -10,
           feedback:
-            "HATA — SSC 2020 ve ACCM 2017 pediatrik şokta dopamini 1. tercih olmaktan çıkardı. Adrenalin/noradrenalin tercih.",
+            "Hayır — hipotansiyon + laktat 3.2 + soğuk şok bulguları septik şok tanımı. Sıvı sınırlamak hayati hata.",
         },
         {
-          id: "d",
-          text: "Daha fazla sıvı (20 mL/kg daha)",
+          id: "b",
+          text: "Pnömoni kaynaklı septik şok — bundle başlat (sıvı + AB + kültür)",
+          correct: true,
+          points: 25,
+          feedback:
+            "Doğru — SSC 2020 Pediatric kriterleri: SBP <70 (infant), kapiller dolum uzun, laktat >2 → septik şok. 1 saatlik bundle aktif.",
+        },
+        {
+          id: "c",
+          text: "Konjenital kalp hastalığı dekompansasyonu",
           correct: false,
           points: -5,
           feedback:
-            "HAYIR — akciğerde ral var, sıvı yüklenmesi başlıyor. 40 mL/kg sonrası vazopressöre geç.",
+            "Hayır — anamnezde KKH yok, aşıları tam, daha önce sağlıklı. Klinik enfeksiyonla uyumlu.",
         },
-        // S4 için: vazopressin ikinci ajan
         {
-          id: "e",
-          text: "Adrenalin + vazopressin (erken ikinci ajan)",
-          correct: true,
-          points: 28,
+          id: "d",
+          text: "Bronşiyolit — destek tedavi yeter",
+          correct: false,
+          points: -10,
           feedback:
-            "Mükemmel — SSC 2020: dirençli şokta ikinci ajan olarak vazopressin (terlipresin de alternatif). Katekolamin dozunu azaltır.",
-          min_difficulty: 4,
+            "Hayır — hipotansiyon ve laktat yüksekliği bronşiyolitle açıklanmaz.",
         },
       ],
     },
 
-    // ========================================================
-    // ADIM 5 — Dirençli vazopressör şok
-    // ========================================================
     {
-      id: "s5_direncli",
+      id: "s5_antibiyotik",
       kind: "action",
-      title: "Vazopressöre Dirençli Şok (60 dk)",
+      title: "Ampirik Antibiyotik",
       prompt:
-        "Adrenalin 0.2 mcg/kg/dk'ya rağmen SBP 78, HR 150 sürüyor. Akciğer raller +, idrar çıkışı yok. Ne eklersin?",
-      narrative:
-        "Sıvı artık dikkatli verilmeli. Kardiyak disfonksiyon olabilir.",
+        "Tanı: septik şok. AB ilk 1 saat içinde. 3 ay-5 yaş toplum kökenli pnömoni etkenleri: S. pneumoniae > H. influenzae > S. aureus.",
       min_actions: 1,
-      max_actions: 3,
+      max_actions: 2,
       expected_outcomes: [
         {
-          action: { type: "give_medication", target_id: "hidrokortizon" },
+          action: { type: "give_medication", target_id: "seftriakson" },
+          points: 25,
+          feedback:
+            "Doğru — Seftriakson 75 mg/kg IV. S. pneumoniae ve H. influenzae'yi örtüyor. AAP 2024 + IDSA önerisi.",
+        },
+        {
+          action: { type: "give_medication", target_id: "vankomisin" },
+          points: 5,
+          feedback:
+            "Kabul — MRSA örtmek için eklenebilir ama bu vakada zorunlu değil. Toplumda MRSA pnömonisi nadir; klinik şüphe yoksa eklemeyi geciktirme. Eklersen 15 mg/kg IV.",
+        },
+      ],
+      default_wrong_penalty: -8,
+      default_wrong_feedback:
+        "Bu adımda antibiyotik. Pediatrik dozlama mg/kg — sabit erişkin doz hayati hata.",
+    },
+
+    {
+      id: "s6_sivi",
+      kind: "action",
+      title: "Sıvı Resüsitasyonu",
+      prompt:
+        "SSC 2020 Pediatric: 10-20 mL/kg izotonik bolus 5-10 dk. Yanıt: HR, kapiller dolum, MAP. Maks 60 mL/kg ilk saatte (yüklenme riski).",
+      narrative: "Bu hasta 9 kg → her bolus 90-180 mL.",
+      min_actions: 1,
+      max_actions: 4,
+      expected_outcomes: [
+        {
+          action: { type: "give_medication", target_id: "ringer_laktat" },
           points: 20,
           feedback:
-            "Doğru — SSC 2020: dirençli vazopressör şokta hidrokortizon 2 mg/kg bolus, sonra 50 mg/m²/gün. Adrenal yetmezlik olasılığı.",
+            "Çok doğru — Ringer Laktat hipokloremik metabolik asidoz riskini azaltır. SSC 2020'de NaCl'a tercih edilir.",
+          vitals_change: { hr: 155, bp_systolic: 80, bp_diastolic: 50 },
         },
-        // S4 için: entübasyon hazırlığı + ketamin tercihi
-        {
-          action: { type: "give_medication", target_id: "ketamin" },
-          points: 15,
-          feedback:
-            "Doğru — septik şokta entübasyon için ketamin (hemodinamik nötr). Etomidate adrenal supresyon yapar, propofol hipotansiyonu derinleştirir.",
-          min_difficulty: 4,
-        },
-        {
-          action: { type: "use_equipment", target_id: "ventilator_mekanik" },
-          points: 15,
-          feedback:
-            "Doğru — akciğer raller + solunum yorulması → entübasyon + mekanik ventilasyon.",
-          min_difficulty: 4,
-        },
-        // S4 için echo (kardiyak disfonksiyon değerlendirmesi)
-        {
-          action: { type: "use_equipment", target_id: "ultrason" },
-          points: 12,
-          feedback:
-            "Doğru — POCUS: EF düşükse inotropik destek (dobutamin), vena kava durumu sıvı ihtiyacı için.",
-          min_difficulty: 4,
-        },
-        // HATA: propofol septik şokta
-        {
-          action: { type: "give_medication", target_id: "propofol" },
-          points: -15,
-          feedback:
-            "HATA — septik şokta propofol = kardiyovasküler kollaps. Ketamin veya etomidate tercih (ancak etomidate de adrenal sup yapar).",
-          critical: true,
-        },
-        // HATA: daha fazla sıvı
         {
           action: { type: "give_medication", target_id: "salin_09" },
-          points: -8,
+          points: 18,
           feedback:
-            "HAYIR — akciğer raller var, sıvı yüklenmesi belirgin. Vazopressör + kardiyak destek öncelikli.",
+            "Doğru — %0.9 NaCl 20 mL/kg (180 mL) bolus 5-10 dk. Yanıt değerlendir, gerekirse tekrar.",
+          vitals_change: { hr: 158, bp_systolic: 78, bp_diastolic: 48 },
         },
       ],
       default_wrong_penalty: -5,
       default_wrong_feedback:
-        "Bu aşamada: hidrokortizon + entübasyon hazırlığı + kardiyak değerlendirme.",
+        "Bu adımda sıvı bolusu. Vazopresör henüz erken — sıvı yanıtını gör.",
+    },
+
+    {
+      id: "s7_ek_tedavi",
+      kind: "decision",
+      title: "Ateş + Hipoglisemi Yönetimi",
+      prompt:
+        "Sıvı bolus sonrası vital iyileşme: HR 158, SBP 80. Ateş hâlâ 39°C, glukoz 65 mg/dL. Sıradaki adım?",
+      options: [
+        {
+          id: "a",
+          text: "Parasetamol IV 15 mg/kg + Dekstroz %10 2 mL/kg bolus",
+          correct: true,
+          points: 18,
+          feedback:
+            "Doğru — pediatrik ateş kontrolü konfor + metabolik talebi azaltır. Hipoglisemi sınırı (<70) düzeltilir.",
+        },
+        {
+          id: "b",
+          text: "Sadece parasetamol — glukoz 65 sınır, kendiliğinden düzelir",
+          correct: false,
+          points: -5,
+          feedback:
+            "Eksik — sepsiste glukoz hızla düşebilir. Beslenme yokken 65 mg/dL düzeltilir (bebeklerde <70 düzelt eşiği).",
+        },
+        {
+          id: "c",
+          text: "İbuprofen + glukoz takibi (replasman yok)",
+          correct: false,
+          points: -8,
+          feedback:
+            "Yanlış — septik şokta ibuprofen kontrendike (renal yan etki, hipoperfüzyon). Glukoz da replasman ister.",
+        },
+      ],
+    },
+
+    {
+      id: "s8_yatis",
+      kind: "decision",
+      title: "Yatış Kararı",
+      prompt:
+        "60 dk sonra: HR 148, SBP 84, SpO₂ 95% (HFNC), laktat 2.0. Sıvı yanıtlı şok, AB verildi. Sıradaki?",
+      options: [
+        {
+          id: "a",
+          text: "Pediatrik Yoğun Bakım (PYBÜ) — yakın monitör, vazopresör hazır",
+          correct: true,
+          points: 20,
+          feedback:
+            "Doğru — sıvı yanıtlı bile olsa septik şok PYBÜ izlemi gerektirir. İlk 24 saat tekrar bozulma olasılığı yüksek.",
+        },
+        {
+          id: "b",
+          text: "Pediatri servisi — durum stabil, normal yatak",
+          correct: false,
+          points: -8,
+          feedback:
+            "Hayır — septik şok geçirdi, PYBÜ standart bakım yeri. Servis monitörü yetersiz.",
+        },
+        {
+          id: "c",
+          text: "Acil gözlem 4-6 saat → düzelirse taburcu",
+          correct: false,
+          points: -15,
+          critical: true,
+          feedback:
+            "Kritik hata — septik şok hastasını taburcu hayati risk. Bakteriyemi ilk saatlerde kötüleşebilir.",
+        },
+        {
+          id: "d",
+          text: "Çocuk Enfeksiyon konsültasyonu + servise yatış",
+          correct: false,
+          points: 5,
+          feedback: "Konsültasyon doğru ama yatış yeri PYBÜ olmalı. Yarı puan.",
+        },
+      ],
     },
   ],
 
-  scoring: {
-    max_points: 150,
-    passing_score: 90,
-    grade_bands: {
-      A: 135,
-      B: 115,
-      C: 95,
-      D: 75,
+  lab_panels: {
+    "psp-tks": {
+      id: "psp-tks",
+      name_tr: "Tam Kan Sayımı",
+      results: [
+        { parameter: "WBC",      value: 22.4, unit: "×10³/µL", reference_range: "6.0-17.5", flag: "H",
+          interpretation: "Sola kayma + lökositoz, bakteriyel paterni. Pediatrik referans yetişkinden farklı." },
+        { parameter: "Nötrofil", value: 78,   unit: "%",        reference_range: "30-60",     flag: "H" },
+        { parameter: "Lenfosit", value: 14,   unit: "%",        reference_range: "30-60",     flag: "L" },
+        { parameter: "Hgb",      value: 10.8, unit: "g/dL",     reference_range: "10.5-13.5" },
+        { parameter: "PLT",      value: 285,  unit: "×10³/µL",  reference_range: "150-450" },
+      ],
+      comment: "Sola kayma + nötrofil hâkimiyeti bakteriyel sepsis ile uyumlu. PLT normal — DIC erken aşamada değil.",
     },
+    "psp-crp-pct": {
+      id: "psp-crp-pct",
+      name_tr: "CRP + Prokalsitonin",
+      results: [
+        { parameter: "CRP",            value: 145, unit: "mg/L",  reference_range: "<5",   flag: "HH" },
+        { parameter: "Prokalsitonin",  value: 8.4, unit: "ng/mL", reference_range: "<0.5", flag: "HH",
+          interpretation: "PCT >2 bakteriyel sepsis için yüksek özgünlük. >10 = ciddi sepsis." },
+      ],
+      comment: "Bakteriyel pnömoni kaynaklı sepsis ile uyumlu. Tedaviyle 48-72 saatte düşer.",
+    },
+    "psp-kan-gazi": {
+      id: "psp-kan-gazi",
+      name_tr: "Kan Gazı + Laktat",
+      results: [
+        { parameter: "pH",     value: 7.31, unit: "",       reference_range: "7.35-7.45",  flag: "L" },
+        { parameter: "pCO₂",   value: 32,   unit: "mmHg",   reference_range: "35-45",       flag: "L" },
+        { parameter: "pO₂",    value: 68,   unit: "mmHg",   reference_range: "80-100",      flag: "L" },
+        { parameter: "HCO₃⁻",  value: 18,   unit: "mEq/L",  reference_range: "22-26",       flag: "L" },
+        { parameter: "BE",     value: -7,   unit: "mEq/L",  reference_range: "-2 / +2",     flag: "L" },
+        { parameter: "Laktat", value: 3.2,  unit: "mmol/L", reference_range: "0.5-2.0",     flag: "H",
+          interpretation: "Doku hipoperfüzyonu işareti. Hedef: laktat <2 (2 saat içinde)." },
+      ],
+      comment: "Hafif metabolik asidoz + kompansatuvar takipne. Laktat 3.2 sepsis bundle indikasyonu.",
+    },
+    "psp-biyokimya": {
+      id: "psp-biyokimya",
+      name_tr: "Biyokimya / Elektrolitler",
+      results: [
+        { parameter: "Glukoz",    value: 68,  unit: "mg/dL", reference_range: "70-110", flag: "L",
+          interpretation: "Sınırda hipoglisemi. Bebeklerde sepsis altında hızlı düşebilir." },
+        { parameter: "BUN",       value: 24,  unit: "mg/dL", reference_range: "5-18",    flag: "H",
+          interpretation: "Prerenal AKI işareti. Sıvı sonrası tekrar değerlendir." },
+        { parameter: "Kreatinin", value: 0.6, unit: "mg/dL", reference_range: "0.2-0.5", flag: "H" },
+        { parameter: "Na⁺",       value: 134, unit: "mEq/L", reference_range: "136-145", flag: "L" },
+        { parameter: "K⁺",        value: 4.2, unit: "mEq/L", reference_range: "3.5-5.5" },
+        { parameter: "Cl⁻",       value: 102, unit: "mEq/L", reference_range: "98-107" },
+      ],
+    },
+    "psp-kan-kulturu": {
+      id: "psp-kan-kulturu",
+      name_tr: "Kan Kültürü (Ön Rapor)",
+      results: [
+        { parameter: "Üreme",       value: "Beklemede",                unit: "", reference_range: "Negatif",
+          interpretation: "Final 24-48 saat. Gram boyamada gram (+) diplokok." },
+        { parameter: "Gram boyama", value: "Gram (+) diplokok",        unit: "", reference_range: "—", flag: "C",
+          interpretation: "S. pneumoniae morfolojisi ile uyumlu. Seftriakson örtüyor." },
+      ],
+      comment: "24 saat sonraki final rapor lab_timeline'da.",
+    },
+  },
+
+  result_delay_seconds: {
+    "psp-tks":         60,
+    "psp-crp-pct":     90,
+    "psp-kan-gazi":    60,
+    "psp-biyokimya":   90,
+    "psp-kan-kulturu": 120,
+  },
+
+  lab_timeline: [
+    {
+      panel_id: "psp-kan-gazi",
+      at_minute: 60,
+      results: [
+        { parameter: "pH",     value: 7.36, unit: "",       reference_range: "7.35-7.45" },
+        { parameter: "pCO₂",   value: 36,   unit: "mmHg",   reference_range: "35-45" },
+        { parameter: "pO₂",    value: 92,   unit: "mmHg",   reference_range: "80-100",  flag: "L" },
+        { parameter: "HCO₃⁻",  value: 22,   unit: "mEq/L",  reference_range: "22-26" },
+        { parameter: "Laktat", value: 2.0,  unit: "mmol/L", reference_range: "0.5-2.0",
+          interpretation: "Resüsitasyon yanıtı: laktat normalize. Bundle başarılı." },
+      ],
+    },
+    {
+      panel_id: "psp-kan-kulturu",
+      at_minute: 1440,
+      results: [
+        { parameter: "Üreme",        value: "S. pneumoniae",                       unit: "", reference_range: "Negatif", flag: "C" },
+        { parameter: "Antibiyogram", value: "Seftriakson duyarlı, Penisilin orta", unit: "", reference_range: "—",
+          interpretation: "Mevcut tedavi (seftriakson) uygun. Vankomisin verildiyse kesilebilir." },
+      ],
+    },
+  ],
+
+  imaging_results: {
+    "psp-pa-grafi": {
+      id: "psp-pa-grafi",
+      name_tr: "PA Akciğer Grafisi",
+      modality: "xray",
+      view: "PA",
+      interpretation:
+        "Sağ alt zonda lober konsolidasyon (sağ alt lob pnömonisi). Sol akciğer açık. Kardiyo-torasik oran normal. Plevral efüzyon yok.",
+      findings: [
+        "Sağ alt lob homojen konsolidasyon",
+        "Hava bronkogramı (+)",
+        "Kardiyak silüet normal",
+        "Plevral efüzyon yok",
+        "Pnömotoraks yok",
+      ],
+      attribution: "Eğitim amaçlı temsili rapor",
+    },
+  },
+
+  scoring: {
+    max_points: 200,
+    passing_score: 130,
+    grade_bands: { A: 175, B: 150, C: 130, D: 100 },
+    score_floor: 0,
   },
 
   debrief: {
     key_learnings: [
-      "Pediatrik septik şokta SBP ile hipotansiyon tanımı yaşa bağlı: 1-10 yaş için SBP <70+(2×yaş).",
-      "SSC 2020 1-saat bundle: sıvı 20 mL/kg × 2-3 bolus + antibiyotik + kültür + laktat.",
-      "Pediatrik septik şokta DOPAMİN ARTIK 1. TERCİH DEĞİL — adrenalin (soğuk şok) veya noradrenalin (sıcak şok).",
-      "Damar yolu 90 sn'de bulunamazsa IO — hayat kurtarır.",
-      "Sıvıya dirençli şokta hidrokortizon düşünül (adrenal yetmezlik olasılığı).",
-      "Septik şokta entübasyon → ketamin tercih (hemodinamik nötr).",
-      "Akciğerde ral/ödem başladıysa sıvıyı durdur, vazopressör ve kardiyak desteğe geç.",
+      "Pediatrik septik şok tanısı SBP'ye değil klinik bulgulara dayanır: kapiller dolum >3 sn, soğuk uçlar, letarji, taşikardi.",
+      "İnfantta SBP <70 mmHg = hipotansiyon (yetişkinden farklı eşik).",
+      "SSC 2020 Pediatric Bundle (1 saat): IV/IO erişim → kültür → antibiyotik → sıvı bolus → laktat kontrolü.",
+      "Sıvı bolusu 10-20 mL/kg, 5-10 dk içinde. İlk saatte maks 60 mL/kg (yüklenme riski).",
+      "Ringer Laktat NaCl'a tercih edilir (hipokloremik asidoz önlenir).",
+      "Antibiyotik ilk 1 saat içinde — kültür hazırlığı geciktirmemeli. 3-5 yaş pnömoni: seftriakson 75 mg/kg IV.",
+      "Pediatrik dozlama mg/kg — sabit erişkin doz puan kaybı + güvenlik riski.",
+      "Sepsiste hipoglisemi sık (özellikle bebeklerde, beslenme yokken). Glukoz <70 düzelt.",
+      "Septik şok hastası — sıvı yanıtlı olsa bile — PYBÜ'ye yatırılır. 24 saat içinde tekrar bozulma riski.",
+      "Toplumda MRSA pnömonisi nadir; vankomisin rutin değil, klinik şüphede ekle.",
     ],
     references: [
       "Weiss SL et al. Surviving Sepsis Campaign International Guidelines for the Management of Septic Shock and Sepsis-Associated Organ Dysfunction in Children. Pediatr Crit Care Med. 2020.",
-      "TATD Çocuklarda Sepsis ve Septik Şok Protokolü, CAYD 2018.",
-      "Evans L et al. Surviving Sepsis Campaign: International Guidelines for Management of Sepsis and Septic Shock 2021.",
+      "AAP — Community-Acquired Pneumonia in Children: 2024 Update.",
+      "IDSA / Pediatric Infectious Diseases Society — Management of CAP in Children Guidelines (revize 2023).",
+      "WHO IMCI — Integrated Management of Childhood Illness.",
+      "TEMD/TPED Pediatrik Sepsis Tanı ve Yönetim Önerileri.",
     ],
     red_flags: [
-      "Pediatrik septik şokta dopamin 1. tercih DEĞİL",
-      "Antibiyotiği 1 saat içinde ver — kültürü bekleme",
-      "Damar yolu bulunamadıysa IO (90 sn eşiği)",
-      "Akciğerde ral başladıysa sıvıyı durdur, vazopressör öncelikli",
-      "Entübasyonda propofol septik şokta kontrendike (ketamin tercih)",
+      "İnfantta SBP <70 = septik şok eşiği — yetişkin değerlendirmesi yanıltır.",
+      "Antibiyotik gecikmesi (>1 saat) mortalite artırır — kültür beklentisi gerekçe olamaz.",
+      "Sıvı yüklenmesi (>60 mL/kg ilk saatte) pulmoner ödem riski — yanıt değerlendirerek bolus tekrarla.",
+      "Hipoglisemiyi atla, sepsiste hızla derinleşir.",
+      "Stabil görünen septik şok hastasını taburcu/servis kararı = kritik hata. Standart yer PYBÜ.",
     ],
-    next_scenarios: ["dahiliye-dka-001"],
+    next_scenarios: ["bronsiyolit-001", "anaflaksi-001"],
   },
 };
