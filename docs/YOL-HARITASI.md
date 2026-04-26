@@ -123,6 +123,65 @@ konumu.
 
 ---
 
+## 🚀 Faz 6 — Alışılmışın Dışında Motorlar (vizyon havuzu)
+
+Bu, "Türkiye'de hatta dünyada başka kimse yapmıyor" katmanı. Mevcut faz sırasını bozmaz — Faz 1+2+3+4+5 yine sırayla. Bu havuzdan en az biri Faz 2'den sonra paralel başlayabilir; AI Hasta + Zaman Makinesi en yüksek WOW × düşük risk kombinasyonu.
+
+### 🤖 6.1 — AI Hasta (anamnez gerçek diyalogla)
+Hastanın NPC'si Anthropic API üzerinden konuşur. Senaryoda "saklı bilgi havuzu" tanımlanır; doğru soru sorulmazsa bilgi gizli kalır. Anamnez becerisi puanlanır. Hiçbir Türkçe platformda yok.
+- Tahmini süre: 1 hafta
+- Risk: API maliyeti (per-request limit + caching)
+- Bağımlılık: Mevcut motor + ek `anamnesis` step kind
+
+### ⏪ 6.2 — Zaman Makinesi (alternative timeline)
+Vaka biter, debrief'te herhangi bir adıma geri dön, farklı karar ver, "ya o anda heparin verseydim" görsele bak. SessionState snapshot'lanır, paralel oynatılır.
+- Tahmini süre: 3-4 gün
+- Risk: Düşük (state snapshot mimarisi)
+- Pedagojik değeri devasa: gerçek hayat hatadan dönüşe izin vermez, simülasyon vermeli
+
+### 🧬 6.3 — Patofizyoloji Canlı Animasyon
+Sol tarafta hasta vücudu — DKA'da pankreas/böbrek/glukoz pompası canlı çalışır, STEMI'de tıkalı damar görünür ve tPA verince damar açılır. SVG animasyon (3D değil, daha az iş, daha hafif).
+- Tahmini süre: 2-3 hafta
+- Risk: İllüstrasyon işi (sanat varlığı bağımlılığı)
+
+### 🇹🇷 6.4 — Türkiye-Özel Motor Katmanı
+- TİTCK ilaç ad otomatik (Aspirin → "Coraspin/Asabir")
+- SGK SUT geri ödeme uyarısı ("bu ilaç ödenmez, alternatif?")
+- **Yerel hastalıklar:** Akdeniz ateşi, KKKA, Brusella, talasemi, Behçet — Türkiye'de bol görülen ama global platformlarda olmayan
+- Türkiye epidemiyoloji istatistikleri tanı diferansiyelinde
+- Tahmini süre: 1-2 hafta (veri toplama yorucu)
+- Pazarda kimsenin yapmadığı diferansiyasyon
+
+### 🧠 6.5 — Klinik Akıl Yürütme Şeması
+Her karar otomatik bir karar ağacına ekleniyor: semptom → diferansiyel → test → tanı → tedavi. Vaka sonu kullanıcı kendi düşünce zincirini görsel görür. Tıp eğitiminin kutsal kasesi.
+- Tahmini süre: 1 hafta
+- Risk: UX tasarım zor (graph layout)
+
+### 🎮 6.6 — Çok-Oyunculu Ekip Simülasyonu
+2-4 öğrenci aynı vaka: lider, yardımcı hekim, hemşire, anestezi. Real-time. CPR ekip dinamiği. Backend gerekir (Faz 2 işi).
+- Tahmini süre: 1-2 ay
+- Bağımlılık: Backend (Faz 2 ile birleşik)
+- WOW: rakip yok
+
+### 📊 6.7 — Yetkinlik RPG Haritası
+Her vaka oyladıkça branş × beceri matrisinde XP toplar. "Kardiyolojide Lv 7, Endokrinde Lv 3". Heatmap "şu konularda zayıfsın → şu vakaları öner".
+- Tahmini süre: 4-5 gün (frontend) + Faz 2 backend ile entegre
+- Risk: Backend olmadan zayıf
+
+### Önerilen sıra
+
+| Sıra | Modül | Faza yerleştirme |
+|------|-------|------------------|
+| 1 | 6.2 Zaman Makinesi | Faz 1 sonrası, mevcut motor üstüne |
+| 2 | 6.1 AI Hasta | Faz 2 ile paralel (hesap sistemi rate limit için lazım) |
+| 3 | 6.5 Akıl Yürütme | Faz 2 sonrası |
+| 4 | 6.4 TR Motoru | Faz 2 sonrası, sürekli devam eden veri katmanı |
+| 5 | 6.3 Patofizyoloji | Faz 3 ile paralel (3D yerine SVG fallback) |
+| 6 | 6.7 RPG | Faz 2 backend hazır olunca |
+| 7 | 6.6 Çok oyunculu | Faz 4 sonrası, en uzun iş |
+
+---
+
 ## 📊 Başarı göstergeleri (KPI)
 
 Her fazın sonunda kontrol:
