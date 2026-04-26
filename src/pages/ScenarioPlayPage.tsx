@@ -299,12 +299,17 @@ export function ScenarioPlayPage() {
     setPointsThisStep((p) => p + totalPoints);
     if (isCritical) setCriticalErrorsThisStep((c) => c + 1);
 
-    if (evaluation.vitals_change && session) {
-      setSession({
-        ...session,
-        baseline_vitals: applyVitalsChange(session.baseline_vitals, evaluation.vitals_change),
-        vitals: applyVitalsChange(session.vitals, evaluation.vitals_change),
-      });
+    if (evaluation.vitals_change) {
+      const vc = evaluation.vitals_change;
+      setSession((s) =>
+        s
+          ? {
+              ...s,
+              baseline_vitals: applyVitalsChange(s.baseline_vitals, vc),
+              vitals: applyVitalsChange(s.vitals, vc),
+            }
+          : s
+      );
     }
 
     if (pharmaCritical) {
@@ -313,7 +318,9 @@ export function ScenarioPlayPage() {
     }
 
     if (evaluation.unlocks.length > 0 && !pharmaCritical) {
-      setTimeout(() => finishStep(evaluation.unlocks[0]), 1200);
+      // Stale closure'u önle: toplam puanı şimdi hesapla, timeout'a geç
+      const stepTotalPts = pointsThisStep + totalPoints;
+      setTimeout(() => finishStep(evaluation.unlocks[0], stepTotalPts), 1200);
     }
   };
 
@@ -396,28 +403,36 @@ export function ScenarioPlayPage() {
   const handleInfoContinue = () => finishStep(null);
   const handleActionStepContinue = () => finishStep(null);
 
-  // overridePoints: decision step setTimeout'larından geçilir — stale closure sorununu önler
+  // overridePoints: decision/unlock timeout'larından geçilir
+  // Functional setSession ile stale closure sorunu çözüldü: s her zaman güncel state
   const finishStep = (unlockId: string | null, overridePoints?: number) => {
-    if (!session || !currentStep) return;
+    if (!currentStep) return;
 
-    const nextStepId =
-      unlockId ??
-      pickNextStep(rs, currentStep.id, [], session.selected_difficulty);
-
+    // Closure değerlerini yerel değişkenlere al — setSession callback'i bunları yakalar
     const pts = overridePoints !== undefined ? overridePoints : pointsThisStep;
+    const actions = actionsThisStep;
+    const critErrors = criticalErrorsThisStep;
+    const stepId = currentStep.id;
 
-    let newSession = completeStep(
-      session,
-      currentStep.id,
-      pts,
-      actionsThisStep,
-      criticalErrorsThisStep,
-      nextStepId
-    );
+    setSession((s) => {
+      if (!s) return s;
+      const nextStepId =
+        unlockId ??
+        pickNextStep(rs, stepId, [], s.selected_difficulty);
 
-    if (newSession.finished) newSession = finalizeSession(newSession, rs, "completed");
+      let newSession = completeStep(
+        s,           // stale closure yerine güncel state
+        stepId,
+        pts,
+        actions,
+        critErrors,
+        nextStepId
+      );
 
-    setSession(newSession);
+      if (newSession.finished) newSession = finalizeSession(newSession, rs, "completed");
+      return newSession;
+    });
+
     setActionsThisStep([]);
     setPointsThisStep(0);
     setCriticalErrorsThisStep(0);
