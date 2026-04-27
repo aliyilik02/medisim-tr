@@ -12,15 +12,15 @@ import type { Scenario } from "@/engine";
 
 export const scenario_stemi: Scenario = {
   id: "kardiyoloji-stemi-001",
-  version: "0.2.0", // Yeni motor uyumlu
+  version: "0.3.0",
   title: "62 Yaş Erkek — Akut Göğüs Ağrısı (STEMI)",
   description:
-    "2 saattir süren retrosternal göğüs ağrısı, sol kola yayılan. STEMI yönetimi ve reperfüzyon kararı.",
+    "2 saattir süren retrosternal göğüs ağrısı, sol kola yayılan. STEMI yönetimi ve reperfüzyon kararı. Lab paralel akış, troponin kinetik, yatak başı EKO ve kardiyojenik şok yönetimi.",
   specialty: "kardiyoloji",
   tags: ["stemi", "acil", "kardiyak", "ekg", "reperfüzyon"],
   difficulty: 3,
   supported_difficulties: [1, 2, 3, 4, 5],
-  estimated_minutes: 15,
+  estimated_minutes: 18,
   modes: ["quiz", "interactive_3d"],
   language: "tr",
   author: "MediSim TR Ekibi",
@@ -76,6 +76,11 @@ export const scenario_stemi: Scenario = {
     "adrenalin",
     "amiodaron",         // VT/VF dalı için
     "lidokain",          // VT alternatifi
+    "norepinefrin",      // Kardiyojenik şok: 1. tercih vazopressör (SOAP-II)
+    "dobutamin",         // Kardiyojenik şok: inotropik destek
+    "dopamin",           // Kardiyojenik şok: eski seçenek (SOAP-II'de kötü)
+    "furosemid",         // Pulmoner ödem
+    "atorvastatin",      // Yüksek doz statin (80 mg) — sekonder profilaksi
   ],
 
   available_equipment: [
@@ -88,9 +93,297 @@ export const scenario_stemi: Scenario = {
     "iv_kateter_20g",
     "defibrilator",
     "stetoskop",
+    "ekokardiyografi",
+    "kan_gazi_cihazi",
   ],
 
   ekg_pattern: "stemi",
+
+  lab_panels: {
+    "stemi-troponin-hs": {
+      id: "stemi-troponin-hs",
+      name_tr: "Troponin I hs + CK-MB (Kardiyak Belirteçler)",
+      collected_at_min: 15,
+      comment:
+        "⚠️ STEMI tanısı klinik + EKG ile konur — troponin BEKLENMEZ. Paralel istenir, risk stratifikasyonu + infarkt boyutu için.",
+      results: [
+        {
+          parameter: "Troponin I hs (Baseline)",
+          value: 0.45,
+          unit: "ng/mL",
+          reference_range: "<0.04",
+          flag: "HH",
+          interpretation:
+            "Yüksek baseline — STEMI'de beklenen erken yükseliş. Klinik+EKG tanısını destekler. Kinetik değerlendirme için 3. saatte tekrar.",
+        },
+        {
+          parameter: "CK-MB",
+          value: 78,
+          unit: "U/L",
+          reference_range: "<25",
+          flag: "HH",
+          interpretation:
+            "Yükselmiş — miyokard hasarı ile uyumlu. İnfarkt boyutu ve kinetik için seri ölçüm.",
+        },
+      ],
+    },
+    "stemi-cbc-bmp": {
+      id: "stemi-cbc-bmp",
+      name_tr: "CBC + BMP — Kontrast Öncesi Değerlendirme",
+      collected_at_min: 10,
+      comment: "Hızlı acil lab — 10dk. Kontrast güvenliği + elektrolit için kritik.",
+      results: [
+        {
+          parameter: "Hemoglobin",
+          value: 13.8,
+          unit: "g/dL",
+          reference_range: "13.5-17.5",
+          interpretation: "Normal — PCI öncesi baseline.",
+        },
+        {
+          parameter: "WBC",
+          value: 11200,
+          unit: "/μL",
+          reference_range: "4500-11000",
+          flag: "H",
+          interpretation: "Hafif yüksek — stres/inflamasyon.",
+        },
+        {
+          parameter: "Trombosit",
+          value: 218000,
+          unit: "/μL",
+          reference_range: "150.000-400.000",
+        },
+        {
+          parameter: "Kreatinin (Cr)",
+          value: 1.0,
+          unit: "mg/dL",
+          reference_range: "0.7-1.3",
+          interpretation:
+            "Normal — eGFR >60. Kontrast güvenli. Cr <1.5 → kontrast nefropatisi riski düşük.",
+        },
+        {
+          parameter: "BUN",
+          value: 18,
+          unit: "mg/dL",
+          reference_range: "7-20",
+        },
+        {
+          parameter: "Glukoz",
+          value: 165,
+          unit: "mg/dL",
+          reference_range: "70-110",
+          flag: "H",
+          interpretation:
+            "Stres hiperglisemisi — DM Tip 2 hastada beklenen. Akut faz hedefi <180 mg/dL.",
+        },
+        {
+          parameter: "Potasyum (K)",
+          value: 4.3,
+          unit: "mEq/L",
+          reference_range: "3.5-5.0",
+          interpretation:
+            "Normal — aritmik aralık içinde güvenli. Hipokalemi (<3.5) VT/VF riskini artırır.",
+        },
+        {
+          parameter: "Sodyum (Na)",
+          value: 139,
+          unit: "mEq/L",
+          reference_range: "136-145",
+        },
+      ],
+    },
+    "stemi-coag-lipid": {
+      id: "stemi-coag-lipid",
+      name_tr: "Koagülasyon + Lipid Profili",
+      collected_at_min: 30,
+      comment:
+        "Heparin öncesi baseline + sekonder profilaksi planlama. Sonuç geç (30dk) — akut PCI kararını etkilemez.",
+      results: [
+        {
+          parameter: "PT/INR",
+          value: 1.0,
+          unit: "",
+          reference_range: "0.8-1.2",
+          interpretation: "Normal — heparin öncesi baseline.",
+        },
+        {
+          parameter: "aPTT",
+          value: 28,
+          unit: "saniye",
+          reference_range: "25-36",
+          interpretation: "Normal — antikoagülan naif.",
+        },
+        {
+          parameter: "Fibrinojen",
+          value: 310,
+          unit: "mg/dL",
+          reference_range: "200-400",
+          interpretation: "Normal sınır — akut faz reaktanı olarak hafif yüksek beklenir.",
+        },
+        {
+          parameter: "LDL Kolesterol",
+          value: 138,
+          unit: "mg/dL",
+          reference_range: "<100 (genel), <55 (ACS)",
+          flag: "HH",
+          interpretation:
+            "Yüksek risk profili. ACS sonrası ESC 2023 hedef <55 mg/dL (Class I). Atorvastatin 80mg veya rosuvastatin 40mg başla.",
+        },
+        {
+          parameter: "HDL Kolesterol",
+          value: 38,
+          unit: "mg/dL",
+          reference_range: ">40",
+          flag: "L",
+          interpretation: "Düşük koruyucu HDL — kardiyovasküler risk artışı.",
+        },
+        {
+          parameter: "Trigliserid",
+          value: 180,
+          unit: "mg/dL",
+          reference_range: "<150",
+          flag: "H",
+          interpretation: "Hafif yüksek — DM + sigara ile uyumlu metabolik profil.",
+        },
+      ],
+    },
+    "stemi-abg-lactate": {
+      id: "stemi-abg-lactate",
+      name_tr: "Kan Gazı + Laktat (Pompa Fonksiyon Değerlendirmesi)",
+      collected_at_min: 10,
+      comment:
+        "Hafif pompa yetmezliği bulguları — kardiyojenik şok eşiğinde değil ama yakın izlem gerekli.",
+      results: [
+        {
+          parameter: "pH",
+          value: 7.36,
+          unit: "",
+          reference_range: "7.35-7.45",
+          interpretation: "Normal sınır — hafif kompanze.",
+        },
+        {
+          parameter: "pCO2",
+          value: 36,
+          unit: "mmHg",
+          reference_range: "35-45",
+        },
+        {
+          parameter: "pO2",
+          value: 88,
+          unit: "mmHg",
+          reference_range: "80-100",
+          flag: "L",
+          interpretation:
+            "Hafif hipoksemi oda havasında — SpO2 %94 ile uyumlu. Destekleyici O2 tartışmalı.",
+        },
+        {
+          parameter: "HCO3",
+          value: 22,
+          unit: "mEq/L",
+          reference_range: "22-26",
+        },
+        {
+          parameter: "Laktat",
+          value: 2.4,
+          unit: "mmol/L",
+          reference_range: "<2.0",
+          flag: "H",
+          interpretation:
+            "Sınırda yüksek — kardiyojenik şok eşiğinde değil (>2.0 hafif, >4.0 şok). Yakın izlem zorunlu. PCI sonrası trend kritik.",
+        },
+      ],
+    },
+  },
+
+  result_delay_seconds: {
+    "stemi-troponin-hs": 900,
+    "stemi-cbc-bmp": 600,
+    "stemi-coag-lipid": 1800,
+    "stemi-abg-lactate": 600,
+  },
+
+  lab_timeline: [
+    {
+      at_minute: 10,
+      panel_id: "stemi-cbc-bmp",
+      results: [
+        {
+          parameter: "Kreatinin (Cr)",
+          value: 1.0,
+          unit: "mg/dL",
+          reference_range: "0.7-1.3",
+          interpretation:
+            "Doğrulandı: Cr 1.0 — kontrast güvenli. eGFR >60. PCI öncesi yeşil ışık.",
+        },
+        {
+          parameter: "Potasyum (K)",
+          value: 4.3,
+          unit: "mEq/L",
+          reference_range: "3.5-5.0",
+          interpretation:
+            "Aritmik risk düşük — K normal. Hipokalemi yoksa antiaritmik ek önlem gerekmez.",
+        },
+      ],
+    },
+    {
+      at_minute: 180,
+      panel_id: "stemi-troponin-hs",
+      results: [
+        {
+          parameter: "Troponin I hs (3. Saat Tekrar)",
+          value: 3.8,
+          unit: "ng/mL",
+          reference_range: "<0.04",
+          flag: "HH",
+          interpretation:
+            "Kinetik artış: 0.45 → 3.8 ng/mL (8x). Anlamlı yükseliş — STEMI doğrulandı. İnfarkt boyutu göstergesi, EF düşüklüğü ile korelasyon.",
+        },
+        {
+          parameter: "CK-MB (3. Saat)",
+          value: 210,
+          unit: "U/L",
+          reference_range: "<25",
+          flag: "HH",
+          interpretation:
+            "Pik yükseliş — miyokard hasarı devam ediyor. CK-MB/CK oranı reinfarkt tespitinde değerli.",
+        },
+      ],
+    },
+    {
+      at_minute: 240,
+      panel_id: "stemi-abg-lactate",
+      results: [
+        {
+          parameter: "pH",
+          value: 7.28,
+          unit: "",
+          reference_range: "7.35-7.45",
+          flag: "L",
+          interpretation:
+            "Asidoz gelişiyor — kardiyojenik şok ilerliyor. Acil vazopressör + inotropik destek.",
+        },
+        {
+          parameter: "Laktat",
+          value: 4.5,
+          unit: "mmol/L",
+          reference_range: "<2.0",
+          flag: "HH",
+          interpretation:
+            "KRİTİK — Laktat >4.0: Kardiyojenik şok eşiği aşıldı. s7b adımı: norepinefrin + dobutamin + IABP/Impella konsültasyonu.",
+        },
+        {
+          parameter: "pO2",
+          value: 72,
+          unit: "mmHg",
+          reference_range: "80-100",
+          flag: "L",
+          interpretation:
+            "Hipoksemi artıyor — pulmoner ödem. Oksijen destek, CPAP veya entübasyon hazırlığı.",
+        },
+      ],
+    },
+  ],
 
   medication_timing_overrides: {
     aspirin:       { onset_sec: 3, peak_min: 0.25,  duration_min: 0.75 },
@@ -471,10 +764,82 @@ export const scenario_stemi: Scenario = {
             "Tartışmalı ve zamanlaması önemli. COMMIT: erken IV beta-bloker kardiyojenik şok riskini artırır. Hemodinamik stabilse oral form gün içinde düşünülebilir. Seviye 3+ için: klinik yargı.",
           min_difficulty: 3,
         },
+        // Lab paralel akış — PCI'yi geciktirmeden
+        {
+          action: { type: "order_test", target_id: "stemi-troponin-hs" },
+          points: 10,
+          feedback:
+            "✓ Troponin paralel istendi — doğru. STEMI tanısı klinik+EKG'ye dayanır, troponin beklenmez. Paralel akış, PCI'yi geciktirmez.",
+        },
+        {
+          action: { type: "order_test", target_id: "stemi-cbc-bmp" },
+          points: 10,
+          feedback:
+            "✓ CBC+BMP paralel istendi — kontrast öncesi Cr değerlendirmesi için kritik. 10 dakikada sonuç, PCI hazırlığını geciktirmez.",
+        },
+        {
+          action: { type: "order_test", target_id: "stemi-abg-lactate" },
+          points: 8,
+          feedback:
+            "✓ Kan gazı + laktat — pompa fonksiyonu baseline için. Laktat 2.4 (sınırda), kardiyojenik şok riski izlemine ekle.",
+        },
+        {
+          action: { type: "examine", target_id: "troponin_sonucu_bekle" },
+          points: -15,
+          feedback:
+            "✗ Troponin için PCI'yi bekleme — 'Time is myocardium'. STEMI tanısı EKG ile konur, troponin destekleyici. Beklersen kapı-balon hedefi kaçar.",
+        },
       ],
       default_wrong_penalty: -5,
       default_wrong_feedback:
         "Reperfüzyon öncesi standart tedavide yer almıyor.",
+    },
+
+    // ========================================================
+    // ADIM 3b (YENİ) — Lab paralel akış + kontrast değerlendirme
+    // ========================================================
+    {
+      id: "s3b_lab_review",
+      kind: "decision",
+      title: "Lab Paralel Akış — Kontrast + Lipid + Risk Değerlendirmesi",
+      prompt:
+        "Lab sonuçları geliyor (CBC+BMP erken, troponin takip): Troponin I hs 0.45 ng/mL (yüksek), Cr 1.0 mg/dL, LDL 138 mg/dL, K 4.3 mEq/L, Laktat 2.4 mmol/L (sınırda). Lab bulgularına göre yaklaşımınız?",
+      narrative:
+        "Paralel akış: Lab PCI'yi geciktirmez ama bilgileri akut ve uzun vadeli kararları şekillendirir.",
+      options: [
+        {
+          id: "opt_tam_degerl",
+          text: "Cr 1.0 → kontrast güvenli (onay), troponin kinetik 3h tekrar planla, atorvastatin 80mg hemen başla (LDL hedef <55, ESC 2023), laktat izleme defterine ekle",
+          correct: true,
+          points: 30,
+          feedback:
+            "Mükemmel — tam paralel akış değerlendirmesi. Cr 1.0: kontrast güvenli (eGFR >60). Troponin kinetik: tanıyı destekler, infarkt boyutunu gösterir. Yüksek doz statin akut fazda başlanır (ESC 2023 Class I). Laktat 2.4: sınır değer, kardiyojenik şok erken sinyali.",
+        },
+        {
+          id: "opt_sadece_troponin",
+          text: "Troponin'e bak, yüksek — STEMI doğrulandı, devam et",
+          correct: false,
+          points: 10,
+          feedback:
+            "Yetersiz — troponin zaten PCI kararını değiştirmez (EKG tanısı). LDL sekonder profilaksi fırsatı kaçırıldı, kontrast güvenliği atlandı, laktat izlemi eksik.",
+        },
+        {
+          id: "opt_kontrast_cr_siz",
+          text: "Cr sonucu gelmeden kontrast ver, zaman kaybetme",
+          correct: false,
+          points: -25,
+          feedback:
+            "Hatalı — bilinmeyen renal fonksiyon → kontrast nefropatisi riski. Cr 10 dakikada gelir, PCI'yi geciktirmez. Akut renal yetmezlik STEMI mortalitesini artırır.",
+        },
+        {
+          id: "opt_statin_gec",
+          text: "Statin taburculuğa bırak, şimdi öncelik değil",
+          correct: false,
+          points: -15,
+          feedback:
+            "ESC 2023 Class I ihlali — Yüksek doz statin akut fazda başlanır. Taburculuğa bırakmak uyumu azaltır. LDL 138 → hedef <55: agresif sekonder profilaksi acilen.",
+        },
+      ],
     },
 
     // ========================================================
@@ -630,6 +995,23 @@ export const scenario_stemi: Scenario = {
             "Doğru (opsiyonel) — EF<%40 + DM veya HF belirtisi varsa spironolakton/eplerenon düşünülür.",
           min_difficulty: 4,
         },
+        {
+          action: {
+            type: "give_medication",
+            target_id: "atorvastatin",
+            dose: "80 mg",
+          },
+          points: 15,
+          feedback:
+            "Doğru — Atorvastatin 80 mg yüksek doz statin. ACS akut fazında başlanır (ESC 2023 Class I). LDL hedef <55 mg/dL. Plak stabilizasyonu + antiinflamatuvar etki.",
+        },
+        {
+          action: { type: "order_test", target_id: "stemi-eko-yatakbasi" },
+          points: 12,
+          feedback:
+            "✓ Yatak başı EKO — EF %38 (orta düşük). Anterior hipokinezi/akinezi. Mekanik komplikasyon ekartandı. ICD endikasyonu değerlendirmesi için 40. günde EF tekrar bakılmalı.",
+          min_difficulty: 3,
+        },
       ],
       default_wrong_penalty: -3,
       default_wrong_feedback:
@@ -693,6 +1075,71 @@ export const scenario_stemi: Scenario = {
       default_wrong_feedback:
         "VF yönetiminde öncelik değil. Defib-adrenalin-amiodaron sırası.",
     },
+
+    // ========================================================
+    // ADIM 7b (YENİ) — Post-PCI Pump Failure / Kardiyojenik Şok
+    // ========================================================
+    {
+      id: "s7b_kardiyojenik_sok_pump_failure",
+      kind: "decision",
+      title: "Post-PCI Kardiyojenik Şok — Pump Failure",
+      prompt:
+        "PCI başarılı (TIMI 3 akım), LAD'ye stent. 4 saat sonra: BP 85/55, HR 110, SpO₂ 91%, bilateral akciğer krepitasyonu, idrar çıkışı azaldı. Laktat 4.5 mmol/L (kritik). EKO tekrar: EF %28, pulmoner ödem bulguları. Kardiyojenik şok + akut pulmoner ödem. Yaklaşımınız?",
+      narrative:
+        "Post-PCI kardiyojenik şok — reperfüze edilmiş miyokardın iyileşmesi zaman alır ('stunned myocardium'). Mekanik komplikasyon ve re-oklüzyon ekartandı.",
+      min_difficulty: 3,
+      options: [
+        {
+          id: "opt_norepinefrin_dobutamin",
+          text: "Norepinefrin 0.1-0.3 mcg/kg/dk (MAP ≥65 hedef) + Dobutamin 5-10 mcg/kg/dk (inotropik) + Furosemid IV (pulmoner ödem) + Sıvı kısıtla + Tekrar koroner anjio planla (re-oklüzyon ekartasyonu)",
+          correct: true,
+          points: 35,
+          feedback:
+            "Mükemmel — ESC 2023 + SOAP-II kılavuzu. Norepinefrin: 1. tercih vazopressör (dopamine üstün, SOAP-II 2010). Dobutamin: inotropik destek. Furosemid: pulmoner ödem boşaltması. Tekrar anjio: stent trombozu/re-oklüzyon ekartasyonu zorunlu. IABP/Impella konsültasyonu (DanGer Shock 2024 pozitif sinyal).",
+        },
+        {
+          id: "opt_mekanik_destek",
+          text: "Mekanik dolaşım desteği konsültasyonu (IABP/Impella) + Norepinefrin + Dikkatli sıvı + Tekrar kateterizasyon",
+          correct: true,
+          points: 30,
+          feedback:
+            "Doğru — Mekanik destek seçilmiş hastada (genç, düzeltile kabul edilebilir şok). IABP-SHOCK II rutin IABP negatif, ama Impella için DanGer Shock 2024 pozitif sinyal. Norepinefrin + tekrar anjio zorunlu bileşenler.",
+        },
+        {
+          id: "opt_dopamin_sivi",
+          text: "Dopamin infüzyonu başla + 1 L SF bolus (hipovolemi düzelt)",
+          correct: false,
+          points: -15,
+          feedback:
+            "Hatalı — Dopamin SOAP-II 2010: norepinefrine göre daha yüksek aritmi insidansı + mortalite. Pulmoner ödem varken 1 L SF bolus sıvı yükünü artırır — zarar verir.",
+        },
+        {
+          id: "opt_sivi_bolus",
+          text: "2 L kristaloid bolus — önce hipovolemiyi düzelt",
+          correct: false,
+          points: -20,
+          feedback:
+            "Hatalı — Bilateral krepitasyon + düşük EF: kardiyojenik şok pulmoner ödemle birlikte. Sıvı yüklemesi pulmoner ödemi kötüleştirir, hipoksiyi artırır. Sıvı kısıtla.",
+        },
+        {
+          id: "opt_beta_bloker",
+          text: "Taşikardi var (HR 110) — metoprolol IV başla",
+          correct: false,
+          points: -30,
+          critical: true,
+          feedback:
+            "KRİTİK HATA — Kardiyojenik şokta beta-blokör KONTRENDİKE. Kalp debisini daha düşürür, hipotansiyonu derinleştirir, mortaliteyi artırır. Taşikardi şokun kompensatuvar yanıtıdır — bastırma.",
+        },
+        {
+          id: "opt_medikal_sadece",
+          text: "Medikal tedaviyle devam et, tekrar kateterizasyon gereksiz",
+          correct: false,
+          points: -20,
+          feedback:
+            "Yetersiz — Stent trombozu, in-stent restenoz, disseke stent veya mekanik komplikasyon post-PCI dönemde klinik kötüleşmenin başlıca nedenleridir. Tekrar görüntüleme zorunlu.",
+        },
+      ],
+    },
   ],
 
   imaging_results: {
@@ -730,17 +1177,34 @@ export const scenario_stemi: Scenario = {
       ],
       timestamp_min: 3,
     },
+    "stemi-eko-yatakbasi": {
+      id: "stemi-eko-yatakbasi",
+      name_tr: "Yatak Başı Ekokardiyografi (TTE)",
+      modality: "echo",
+      view: "Parasternal uzun eksen + apikal 4 odacıklı",
+      interpretation:
+        "EF %38 (orta düşük — anterior MI sonrası). Anterior ve anteroseptal duvarlarda belirgin hipokinezi/akinezi (LAD sulama alanı). Sağ ventrikül fonksiyonu korunmuş. Perikart efüzyonu yok. Papiller kas bütünlüğü korunmuş — mitral regürjitasyon yok. VSD yok. Serbest duvar rüptürü ekartandı. Kapak patolojisi saptanmadı.",
+      findings: [
+        "EF: %38 — orta düşük (normal >55%)",
+        "Anterior + anteroseptal duvar: hipokinezi/akinezi (LAD okluzyonu alanı)",
+        "Sağ ventrikül: fonksiyon korunmuş",
+        "Perikart: sıvı yok",
+        "Mekanik komplikasyon EKARTANDı: VSD(-), papiller kas rüptürü(-), serbest duvar rüptürü(-)",
+        "Kapaklar: mitral, aort, triküspit normal",
+      ],
+      timestamp_min: 15,
+    },
   },
 
   scoring: {
-    max_points: 280,
-    passing_score: 170,
+    max_points: 365,
+    passing_score: 220,
     score_floor: 0,
     grade_bands: {
-      A: 240,
-      B: 200,
-      C: 170,
-      D: 130,
+      A: 315,
+      B: 260,
+      C: 220,
+      D: 165,
     },
   },
 
@@ -801,13 +1265,24 @@ export const scenario_stemi: Scenario = {
       "Morfin rutin değil — CRUSADE mortalite artışı göstermiştir. Nitrata dirençli ağrıda düşünülür.",
       "SpO₂ ≥90% ise rutin O₂ endike değil (AVOID trial).",
       "PCI sonrası: DAPT 12 ay + yüksek doz statin + ACEi/ARB + oral beta-bloker.",
+      "Time is myocardium: Door-to-balloon <90dk (direkt PCI merkezi), <120dk (transfer). Lab paralel akış — PCI'yi geciktirmez.",
+      "Troponin STEMI tanısı için beklenmez — klinik+EKG yeterli. Paralel istenir, risk stratifikasyonu + infarkt boyutu için.",
+      "LDL hedef <55 mg/dL ACS sonrası (ESC 2023 Class I). Atorvastatin 80mg veya rosuvastatin 40mg — akut fazda başla.",
+      "Cr kontrast öncesi: Cr <1.5 güvenli, 1.5-2.0 dikkatli (hidrasyon), >2.0 alternatif yöntem.",
+      "Yatak başı EKO post-STEMI: EF + mekanik komplikasyon ekartasyonu (VSD, papiller kas, serbest duvar rüptürü) zorunlu.",
+      "Kardiyojenik şokta beta-blokör KONTRENDİKE — kalp debisini düşürür, mortalite artırır.",
+      "Norepinefrin > Dopamin kardiyojenik şokta (SOAP-II 2010). IABP rutin negatif (IABP-SHOCK II). Impella pozitif sinyal (DanGer Shock 2024).",
+      "Re-oklüzyon + stent trombozu post-PCI ilk 24-48 saatte yüksek risk — klinik kötüleşmede tekrar anjio.",
     ],
     references: [
-      "ESC 2023 ACS Yönetim Kılavuzu",
+      "ESC 2023 ACS Yönetim Kılavuzu (Byrne et al., Eur Heart J 2023)",
       "TKD Akut Koroner Sendrom Kılavuzu 2022",
-      "AHA/ACC 2022 STEMI Guidelines",
+      "AHA/ACC 2021 STEMI Guidelines",
       "PLATO (tikagrelor), TRITON-TIMI 38 (prasugrel)",
       "COMMIT, CRUSADE, AVOID çalışmaları",
+      "SOAP-II 2010 (De Backer et al., NEJM) — Norepinefrin vs Dopamin",
+      "IABP-SHOCK II 2012 (Thiele et al., NEJM) — IABP rutin negatif",
+      "DanGer Shock 2024 (Møller et al., NEJM) — Impella pozitif sinyal",
     ],
     red_flags: [
       "Hipotansiyon (sağ ventrikül MI? Kardiyojenik şok?)",
@@ -815,10 +1290,10 @@ export const scenario_stemi: Scenario = {
       "VT/VF — hemen defibrilasyon",
       "V1-V3'te ST depresyonu → posterior MI düşün (V7-V9 çek)",
       "İki kol arası TA farkı >20 mmHg → aort diseksiyonu ekarte et",
+      "Laktat >2.0 post-MI: kardiyojenik şok erken sinyali — yakın izlem",
+      "PCI sonrası klinik kötüleşme → re-oklüzyon/stent trombozu ekarte",
+      "Kardiyojenik şokta beta-blokör emri → kritik hata, durumun kötüleşmesine yol açar",
     ],
-    next_scenarios: [
-      "kardiyoloji-kardiyojenik-sok-001",
-      "kardiyoloji-aritmi-vt-001",
-    ],
+    next_scenarios: [],
   },
 };
