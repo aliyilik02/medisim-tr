@@ -1,19 +1,19 @@
 // ============================================================
 // MediSim TR — Kardiyojenik Şok Senaryosu
 // ============================================================
-// Klinik referans: ESC 2023 Akut KY kılavuzu, AHA Cardiogenic
+// Klinik referans: ESC 2021 Heart Failure kılavuzu, AHA Cardiogenic
 // Shock 2022 Scientific Statement, SCAI Shock Classification
 // (A-B-C-D-E stages).
 // Ana öğretim: şok tanıma, vazopressor/inotrop seçimi, mekanik
 // destek kararı, STEMI komplikasyonu tanıma.
-// Klinik review: Mehmet Ali (kullanıcı) — TODO
+// Faz 5.1: lab_panels + imaging_results + lab_timeline + S2.5 eklendi
 // ============================================================
 
 import type { Scenario } from "@/engine";
 
 export const scenario_kardiyojenik_sok: Scenario = {
   id: "kardi-kardiyojenik-sok-001",
-  version: "0.1.0",
+  version: "0.2.0",
   title: "65 Yaş Erkek — STEMI Sonrası Şok",
   description:
     "3 saat önce anterior STEMI tanısı alan hasta, primer PCI sonrası koroner yoğun bakımda. Ani hipotansiyon, oligüri ve konfüzyon. SCAI evrelendirmesi, vazopressor-inotrop seçimi, mekanik destek kararı.",
@@ -25,7 +25,7 @@ export const scenario_kardiyojenik_sok: Scenario = {
   modes: ["quiz", "interactive_3d"],
   language: "tr",
   author: "MediSim TR Ekibi",
-  last_updated: "2026-04-24",
+  last_updated: "2026-04-27",
 
   patient: {
     age: 65,
@@ -157,6 +157,62 @@ export const scenario_kardiyojenik_sok: Scenario = {
       prompt: "",
       content:
         "Yatak başı EKO: LV ejeksiyon fraksiyonu %25, anterior ve apikal duvar akinez. Mitral yetmezlik hafif. Sağ ventrikül normal. Perikardiyal efüzyon yok. VSR (ventriküler septal rüptür) yok. → İskemik LV disfonksiyonuna bağlı kardiyojenik şok (SCAI Evre C-D).",
+    },
+
+    // ===== ADIM 2b (S2.5) — Lab + Görüntüleme Tetkikleri =====
+    {
+      id: "step-2b",
+      kind: "action",
+      title: "Lab + Tetkik Paketi",
+      prompt:
+        "EKO yatak başında başlatıldı. Şokun derinliğini ve organ hasarını belirlemek için hangi acil laboratuvar tetkiklerini istiyorsunuz?",
+      min_actions: 3,
+      default_wrong_penalty: -5,
+      expected_outcomes: [
+        {
+          action: { type: "order_test", target_id: "ks-cardiac-markers" },
+          points: 20,
+          feedback:
+            "✓ Troponin I + NT-proBNP: MI tanısını doğrula, KY şiddetini değerlendir. NT-proBNP >5000 → ağır ventriküler yüklenim.",
+        },
+        {
+          action: { type: "order_test", target_id: "ks-abg-lactate" },
+          points: 20,
+          feedback:
+            "✓ ABG + Laktat: Kardiyojenik şokta en kritik tetkik. Laktat >4 mmol/L ciddi hipoperfüzyon — tedavi yanıtı laktat klerensiyle izlenir.",
+        },
+        {
+          action: { type: "order_test", target_id: "ks-cbc" },
+          points: 10,
+          feedback:
+            "✓ Tam kan sayımı: Anemiyi dışla (LV fonksiyon bozukluğunu derinleştirir), stres lökositozu değerlendir.",
+        },
+        {
+          action: { type: "order_test", target_id: "ks-bmp-extended" },
+          points: 15,
+          feedback:
+            "✓ BMP: Renal perfüzyon (BUN/Cr), K+ ve Mg2+ (vazopresör + reperfüzyon altında aritmi riski), stres hiperglisemi.",
+        },
+        {
+          action: { type: "order_test", target_id: "ks-lft-coag" },
+          points: 10,
+          feedback:
+            "✓ Karaciğer + Koagülasyon: Şok karaciğeri izlemi (AST/ALT). INR uzaması DIC başlangıcının erken işareti.",
+        },
+        // Yanlış seçimler
+        {
+          action: { type: "order_test", target_id: "d-dimer" },
+          points: -10,
+          feedback:
+            "✗ D-dimer gereksiz: STEMI + PCI öyküsü + EKO bulgusuyla tanı kardiyojenik şok. PE ayırıcısı bu tabloda katkı sağlamaz.",
+        },
+        {
+          action: { type: "order_test", target_id: "prokalsitonin" },
+          points: -10,
+          feedback:
+            "✗ Prokalsitonin gereksiz: Bu tablo kardiyojenik şok, sepsis değil. PCT sonucu yönetimi değiştirmez, zaman kaybettirir.",
+        },
+      ],
     },
 
     // ===== ADIM 3 — Vazopressor seçimi =====
@@ -341,14 +397,169 @@ export const scenario_kardiyojenik_sok: Scenario = {
     },
   ],
 
+  lab_panels: {
+    "ks-cbc": {
+      id: "ks-cbc",
+      name_tr: "Tam Kan Sayımı",
+      results: [
+        { parameter: "WBC",      value: 14.2, unit: "×10³/µL", reference_range: "4.5-11.0",  flag: "H",
+          interpretation: "Stres lökositozu — kardiyojenik şokta sempatoadrenal aktivasyonla beklenen." },
+        { parameter: "Nötrofil", value: 82,   unit: "%",        reference_range: "40-70",      flag: "H" },
+        { parameter: "Hgb",      value: 13.2, unit: "g/dL",     reference_range: "13.5-17.5",  flag: "L" },
+        { parameter: "Hct",      value: 39,   unit: "%",        reference_range: "40-52",       flag: "L" },
+        { parameter: "PLT",      value: 198,  unit: "×10³/µL",  reference_range: "150-400" },
+      ],
+      comment: "Belirgin anemi yok. Hafif sınır Hgb — LV disfonksiyonunu derinleştirmez ama izle.",
+    },
+    "ks-cardiac-markers": {
+      id: "ks-cardiac-markers",
+      name_tr: "Kardiyak Belirteçler",
+      results: [
+        { parameter: "Troponin I", value: 8.4,    unit: "ng/mL",  reference_range: "<0.04",    flag: "HH",
+          interpretation: "Akut MI + şok durumunda masif miyokard hasarı. Trend her 3-6 saatte izlenir." },
+        { parameter: "NT-proBNP",  value: 12450,  unit: "pg/mL",  reference_range: "<125",     flag: "HH",
+          interpretation: ">5000 → ağır ventriküler yüklenim + duvar stresi. EF %25 ile uyumlu." },
+        { parameter: "CK-MB",      value: 145,    unit: "U/L",    reference_range: "<25",      flag: "HH" },
+      ],
+      comment: "Troponin I ve NT-proBNP değerleri STEMI komplikasyonu olarak gelişen kardiyojenik şokla uyumlu.",
+    },
+    "ks-abg-lactate": {
+      id: "ks-abg-lactate",
+      name_tr: "Kan Gazı + Laktat",
+      results: [
+        { parameter: "pH",     value: 7.22, unit: "",       reference_range: "7.35-7.45",  flag: "LL",
+          interpretation: "Ciddi metabolik asidoz. Kompansatuvar hiperventilasyon (RR 26) ile pCO2 düşük." },
+        { parameter: "pCO₂",   value: 28,   unit: "mmHg",   reference_range: "35-45",       flag: "L" },
+        { parameter: "pO₂",    value: 62,   unit: "mmHg",   reference_range: "80-100",      flag: "L" },
+        { parameter: "HCO₃⁻",  value: 14,   unit: "mEq/L",  reference_range: "22-26",       flag: "LL" },
+        { parameter: "BE",     value: -12,  unit: "mEq/L",  reference_range: "-2 / +2",     flag: "LL" },
+        { parameter: "Laktat", value: 4.8,  unit: "mmol/L", reference_range: "0.5-2.0",     flag: "HH",
+          interpretation: "Kritik hipoperfüzyon. >4 mmol/L SCAI C-D ile uyumlu. Hedef: laktat klerensi >10%/saat." },
+        { parameter: "SaO₂",   value: 89,   unit: "%",      reference_range: "95-100",      flag: "L" },
+      ],
+      comment: "Ağır metabolik asidoz + hiperlaktatemi. Tedavinin başarısı laktat klerensiyle izlenir.",
+    },
+    "ks-bmp-extended": {
+      id: "ks-bmp-extended",
+      name_tr: "BMP + Elektrolitler",
+      results: [
+        { parameter: "Na⁺",       value: 137,  unit: "mEq/L",  reference_range: "136-145" },
+        { parameter: "K⁺",        value: 4.8,  unit: "mEq/L",  reference_range: "3.5-5.0",  flag: "H",
+          interpretation: "Sınırda hiperkali — prerenal AKI + asidoz kaynaklı. >5.5 tehlikeli, yakın izle." },
+        { parameter: "Cl⁻",       value: 103,  unit: "mEq/L",  reference_range: "98-107" },
+        { parameter: "BUN",       value: 38,   unit: "mg/dL",  reference_range: "7-20",      flag: "H",
+          interpretation: "Prerenal AKI işareti. Renal perfüzyon bozulmuş." },
+        { parameter: "Kreatinin", value: 2.1,  unit: "mg/dL",  reference_range: "0.7-1.2",  flag: "HH",
+          interpretation: "Akut böbrek hasarı (baseline N varsayıldı). Sıvı + perfüzyon düzelince izle." },
+        { parameter: "Glukoz",    value: 178,  unit: "mg/dL",  reference_range: "70-100",    flag: "H",
+          interpretation: "Stres hiperglisemi — kardiyojenik şokta sempatoadrenal yanıt. >180 → insülin protokolü." },
+        { parameter: "Mg²⁺",      value: 0.7,  unit: "mEq/L",  reference_range: "1.3-2.1",  flag: "L",
+          interpretation: "Hipomagnesemi — ventrikül fibrilasyonu ve diğer aritmi riskini artırır. Replase et." },
+        { parameter: "Ca²⁺",      value: 8.2,  unit: "mg/dL",  reference_range: "8.5-10.2", flag: "L" },
+      ],
+      comment: "AKI + hipomagnesemi + stres hiperglisemi üçlüsü kardiyojenik şok organ hasarı profiliyle uyumlu.",
+    },
+    "ks-lft-coag": {
+      id: "ks-lft-coag",
+      name_tr: "Karaciğer Fonksiyon + Koagülasyon",
+      results: [
+        { parameter: "AST",          value: 385,  unit: "U/L",  reference_range: "10-40",   flag: "HH",
+          interpretation: "Şok karaciğeri (hipoksik hepatit). Düşük debili hepatik hipoperfüzyon → santrilobüler nekroz." },
+        { parameter: "ALT",          value: 215,  unit: "U/L",  reference_range: "7-56",    flag: "HH" },
+        { parameter: "T. Bilirubin", value: 1.8,  unit: "mg/dL", reference_range: "<1.2",   flag: "H" },
+        { parameter: "INR",          value: 1.9,  unit: "",      reference_range: "0.8-1.2", flag: "H",
+          interpretation: "Koagülasyon bozukluğu başlangıcı. >2.0 → DIC / ağır karaciğer hasarı eşiği." },
+        { parameter: "aPTT",         value: 52,   unit: "sn",    reference_range: "25-35",   flag: "H",
+          interpretation: "Uzamış aPTT. Heparin/DAPT + karaciğer hasarı katkısı. Kanama riskini artırır." },
+      ],
+      comment: "Şok karaciğeri tablosu — kardiyojenik şokta %30-50 olguda görülür. Perfüzyon düzelince AST/ALT gerilemeye başlar.",
+    },
+  },
+
+  result_delay_seconds: {
+    "ks-cbc":              900,   // 15 dk
+    "ks-cardiac-markers":  900,   // 15 dk
+    "ks-abg-lactate":      600,   // 10 dk
+    "ks-bmp-extended":    1800,   // 30 dk
+    "ks-lft-coag":        2700,   // 45 dk
+  },
+
+  lab_timeline: [
+    {
+      panel_id: "ks-abg-lactate",
+      at_minute: 30,
+      results: [
+        { parameter: "pH",     value: 7.24, unit: "",       reference_range: "7.35-7.45",  flag: "LL" },
+        { parameter: "pCO₂",   value: 26,   unit: "mmHg",   reference_range: "35-45",       flag: "L" },
+        { parameter: "HCO₃⁻",  value: 13,   unit: "mEq/L",  reference_range: "22-26",       flag: "LL" },
+        { parameter: "BE",     value: -13,  unit: "mEq/L",  reference_range: "-2 / +2",     flag: "LL" },
+        { parameter: "Laktat", value: 5.8,  unit: "mmol/L", reference_range: "0.5-2.0",     flag: "HH",
+          interpretation: "Laktat kötüleşiyor — noradrenalin MAP hedefi sağlandı ama doku perfüzyonu yetersiz. İnotrop + mekanik destek gerekliliğine işaret." },
+      ],
+    },
+    {
+      panel_id: "ks-abg-lactate",
+      at_minute: 90,
+      results: [
+        { parameter: "pH",     value: 7.30, unit: "",       reference_range: "7.35-7.45",  flag: "L" },
+        { parameter: "pCO₂",   value: 30,   unit: "mmHg",   reference_range: "35-45",       flag: "L" },
+        { parameter: "HCO₃⁻",  value: 17,   unit: "mEq/L",  reference_range: "22-26",       flag: "L" },
+        { parameter: "BE",     value: -9,   unit: "mEq/L",  reference_range: "-2 / +2",     flag: "L" },
+        { parameter: "Laktat", value: 4.2,  unit: "mmol/L", reference_range: "0.5-2.0",     flag: "HH",
+          interpretation: "Mekanik destek sonrası hafif iyileşme. Laktat klerensi başladı ancak hedef (<2) uzak. Devam izlemi gerekli." },
+      ],
+    },
+  ],
+
+  imaging_results: {
+    "ks-eko": {
+      id: "ks-eko",
+      name_tr: "Yatak Başı EKO",
+      modality: "echo",
+      view: "Apikal 4 boşluk + Parasternal",
+      interpretation:
+        "Ağır LV sistolik disfonksiyon: EF %25-30. Anterior ve apikal duvar akinez (LAD bölgesi). RV boyut ve fonksiyon normal. Perikardiyal efüzyon yok. Kapaklar: hafif mitral yetersizlik, diğerleri normal. VSR yok, serbest duvar rüptürü yok.",
+      findings: [
+        "LV ejeksiyon fraksiyonu: %25-30 (ağır sistolik disfonksiyon)",
+        "Anterior-apikal akinez — LAD bölgesi iskemisiyle uyumlu",
+        "RV fonksiyon ve boyut normal",
+        "Perikardiyal efüzyon yok",
+        "Mitral yetersizlik hafif (grade 1)",
+        "Triküspid, aort, pulmoner kapaklar normal",
+        "Ventriküler septal rüptür yok",
+        "Serbest duvar rüptürü yok",
+      ],
+      timestamp_min: 10,
+      attribution: "Eğitim amaçlı temsili rapor — ESC 2021 HF kriterleri",
+    },
+    "ks-cxr": {
+      id: "ks-cxr",
+      name_tr: "PA Akciğer Grafisi",
+      modality: "xray",
+      view: "PA (Posteroanterior)",
+      interpretation:
+        "Bilateral perihiler ve bazal buzlu cam opasiteler, pulmoner venöz hipertansiyonla uyumlu akciğer ödemi. Kardiyotorasik oran genişlemiş (>0.55). Bilateral Kerley B çizgileri. Küçük bilateral plevral efüzyon.",
+      findings: [
+        "Kardiyomegali (KT oranı >0.55)",
+        "Bilateral perihiler buzlu cam opasite — pulmoner ödem",
+        "Bilateral Kerley B çizgileri (interstirsyel ödem)",
+        "Küçük bilateral plevral efüzyon",
+        "Pnömotoraks yok",
+        "Mediastinum geniş değil (aort diseksiyonu dışlandı)",
+      ],
+      timestamp_min: 15,
+      attribution: "Eğitim amaçlı temsili rapor — ESC 2021 HF radyoloji kriterleri",
+    },
+  },
+
   scoring: {
-    max_points: 220,
-    passing_score: 130,
+    max_points: 295,
+    passing_score: 175,
     grade_bands: {
-      A: 185,
-      B: 160,
-      C: 130,
-      D: 95,
+      A: 250,
+      B: 215,
+      C: 175,
+      D: 130,
     },
   },
 
