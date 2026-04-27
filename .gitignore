@@ -35,3 +35,9 @@ build/
 .claude/shell-snapshots/
 .claude/file-history/
 .claude/plugins/
+
+# Local snapshot/backup files
+*.zip
+medisim-tr-*.zip
+*.tar.gz
+*.bak
