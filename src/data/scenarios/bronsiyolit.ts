@@ -1,20 +1,20 @@
 // ============================================================
 // MediSim TR — Akut Bronşiyolit Senaryosu
 // ============================================================
-// Klinik referans: Türk Toraks Derneği Akut Bronşiyolit Uzlaşı
-// Raporu, Türkiye Milli Pediatri Derneği 2017 AB Rehberi,
-// AAP Bronchiolitis 2014 Guideline.
+// Klinik referans: AAP Bronchiolitis 2014 Guideline (Ralston et al.),
+// NICE NG9 2021, TTD 2020, Türk Pediatri Kurumu 2018 Konsensusu.
 // Ana öğretim: destek tedavi vurgusu, gereksiz ilaçları önleme
 // (rutin salbutamol, steroid, antibiyotik YOK), hospitalizasyon
-// kriterleri, HFNC oksijen desteği.
-// Klinik review: Mehmet Ali (kullanıcı) — TODO
+// kriterleri, HFNC eskalasyonu.
+// Eğitici felsefe: Az tetkik = doğru hekimlik (AAP 2014 Class B).
+// Faz 5.4: lab_panels + imaging_results + lab_timeline + s2b/s4b eklendi
 // ============================================================
 
 import type { Scenario } from "@/engine";
 
 export const scenario_bronsiyolit: Scenario = {
   id: "pedi-bronsiyolit-001",
-  version: "0.1.0",
+  version: "0.2.0",
   title: "8 Aylık Erkek Bebek — Hışıltı ve Solunum Sıkıntısı",
   description:
     "3 gündür burun akıntısı ve öksürük olan bebek, son 12 saatte beslenemiyor, hızlı soluk alıyor. Akut bronşiyolit tanı ve yönetimi — özellikle gereksiz tedavilerden kaçınma.",
@@ -26,7 +26,7 @@ export const scenario_bronsiyolit: Scenario = {
   modes: ["quiz", "interactive_3d"],
   language: "tr",
   author: "MediSim TR Ekibi",
-  last_updated: "2026-04-24",
+  last_updated: "2026-04-27",
 
   patient: {
     age: 0, // 8 aylık — yıl olarak 0, history'de belirtilir
@@ -127,6 +127,62 @@ export const scenario_bronsiyolit: Scenario = {
           feedback:
             "✗ Bronşiyolit viral, antibiyotik rutin önerilmez. Sadece sekonder bakteriyel enfeksiyon kanıtı varsa.",
           critical: true,
+        },
+      ],
+    },
+
+    // ===== ADIM 1b (S2.5) — Tetkik Kararı =====
+    {
+      id: "s2b_orders",
+      kind: "action",
+      title: "Tetkik Kararı — Az Tetkik Doğru Hekimliktir",
+      prompt:
+        "Bronşiyolit klinik tanısı kuvvetli. Hangi tetkikleri istersiniz? Dikkat: bronşiyolitte rutin lab/görüntüleme AAP 2014'e göre ÖNERİLMEZ.",
+      min_actions: 0,
+      default_wrong_penalty: -10,
+      expected_outcomes: [
+        {
+          action: { type: "order_test", target_id: "br-cbg" },
+          points: 30,
+          feedback:
+            "✓ Kapiller kan gazı: Orta-ağır bronşiyolitte CO2 retansiyonunu değerlendirir. SpO2 91, RR 58, çekilme var — CBG solunum yetmezliği eşiğini gösterir. pH 7.32, pCO2 52 → kompanze respiratuar asidoz başlıyor.",
+        },
+        {
+          action: { type: "order_test", target_id: "br-viral-pcr" },
+          points: 25,
+          feedback:
+            "✓ RSV PCR: Tanıyı doğrular, hastane izolasyon kararı için kullanışlı. Zorunlu değil ama eğitici — yönetimi değiştirmez. RSV pozitif doğrulandı.",
+        },
+        {
+          action: { type: "order_test", target_id: "br-cbc-crp" },
+          points: 0,
+          feedback:
+            "⚠️ CBC + CRP: Viral tabloda lenfosit baskınlığı ve düşük CRP (%65 lenfosit, CRP 8 mg/L) bakteriyel ko-enfeksiyonu dışlar — ama AAP 2014 rutin önermiyor. Atipik seyir veya lökositoz şüphesinde kabul edilebilir.",
+        },
+        // Yanlış seçimler — eğitici negatif puan
+        {
+          action: { type: "order_test", target_id: "pa-cxr-pediatrik" },
+          points: -15,
+          feedback:
+            "✗ PA Akciğer Grafisi: AAP 2014 Class B — tipik bronşiyolitte rutin grafi ÖNERİLMEZ. Gereksiz radyasyon, klinik kararı değiştirmez (hiperinflasyon bulgusu zaten beklenen). Atipik seyir/komplikasyon şüphesinde iste.",
+        },
+        {
+          action: { type: "order_test", target_id: "idrar_tam_tahlili" },
+          points: -10,
+          feedback:
+            "✗ Tam idrar tahlili: Ateşli <2 aylık infantta UTI ekartasyonu gereklidir ama 8 aylık bu hastada klinik endikasyon yok.",
+        },
+        {
+          action: { type: "order_test", target_id: "kan_kulturu" },
+          points: -15,
+          feedback:
+            "✗ Kan kültürü: Bakteremi olasılığı viral bronşiyolitte çok düşük. Gereksiz invazif işlem ve gecikme.",
+        },
+        {
+          action: { type: "order_test", target_id: "prokalsitonin" },
+          points: -15,
+          feedback:
+            "✗ Prokalsitonin: Viral bronşiyolitte klinik bağlamda anlamsız. Az tetkik = doğru hekimlik.",
         },
       ],
     },
@@ -240,6 +296,50 @@ export const scenario_bronsiyolit: Scenario = {
       ],
     },
 
+    // ===== ADIM 3b — HFNC Eskalasyon Kararı =====
+    {
+      id: "s4b_escalation",
+      kind: "decision",
+      title: "Servis: Solunum Desteği Eskalasyonu",
+      prompt:
+        "Servis yatışı yapıldı, standart nazal O2 (2 L/dk) başlandı. 1. saat değerlendirme: SpO2 %89 (O2 altında), RR 68/dk, subkostal + interkostal çekilme artıyor, bebek beslenemıyor, hafif letarji. Solunum desteğini nasıl artırırsınız?",
+      options: [
+        {
+          id: "opt_hfnc",
+          text: "HFNC başla — 2 L/kg/dk, FiO2 titreyle (hedef SpO2 ≥%92)",
+          correct: true,
+          points: 25,
+          feedback:
+            "✓ HFNC ilk eskalasyon seçeneği (NICE NG9 2021 + AAP). Yüksek akımlı nazal kanül CPAP etkisi + ısıtmalı nemlendirilmiş O2 birlikte sağlar. CBG izlemi: HFNC ile pCO2 düşüş beklenir (52 → 46).",
+        },
+        {
+          id: "opt_dusuk_o2",
+          text: "Düşük akım O2 devam + daha sık vital ölçümü",
+          correct: false,
+          points: 5,
+          feedback:
+            "⚠️ SpO2 %89, RR 68, letarji başlıyor — düşük akım O2 yetersiz kalacak. Kabul edilebilir ama optimal değil. HFNC eskalasyonu geciktirilmemeli.",
+        },
+        {
+          id: "opt_entübasyon",
+          text: "Entübasyon + mekanik ventilasyon",
+          correct: false,
+          points: -15,
+          feedback:
+            "✗ Apne, solunum durması veya ağır yorgunluk yok. Entübasyon prematür ve gereksiz risk. Önce HFNC dene — mekanik ventilasyon son basamak.",
+        },
+        {
+          id: "opt_salbutamol_steroid",
+          text: "Salbutamol nebül + deksametazon IV başla",
+          correct: false,
+          points: -20,
+          feedback:
+            "✗ KRİTİK HATA — AAP 2014: Bronşiyolitte bronkodilatör VE sistemik steroid rutin ÖNERİLMEZ. Bu astım değil — bronkodilatörün etki mekanizması yoktur. Steroid ise zarar verir. Bu tercih yapılırsa CBG kötüleşir: pH 7.32→7.28, pCO2 52→60.",
+          critical: true,
+        },
+      ],
+    },
+
     // ===== ADIM 4 — İleri seviye: komplikasyon =====
     {
       id: "step-4",
@@ -277,40 +377,135 @@ export const scenario_bronsiyolit: Scenario = {
     },
   ],
 
+  lab_panels: {
+    "br-cbg": {
+      id: "br-cbg",
+      name_tr: "Kapiller Kan Gazı",
+      results: [
+        { parameter: "pH",     value: 7.32, unit: "",       reference_range: "7.35-7.45",  flag: "L",
+          interpretation: "Kompanze respiratuar asidoz başlangıcı. CO2 retansiyonu var; HCO3 artışı henüz yetişemedi." },
+        { parameter: "pCO₂",   value: 52,   unit: "mmHg",   reference_range: "35-45",       flag: "H",
+          interpretation: "Hiperkarbi — solunum yetmezliğinin erken işareti. >60 kritik, hemen HFNC/entübasyon." },
+        { parameter: "pO₂",    value: 45,   unit: "mmHg",   reference_range: "50-80",       flag: "L",
+          interpretation: "Kapiller kan gazında pO2 düşük izlenir, SpO2 ile birlikte yorumla." },
+        { parameter: "HCO₃⁻",  value: 26,   unit: "mEq/L",  reference_range: "22-26" },
+        { parameter: "BE",     value: 1,    unit: "mEq/L",  reference_range: "-2 / +2" },
+        { parameter: "SaO₂",   value: 87,   unit: "%",      reference_range: "95-100",      flag: "L" },
+      ],
+      comment: "Kompanze respiratuar asidoz + hiperkarbi. HFNC veya solunum desteği eskalasyonu endikasyonu güçlü.",
+    },
+    "br-viral-pcr": {
+      id: "br-viral-pcr",
+      name_tr: "Viral PCR Paneli (Solunum)",
+      results: [
+        { parameter: "RSV",             value: "Pozitif +++", unit: "", reference_range: "Negatif", flag: "H",
+          interpretation: "RSV bronşiyoliti doğrulandı. Türkiye'de kış mevsiminde en sık etken (%60-80)." },
+        { parameter: "İnfluenza A",     value: "Negatif",    unit: "", reference_range: "Negatif" },
+        { parameter: "İnfluenza B",     value: "Negatif",    unit: "", reference_range: "Negatif" },
+        { parameter: "Parainfluenza 1", value: "Negatif",    unit: "", reference_range: "Negatif" },
+        { parameter: "Parainfluenza 3", value: "Negatif",    unit: "", reference_range: "Negatif" },
+        { parameter: "hMPV",            value: "Negatif",    unit: "", reference_range: "Negatif" },
+        { parameter: "Adenovirüs",      value: "Negatif",    unit: "", reference_range: "Negatif" },
+      ],
+      comment: "RSV mono-enfeksiyonu. Tanıyı doğrular, tedaviyi değiştirmez — yönetim zaten destek tedavidir.",
+    },
+    "br-cbc-crp": {
+      id: "br-cbc-crp",
+      name_tr: "Tam Kan Sayımı + CRP",
+      results: [
+        { parameter: "WBC",      value: 11.2, unit: "×10³/µL", reference_range: "6.0-17.5" },
+        { parameter: "Nötrofil", value: 28,   unit: "%",        reference_range: "30-60",    flag: "L",
+          interpretation: "Nötrofil oranı düşük — viral enfeksiyon paterni." },
+        { parameter: "Lenfosit", value: 65,   unit: "%",        reference_range: "30-60",    flag: "H",
+          interpretation: "Lenfosit baskınlığı viral etiyolojiyle uyumlu. Bakteriyel ko-enfeksiyon düşük ihtimal." },
+        { parameter: "Hgb",      value: 11.5, unit: "g/dL",     reference_range: "10.5-13.5" },
+        { parameter: "PLT",      value: 320,  unit: "×10³/µL",  reference_range: "150-450" },
+        { parameter: "CRP",      value: 8,    unit: "mg/L",     reference_range: "<5",       flag: "H",
+          interpretation: "<10 mg/L: Bakteriyel ko-enfeksiyon olasılığı düşük. Viral inflamasyon ile uyumlu." },
+      ],
+      comment: "Viral CBC paterni + düşük CRP — bakteriyel ko-enfeksiyon ekarte. AAP 2014: bu tetkik rutin önerilmez.",
+    },
+  },
+
+  result_delay_seconds: {
+    "br-cbg":       600,   // 10 dk
+    "br-viral-pcr": 7200,  // 120 dk (sınav modunda gerçek; eğitimde 5 sn)
+    "br-cbc-crp":   900,   // 15 dk
+  },
+
+  lab_timeline: [
+    {
+      panel_id: "br-cbg",
+      at_minute: 60,
+      results: [
+        { parameter: "pH",     value: 7.35, unit: "",      reference_range: "7.35-7.45",
+          interpretation: "HFNC sonrası pH normalize oluyor. Solunum desteği etkinliğini doğrular." },
+        { parameter: "pCO₂",   value: 46,   unit: "mmHg",  reference_range: "35-45",       flag: "H" },
+        { parameter: "HCO₃⁻",  value: 25,   unit: "mEq/L", reference_range: "22-26" },
+        { parameter: "BE",     value: 0,    unit: "mEq/L", reference_range: "-2 / +2" },
+        { parameter: "SaO₂",   value: 93,   unit: "%",     reference_range: "95-100",      flag: "L",
+          interpretation: "SpO2 hedefi ≥%92 sağlandı. HFNC yanıtı olumlu — eskalasyon (entübasyon) gerekmedi." },
+      ],
+    },
+  ],
+
+  imaging_results: {
+    "pa-cxr-pediatrik": {
+      id: "pa-cxr-pediatrik",
+      name_tr: "PA Akciğer Grafisi (Pediatrik)",
+      modality: "xray",
+      view: "PA (Anteroposterior — bebek)",
+      interpretation:
+        "Bilateral hiperinflasyon (havalanma artışı): düzleşmiş diyafram, yatay kotalar. Peribronşiyal kalınlaşma. Sağ üst lobda subsegmenter atelektazi (plug/tıkaç). Konsolidasyon/infiltrasyon görülmedi. Kardiyak silüet normal. Plevral efüzyon yok. AAP 2014 uyarısı: Bu bulgular tipik bronşiyolitte beklenen değişikliklerdir — yönetimi değiştirmez. Rutin çekimden kaçının.",
+      findings: [
+        "Bilateral hiperinflasyon (düzleşmiş diyafram)",
+        "Peribronşiyal kalınlaşma",
+        "Sağ üst lob subsegmenter atelektazi",
+        "Konsolidasyon/infiltrasyon: Yok",
+        "Kardiyak silüet: Normal",
+        "Plevral efüzyon: Yok",
+        "Yorum: Tipik bronşiyolit radyolojisi — yönetim kararını değiştirmez",
+      ],
+      timestamp_min: 15,
+      attribution: "Eğitim amaçlı temsili rapor — AAP 2014 bronşiyolit radyoloji kriterleri",
+    },
+  },
+
   scoring: {
-    max_points: 170,
-    passing_score: 100,
+    max_points: 250,
+    passing_score: 150,
     grade_bands: {
-      A: 145,
-      B: 125,
-      C: 100,
-      D: 70,
+      A: 215,
+      B: 185,
+      C: 150,
+      D: 120,
     },
   },
 
   debrief: {
     key_learnings: [
-      "Bronşiyolit viral, destek tedavi esastır. Rutin salbutamol, steroid, antibiyotik ÖNERİLMEZ.",
-      "Nazal aspirasyon ve hidrasyon en önemli iki müdahaledir — hem tedavi hem beslenmenin önkoşulu.",
-      "Hospitalizasyon kriterleri: SpO2 <%92 oda havasında, belirgin solunum sıkıntısı, beslenememe, dehidrasyon, apne, yaş <3 ay.",
-      "HFNC (yüksek akımlı nazal kanül) orta-ciddi bronşiyolitte mekanik ventilasyon ihtiyacını azaltan kanıtlı bir araç.",
-      "Apne küçük bebeklerde ilk ve tek bulgu olabilir — 3 ay altı hasta yakın izlem.",
-      "Akciğer grafisi ve rutin laboratuvar tanısal değil, atipik seyir/komplikasyon şüphesinde istenir.",
-      "Aileyi eğitmek: nazal aspirasyon tekniği, sık az miktar beslenme, ateş yönetimi, kırmızı bayraklar.",
+      "Az tetkik doğru hekimliktir: AAP 2014 Class B — bronşiyolitte rutin lab ve akciğer grafisi ÖNERİLMEZ. Tanı kliniktir.",
+      "Bronşiyolit viral, destek tedavi esastır: Nazal aspirasyon + hidrasyon + oksijen desteği. Rutin salbutamol, steroid, antibiyotik YOK.",
+      "Kapiller kan gazı endikasyonu: Orta-ağır tabloda (SpO2 <%92, RR >60, çekilme) CO2 retansiyonunu değerlendirmek için gerekli — pCO2 >52 HFNC eskalasyonu güçlendirir.",
+      "RSV PCR: Tanıyı doğrular, izolasyon kararına yardımcı olur. Tedaviyi değiştirmez.",
+      "HFNC ilk eskalasyon seçeneğidir (NICE NG9 2021): pCO2 52 → 46, pH 7.32 → 7.35 ile yanıt izlenir.",
+      "Salbutamol/steroid ısrarı klasik öğrenci hatası: Astım değil bronşiyolit — bronkodilatörün mekanizması yoktur. Steroid zarar verir.",
+      "Hospitalizasyon kriterleri: SpO2 <%92, ciddi solunum sıkıntısı, beslenememe, dehidrasyon, apne, <3 ay yaş.",
+      "Apne küçük bebeklerde ilk ve tek bulgu olabilir — 3 ay altı yakın izlem.",
     ],
     references: [
-      "Türk Toraks Derneği Akut Bronşiyolit Tanı ve Tedavi Uzlaşı Raporu",
-      "Türkiye Milli Pediatri Derneği — Akut Bronşiyolit Tanı, Değerlendirme ve Yönetim Rehberi 2017",
-      "AAP (American Academy of Pediatrics) Clinical Practice Guideline: Bronchiolitis 2014",
+      "AAP Clinical Practice Guideline: Bronchiolitis 2014 (Ralston et al., Pediatrics)",
       "NICE Guideline NG9 — Bronchiolitis in children (2015, updated 2021)",
+      "Türk Toraks Derneği Akut Bronşiyolit Uzlaşı Raporu",
+      "Türk Pediatri Kurumu Bronşiyolit Tanı/Tedavi Konsensusu 2018",
     ],
     red_flags: [
-      "Apne — özellikle <3 ay ve prematüre bebeklerde ilk bulgu olabilir",
-      "Yorgunluk belirtileri: düşen solunum sayısı, azalan çekilme, letarji → solunum yetmezliği yaklaşıyor",
-      "Ciddi dehidrasyon: mukoz kuru, fontanel çökük, kapiller dolum >3 sn",
-      "Atelektazi/pnömotoraks — akut kötüleşmede akciğer grafisi",
-      "Bakteriyel süperenfeksiyon: yüksek ateş persistan + lökositoz + lobar konsolidasyon",
+      "Gereksiz tetkik istemek (grafi, kan kültürü, PCT): Radyasyon + invazif işlem + gecikme — klinik kararı değiştirmez",
+      "Salbutamol/steroid: Bronşiyolitte etkinliği yok, zarar var — CBG kötüleşir (pH düşer, pCO2 artar)",
+      "Yorgunluk belirtileri: Düşen SS + azalan çekilme + letarji → solunum yetmezliği yaklaşıyor",
+      "Apne: <3 ay ve prematüre bebeklerde bronşiyolitte sık; hemen balon-maske + PYBÜ",
+      "Bakteriyel süperenfeksiyon: Persistan ateş + lökositoz + lobar konsolidasyon → antibiyotik + grafi endike",
     ],
-    next_scenarios: ["pedi-sepsis-001"],
+    next_scenarios: ["pediatri-sepsis-001"],
   },
 };
