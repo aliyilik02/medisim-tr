@@ -2,16 +2,17 @@
 // MediSim TR — Akut Apandisit Senaryosu (Cerrahi)
 // ============================================================
 // Klinik referans: WSES Jerusalem Guidelines 2020 (Acute Appendicitis),
-// Türk Cerrahi Derneği Akut Karın Kılavuzu.
-// Ana öğretim hedefi: Alvarado skoru, görüntüleme kararı,
-// antibiyotik seçimi, laparoskopik appendektomi endikasyonu.
+// EAES 2016 (laparoskopik apandektomi), TCD 2019 Akut Karın.
+// Ana öğretim hedefi: Alvarado skoru, görüntüleme kararı (USG→BT),
+// perforasyon ayırıcı tanısı, antibiyotik + cerrahi hazırlık.
+// Faz 5.3: lab_panels + imaging_results + lab_timeline + s2b/s3b eklendi
 // ============================================================
 
 import type { Scenario } from "@/engine";
 
 export const scenario_apandisit: Scenario = {
   id: "cerrahi-apandisit-001",
-  version: "0.1.0",
+  version: "0.2.0",
   title: "28 Yaş Erkek — Sağ Alt Kadran Ağrısı",
   description:
     "12 saat önce göbek çevresinden başlayıp sağ alt kadrana yerleşen ağrı, bulantı-kusma. Akut apandisit tanı-tedavi algoritması ve cerrahi karar.",
@@ -24,7 +25,7 @@ export const scenario_apandisit: Scenario = {
   language: "tr",
   author: "MediSim TR Ekibi",
   reviewed_by: "WSES Jerusalem Guidelines 2020 uyumlu",
-  last_updated: "2026-04-25",
+  last_updated: "2026-04-27",
 
   patient: {
     age: 28,
@@ -116,7 +117,6 @@ export const scenario_apandisit: Scenario = {
           points: 20,
           feedback:
             "Doğru — Lökositoz (+2 Alvarado). Lökosit >10.000/mm³ apandisit tanısını güçlendirir.",
-          unlocks: ["s2_goruntuleme_karari"],
         },
         {
           action: { type: "order_test", target_id: "crp" },
@@ -145,6 +145,64 @@ export const scenario_apandisit: Scenario = {
       ],
       default_wrong_penalty: -5,
       default_wrong_feedback: "Apandisit değerlendirmesinde bu adım öncelik değil.",
+    },
+
+    // ====================================================
+    // ADIM 2b (S2.5) — Lab Paneli + İlk Görüntüleme Tetkiki
+    // ====================================================
+    {
+      id: "s2b_orders",
+      kind: "action",
+      title: "Lab Paneli + Görüntüleme",
+      prompt:
+        "Akut apandisit şüphesi var. Tanıyı güçlendirmek ve ayırıcı tanıları dışlamak için tetkik paketini isteyin.",
+      min_actions: 3,
+      default_wrong_penalty: -5,
+      expected_outcomes: [
+        {
+          action: { type: "order_test", target_id: "ap-cbc" },
+          points: 12,
+          feedback:
+            "✓ TKS: WBC 14.5k (+2 Alvarado). Nötrofil %82 sola kayma (+1 Alvarado). Lökositoz + nötrofili apandisit için klasik.",
+        },
+        {
+          action: { type: "order_test", target_id: "ap-inflammation" },
+          points: 12,
+          feedback:
+            "✓ CRP + PCT: CRP 45 mg/L orta inflamasyon. PCT 0.3 sınırda — <0.5 komplike olmayan apandisiti destekler, >0.5 perforasyon şüphesi.",
+        },
+        {
+          action: { type: "order_test", target_id: "ap-bmp-lft" },
+          points: 10,
+          feedback:
+            "✓ BMP + LFT: Kolesistit ayırıcısı için LFT (N → safra patolojisi dışlandı). Dehidratasyon değerlendirmesi.",
+        },
+        {
+          action: { type: "order_test", target_id: "ap-urine-hcg" },
+          points: 8,
+          feedback:
+            "✓ İdrar tahlili: Hafif lökositüri komşuluk irritasyonu ile açıklanır — UTI değil. βhCG erkek hastada N/A (kadın hastada ektopik gebelik zorunlu dışlama).",
+        },
+        {
+          action: { type: "use_equipment", target_id: "ultrasonografi" },
+          points: 13,
+          feedback:
+            "✓ Abdominal USG: İlk görüntüleme seçeneği (radyasyon yok, hızlı). Apendiks 8mm, peri-apendiküler sıvı +/- — tanısal değer sınırda.",
+        },
+        // Yanlış seçimler
+        {
+          action: { type: "order_test", target_id: "d-dimer" },
+          points: -10,
+          feedback:
+            "✗ D-dimer gereksiz: Pulmoner emboli şüphesi yok. Akut karında katkısı yok.",
+        },
+        {
+          action: { type: "order_test", target_id: "troponin" },
+          points: -10,
+          feedback:
+            "✗ Troponin gereksiz: Kardiyak şikâyet yok. Akut apandisit tanı paketinde yeri yok.",
+        },
+      ],
     },
 
     // ====================================================
@@ -190,6 +248,54 @@ export const scenario_apandisit: Scenario = {
           points: 10,
           feedback:
             "Kabul — Alvarado ≥8'de (veya çok tipik tabloda) doğrudan cerrahi mümkün. Ama bu hastada 7 — görüntüleme kesinleştirici.",
+        },
+      ],
+    },
+
+    // ====================================================
+    // ADIM 3b — USG Sonucu Sınırda: BT Kararı
+    // ====================================================
+    {
+      id: "s3b_imaging_decision",
+      kind: "decision",
+      title: "USG Sonucu Sınırda — Sıradaki Adım",
+      prompt:
+        "USG: apendiks 8mm, çevre yağda hafif inflamasyon, peri-apendiküler sıvı +/-. Sensitivite sınırda. Alvarado skoru 7. Ne yaparsınız?",
+      narrative:
+        "USG'de apendiks görselleştirildi ancak çap ve bulgular kesin tanıya yetmiyor. Perforasyon ekarte edilemedi.",
+      options: [
+        {
+          id: "opt_bt_iste",
+          text: "Abdominal BT çek — USG inkonklusif, altın standart görüntüleme",
+          correct: true,
+          points: 15,
+          feedback:
+            "✓ Doğru — WSES 2020: USG inkonklusif ise BT altın standart (sensitivite %94-98, özgüllük %95). Apendiks 11mm + fekalit + peri-apendiküler yağ inflamasyonu görüldü → tanı kesinleşti.",
+        },
+        {
+          id: "opt_klinik_takip",
+          text: "Klinik takip + Alvarado tekrar (2-4 saat)",
+          correct: false,
+          points: 5,
+          feedback:
+            "⚠️ Düşük şüphede kabul edilebilir. Ama bu hastada Alvarado 7, CRP 45, sola kayma var — gecikme perforasyon riskini artırır. BT tercih edilmeli.",
+        },
+        {
+          id: "opt_direkt_cerrahi",
+          text: "Direkt cerrahi konsültasyon — görüntüleme yeterli",
+          correct: false,
+          points: -5,
+          feedback:
+            "✗ Görüntüleme tamamlanmadan cerrahi erken — BT perforasyon, abse, alternatif tanı verir. Cerrahi riskini tanıyla orantıla.",
+        },
+        {
+          id: "opt_taburcu",
+          text: "Taburcu et, 24 saat sonra kontrole çağır",
+          correct: false,
+          points: -15,
+          feedback:
+            "✗ TEHLİKELİ — Alvarado 7 + lab bulgusu + görüntüleme şüpheli. Perforasyon 12-24 saatte gelişebilir. Gözlem veya görüntüleme tamamlanmadan taburcu edilmez.",
+          critical: true,
         },
       ],
     },
@@ -295,30 +401,169 @@ export const scenario_apandisit: Scenario = {
     },
   ],
 
+  lab_panels: {
+    "ap-cbc": {
+      id: "ap-cbc",
+      name_tr: "Tam Kan Sayımı",
+      results: [
+        { parameter: "WBC",      value: 14.5, unit: "×10³/µL", reference_range: "4.5-11.0",  flag: "HH",
+          interpretation: "Lökositoz — Alvarado +2. >10k apandisit tanısını güçlendirir." },
+        { parameter: "Nötrofil", value: 82,   unit: "%",        reference_range: "40-70",      flag: "H",
+          interpretation: "Sola kayma — Alvarado +1. >75% nötrofil inflamasyon/enfeksiyona işaret." },
+        { parameter: "Lenfosit", value: 12,   unit: "%",        reference_range: "20-40",      flag: "L" },
+        { parameter: "Hgb",      value: 15.2, unit: "g/dL",     reference_range: "13.5-17.5" },
+        { parameter: "Hct",      value: 45.6, unit: "%",        reference_range: "40-52" },
+        { parameter: "PLT",      value: 312,  unit: "×10³/µL",  reference_range: "150-400" },
+        { parameter: "Bant",     value: "+/-", unit: "",         reference_range: "<5%",        flag: "H",
+          interpretation: "Periferik yaymada bant nötrofil — sola kaymanın ek kanıtı." },
+      ],
+      comment: "Lökositoz + sola kayma → Alvarado L1+L2 = +3 puan. WBC 14.5k komplike olmayan apandisitin tipik değeri.",
+    },
+    "ap-inflammation": {
+      id: "ap-inflammation",
+      name_tr: "İnflamasyon Belirteçleri",
+      results: [
+        { parameter: "CRP",           value: 45,  unit: "mg/L",  reference_range: "<5",   flag: "H",
+          interpretation: "Orta düzey inflamasyon. <10: düşük şüphe. 10-100: orta. >100: perforasyon/abse şüphesi." },
+        { parameter: "Prokalsitonin", value: 0.3, unit: "ng/mL", reference_range: "<0.5",
+          interpretation: "Sınırda normal. <0.5 komplike olmayan apandisitle uyumlu. >0.5 perforasyon riskini artırır." },
+      ],
+      comment: "CRP 45 orta inflamasyon — aktif apandisit ama henüz perforasyon değil. PCT sınırda güven verici.",
+    },
+    "ap-bmp-lft": {
+      id: "ap-bmp-lft",
+      name_tr: "BMP + Karaciğer Fonksiyon",
+      results: [
+        { parameter: "Na⁺",    value: 138, unit: "mEq/L", reference_range: "136-145" },
+        { parameter: "K⁺",     value: 3.8, unit: "mEq/L", reference_range: "3.5-5.0" },
+        { parameter: "Cl⁻",    value: 102, unit: "mEq/L", reference_range: "98-107" },
+        { parameter: "BUN",    value: 18,  unit: "mg/dL",  reference_range: "7-20" },
+        { parameter: "Cr",     value: 0.9, unit: "mg/dL",  reference_range: "0.7-1.2" },
+        { parameter: "Glukoz", value: 95,  unit: "mg/dL",  reference_range: "70-100" },
+        { parameter: "AST",    value: 28,  unit: "U/L",    reference_range: "10-40" },
+        { parameter: "ALT",    value: 24,  unit: "U/L",    reference_range: "7-56" },
+        { parameter: "T. Bil", value: 0.8, unit: "mg/dL",  reference_range: "<1.2",
+          interpretation: "Normal bilirübin — kolesistit/kolanjit tanısı dışlandı." },
+      ],
+      comment: "LFT normal → safra yolu patolojisi ekarte. Renal fonksiyon ve elektrolitler normal — cerrahi için hazır.",
+    },
+    "ap-urine-hcg": {
+      id: "ap-urine-hcg",
+      name_tr: "İdrar Tahlili",
+      results: [
+        { parameter: "Lökosit",  value: "+1",       unit: "",      reference_range: "Negatif", flag: "H",
+          interpretation: "1-5/hpf hafif lökositüri — apandiksin mesane/üreter komşuluğu irritasyonu ile açıklanır. UTI dışlandı (nitrit negatif)." },
+        { parameter: "Eritrosit",value: "Negatif",  unit: "",      reference_range: "Negatif" },
+        { parameter: "Nitrit",   value: "Negatif",  unit: "",      reference_range: "Negatif" },
+        { parameter: "Protein",  value: "Negatif",  unit: "",      reference_range: "Negatif" },
+        { parameter: "βhCG",     value: "N/A",      unit: "",      reference_range: "—",
+          interpretation: "Erkek hasta — βhCG uygulanmaz. Kadın hastada ektopik gebelik dışlaması zorunludur." },
+      ],
+      comment: "İdrar bulguları UTI ile uyumlu değil — komşuluk irritasyonu. UTI + ektopik gebelik (erkek N/A) ekarte.",
+    },
+  },
+
+  result_delay_seconds: {
+    "ap-cbc":          900,   // 15 dk
+    "ap-inflammation": 1800,  // 30 dk
+    "ap-bmp-lft":      900,   // 15 dk
+    "ap-urine-hcg":    600,   // 10 dk
+  },
+
+  lab_timeline: [
+    {
+      panel_id: "ap-cbc",
+      at_minute: 90,
+      results: [
+        { parameter: "WBC",      value: 17.2, unit: "×10³/µL", reference_range: "4.5-11.0",  flag: "HH",
+          interpretation: "Gözlem altında WBC 14.5k → 17.2k: inflamasyon artıyor. Perforasyon riski yükseldi." },
+        { parameter: "Nötrofil", value: 88,   unit: "%",        reference_range: "40-70",      flag: "H" },
+      ],
+    },
+    {
+      panel_id: "ap-inflammation",
+      at_minute: 90,
+      results: [
+        { parameter: "CRP",           value: 95,  unit: "mg/L",  reference_range: "<5",   flag: "HH",
+          interpretation: "CRP 45 → 95 mg/L: Hızlı yükseliş perforasyon riskini güçlü şekilde artırıyor. Cerrahi kararını geciktirme." },
+        { parameter: "Prokalsitonin", value: 0.8, unit: "ng/mL", reference_range: "<0.5", flag: "H",
+          interpretation: "PCT >0.5 sınırı geçti — perforasyon veya lokal peritonit başlangıcı." },
+      ],
+    },
+  ],
+
+  imaging_results: {
+    "abdominal-usg": {
+      id: "abdominal-usg",
+      name_tr: "Abdominal Ultrasonografi",
+      modality: "us",
+      view: "Sağ alt kadran odaklı",
+      interpretation:
+        "Apendiks görselleştirildi: çap 8mm (N <6mm), duvar kalınlığı 3mm. Peri-apendiküler sıvı minimal (+/-). Probe-tenderness pozitif (transduktör baskısında hassasiyet arttı). Kompressibilite yok. Perforasyon ekarte edilemiyor. Tanısal değer sınırda — BT ile teyit önerilir.",
+      findings: [
+        "Apendiks çapı: 8mm (anormal, >6mm)",
+        "Duvar kalınlığı: 3mm (artmış)",
+        "Kompressibilite: Yok (anormal)",
+        "Probe-tenderness: Pozitif",
+        "Peri-apendiküler sıvı: Minimal (+/-)",
+        "Serbest sıvı: Görülmedi",
+        "Perforasyon: Ekarte edilemiyor",
+        "Yorum: Tanısal değer sınırda → BT gerekli",
+      ],
+      timestamp_min: 10,
+      attribution: "Eğitim amaçlı temsili rapor — WSES 2020 kriterleri",
+    },
+    "abdominal-ct": {
+      id: "abdominal-ct",
+      name_tr: "Abdominal Bilgisayarlı Tomografi",
+      modality: "ct",
+      view: "Kontrastlı aksiyel + koronal",
+      interpretation:
+        "Apendiks çapı 11mm, duvar kalınlığı 4mm. Peri-apendiküler yağ dokusunda inflamatuvar değişiklikler (stranding). Apendiks proksimalinde fekalit (+). Serbest sıvı minimal. Perforasyon kesin görülmüyor ancak sağ alt kadranda izole küçük hava kabarcığı şüpheli — olası erken/mikro perforasyon ekarte edilemez. Apandisit tanısı kesin.",
+      findings: [
+        "Apendiks çapı: 11mm (belirgin dilatasyon)",
+        "Duvar kalınlığı: 4mm (artmış, mural ödem)",
+        "Peri-apendiküler yağ inflamasyonu: Belirgin (+)",
+        "Fekalit: Apendiks proksimalinde (+)",
+        "Serbest sıvı: Minimal sağ alt kadran",
+        "Şüpheli serbest hava izi: Sağ alt kadranda küçük hava kabarcığı (+/-)",
+        "Perforasyon: Kesin görülmüyor, mikro-perforasyon ekarte edilemiyor",
+        "Tanı: Akut apandisit — acil cerrahi endike",
+      ],
+      timestamp_min: 25,
+      attribution: "Eğitim amaçlı temsili rapor — WSES 2020 + ACR kriterleri",
+    },
+  },
+
   scoring: {
-    max_points: 160,
-    passing_score: 100,
-    grade_bands: { A: 140, B: 120, C: 100, D: 75 },
+    max_points: 230,
+    passing_score: 145,
+    grade_bands: { A: 200, B: 170, C: 145, D: 115 },
   },
 
   debrief: {
     key_learnings: [
       "Alvarado skoru ≥7: cerrahi konsültasyon endikasyonu. ≥8-10: görüntüleme atlanabilir.",
-      "USG önce: genç hasta, tipik tablo, radyasyon kısıtlaması. BT: belirsiz tablo, obez hasta, komplikasyon şüphesi.",
-      "Preoperatif antibiyotik profilaksisi: seftriakson + metronidazol VEYA ampisilin-sulbaktam (komplikasyona göre süre)",
+      "Bu senaryoda Alvarado breakdown (10/10): M=+1 (migrasyon) | A=+1 (anoreksi) | N=+1 (bulantı/kusma) | T=+2 (SAK hassasiyet) | R=+1 (rebound) | E=+1 (ateş 38.1°C) | L1=+2 (WBC 14.5k) | L2=+1 (nötrofil %82). Maksimum skor = kesin apandisit şüphesi.",
+      "USG önce: genç hasta, tipik tablo, radyasyon kısıtlaması (sensitivite %75-90). BT altın standart: USG inkonklusif, obez hasta, komplikasyon şüphesi (sensitivite %94-98).",
+      "CRP + PCT kombinasyonu: CRP <10 düşük şüphe. PCT >0.5 perforasyon riskini artırır. Bu hastada CRP 45, PCT 0.3 — komplike olmayan apandisit.",
+      "Gözlemde gecikme tehlikeli: t=90dk'de CRP 45→95, WBC 14.5k→17.2k. Hızlı yükseliş perforasyon riskini güçlü gösterir.",
+      "Preoperatif antibiyotik profilaksisi: seftriakson + metronidazol VEYA ampisilin-sulbaktam (komplike olguda 3-5 gün uzat).",
       "Analjezik muayeneyi maskelemez — erken ağrı tedavisi WSES/Cochrane kanıtlı.",
-      "Perfore apandisit: laparoskopik devam + bol irrigasyon + dren + uzatılmış IV antibiyotik (3-5 gün).",
+      "Perfore apandisit: laparoskopik devam + bol irrigasyon + dren + uzatılmış IV antibiyotik.",
     ],
     references: [
       "WSES Jerusalem Guidelines for Acute Appendicitis 2020",
-      "Türk Cerrahi Derneği Akut Karın Kılavuzu",
+      "EAES Guidelines for Laparoscopic Appendectomy 2016",
+      "Türk Cerrahi Derneği Akut Karın Kılavuzu 2019",
       "Cochrane: analjezi tanıyı maskeler mi? (yok — kanıt yok)",
-      "AHA/SIS Surgical Infection Society Guidelines 2017",
     ],
     red_flags: [
       "Jeneralize peritonit → acil laparotomi",
-      "Ateş >38.5 + katı karın → perfore / abse şüphesi",
-      "Alvarado <4 → alternatif tanılar: ovaryan kist torsiyonu, üreteral taş, Meckel divertikülü",
+      "CRP >100 + ateş yüksek → abse/perfore apandisit — BT şart",
+      "Gözlemde CRP/WBC hızlı yükseliş → gecikmeyin, cerrahi kararını verin",
+      "Alvarado <4 → alternatif tanılar: ovaryan kist/torsiyon (kadın), üreteral taş, Meckel divertikülü",
+      "USG inkonklusif → BT atlamayın; şüpheli serbest hava = acil cerrahi",
     ],
     next_scenarios: ["cerrahi-kolesistit-001", "cerrahi-intestinal-obstruksiyon-001"],
   },
