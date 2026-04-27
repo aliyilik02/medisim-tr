@@ -136,7 +136,7 @@ export function ScenarioPlayPage() {
   }, [scenario?.specialty]);
 
   const handleCriticalExpired = useCallback(() => {
-    if (!session || !resolvedScenario) return;
+    if (!resolvedScenario) return;
     setCriticalInfo(null);
     setCriticalModalHidden(false);
     show({
@@ -144,13 +144,16 @@ export function ScenarioPlayPage() {
       points: -30,
       type: "critical",
     });
-    const finalized = finalizeSession(
-      { ...session, total_score: session.total_score - 30 },
-      resolvedScenario,
-      "abandoned"
-    );
-    setSession(finalized);
-  }, [session, resolvedScenario, show]);
+    // Modal timer async çağırır — functional form ile stale session.total_score riski ortadan kalkar
+    setSession((s) => {
+      if (!s) return s;
+      return finalizeSession(
+        { ...s, total_score: s.total_score - 30 },
+        resolvedScenario,
+        "abandoned"
+      );
+    });
+  }, [resolvedScenario, show]);
 
   if (!scenario) {
     return (
