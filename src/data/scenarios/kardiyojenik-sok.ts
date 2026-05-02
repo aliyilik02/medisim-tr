@@ -474,6 +474,45 @@ export const scenario_kardiyojenik_sok: Scenario = {
       ],
       comment: "Şok karaciğeri tablosu — kardiyojenik şokta %30-50 olguda görülür. Perfüzyon düzelince AST/ALT gerilemeye başlar.",
     },
+
+    // ------------------------------------------------------------
+    // step-1 nokta laktat ölçümü (POC) — ABG'den ayrı, hızlı tetkik
+    // ------------------------------------------------------------
+    "laktat": {
+      id: "laktat",
+      name_tr: "Nokta Laktat (POC)",
+      results: [
+        { parameter: "Laktat (POC)", value: 5.2, unit: "mmol/L", reference_range: "<2.0", flag: "HH",
+          interpretation: "Ciddi hipoperfüzyon — SCAI Evre C-D ile uyumlu. Laktat klerensi tedavi yanıtının primer takip parametresi (>%10/saat hedef). >4 mmol/L mortalite belirteci." },
+      ],
+      comment: "Nokta laktat (i-STAT/POC) ABG sonucundan önce 1-2 dk'da gelir — şokta erken karar için kritik. Hedef: 2 saatte ≥%10 düşüş. Dirençli laktat → mekanik destek (Impella/IABP/VA-ECMO) eşiğini düşürür.",
+    },
+
+    // ------------------------------------------------------------
+    // Yanlış seçim (-10): D-dimer, kardiyojenik şokta PE ayırıcı katkı sağlamaz
+    // ------------------------------------------------------------
+    "d-dimer": {
+      id: "d-dimer",
+      name_tr: "D-Dimer",
+      results: [
+        { parameter: "D-Dimer", value: 1380, unit: "ng/mL FEU", reference_range: "<500", flag: "H",
+          interpretation: "Hafif-orta yükseklik. Akut MI + sistemik inflamasyon + heparin altındaki hastada D-Dimer non-spesifik olarak yükselir — PE'yi ne destekler ne dışlar. STEMI + PCI öyküsü + EKO bulgusu zaten kardiyojenik şok tanısı koymuş durumda." },
+      ],
+      comment: "ESC 2021: Akut iskemik olayda D-Dimer rutin önerilmez (Wells skoru düşükse). Bu hastada PE ön olasılığı düşük; non-spesifik yükseklik gereksiz BT-anjio kararına götürebilir.",
+    },
+
+    // ------------------------------------------------------------
+    // Yanlış seçim (-10): Prokalsitonin, sepsis değil kardiyojenik şok
+    // ------------------------------------------------------------
+    "prokalsitonin": {
+      id: "prokalsitonin",
+      name_tr: "Prokalsitonin (PCT)",
+      results: [
+        { parameter: "PCT", value: 0.18, unit: "ng/mL", reference_range: "<0.25 (bakteriyel sepsis dışı)",
+          interpretation: "Düşük — bakteriyel sepsis lehine bulgu yok. Kardiyojenik şokta PCT hafif yükselebilir (doku hipoperfüzyonu) ama tablo zaten sepsis değil. Sonuç klinik kararı değiştirmedi." },
+      ],
+      comment: "AHA 2022 Cardiogenic Shock: Sepsis ön olasılığı yoksa PCT rutin önerilmez. Bu hastada STEMI + KY → tablo açık. PCT zaman ve maliyet kaybı.",
+    },
   },
 
   result_delay_seconds: {
@@ -482,6 +521,9 @@ export const scenario_kardiyojenik_sok: Scenario = {
     "ks-abg-lactate":      600,   // 10 dk
     "ks-bmp-extended":    1800,   // 30 dk
     "ks-lft-coag":        2700,   // 45 dk
+    "laktat":              120,   // 2 dk — POC, hızlı
+    "d-dimer":             900,   // 15 dk
+    "prokalsitonin":      1800,   // 30 dk
   },
 
   lab_timeline: [

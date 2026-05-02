@@ -471,14 +471,126 @@ export const scenario_preeklampsi: Scenario = {
       ],
       comment: "P/Cr 0.85 + 24h protein 5.2g → ağır proteinüri. Oligüri ile birlikte böbrek komplikasyonu riski yüksek.",
     },
+
+    // ------------------------------------------------------------
+    // s1b adımındaki "doğru" hızlı tarama tetkikleri
+    // (s2b'deki pe-* panelleriyle klinik olarak tutarlı; aynı hasta,
+    // daha basit/abstract panel — eğitim akışında öncelik)
+    // ------------------------------------------------------------
+    "tam_kan_sayimi": {
+      id: "tam_kan_sayimi",
+      name_tr: "Tam Kan Sayımı (TKS)",
+      results: [
+        { parameter: "WBC", value: 12.4, unit: "×10³/µL", reference_range: "4.5-11.0", flag: "H",
+          interpretation: "Hafif lökositoz — gebelik + stres yanıtı." },
+        { parameter: "Hgb", value: 9.8,  unit: "g/dL",    reference_range: "11.0-14.5", flag: "L",
+          interpretation: "Anemi — mikroanjiopatik hemolitik anemi (MAHA, HELLP komponenti)." },
+        { parameter: "Hct", value: 30,   unit: "%",       reference_range: "33-44",     flag: "L" },
+        { parameter: "Plt", value: 78,   unit: "×10³/µL", reference_range: "150-400",   flag: "HH",
+          interpretation: "Trombositopeni <100k — HELLP sendromu Tennessee kriteri 1, ağır özellik (ACOG PB 222)." },
+        { parameter: "Periferik yayma — Şistosit", value: "Var (++)", unit: "", reference_range: "Yok", flag: "H",
+          interpretation: "Şistositler MAHA'yı doğrular. HELLP tanısının destekleyici bulgusu." },
+      ],
+      comment: "Plt 78k + şistosit + Hgb düşüklüğü → HELLP'ın hematolojik üçlüsünden iki bulgu. Karaciğer enzimleriyle birlikte tanı tamamlanır.",
+    },
+
+    "karaciger_fonksiyon_testleri": {
+      id: "karaciger_fonksiyon_testleri",
+      name_tr: "Karaciğer Fonksiyon Testleri (KCFT)",
+      results: [
+        { parameter: "AST",        value: 124, unit: "U/L",   reference_range: "<35",   flag: "HH",
+          interpretation: "AST >70 ağır özellik kriteri (ACOG PB 222). HELLP'ın 'EL' (elevated liver enzymes) komponenti." },
+        { parameter: "ALT",        value: 98,  unit: "U/L",   reference_range: "<35",   flag: "HH" },
+        { parameter: "Total bilirubin", value: 1.6, unit: "mg/dL", reference_range: "0.3-1.2", flag: "H",
+          interpretation: "İndirekt hiperbilirübinemi — hemolizle uyumlu." },
+        { parameter: "LDH",        value: 720, unit: "U/L",   reference_range: "140-280", flag: "HH",
+          interpretation: "LDH >600 → hemoliz kanıtı (HELLP 'H' komponenti). Tennessee kriteri 3." },
+        { parameter: "Haptoglobin", value: 18, unit: "mg/dL", reference_range: "30-200", flag: "L",
+          interpretation: "Düşük haptoglobin — intravasküler hemoliz (MAHA)." },
+        { parameter: "Albümin",    value: 3.2, unit: "g/dL",  reference_range: "3.5-5.0", flag: "L" },
+        { parameter: "ALP",        value: 145, unit: "U/L",   reference_range: "30-120 (gebelikte 2× normal)" },
+      ],
+      comment: "AST 124 + LDH 720 + düşük haptoglobin → HELLP tam klinik tablo (H + EL). Trombositopeni ile birlikte tanı tamamlandı.",
+    },
+
+    "kreatinin": {
+      id: "kreatinin",
+      name_tr: "Serum Kreatinin",
+      results: [
+        { parameter: "Kreatinin", value: 1.3, unit: "mg/dL", reference_range: "0.5-0.9 (gebelikte)", flag: "HH",
+          interpretation: "Kreatinin >1.1 (bazalsiz) → ACOG ağır özellik kriteri. Glomerüler filtrasyon azalmış. Akut böbrek hasarı (AKI) eşiğinde." },
+        { parameter: "Ürik asit", value: 7.2, unit: "mg/dL", reference_range: "<5.5 (gebelikte)", flag: "H",
+          interpretation: "Hiperürisemi — preeklampsi şiddet göstergesi (TJOD 2022). Glomerüler hasar ve azalmış tübüler sekresyon." },
+        { parameter: "BUN",       value: 22,  unit: "mg/dL", reference_range: "8-20", flag: "H" },
+      ],
+      comment: "Cr 1.3 + ürik asit 7.2 → renal disfonksiyon ağır özellik kriteri. Oligüri (<500 mL/24h) gelişirse ileri renal monitörizasyon gerekir.",
+    },
+
+    "idrar_protein": {
+      id: "idrar_protein",
+      name_tr: "İdrar Protein (Spot + 24h)",
+      results: [
+        { parameter: "Dipstick protein",        value: "+++",  unit: "",       reference_range: "Negatif", flag: "HH",
+          interpretation: "Yoğun proteinüri — preeklampsi tanı kriteri." },
+        { parameter: "Spot Protein/Kreatinin", value: 0.85,    unit: "",       reference_range: "<0.3",   flag: "HH",
+          interpretation: "≥0.3 anlamlı proteinüri (ACOG/ISSHP). >3.5 nefrotik. Bu değer ağır proteinüri sınırında." },
+        { parameter: "24h idrar proteini",     value: 5.2,     unit: "g/24h",  reference_range: "<0.3",   flag: "HH",
+          interpretation: ">5g/24h ağır proteinüri. ACOG 2020 ağır özellik kriterinden çıkarılmış olsa da klinik şiddet göstergesi olarak değerlidir." },
+      ],
+      comment: "Spot P/Cr 0.85 + 24h 5.2g → tanı kesin, ağır düzey. Tek başına ağır özellik kriteri değildir (ACOG 2020) ama diğer ağır özelliklerle (TA, semptom, lab) birleşince tablo netleşir.",
+    },
+
+    // ------------------------------------------------------------
+    // s4 (MgSO4 tedavi izlemi) — magnezyum düzeyi
+    // ------------------------------------------------------------
+    "magnezyum_duzeyi": {
+      id: "magnezyum_duzeyi",
+      name_tr: "Serum Magnezyum",
+      collected_at_min: 5,
+      results: [
+        { parameter: "Mg (baseline)", value: 1.9, unit: "mEq/L", reference_range: "1.5-2.5",
+          interpretation: "Tedavi öncesi normal seviye. MgSO4 yükleme dozu sonrası 4-6h'de tekrar et." },
+      ],
+      comment: "MgSO4 tedavi penceresi: 4-7 mEq/L (terapötik). >9 mEq/L → patellar refleks kaybı (toksisite uyarısı). >12 mEq/L → solunum depresyonu/arrest. Klinik izlem (DTR, SS, idrar çıkışı) lab seviyesi kadar önemli — antidot: kalsiyum glukonat 1g IV.",
+    },
+
+    // ------------------------------------------------------------
+    // s2b yanlış seçimleri (-10): Prokalsitonin, Troponin
+    // ------------------------------------------------------------
+    "prokalsitonin": {
+      id: "prokalsitonin",
+      name_tr: "Prokalsitonin (PCT)",
+      results: [
+        { parameter: "PCT", value: 0.14, unit: "ng/mL", reference_range: "<0.25",
+          interpretation: "Düşük — bakteriyel sepsis kanıtı yok. Klinik tablo zaten preeklampsi/HELLP, sepsis değil. Sonuç klinik kararı değiştirmedi." },
+      ],
+      comment: "ACOG PB 222 + TJOD 2022: Preeklampsi tanı/yönetim algoritmasında PCT yer almaz. Korioamnionit veya sepsis ön olasılığı varsa düşünülür — bu hastada o klinik şüphe yok.",
+    },
+
+    "troponin": {
+      id: "troponin",
+      name_tr: "Troponin I (yüksek duyarlıklı)",
+      results: [
+        { parameter: "Troponin I (hs)", value: 0.018, unit: "ng/mL", reference_range: "<0.04",
+          interpretation: "Normal — kardiyak iskemi yok. Bu evrede preeklampsi-ilişkili kardiyak tutulum yok. Peripartum kardiyomiyopati veya akut akciğer ödemi gelişirse anlamlı olabilir, mevcut tabloda değil." },
+      ],
+      comment: "Preeklampsi-ilişkili kardiyak tutulum (peripartum kardiyomiyopati, akut akciğer ödemi) ileri evrede izlenebilir. Erken tanı/yönetim aşamasında troponin rutin değil.",
+    },
   },
 
   result_delay_seconds: {
-    "pe-cbc":   900,   // 15 dk
-    "pe-lft":   900,   // 15 dk
-    "pe-renal": 900,   // 15 dk
-    "pe-coag":  1800,  // 30 dk
-    "pe-urine": 3600,  // 60 dk (24h idrar toplama simüle)
+    "pe-cbc":                       900,   // 15 dk
+    "pe-lft":                       900,   // 15 dk
+    "pe-renal":                     900,   // 15 dk
+    "pe-coag":                     1800,   // 30 dk
+    "pe-urine":                    3600,   // 60 dk (24h idrar toplama simüle)
+    "tam_kan_sayimi":               900,   // 15 dk
+    "karaciger_fonksiyon_testleri": 900,   // 15 dk
+    "kreatinin":                    600,   // 10 dk
+    "idrar_protein":               1800,   // 30 dk (spot için kısa, 24h için kavramsal)
+    "magnezyum_duzeyi":             600,   // 10 dk — tedavi izlemi
+    "prokalsitonin":               1800,   // 30 dk — yanlış seçim
+    "troponin":                     900,   // 15 dk — yanlış seçim
   },
 
   lab_timeline: [

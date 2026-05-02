@@ -425,12 +425,68 @@ export const scenario_bronsiyolit: Scenario = {
       ],
       comment: "Viral CBC paterni + düşük CRP — bakteriyel ko-enfeksiyon ekarte. AAP 2014: bu tetkik rutin önerilmez.",
     },
+
+    // ------------------------------------------------------------
+    // Aşağıdaki 3 panel "yanlış seçim" tetkikleridir (s2b_orders'da
+    // negatif puan). Öğrenci ısmarlarsa klinik olarak gerçekçi sonuç
+    // dönmesi için tanımlandı — pedagojik mesaj: "bu tetkik tabloyu
+    // değiştirmedi, sadece zaman/maliyet harcandı."
+    // ------------------------------------------------------------
+    "idrar_tam_tahlili": {
+      id: "idrar_tam_tahlili",
+      name_tr: "Tam İdrar Tahlili (TIT)",
+      results: [
+        { parameter: "Renk",       value: "Koyu sarı", unit: "",     reference_range: "Açık sarı" },
+        { parameter: "Berraklık",  value: "Berrak",    unit: "",     reference_range: "Berrak" },
+        { parameter: "Dansite",    value: 1.028,        unit: "",     reference_range: "1.005-1.025", flag: "H",
+          interpretation: "Yüksek dansite — dehidrasyonu yansıtır. Klinik olarak zaten bilinen bir bulgu (4 saattir idrar yok)." },
+        { parameter: "pH",         value: 6.0,          unit: "",     reference_range: "5.0-7.5" },
+        { parameter: "Glukoz",     value: "Negatif",    unit: "",     reference_range: "Negatif" },
+        { parameter: "Keton",      value: "++",         unit: "",     reference_range: "Negatif",     flag: "H",
+          interpretation: "Hafif ketozis — beslenememe + dehidrasyon. Yine zaten bilinen klinik bilgi." },
+        { parameter: "Protein",    value: "Negatif",    unit: "",     reference_range: "Negatif" },
+        { parameter: "Lökosit esterazı", value: "Negatif", unit: "",  reference_range: "Negatif" },
+        { parameter: "Nitrit",     value: "Negatif",    unit: "",     reference_range: "Negatif" },
+        { parameter: "Eritrosit",  value: "Negatif",    unit: "",     reference_range: "Negatif" },
+        { parameter: "Lökosit (mikroskopi)",  value: "0-2", unit: "/hpf", reference_range: "0-5" },
+        { parameter: "Eritrosit (mikroskopi)", value: "0-1", unit: "/hpf", reference_range: "0-2" },
+        { parameter: "Bakteri",    value: "Yok",        unit: "",     reference_range: "Yok" },
+      ],
+      comment: "İdrar yolu enfeksiyonu bulgusu YOK (lökosit esterazı / nitrit negatif). Yüksek dansite + keton dehidrasyonu yansıtır — klinik muayenede zaten saptanmıştı. AAP 2014: 8 aylık ateşli infantta klinik UTI şüphesi yoksa rutin TIT önerilmez. Tetkik tabloyu değiştirmedi.",
+    },
+
+    "kan_kulturu": {
+      id: "kan_kulturu",
+      name_tr: "Kan Kültürü (Aerobik + Anaerobik)",
+      results: [
+        { parameter: "Aerobik kültür (24 saat)",  value: "Üreme yok", unit: "", reference_range: "Üreme yok",
+          interpretation: "İlk 24 saat ön rapor — bakteremi açısından düşük olasılık." },
+        { parameter: "Anaerobik kültür (24 saat)", value: "Üreme yok", unit: "", reference_range: "Üreme yok" },
+        { parameter: "Final rapor (48-72 saat)",  value: "Bekleniyor", unit: "", reference_range: "—",
+          interpretation: "Final üreme raporu 48-72 saat sürer. Senaryo süresinde sonuç beklenmez." },
+        { parameter: "Gram boyama",                value: "Yapılmadı (üreme yok)", unit: "", reference_range: "—" },
+      ],
+      comment: "Viral bronşiyolitte sekonder bakteremi insidansı %1'in altıdır (Hall et al., AAP 2014 ref). Klinik tablo viral, ateş 38.1 °C — invazif bakteriyel enfeksiyon riski düşük. Kültür sonucu klinik kararı değiştirmez ve 48-72 saat sürdüğü için tedavi başlangıcını da yönlendirmez. Gereksiz invazif işlem.",
+    },
+
+    "prokalsitonin": {
+      id: "prokalsitonin",
+      name_tr: "Prokalsitonin (PCT)",
+      results: [
+        { parameter: "PCT",  value: 0.08, unit: "ng/mL", reference_range: "<0.25 (viral) / 0.25-0.5 (sınırda) / >0.5 (bakteriyel)",
+          interpretation: "Viral patern. Düşük PCT bakteriyel ko-enfeksiyonu dışlar — ancak klinik zaten viral bronşiyolit (RSV+, lenfosit baskınlığı, düşük CRP). Yeni klinik bilgi sağlamadı." },
+      ],
+      comment: "AAP 2014 + Türk Pediatri Kurumu 2018: bronşiyolitte rutin PCT önerilmez. Atipik seyir (lokalize konsolidasyon, lökositoz, ısrarlı ateş) varlığında bakteriyel ko-enfeksiyon değerlendirilirken anlamlı. Mevcut klinikte tablo viral ve PCT bunu yalnızca doğrular — yönetim değişmez.",
+    },
   },
 
   result_delay_seconds: {
-    "br-cbg":       600,   // 10 dk
-    "br-viral-pcr": 7200,  // 120 dk (sınav modunda gerçek; eğitimde 5 sn)
-    "br-cbc-crp":   900,   // 15 dk
+    "br-cbg":            600,    // 10 dk
+    "br-viral-pcr":      7200,   // 120 dk (sınav modunda gerçek; eğitimde 5 sn)
+    "br-cbc-crp":        900,    // 15 dk
+    "idrar_tam_tahlili": 1800,   // 30 dk — yanlış seçim, sınav modunda zaman cezası
+    "kan_kulturu":       86400,  // 24 saat — sınav modunda senaryo içinde dönmez (pedagojik)
+    "prokalsitonin":     1800,   // 30 dk
   },
 
   lab_timeline: [
