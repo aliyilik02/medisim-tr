@@ -199,12 +199,26 @@ export const scenario_anaflaksi: Scenario = {
       comment:
         "Laktat 3.8 mmol/L — refrakter şokta yüksekliği devam ederse IV adrenalin infüzyon gerekebilir",
     },
+
+    // ------------------------------------------------------------
+    // Yanlış seçim (-15): D-Dimer, anaflaksiyi PE ile karıştırma hatası
+    // ------------------------------------------------------------
+    "d_dimer": {
+      id: "d_dimer",
+      name_tr: "D-Dimer",
+      results: [
+        { parameter: "D-Dimer", value: 1240, unit: "ng/mL FEU", reference_range: "<500", flag: "H",
+          interpretation: "Hafif-orta yükseklik. Anaflaksinin kendisi DIC-benzeri aktivasyon yaparak D-Dimer'i yükseltir (Wakahara 2008, Choi 2014) — bu bulgu PE'yi ne destekler ne de dışlar. Klinik bağlam: tetikleyici + cilt + bronkospazm = anaflaksi tanısı zaten kondu." },
+      ],
+      comment: "WAO 2020: anaflakside D-Dimer rutin önerilmez. Anafilaksi distribütif şoku ile PE obstrüktif şoku ayırıcı tanısı klinik bağlamla yapılır — D-Dimer non-spesifik yükseklikle yanlış yönlendirebilir. Tetkik tabloyu değiştirmedi.",
+    },
   },
 
   result_delay_seconds: {
-    "ana-tryptase": 1800,
-    "ana-cbc-bmp": 900,
+    "ana-tryptase":   1800,
+    "ana-cbc-bmp":    900,
     "ana-abg-lactate": 600,
+    "d_dimer":        900,  // 15 dk
   },
 
   lab_timeline: [

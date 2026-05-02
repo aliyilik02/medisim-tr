@@ -461,13 +461,113 @@ export const scenario_apandisit: Scenario = {
       ],
       comment: "İdrar bulguları UTI ile uyumlu değil — komşuluk irritasyonu. UTI + ektopik gebelik (erkek N/A) ekarte.",
     },
+
+    // ------------------------------------------------------------
+    // s1_fizik_muayene adımındaki "hızlı tarama" tetkikleri
+    // (s2b_orders'daki ap-cbc/ap-inflammation/ap-urine-hcg ile
+    // klinik olarak tutarlı değerler — aynı hasta, daha kısa panel)
+    // ------------------------------------------------------------
+    "tam_kan_sayimi": {
+      id: "tam_kan_sayimi",
+      name_tr: "Tam Kan Sayımı (TKS)",
+      results: [
+        { parameter: "WBC",      value: 14.5, unit: "×10³/µL", reference_range: "4.5-11.0", flag: "H",
+          interpretation: "Lökositoz (+2 Alvarado). Apandisit için klasik bulgu." },
+        { parameter: "Nötrofil", value: 82,   unit: "%",        reference_range: "50-70",   flag: "H",
+          interpretation: "Sola kayma (+1 Alvarado). Bakteriyel/akut inflamasyon paterni." },
+        { parameter: "Lenfosit", value: 12,   unit: "%",        reference_range: "20-40",   flag: "L" },
+        { parameter: "Hgb",      value: 14.8, unit: "g/dL",     reference_range: "13.5-17.5" },
+        { parameter: "Hct",      value: 44,   unit: "%",        reference_range: "40-52" },
+        { parameter: "Plt",      value: 285,  unit: "×10³/µL",  reference_range: "150-450" },
+      ],
+      comment: "Lökositoz + nötrofili + sola kayma → Alvarado +3 puan. WSES 2020: TKS apandisit tanısının laboratuvar köşe taşı.",
+    },
+
+    "crp": {
+      id: "crp",
+      name_tr: "CRP",
+      results: [
+        { parameter: "CRP", value: 45, unit: "mg/L", reference_range: "<5", flag: "H",
+          interpretation: "Orta inflamasyon. CRP >10 + lökositoz apandisit tanısını kuvvetlendirir (WSES 2020). >100 mg/L perforasyon/abse şüphesi yükseltir." },
+      ],
+      comment: "CRP TKS ile birlikte güçlü tanısal destek. Tek başına özgül değildir; klinik + lökosit ile birlikte yorumlanır.",
+    },
+
+    "idrar_tam_tahlili": {
+      id: "idrar_tam_tahlili",
+      name_tr: "Tam İdrar Tahlili (TIT)",
+      results: [
+        { parameter: "Renk",      value: "Sarı",     unit: "",     reference_range: "Açık sarı" },
+        { parameter: "Berraklık", value: "Berrak",   unit: "",     reference_range: "Berrak" },
+        { parameter: "Dansite",   value: 1.020,      unit: "",     reference_range: "1.005-1.025" },
+        { parameter: "pH",        value: 6.0,        unit: "",     reference_range: "5.0-7.5" },
+        { parameter: "Lökosit esterazı", value: "Eser (+)", unit: "", reference_range: "Negatif", flag: "H",
+          interpretation: "Hafif lökositüri — apandiksin mesane/üreter komşuluğu irritasyonu ile uyumlu." },
+        { parameter: "Nitrit",    value: "Negatif",  unit: "",     reference_range: "Negatif",
+          interpretation: "Negatif — UTI ekarte (klinik olarak en önemli bulgu)." },
+        { parameter: "Glukoz",    value: "Negatif",  unit: "",     reference_range: "Negatif" },
+        { parameter: "Keton",     value: "+",        unit: "",     reference_range: "Negatif",
+          interpretation: "Hafif keton — açlık/iştahsızlık ile uyumlu." },
+        { parameter: "Protein",   value: "Negatif",  unit: "",     reference_range: "Negatif" },
+        { parameter: "Eritrosit", value: "Negatif",  unit: "",     reference_range: "Negatif" },
+        { parameter: "Lökosit (mikroskopi)", value: "5-8", unit: "/hpf", reference_range: "0-5", flag: "H" },
+        { parameter: "Bakteri",   value: "Yok",      unit: "",     reference_range: "Yok" },
+      ],
+      comment: "İdrar yolu enfeksiyonu YOK (nitrit negatif, bakteri yok). Hafif piyüri komşuluk irritasyonundan — apandisit tanısını desteklemeyen ama dışlamayan bulgu.",
+    },
+
+    // ------------------------------------------------------------
+    // s2b_orders yanlış seçimleri (-10): D-Dimer, Troponin
+    // ------------------------------------------------------------
+    "d-dimer": {
+      id: "d-dimer",
+      name_tr: "D-Dimer",
+      results: [
+        { parameter: "D-Dimer", value: 580, unit: "ng/mL FEU", reference_range: "<500", flag: "H",
+          interpretation: "Hafif yükseklik. Akut inflamasyon (apandisit) D-Dimer'i non-spesifik olarak yükseltebilir — PE tanısına götürmez. Klinik bağlamda PE şüphesi yok; bu bulgu yanlış pozitif." },
+      ],
+      comment: "WSES 2020: Akut karında D-Dimer rutin önerilmez. PE ön olasılığı yoksa istem klinik kararı değiştirmez ve gereksiz ileri tetkik (BT-anjio) tetikleyebilir.",
+    },
+
+    "troponin": {
+      id: "troponin",
+      name_tr: "Troponin I (yüksek duyarlıklı)",
+      results: [
+        { parameter: "Troponin I (hs)", value: 0.012, unit: "ng/mL", reference_range: "<0.04",
+          interpretation: "Normal — kardiyak iskemi kanıtı yok. Klinik tabloda zaten kardiyak şikâyet yok; bu tetkik anlamsızdı." },
+      ],
+      comment: "Tabloda göğüs ağrısı, dispne veya EKG değişikliği yok. Troponin akut karın paneline dahil değildir — ESC AKS kılavuzu klinik şüphe + EKG ile değerlendirir.",
+    },
+
+    // ------------------------------------------------------------
+    // s4 (cerrahi hazırlık) — preoperatif kan grubu / cross-match
+    // ------------------------------------------------------------
+    "kan_grubu_cross": {
+      id: "kan_grubu_cross",
+      name_tr: "Kan Grubu + Cross-Match",
+      results: [
+        { parameter: "ABO grubu",        value: "O",       unit: "", reference_range: "—" },
+        { parameter: "Rh tipi",          value: "Pozitif", unit: "", reference_range: "—" },
+        { parameter: "Direkt Coombs",    value: "Negatif", unit: "", reference_range: "Negatif" },
+        { parameter: "İndirekt Coombs",  value: "Negatif", unit: "", reference_range: "Negatif" },
+        { parameter: "Cross-match",      value: "Uyumlu — 2 ünite ER konsantresi rezerve", unit: "", reference_range: "—",
+          interpretation: "Kan bankası 2 Ü ER konsantresi hazır tuttu. Komplike apandisit/perforasyon olasılığında transfüzyon ihtiyacı için preoperatif standart." },
+      ],
+      comment: "Preoperatif kan grubu/cross-match elektif/yarı-elektif tüm cerrahide standart. Komplike apandisitte intraabdominal kanama veya peritoneal kontaminasyon kontrolünde transfüzyon gerekebilir.",
+    },
   },
 
   result_delay_seconds: {
-    "ap-cbc":          900,   // 15 dk
-    "ap-inflammation": 1800,  // 30 dk
-    "ap-bmp-lft":      900,   // 15 dk
-    "ap-urine-hcg":    600,   // 10 dk
+    "ap-cbc":             900,   // 15 dk
+    "ap-inflammation":   1800,   // 30 dk
+    "ap-bmp-lft":         900,   // 15 dk
+    "ap-urine-hcg":       600,   // 10 dk
+    "tam_kan_sayimi":     900,   // 15 dk — basit TKS
+    "crp":                900,   // 15 dk
+    "idrar_tam_tahlili":  600,   // 10 dk
+    "d-dimer":            900,   // 15 dk — yanlış seçim
+    "troponin":           900,   // 15 dk — yanlış seçim
+    "kan_grubu_cross":   1200,   // 20 dk — preop standart
   },
 
   lab_timeline: [
