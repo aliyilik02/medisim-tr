@@ -539,9 +539,26 @@ export function ScenarioPlayPage() {
             {/* Erken bitir — partial olarak finalizeSession */}
             <button
               onClick={() => {
-                if (confirm("Senaryoyu şimdi bitir ve sonuçları gör? (Tamamlanmamış adımlar 0 puan alır)")) {
-                  const finalized = finalizeSession(session, rs, "partial");
-                  setSession(finalized);
+                if (confirm("Senaryoyu şimdi bitir ve sonuçları gör? (Aktif adımdaki puanın korunur, harf notu hesaplanmaz)")) {
+                  setSession((s) => {
+                    if (!s) return s;
+                    // Aktif adımda iz bırakıldıysa (puan, aksiyon veya kritik hata) senkron flush
+                    const hasProgress =
+                      pointsThisStep !== 0 ||
+                      actionsThisStep.length > 0 ||
+                      criticalErrorsThisStep > 0;
+                    const flushed = (hasProgress && currentStep)
+                      ? completeStep(
+                          s,
+                          currentStep.id,
+                          pointsThisStep,
+                          actionsThisStep,
+                          criticalErrorsThisStep,
+                          null
+                        )
+                      : s;
+                    return finalizeSession(flushed, rs, "partial");
+                  });
                 }
               }}
               className="text-xs text-ink-500 hover:text-clinical-warning border border-ink-700 hover:border-clinical-warning/50 rounded px-2 py-0.5 transition"
