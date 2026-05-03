@@ -109,10 +109,8 @@ describe("Scenario code mappings — DRAFT izolasyonu", () => {
     // Senaryo şemasında clinical_codes alanı varsa scenarioMappings ile çakışmayı önle.
     // Şu an senaryo dosyalarında bu alan kullanılmıyor — DRAFT verisi engine'e bağlı değil.
     for (const sc of ALL_SCENARIOS) {
-      // @ts-expect-error — clinical_codes opsiyonel, henüz eklenmedi
-      const onScenario = sc.clinical_codes;
       expect(
-        onScenario,
+        sc.clinical_codes,
         `${sc.id}: clinical_codes alanı senaryoda var — DRAFT henüz aktif değil, kullanıcı onayı sonrası ayrı PR olarak eklenmeli`
       ).toBeUndefined();
     }

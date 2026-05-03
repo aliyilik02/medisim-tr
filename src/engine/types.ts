@@ -429,6 +429,17 @@ export interface Scenario {
   // Görüntüleme sonuçları. Key = equipment id → tetkik istendiğinde döner
   imaging_results?: Record<string, ImagingResult>;
 
+  /**
+   * Opsiyonel: ICD-10/SNOMED CT kodlama (Faz 4 — DRAFT şema desteği).
+   * Şu an senaryo dosyalarında doldurulmamış. Kullanıcı onayı ve klinik
+   * review sonrası ayrı bir PR olarak eklenir. Bkz:
+   * src/data/clinical-codes/scenario-mappings.json
+   */
+  clinical_codes?: {
+    icd10?: string;
+    snomed_ct?: string;
+  };
+
   // 3D (opsiyonel)
   scene?: SceneConfig;
 }
