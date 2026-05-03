@@ -44,6 +44,6 @@
     "vitest": "^4.1.5"
   },
   "lint-staged": {
-    "*.{ts,tsx}": "vitest related --run"
+    "src/**/*.{ts,tsx}": "vitest related --run"
   }
 }
