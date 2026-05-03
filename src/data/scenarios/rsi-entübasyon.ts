@@ -859,7 +859,7 @@ export const scenario_rsi_entübasyon: Scenario = {
   ],
 
   scoring: {
-    max_points: 340,
+    max_points: 375,
     passing_score: 205,
     grade_bands: {
       A: 306,
