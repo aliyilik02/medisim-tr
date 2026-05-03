@@ -341,8 +341,8 @@ export const scenario_preeklampsi: Scenario = {
         {
           id: "opt_deksametazon_bekle",
           text: "<34 hafta olsaydı kortikosteroid (betametazon) ver, 48 saat bekle",
-          correct: true,
-          points: 15,
+          correct: false,
+          points: 5,
           feedback:
             "Doğru prensip ama bu senaryoda 36 hafta — kortikosteroid penceresi kapanmış. ≥34 haftada bekleme önerilmez.",
         },
