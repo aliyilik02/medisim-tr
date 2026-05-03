@@ -279,6 +279,8 @@ export const scenario_preeklampsi: Scenario = {
     {
       id: "s3_antihipertansif",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Antihipertansif Seçimi",
       prompt:
         "TA 168/110. Ağır hipertansiyon (SBP≥160 veya DBP≥110) için acil antihipertansif başlayın. Hangi ilacı seçersiniz?",
