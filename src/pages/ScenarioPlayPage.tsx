@@ -601,7 +601,7 @@ export function ScenarioPlayPage() {
                 currentStep.kind === "decision"
                   ? seededShuffle(
                       getVisibleOptions(currentStep, session.selected_difficulty),
-                      `${resolvedScenario?.id ?? scenario.id}:${currentStep.id}`
+                      `${resolvedScenario?.id ?? scenario.id}:${currentStep.id}:${session.started_at}`
                     )
                   : undefined
               }
