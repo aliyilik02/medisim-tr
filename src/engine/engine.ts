@@ -19,6 +19,7 @@ import type {
   DecisionMultiEvaluation,
 } from "./types";
 import { resolveScenarioVariant } from "./variant";
+import { getEffectiveGradeBands } from "./grading";
 
 // ------------------------------------------------------------
 // Yardımcı: Aksiyon eşleştirme
@@ -302,11 +303,11 @@ export function calculateGrade(
   score: number,
   scoring: Scenario["scoring"]
 ): "A" | "B" | "C" | "D" | "F" {
-  const { grade_bands } = scoring;
-  if (score >= grade_bands.A) return "A";
-  if (score >= grade_bands.B) return "B";
-  if (score >= grade_bands.C) return "C";
-  if (score >= grade_bands.D) return "D";
+  const bands = getEffectiveGradeBands(scoring);
+  if (score >= bands.A) return "A";
+  if (score >= bands.B) return "B";
+  if (score >= bands.C) return "C";
+  if (score >= bands.D) return "D";
   return "F";
 }
 
