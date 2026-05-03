@@ -282,14 +282,21 @@ export function ScenarioPlayPage() {
       session.selected_difficulty
     );
 
-    const totalPoints = evaluation.points + pharmaPoints;
+    // Çift cezalama önleme:
+    // Senaryo bu aksiyonu expected_outcomes'ta özel olarak ele aldıysa
+    // (matched_outcome dolu), senaryo yazarının verdiği puan otoritedir.
+    // Pharma engine'in eklediği puanı kullanma — ama kritik kontrendikasyon
+    // modali yine açılır (klinik uyarı kaybolmaz).
+    const effectivePharmaPoints = evaluation.matched_outcome ? 0 : pharmaPoints;
+
+    const totalPoints = evaluation.points + effectivePharmaPoints;
     const isCritical = evaluation.critical || pharmaCritical !== null;
 
     let combinedFeedback = evaluation.feedback;
-    if (pharmaPoints !== 0 && !pharmaCritical) {
+    if (effectivePharmaPoints !== 0 && !pharmaCritical) {
       combinedFeedback +=
-        pharmaPoints < 0
-          ? ` (Farmakoloji: ${pharmaPoints} — doz/kontrendikasyon)`
+        effectivePharmaPoints < 0
+          ? ` (Farmakoloji: ${effectivePharmaPoints} — doz/kontrendikasyon)`
           : "";
     }
 
