@@ -546,6 +546,7 @@ export const scenario_anaflaksi: Scenario = {
           points: 15,
           feedback:
             "✓ DOĞRU (şartlı). Beta-blokör kullanan hastalarda adrenerjik direnci aşmak için glukagon cAMP ile bypass eder. Bu hastada beta-blokör öyküsü yok, ancak bilinmesi gereken ilke. Eğer beta-blokör öyküsü olsaydı — Sınıf IIa.",
+          min_difficulty: 4,
         },
         {
           id: "opt_uc_doz_im",
