@@ -81,6 +81,7 @@ export const scenario_preeklampsi: Scenario = {
     "ultrasonografi",
     "fetal_kalp_monitoru",
     "reflex_çekici",
+    "oksijen_maske",
   ],
 
   ekg_pattern: "normal_sinüs",
