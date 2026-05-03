@@ -17,7 +17,9 @@
 
 import { describe, expect, test } from "vitest";
 import type { Scenario, Step, ActionStep, DecisionStep } from "@/engine";
+import { getEffectiveGradeBands } from "@/engine";
 import { ALL_SCENARIOS } from "../helpers/all-scenarios";
+import { autoPlayBestPath } from "../helpers/auto-play";
 
 // ------------------------------------------------------------
 // Genel: senaryo listesi sağlığı
@@ -162,11 +164,25 @@ describe.each(ALL_SCENARIOS.map((s) => [s.id, s] as const))(
       ).toBeLessThan(scenario.scoring.max_points);
     });
 
-    test("grade_bands sıralı (A > B > C > D)", () => {
-      const { A, B, C, D } = scenario.scoring.grade_bands;
+    test("grade_bands sıralı (A > B > C > D) — helper sonucuyla", () => {
+      const { A, B, C, D } = getEffectiveGradeBands(scenario.scoring);
       expect(A, `${scenario.id} A<=B`).toBeGreaterThan(B);
       expect(B, `${scenario.id} B<=C`).toBeGreaterThan(C);
       expect(C, `${scenario.id} C<=D`).toBeGreaterThan(D);
+    });
+
+    test("max_points >= auto-play en iyi skor (denge sanity check)", () => {
+      const { totalPoints } = autoPlayBestPath(scenario, 1);
+      expect(
+        scenario.scoring.max_points,
+        `${scenario.id}: max_points (${scenario.scoring.max_points}) auto-play en iyi skor (${totalPoints})'dan küçük`
+      ).toBeGreaterThanOrEqual(totalPoints);
+      if (scenario.scoring.max_points - totalPoints > 20) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `${scenario.id}: max_points (${scenario.scoring.max_points}) auto-play sonucu (${totalPoints})'dan çok yüksek — bonus outcome'lar eksik olabilir`
+        );
+      }
     });
 
     test("lab_panel referansları (varsa) panel id'leri ile eşleşiyor", () => {
