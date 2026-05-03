@@ -712,6 +712,7 @@ export const scenario_rsi_entübasyon: Scenario = {
           points: 20,
           feedback:
             "✓ DOĞRU alternatif. Rokuronyum + sugammadeks kombinasyonu Avrupa merkezlerinde giderek tercih edilmekte. Süksinilkolin eşit güvenli ama rokuronyum reversibilite avantajı sunar. İkisi de doğru seçim.",
+          min_difficulty: 2,
         },
         {
           id: "opt_kontrol_sonra",
