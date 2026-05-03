@@ -48,30 +48,36 @@ export function InventoryPanel({
     .filter(Boolean)
     .filter(
       (m) => search === "" || m.name_tr.toLowerCase().includes(search.toLowerCase())
-    );
+    )
+    .sort((a, b) => a.name_tr.localeCompare(b.name_tr, "tr"));
 
   const eqFiltered = availableEquipment
     .map((id) => EQUIPMENT[id])
     .filter(Boolean)
     .filter(
       (e) => search === "" || e.name_tr.toLowerCase().includes(search.toLowerCase())
-    );
+    )
+    .sort((a, b) => a.name_tr.localeCompare(b.name_tr, "tr"));
 
   const labPanelEntries = labPanels
-    ? Object.entries(labPanels).filter(
-        ([id, p]) =>
-          search === "" ||
-          p.name_tr.toLowerCase().includes(search.toLowerCase()) ||
-          id.toLowerCase().includes(search.toLowerCase())
-      )
+    ? Object.entries(labPanels)
+        .filter(
+          ([id, p]) =>
+            search === "" ||
+            p.name_tr.toLowerCase().includes(search.toLowerCase()) ||
+            id.toLowerCase().includes(search.toLowerCase())
+        )
+        .sort(([, a], [, b]) => a.name_tr.localeCompare(b.name_tr, "tr"))
     : [];
 
-  const imagingFiltered = imagingResults.filter(
-    (r) =>
-      search === "" ||
-      r.name_tr.toLowerCase().includes(search.toLowerCase()) ||
-      r.modality.toLowerCase().includes(search.toLowerCase())
-  );
+  const imagingFiltered = imagingResults
+    .filter(
+      (r) =>
+        search === "" ||
+        r.name_tr.toLowerCase().includes(search.toLowerCase()) ||
+        r.modality.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => a.name_tr.localeCompare(b.name_tr, "tr"));
 
   return (
     <div className="panel flex flex-col h-full">
