@@ -2,11 +2,13 @@
 
 **GitHub:** https://github.com/aliyilik02/medisim-tr
 
+[![Test](https://github.com/aliyilik02/medisim-tr/actions/workflows/test.yml/badge.svg)](https://github.com/aliyilik02/medisim-tr/actions/workflows/test.yml)
+
 **Türkiye'ye özel, web tabanlı sanal hasta simülasyon platformu.**
 Tıp öğrencileri, hemşireler, acil sağlık personeli ve saha sağlıkçıları için
 senaryo tabanlı klinik eğitim.
 
-> ⚠️ Proje şu an **v0.1 · alpha** aşamasında. Eğitim amaçlıdır, klinik karar
+> ⚠️ Proje şu an **v0.2 · alpha** aşamasında. Eğitim amaçlıdır, klinik karar
 > verme aracı olarak kullanılamaz.
 
 ---
@@ -61,25 +63,28 @@ Tarayıcıda `http://localhost:5173` açılacak.
 
 ## Ne var içinde?
 
-### v0.1 (bu sürüm)
+### v0.2 (bu sürüm)
 
-- ✅ Senaryo motoru (TypeScript tipleri + değerlendirme mantığı)
-- ✅ Eğitim / sınav modu
-- ✅ Puanlama, harf notu, debrief
-- ✅ Hasta kartı, vital monitörü (klinik renk kodlaması)
-- ✅ İlaç + ekipman envanteri (20 ilaç, 30 ekipman)
-- ✅ 2 tam senaryo (STEMI, Anaflaksi)
+- ✅ Senaryo motoru (TypeScript tipleri + değerlendirme mantığı + farmakoloji tick)
+- ✅ Eğitim / sınav modu, 5 zorluk seviyesi
+- ✅ Puanlama, harf notu (Body Interact uyumlu %85/70/55/40 standart eşikler), debrief
+- ✅ Hasta kartı, canlı vital monitörü, EKG dalga formu
+- ✅ İlaç + ekipman + lab/görüntüleme envanteri
+- ✅ **14 tam senaryo** — kardiyoloji, dahiliye, acil, pediatri, cerrahi, anestezi, kadın doğum, hemşirelik, askeri TCCC
+- ✅ Klinik kod altyapısı (ICD-10 / SNOMED CT / RxNorm) — DRAFT veri katmanı
+- ✅ Türk kılavuz kural motoru (DRAFT, 10 örnek kural — TARD, BDHD, ACOG-MFTP-TR, ESC, WAO, WALLS, WSES kaynaklı)
 - ✅ Türkçe arayüz
+- ✅ **348 birim/regresyon/yapı testi** (vitest), GitHub Actions CI
 
 ### Planlanan (yol haritası)
 
 - 🔜 Three.js / WebGL ile 3D hasta & hotspot sistemi
-- 🔜 Askeri TCCC modülü (turnike, penetran toraks, hipotermi)
-- 🔜 Kullanıcı hesabı + ilerleme takibi (backend)
+- 🔜 Kullanıcı hesabı + ilerleme takibi (backend — Fastify + PostgreSQL)
 - 🔜 Kurumsal lisans paneli (hocalar için sınıf görünümü)
 - 🔜 iyzico ödeme entegrasyonu
 - 🔜 Senaryo editörü (kod bilmeden senaryo ekleme)
-- 🔜 Görsel EKG, lab, görüntüleme entegrasyonu
+- 🔜 Klinik kural motoru ACTIVE entegrasyonu (DRAFT review sonrası)
+- 🔜 Playwright E2E test paketi
 
 ---
 
@@ -89,8 +94,22 @@ Tarayıcıda `http://localhost:5173` açılacak.
 - **Styling:** Tailwind CSS + custom design system
 - **Routing:** React Router
 - **State:** React useState (gerektiğinde Zustand)
+- **Test:** Vitest + Testing Library (happy-dom) — `npm test`
+- **CI:** GitHub Actions + husky pre-commit/pre-push hooks
 - **3D (planlanan):** Three.js + React Three Fiber
 - **Backend (planlanan):** Node.js + Fastify + PostgreSQL
+
+## Test ve geliştirme
+
+```bash
+npm test              # tüm test paketi (348 test)
+npm run test:watch    # değişikliklerde otomatik
+npm run test:ui       # tarayıcıda interaktif panel
+npm run test:coverage # HTML coverage raporu
+```
+
+Detaylar: [`tests/README.md`](./tests/README.md). Geçmiş aşama raporları
+`tests/PHASE-*.md` dosyalarında.
 
 ---
 
