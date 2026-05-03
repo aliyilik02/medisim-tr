@@ -1,0 +1,145 @@
+{
+  "version": "0.1.0-DRAFT",
+  "status": "DRAFT",
+  "generated_at": "2026-05-04T03:00:00Z",
+  "generated_by": "Claude AI assistant — needs human review",
+  "rules": [
+    {
+      "id": "tr-rsi-001",
+      "source": "TARD",
+      "source_year": 2021,
+      "source_section": "RSI Bölüm",
+      "rule_text_tr": "Travma RSI indüksiyonunda etomidat birinci tercih, ketamin hemodinamik sınır + TBI'da güncel kanıtlı alternatif (S2+ öğretim).",
+      "affects_scenarios": ["anestezi-rsi-001"],
+      "affects_steps": ["s2_indüksiyon"],
+      "validation": {
+        "type": "min_difficulty",
+        "description": "opt_ketamin min_difficulty: 2 olmalı"
+      },
+      "status": "DRAFT_NEEDS_REVIEW",
+      "notes": "Kullanıcı kararı 2026-05-03 oturumunda. TARD kılavuz: ülkemizde propofol-süks/mivakuryum/rok seçenekleri."
+    },
+    {
+      "id": "tr-rsi-002",
+      "source": "WALLS",
+      "source_year": 2024,
+      "rule_text_tr": "Akut travma <48h'de süksinilkolin kontrendike DEĞİL. Hiperkalemik arrest riski sadece >48h denervasyon, yanık >24h, ezilme >48h, kronik immobilizasyon. Türkiye'de yaygın yanlış inanış: her travmada süks kontrendike.",
+      "affects_scenarios": ["anestezi-rsi-001"],
+      "affects_steps": ["s3b_succinilkolin_kontrendikasyon"],
+      "validation": {
+        "type": "decision_correct",
+        "description": "opt_guvenli +30 primer, opt_rokuronyum_tercih +20 (kabul edilebilir alternatif). Pedagojik amaç: süks güvenli mesajı"
+      },
+      "status": "DRAFT_NEEDS_REVIEW",
+      "notes": "Kullanıcı kararı 2026-05-03. Walls Manual 2024 ile Türk pratiğinde yaygın hatayı düzeltme."
+    },
+    {
+      "id": "tr-anaflaksi-001",
+      "source": "WAO",
+      "source_year": 2020,
+      "rule_text_tr": "Anaflakside adrenalin birinci ve vazgeçilmez ilaçtır. Refrakter durumda IV infüzyon. Glukagon SADECE beta-blokör kullanan hastada (S4+ öğretim).",
+      "affects_scenarios": ["acil-anaflaksi-001"],
+      "affects_steps": ["s3b_refractory"],
+      "validation": {
+        "type": "min_difficulty",
+        "description": "opt_glukagon min_difficulty: 4 olmalı"
+      },
+      "status": "DRAFT_NEEDS_REVIEW",
+      "notes": "Kullanıcı kararı 2026-05-03. BB öyküsü olmayan hastada glukagon endike değil."
+    },
+    {
+      "id": "tr-iskemik-inme-001",
+      "source": "BDHD",
+      "source_year": 2024,
+      "rule_text_tr": "Akut iskemik inmede tromboliz: alteplaz birinci tercih (Sınıf I-A). LVO + bridge EVT adayında tenekteplaz alternatif (Sınıf I-B). İkisi de eşit kabul.",
+      "affects_scenarios": ["acil-iskemik-inme-001"],
+      "affects_steps": ["s3b_thrombolysis_decision"],
+      "validation": {
+        "type": "decision_correct",
+        "description": "opt-alteplaz ve opt-tnk ikisi de correct: true, allow_multiple"
+      },
+      "status": "DRAFT_NEEDS_REVIEW",
+      "notes": "Kullanıcı kararı 2026-05-03. Türk acil pratik kaynağı: 'tenekteplaz yerine alteplaz önerilmektedir' ANCAK LVO+EVT adayında TNK öneriliyor."
+    },
+    {
+      "id": "tr-preeklampsi-001",
+      "source": "ACOG-MFTP-TR",
+      "source_year": 2024,
+      "rule_text_tr": "Preeklampsi/eklampside ağır hipertansiyon (≥160/110): labetalol IV, hidralazin IV, oral nifedipin — üçü de ilk basamak, eşit kabul.",
+      "affects_scenarios": ["kadin_dogum-preeklampsi-001"],
+      "affects_steps": ["s3_antihipertansif"],
+      "validation": {
+        "type": "decision_correct",
+        "description": "üç opsiyon allow_multiple, mevcut puan farkı korunur (Labetalol +25, Hidralazin +22, Nifedipin +20)"
+      },
+      "status": "DRAFT_NEEDS_REVIEW",
+      "notes": "Kullanıcı kararı. Türk MFTP çevirisi ACOG kılavuzunu üç ajan eşit kabul olarak listeler."
+    },
+    {
+      "id": "tr-preeklampsi-002",
+      "source": "ACOG-MFTP-TR",
+      "source_year": 2024,
+      "rule_text_tr": "Ağır preeklampside doğum kararı: ≥34 hafta kesin endikasyon. Kortikosteroid penceresi <34 hafta için. 36 hf'de bekleme önerilmez.",
+      "affects_scenarios": ["kadin_dogum-preeklampsi-001"],
+      "affects_steps": ["s4_dogum_karari"],
+      "validation": {
+        "type": "decision_correct",
+        "description": "opt_deksametazon_bekle correct: false, points: 5 (kısmi bilgi puanı)"
+      },
+      "status": "DRAFT_NEEDS_REVIEW",
+      "notes": "Kullanıcı kararı. Vakaya uygun değil (36 hf), iyi düşünme ödülü."
+    },
+    {
+      "id": "tr-stemi-001",
+      "source": "ESC",
+      "source_year": 2017,
+      "rule_text_tr": "STEMI'de ek derivasyon: V4R sağ ventrikül MI tanısında, V7-V9 posterior MI tanısında. Anterior STEMI'de ikisi de değerlendirilebilir, kapsamlı yaklaşım.",
+      "affects_scenarios": ["kardiyoloji-stemi-001"],
+      "affects_steps": ["s2b_ek_derivasyonlar"],
+      "validation": {
+        "type": "decision_correct",
+        "description": "V4R + V7-V9 allow_multiple, mevcut puanlar (+15, +12) korunur"
+      },
+      "status": "DRAFT_NEEDS_REVIEW"
+    },
+    {
+      "id": "tr-stemi-002",
+      "source": "ESC",
+      "source_year": 2023,
+      "rule_text_tr": "Post-PCI kardiyojenik şokta birinci basamak: norepinefrin + dobutamin + furosemid + tekrar anjio. Mekanik destek (IABP/Impella) seçilmiş hastada (Türkiye'de erişim sınırlı, S4+ öğretim).",
+      "affects_scenarios": ["kardiyoloji-stemi-001"],
+      "affects_steps": ["s7b_kardiyojenik_sok_pump_failure"],
+      "validation": {
+        "type": "min_difficulty",
+        "description": "opt_mekanik_destek min_difficulty: 4"
+      },
+      "status": "DRAFT_NEEDS_REVIEW"
+    },
+    {
+      "id": "tr-apandisit-001",
+      "source": "WSES",
+      "source_year": 2020,
+      "rule_text_tr": "Akut apandisit görüntüleme: USG genç erkekte birinci tercih (radyasyon yok), BT belirsiz tanıda veya obez hastada. Türkiye acil yoğunluğunda BT yaygın. Doğrudan cerrahi Alvarado ≥8'de düşünülür (S2+ öğretim).",
+      "affects_scenarios": ["cerrahi-apandisit-001"],
+      "affects_steps": ["s2_goruntuleme_karari"],
+      "validation": {
+        "type": "decision_correct",
+        "description": "USG + BT S1'de ikisi correct, allow_multiple. opt_goruntuleme_yok min_difficulty: 2"
+      },
+      "status": "DRAFT_NEEDS_REVIEW"
+    },
+    {
+      "id": "tr-apandisit-002",
+      "source": "WSES",
+      "source_year": 2020,
+      "rule_text_tr": "Komplike apandisitte cerrahi yaklaşım: laparoskopi birinci tercih. Açık konversiyon sadece yaygın peritonit veya teknik zorlukta. Lokal peritonit laparoskopik devama izin verir.",
+      "affects_scenarios": ["cerrahi-apandisit-001"],
+      "affects_steps": ["s4_komplikasyon"],
+      "validation": {
+        "type": "decision_correct",
+        "description": "opt_acik correct: false, points: 5 (lokal peritonitte gereksiz konversiyon)"
+      },
+      "status": "DRAFT_NEEDS_REVIEW"
+    }
+  ]
+}
