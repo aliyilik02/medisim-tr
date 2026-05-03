@@ -611,6 +611,8 @@ export const scenario_stemi: Scenario = {
     {
       id: "s2b_ek_derivasyonlar",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Ek Derivasyon Kontrolü",
       prompt:
         "Anterior STEMI tanısı için ek derivasyonlardan hangisini incelersiniz?",
