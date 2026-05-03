@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+# ============================================================
+# MediSim TR — pre-commit hook
+# ============================================================
+# 1) Klinik veri dosyaları (senaryo/ilaç/ekipman) staged'da görünüyorsa
+#    commit'i durdur. Otomatik araçların bu dosyaları değiştirmesi
+#    yasak. Bilerek değişiklik için: git commit --no-verify
+# 2) Lint-staged: değişen .ts/.tsx için ilgili testleri koş.
+# ============================================================
+
+CHANGED=$(git diff --cached --name-only | grep -E '^src/data/(scenarios/|medications\.ts|medications-extended\.ts|equipment\.ts|lab-panels\.ts|imaging\.ts)' || true)
+
+if [ -n "$CHANGED" ]; then
+  echo ""
+  echo "KLİNİK DOSYA DEĞİŞİKLİĞİ TESPİT EDİLDİ:"
+  echo "$CHANGED"
+  echo ""
+  echo "Bu dosyalar otomatik araçlarla değiştirilmemelidir."
+  echo "Bilerek değişiklik yapıyorsanız: git commit --no-verify"
+  echo "Aksi halde unstage edin: git restore --staged <dosya>"
+  exit 1
+fi
+
+npx lint-staged
