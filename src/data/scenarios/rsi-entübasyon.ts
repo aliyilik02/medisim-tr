@@ -812,6 +812,8 @@ export const scenario_rsi_entübasyon: Scenario = {
     {
       id: "s5_post_intubation",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Post-Entübasyon Hipotansiyon + TBI Yönetimi",
       prompt:
         "Entübasyon sonrası 5. dk: TA 78/45 (MAP ~56), HR 130, SpO₂ %100, EtCO₂ 38. Post-entübasyon hipotansiyon. TBI hastası — MAP <65 nöron kaybı. Yaklaşımınız?",
