@@ -612,6 +612,7 @@ export const scenario_rsi_entübasyon: Scenario = {
           points: 25,
           feedback:
             "✓ DOĞRU. Ketamin sempatomimetik etki → BP korur. TBI'da ICP artışı eski endişesi — güncel kanıt (WARS Trial 2024, Upchurch 2018) bu endişeyi desteklemiyor. Sınır hemodinami + travmada birinci tercih.",
+          min_difficulty: 2,
         },
         {
           id: "opt_etomidat",
