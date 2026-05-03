@@ -709,7 +709,7 @@ export const scenario_rsi_entübasyon: Scenario = {
           id: "opt_rokuronyum_tercih",
           text: "Rokuronyum + sugammadeks tercih — modern yaklaşım, her iki ajan güvenli bu hastada",
           correct: true,
-          points: 30,
+          points: 20,
           feedback:
             "✓ DOĞRU alternatif. Rokuronyum + sugammadeks kombinasyonu Avrupa merkezlerinde giderek tercih edilmekte. Süksinilkolin eşit güvenli ama rokuronyum reversibilite avantajı sunar. İkisi de doğru seçim.",
         },
