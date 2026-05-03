@@ -1106,6 +1106,7 @@ export const scenario_stemi: Scenario = {
           points: 30,
           feedback:
             "Doğru — Mekanik destek seçilmiş hastada (genç, düzeltile kabul edilebilir şok). IABP-SHOCK II rutin IABP negatif, ama Impella için DanGer Shock 2024 pozitif sinyal. Norepinefrin + tekrar anjio zorunlu bileşenler.",
+          min_difficulty: 4,
         },
         {
           id: "opt_dopamin_sivi",
