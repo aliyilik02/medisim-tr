@@ -512,7 +512,7 @@ export const scenario_pediatrik_sepsis: Scenario = {
   },
 
   scoring: {
-    max_points: 200,
+    max_points: 240,
     passing_score: 130,
     grade_bands: { A: 175, B: 150, C: 130, D: 100 },
     score_floor: 0,
