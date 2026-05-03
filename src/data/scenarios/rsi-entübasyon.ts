@@ -666,6 +666,7 @@ export const scenario_rsi_entübasyon: Scenario = {
           points: 25,
           feedback:
             "✓ DOĞRU — Modern alternatif. Yüksek doz rokuronyum RSI koşullarını karşılar (~60 sn). Sugammadeks 16 mg/kg ile 3 dk'da tam reversiyon. Avrupa/UK merkezlerinde süksinilkolinle eşdeğer veya tercih edilen.",
+          min_difficulty: 2,
         },
         {
           id: "opt_rokuronyum_dusuk",
