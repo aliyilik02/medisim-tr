@@ -23,6 +23,10 @@ build/
 # Vite
 .vite/
 
+# Vitest
+coverage/
+.vitest-cache/
+
 # TypeScript
 *.tsbuildinfo
 
