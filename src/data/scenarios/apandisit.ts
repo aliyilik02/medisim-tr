@@ -211,6 +211,8 @@ export const scenario_apandisit: Scenario = {
     {
       id: "s2_goruntuleme_karari",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Görüntüleme Kararı",
       prompt:
         "Lökosit 14.500, CRP 45 mg/L, Alvarado skoru 7 hesaplandı. Görüntüleme için ne yaparsınız?",
@@ -248,6 +250,7 @@ export const scenario_apandisit: Scenario = {
           points: 10,
           feedback:
             "Kabul — Alvarado ≥8'de (veya çok tipik tabloda) doğrudan cerrahi mümkün. Ama bu hastada 7 — görüntüleme kesinleştirici.",
+          min_difficulty: 2,
         },
       ],
     },
