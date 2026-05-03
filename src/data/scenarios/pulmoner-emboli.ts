@@ -87,6 +87,7 @@ export const scenario_pulmoner_emboli: Scenario = {
     "yuksek_akimli_oksijen",
     "stetoskop",
     "eko",
+    "foley_sonda",
   ],
 
   start_step_id: "s1_ilk_degerlendirme",
