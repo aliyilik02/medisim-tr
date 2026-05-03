@@ -215,6 +215,13 @@ export interface ScoringConfig {
     C: number;
     D: number;
   };
+  /**
+   * "auto" (varsayılan): grade_bands ve passing_score, max_points × standart
+   *   eşik (%85/%70/%55/%40) olarak hesaplanır. Yazılı değerler ignore edilir.
+   * "manual": grade_bands ve passing_score elle yazılmış değerler kullanılır.
+   *   Özel senaryolar (sınav modu, OSCE) için.
+   */
+  grading_mode?: "auto" | "manual";
   time_bonus?: {
     target_seconds: number;
     bonus_points: number;
