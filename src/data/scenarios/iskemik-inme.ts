@@ -492,6 +492,8 @@ export const scenario_iskemik_inme: Scenario = {
     {
       id: "s3b_thrombolysis_decision",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: false,
       title: "Tromboliz kararı — INR 1.1, LVO+, pencere 110 dk",
       prompt:
         "BT'de kanama yok. INR 1.1, Plt 198.000, KŞ 108 mg/dL. Antikoagülan öyküsü yok. NIHSS 14 + sol MCA M1 LVO. Tromboliz verir misiniz?",
