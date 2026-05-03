@@ -647,7 +647,7 @@ export const scenario_sepsis_hemsirelik: Scenario = {
   ],
 
   scoring: {
-    max_points: 280,
+    max_points: 301,
     passing_score: 168,
     grade_bands: {
       A: 252,
