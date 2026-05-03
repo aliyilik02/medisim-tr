@@ -851,7 +851,7 @@ export const scenario_tccc_patlama: Scenario = {
   ],
 
   scoring: {
-    max_points: 340,
+    max_points: 287,
     passing_score: 205,
     grade_bands: { A: 306, B: 255, C: 205, D: 153 },
   },

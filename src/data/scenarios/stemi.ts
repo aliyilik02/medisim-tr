@@ -1197,7 +1197,7 @@ export const scenario_stemi: Scenario = {
   },
 
   scoring: {
-    max_points: 365,
+    max_points: 293,
     passing_score: 220,
     score_floor: 0,
     grade_bands: {
