@@ -23,6 +23,7 @@ import {
 import { getExtendedMedication } from "@/data/medications-extended";
 import { administerMedication } from "@/engine/pharmacology/engine";
 import { getMedication } from "@/data/medications";
+import { seededShuffle } from "@/lib/shuffle";
 import { useVitalsTick } from "@/hooks/useVitalsTick";
 import { useMonitorSounds } from "@/hooks/useMonitorSounds";
 import { useLabResults } from "@/hooks/useLabResults";
@@ -598,7 +599,10 @@ export function ScenarioPlayPage() {
               decisionMultiAnswered={decisionMultiAnswered}
               visibleOptions={
                 currentStep.kind === "decision"
-                  ? getVisibleOptions(currentStep, session.selected_difficulty)
+                  ? seededShuffle(
+                      getVisibleOptions(currentStep, session.selected_difficulty),
+                      `${resolvedScenario?.id ?? scenario.id}:${currentStep.id}`
+                    )
                   : undefined
               }
             />
