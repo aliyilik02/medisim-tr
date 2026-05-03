@@ -2,16 +2,16 @@
 
 **Tarih:** 3 Mayıs 2026
 **Branch:** `fix/scenario-bugs-phase-1`
-**Durum:** ✅ 13/13 commit uygulandı, 2 fail kaldı (1 brief sınırı, 1 brief'te yok)
+**Durum:** ✅ 13/13 + 2 ek commit uygulandı, **0 fail**
 
 ---
 
 ## 1. Tek satır özet
 
-`npm test`: **311 pass / 2 fail / 2 skip** (önceki: 305 / 8 / 2).
-- ✅ 6 yapı bug'ı klinik karar uygulamasıyla çözüldü
-- ⚠️ 1 fail kaldı (RSI s3b — brief'in açık talimatı tek başına yapı testini çözmedi)
-- ⚠️ 1 fail kaldı (TCCC s3b_poc_lab_decision — Brief 1.2 commit listesinde unutulmuş)
+`npm test`: **313 pass / 0 fail / 2 skip** (önceki Aşama 1.2 ana: 311/2/2; başlangıç: 305/8/2).
+- ✅ 8 yapı bug'ının tamamı klinik karar uygulamasıyla çözüldü
+- ✅ Brief 1.2 ek (2 commit) ile final temizlik
+- 📋 Branch master'a merge için temiz
 
 ---
 
@@ -145,10 +145,48 @@ abec82d fix(rsi-entubasyon): s2_indüksiyon — Etomidat primer
 ## 9. Özetin özeti
 
 ✅ 13 atomik klinik karar düzeltmesi uygulandı (kılavuz referanslı)
-✅ Yapı testi fail'leri 8 → 2'ye düştü
+✅ Yapı testi fail'leri 8 → 2 → **0**'a düştü (EK iki commit ile)
 ✅ Klinik metinler, prompt'lar, narrative'ler **hiç değişmedi** — sadece structural alanlar (correct/points/min_difficulty/allow_multiple/partial_credit)
-✅ Engine'in `evaluateDecisionMulti` semantiğine uygun karar (commit 3 `partial_credit: false`)
-⚠️ 2 fail kaldı: 1 brief'in iç sınırı (commit 10), 1 brief'te unutulmuş (TCCC) — kullanıcı kararına bırakıldı
-📋 Master'a değil branch'te bekliyor
+✅ Engine'in `evaluateDecisionMulti` semantiğine uygun karar (commit 3 ve TCCC ek `partial_credit: false`)
+📋 Branch master'a merge için TEMİZ
 
 — Claude
+
+---
+
+## EK — Brief Eksiği Kapatma (2 commit)
+
+Aşama 1.2 brief'inde 2 yapı detayı eksik kalmıştı, ek olarak kapatıldı:
+
+### EK Commit 1 — RSI s3b_succinilkolin_kontrendikasyon (yapı temizliği)
+**Dosya:** `src/data/scenarios/rsi-entübasyon.ts`
+**Değişiklik:** `opt_rokuronyum_tercih` opsiyonuna `min_difficulty: 2` eklendi.
+**Klinik gerekçe:** Aşama 1.2 commit 2 ile tutarlı (Süks primer, Rok S2+ alternatif). opt_guvenli S1'de tek primer doğru, opt_rokuronyum_tercih S2+'da kabul edilebilir alternatif. Pedagojik amaç (opt_guvenli +30 ile vurgulu) korunur.
+**Hash:** `dad7ea8`
+
+### EK Commit 2 — TCCC s3b_poc_lab_decision
+**Dosya:** `src/data/scenarios/tccc-patlama.ts`
+**Değişiklik:** Step → `allow_multiple: true, partial_credit: false`.
+**Klinik gerekçe:** Askeri TCCC bağlamında MTP 1:1:1 (sivil JTS standart) ve whole blood (TCCC 2024 PWB protokolü) ikisi de doğru klinik karar — ya birini ya öbürünü seç (ya/ya semantiği), eksik bırakma cezalandırılmaz. İskemik inme commit 3 ile tutarlı (`partial_credit: false`).
+**Hash:** `b53b8ca`
+
+### Final test sonucu
+| | Aşama 1.2 ana | EK sonrası |
+|---|---|---|
+| Pass | 311 | **313** |
+| Fail | 2 | **0** |
+| Skip | 2 | 2 |
+
+Branch master'a merge için **temiz**.
+
+---
+
+## Toplam Aşama 1.x istatistiği (Aşama 1 → 1.2 EK)
+
+| Metrik | Aşama 1 başı | Aşama 1.2 EK sonu | Δ |
+|---|---|---|---|
+| Pass | 0 (henüz test yok) | 313 | +313 |
+| Fail | yok | 0 | 0 |
+| Toplam test | 0 | 315 | +315 |
+
+22 atomik commit (Aşama 1: 8 + 1.1: 6 + 1.1 ek: 4 + 1.2: 13 + 1.2 EK: 2). Klinik metin değişikliği: 0. Yapı/scoring/grade_bands değişikliği: tek tek belgeli. Test altyapısı + 14 senaryo yeniden dengelenmiş + helper'lar hazır.
