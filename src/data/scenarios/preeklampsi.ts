@@ -81,6 +81,7 @@ export const scenario_preeklampsi: Scenario = {
     "ultrasonografi",
     "fetal_kalp_monitoru",
     "reflex_çekici",
+    "oksijen_maske",
   ],
 
   ekg_pattern: "normal_sinüs",
@@ -278,6 +279,8 @@ export const scenario_preeklampsi: Scenario = {
     {
       id: "s3_antihipertansif",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Antihipertansif Seçimi",
       prompt:
         "TA 168/110. Ağır hipertansiyon (SBP≥160 veya DBP≥110) için acil antihipertansif başlayın. Hangi ilacı seçersiniz?",
@@ -338,8 +341,8 @@ export const scenario_preeklampsi: Scenario = {
         {
           id: "opt_deksametazon_bekle",
           text: "<34 hafta olsaydı kortikosteroid (betametazon) ver, 48 saat bekle",
-          correct: true,
-          points: 15,
+          correct: false,
+          points: 5,
           feedback:
             "Doğru prensip ama bu senaryoda 36 hafta — kortikosteroid penceresi kapanmış. ≥34 haftada bekleme önerilmez.",
         },

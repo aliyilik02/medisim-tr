@@ -612,6 +612,7 @@ export const scenario_rsi_entübasyon: Scenario = {
           points: 25,
           feedback:
             "✓ DOĞRU. Ketamin sempatomimetik etki → BP korur. TBI'da ICP artışı eski endişesi — güncel kanıt (WARS Trial 2024, Upchurch 2018) bu endişeyi desteklemiyor. Sınır hemodinami + travmada birinci tercih.",
+          min_difficulty: 2,
         },
         {
           id: "opt_etomidat",
@@ -665,6 +666,7 @@ export const scenario_rsi_entübasyon: Scenario = {
           points: 25,
           feedback:
             "✓ DOĞRU — Modern alternatif. Yüksek doz rokuronyum RSI koşullarını karşılar (~60 sn). Sugammadeks 16 mg/kg ile 3 dk'da tam reversiyon. Avrupa/UK merkezlerinde süksinilkolinle eşdeğer veya tercih edilen.",
+          min_difficulty: 2,
         },
         {
           id: "opt_rokuronyum_dusuk",
@@ -707,9 +709,10 @@ export const scenario_rsi_entübasyon: Scenario = {
           id: "opt_rokuronyum_tercih",
           text: "Rokuronyum + sugammadeks tercih — modern yaklaşım, her iki ajan güvenli bu hastada",
           correct: true,
-          points: 30,
+          points: 20,
           feedback:
             "✓ DOĞRU alternatif. Rokuronyum + sugammadeks kombinasyonu Avrupa merkezlerinde giderek tercih edilmekte. Süksinilkolin eşit güvenli ama rokuronyum reversibilite avantajı sunar. İkisi de doğru seçim.",
+          min_difficulty: 2,
         },
         {
           id: "opt_kontrol_sonra",
@@ -810,6 +813,8 @@ export const scenario_rsi_entübasyon: Scenario = {
     {
       id: "s5_post_intubation",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Post-Entübasyon Hipotansiyon + TBI Yönetimi",
       prompt:
         "Entübasyon sonrası 5. dk: TA 78/45 (MAP ~56), HR 130, SpO₂ %100, EtCO₂ 38. Post-entübasyon hipotansiyon. TBI hastası — MAP <65 nöron kaybı. Yaklaşımınız?",
@@ -859,7 +864,7 @@ export const scenario_rsi_entübasyon: Scenario = {
   ],
 
   scoring: {
-    max_points: 340,
+    max_points: 375,
     passing_score: 205,
     grade_bands: {
       A: 306,

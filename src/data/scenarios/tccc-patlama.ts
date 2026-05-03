@@ -704,6 +704,8 @@ export const scenario_tccc_patlama: Scenario = {
     {
       id: "s3b_poc_lab_decision",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: false,
       title: "POC Lab Yorumlama — DCR / Masif Transfüzyon Kararı",
       prompt:
         "POC lab sonuçları: Hgb 8.4 g/dL, Laktat 5.8 mmol/L, pH 7.22, BE -9, iCa 0.95 mmol/L. Tanı: Sınıf III hemoraji + asidemi + hipokalsemi. Resüsitasyon stratejiniz?",
@@ -851,7 +853,7 @@ export const scenario_tccc_patlama: Scenario = {
   ],
 
   scoring: {
-    max_points: 340,
+    max_points: 287,
     passing_score: 205,
     grade_bands: { A: 306, B: 255, C: 205, D: 153 },
   },

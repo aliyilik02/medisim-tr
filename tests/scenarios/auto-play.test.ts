@@ -10,6 +10,7 @@
 // ============================================================
 
 import { describe, expect, test } from "vitest";
+import { getEffectiveGradeBands } from "@/engine";
 import { ALL_SCENARIOS } from "../helpers/all-scenarios";
 import { autoPlayBestPath } from "../helpers/auto-play";
 
@@ -22,7 +23,9 @@ describe.each(ALL_SCENARIOS.map((s) => [s.id, s] as const))(
     for (const diff of testDiffs) {
       test(`S${diff}: en iyi yol A notu eşiğine ulaşmalı`, () => {
         const result = autoPlayBestPath(scenario, diff);
-        const threshold = scenario.scoring.grade_bands.A;
+        // Helper kullan — grading_mode "auto" ise max_points × 0.85,
+        // "manual" ise yazılı grade_bands.A.
+        const threshold = getEffectiveGradeBands(scenario.scoring).A;
         expect(
           result.totalPoints,
           `${scenario.id} S${diff}: ${result.totalPoints} < A eşiği (${threshold})\n` +

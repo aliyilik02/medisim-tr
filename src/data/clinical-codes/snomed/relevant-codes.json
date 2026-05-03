@@ -1,0 +1,21 @@
+{
+  "version": "SNOMED-CT-2024-subset",
+  "fetched_at": "2026-05-04T03:00:00Z",
+  "source": "Manual curation — SNOMED CT International (https://browser.ihtsdotools.org); kullanıcı reviewi bekliyor",
+  "codes": [
+    { "system": "SNOMED-CT", "code": "39579001", "display_en": "Anaphylaxis", "display_tr": "Anafilaksi", "status": "active" },
+    { "system": "SNOMED-CT", "code": "302866003", "display_en": "Hypoglycemia", "display_tr": "Hipoglisemi", "status": "active" },
+    { "system": "SNOMED-CT", "code": "420422005", "display_en": "Diabetic ketoacidosis", "display_tr": "Diyabetik ketoasidoz (DKA)", "status": "active" },
+    { "system": "SNOMED-CT", "code": "85189001", "display_en": "Acute appendicitis", "display_tr": "Akut apandisit", "status": "active" },
+    { "system": "SNOMED-CT", "code": "401303003", "display_en": "Acute ST segment elevation myocardial infarction", "display_tr": "Akut STEMI", "status": "active" },
+    { "system": "SNOMED-CT", "code": "401314000", "display_en": "Acute non-ST segment elevation myocardial infarction", "display_tr": "Akut NSTEMI", "status": "active" },
+    { "system": "SNOMED-CT", "code": "89138009", "display_en": "Cardiogenic shock", "display_tr": "Kardiyojenik şok", "status": "active" },
+    { "system": "SNOMED-CT", "code": "422504002", "display_en": "Ischemic stroke", "display_tr": "İskemik inme", "status": "active" },
+    { "system": "SNOMED-CT", "code": "4120002", "display_en": "Bronchiolitis", "display_tr": "Bronşiyolit", "status": "active" },
+    { "system": "SNOMED-CT", "code": "398254007", "display_en": "Pre-eclampsia", "display_tr": "Preeklampsi", "status": "active" },
+    { "system": "SNOMED-CT", "code": "15938005", "display_en": "Eclampsia", "display_tr": "Eklampsi", "status": "active" },
+    { "system": "SNOMED-CT", "code": "59282003", "display_en": "Pulmonary embolism", "display_tr": "Pulmoner emboli", "status": "active" },
+    { "system": "SNOMED-CT", "code": "21454007", "display_en": "Subdural hemorrhage", "display_tr": "Subdural hematom", "status": "active" },
+    { "system": "SNOMED-CT", "code": "91302008", "display_en": "Sepsis", "display_tr": "Sepsis", "status": "active" }
+  ]
+}

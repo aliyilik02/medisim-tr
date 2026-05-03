@@ -497,6 +497,8 @@ export const scenario_sepsis_hemsirelik: Scenario = {
     {
       id: "s4b_kby_sivi_dikkat",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "KBY'de Sıvı Aşırı Yüklenme Bulgusu",
       prompt:
         "30 mL/kg kristaloid (~1.9 L) uygulanırken yeni bulgular gelişti: oskültasyonda bibaziler ral (yeni), SpO₂ %96→93, boyun veni dolgunluğu. KBY Evre 3a zemin var. Yaklaşımınız?",
@@ -647,7 +649,7 @@ export const scenario_sepsis_hemsirelik: Scenario = {
   ],
 
   scoring: {
-    max_points: 280,
+    max_points: 301,
     passing_score: 168,
     grade_bands: {
       A: 252,

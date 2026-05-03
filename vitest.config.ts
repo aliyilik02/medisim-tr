@@ -11,14 +11,17 @@ export default defineConfig({
     },
   },
   test: {
-    environment: "node",
-    include: ["tests/**/*.{test,spec}.ts"],
-    setupFiles: ["tests/setup/clinical-protection.ts"],
+    environment: "happy-dom",
+    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
+    setupFiles: [
+      "tests/setup/clinical-protection.ts",
+      "tests/setup/dom-setup.ts",
+    ],
     reporters: ["default"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json"],
-      include: ["src/**/*.ts"],
+      include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/data/**",
         "src/main.tsx",

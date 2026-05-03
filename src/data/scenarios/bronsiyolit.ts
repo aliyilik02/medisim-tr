@@ -79,6 +79,7 @@ export const scenario_bronsiyolit: Scenario = {
     "nebulizator",
     "iv_kateter",
     "infant_tartisi",
+    "ambu",
   ],
 
   ekg_pattern: "normal",
@@ -528,7 +529,7 @@ export const scenario_bronsiyolit: Scenario = {
   },
 
   scoring: {
-    max_points: 250,
+    max_points: 195,
     passing_score: 150,
     grade_bands: {
       A: 215,

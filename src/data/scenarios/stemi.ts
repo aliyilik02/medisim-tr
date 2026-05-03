@@ -611,6 +611,8 @@ export const scenario_stemi: Scenario = {
     {
       id: "s2b_ek_derivasyonlar",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Ek Derivasyon Kontrolü",
       prompt:
         "Anterior STEMI tanısı için ek derivasyonlardan hangisini incelersiniz?",
@@ -1104,6 +1106,7 @@ export const scenario_stemi: Scenario = {
           points: 30,
           feedback:
             "Doğru — Mekanik destek seçilmiş hastada (genç, düzeltile kabul edilebilir şok). IABP-SHOCK II rutin IABP negatif, ama Impella için DanGer Shock 2024 pozitif sinyal. Norepinefrin + tekrar anjio zorunlu bileşenler.",
+          min_difficulty: 4,
         },
         {
           id: "opt_dopamin_sivi",
@@ -1197,7 +1200,7 @@ export const scenario_stemi: Scenario = {
   },
 
   scoring: {
-    max_points: 365,
+    max_points: 293,
     passing_score: 220,
     score_floor: 0,
     grade_bands: {

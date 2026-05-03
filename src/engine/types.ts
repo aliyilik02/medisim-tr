@@ -215,6 +215,13 @@ export interface ScoringConfig {
     C: number;
     D: number;
   };
+  /**
+   * "auto" (varsayılan): grade_bands ve passing_score, max_points × standart
+   *   eşik (%85/%70/%55/%40) olarak hesaplanır. Yazılı değerler ignore edilir.
+   * "manual": grade_bands ve passing_score elle yazılmış değerler kullanılır.
+   *   Özel senaryolar (sınav modu, OSCE) için.
+   */
+  grading_mode?: "auto" | "manual";
   time_bonus?: {
     target_seconds: number;
     bonus_points: number;
@@ -421,6 +428,17 @@ export interface Scenario {
   result_delay_seconds?: Record<string, number>;
   // Görüntüleme sonuçları. Key = equipment id → tetkik istendiğinde döner
   imaging_results?: Record<string, ImagingResult>;
+
+  /**
+   * Opsiyonel: ICD-10/SNOMED CT kodlama (Faz 4 — DRAFT şema desteği).
+   * Şu an senaryo dosyalarında doldurulmamış. Kullanıcı onayı ve klinik
+   * review sonrası ayrı bir PR olarak eklenir. Bkz:
+   * src/data/clinical-codes/scenario-mappings.json
+   */
+  clinical_codes?: {
+    icd10?: string;
+    snomed_ct?: string;
+  };
 
   // 3D (opsiyonel)
   scene?: SceneConfig;

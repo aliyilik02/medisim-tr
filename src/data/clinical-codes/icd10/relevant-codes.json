@@ -1,0 +1,26 @@
+{
+  "version": "ICD-10-2024-subset",
+  "fetched_at": "2026-05-04T03:00:00Z",
+  "source": "Manual curation — WHO ICD-10 (https://icd.who.int/browse10/2019/en); kullanıcı reviewi bekliyor",
+  "codes": [
+    { "system": "ICD10", "code": "T78.2", "display_en": "Anaphylactic shock, unspecified", "display_tr": "Anafilaktik şok, tanımlanmamış", "status": "active" },
+    { "system": "ICD10", "code": "T88.7", "display_en": "Unspecified adverse effect of drug or medicament", "display_tr": "Tanımlanmamış ilaç ters etkisi", "status": "active" },
+    { "system": "ICD10", "code": "E16.2", "display_en": "Hypoglycaemia, unspecified", "display_tr": "Hipoglisemi, tanımlanmamış", "status": "active" },
+    { "system": "ICD10", "code": "E10.65", "display_en": "Type 1 diabetes mellitus with hyperglycemia", "display_tr": "Tip 1 DM, hiperglisemili", "status": "active" },
+    { "system": "ICD10", "code": "E11.10", "display_en": "Type 2 diabetes mellitus with ketoacidosis without coma", "display_tr": "Tip 2 DM, ketoasidoz (komasız)", "status": "active" },
+    { "system": "ICD10", "code": "K35.80", "display_en": "Unspecified acute appendicitis", "display_tr": "Akut apandisit, tanımlanmamış", "status": "active" },
+    { "system": "ICD10", "code": "I21.0", "display_en": "Acute transmural myocardial infarction of anterior wall", "display_tr": "Anterior STEMI", "status": "active" },
+    { "system": "ICD10", "code": "I21.4", "display_en": "Acute subendocardial myocardial infarction (NSTEMI)", "display_tr": "NSTEMI", "status": "active" },
+    { "system": "ICD10", "code": "R57.0", "display_en": "Cardiogenic shock", "display_tr": "Kardiyojenik şok", "status": "active" },
+    { "system": "ICD10", "code": "I63.9", "display_en": "Cerebral infarction, unspecified", "display_tr": "İskemik inme, tanımlanmamış", "status": "active" },
+    { "system": "ICD10", "code": "J21.9", "display_en": "Acute bronchiolitis, unspecified", "display_tr": "Akut bronşiyolit", "status": "active" },
+    { "system": "ICD10", "code": "O14.0", "display_en": "Mild to moderate pre-eclampsia", "display_tr": "Hafif-orta preeklampsi", "status": "active" },
+    { "system": "ICD10", "code": "O14.1", "display_en": "Severe pre-eclampsia", "display_tr": "Ağır preeklampsi", "status": "active" },
+    { "system": "ICD10", "code": "O15.0", "display_en": "Eclampsia in pregnancy", "display_tr": "Eklampsi (antepartum)", "status": "active" },
+    { "system": "ICD10", "code": "I26.99", "display_en": "Other pulmonary embolism without acute cor pulmonale", "display_tr": "Pulmoner emboli", "status": "active" },
+    { "system": "ICD10", "code": "S06.5", "display_en": "Traumatic subdural hemorrhage", "display_tr": "Travmatik subdural hematom", "status": "active" },
+    { "system": "ICD10", "code": "T07", "display_en": "Unspecified multiple injuries", "display_tr": "Tanımlanmamış multiple yaralanma", "status": "active" },
+    { "system": "ICD10", "code": "A41.9", "display_en": "Sepsis, unspecified organism", "display_tr": "Sepsis, tanımlanmamış", "status": "active" },
+    { "system": "ICD10", "code": "P36.9", "display_en": "Bacterial sepsis of newborn, unspecified", "display_tr": "Yenidoğan sepsisi, tanımlanmamış", "status": "active" }
+  ]
+}

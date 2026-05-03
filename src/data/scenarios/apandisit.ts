@@ -211,6 +211,8 @@ export const scenario_apandisit: Scenario = {
     {
       id: "s2_goruntuleme_karari",
       kind: "decision",
+      allow_multiple: true,
+      partial_credit: true,
       title: "Görüntüleme Kararı",
       prompt:
         "Lökosit 14.500, CRP 45 mg/L, Alvarado skoru 7 hesaplandı. Görüntüleme için ne yaparsınız?",
@@ -248,6 +250,7 @@ export const scenario_apandisit: Scenario = {
           points: 10,
           feedback:
             "Kabul — Alvarado ≥8'de (veya çok tipik tabloda) doğrudan cerrahi mümkün. Ama bu hastada 7 — görüntüleme kesinleştirici.",
+          min_difficulty: 2,
         },
       ],
     },
@@ -384,8 +387,8 @@ export const scenario_apandisit: Scenario = {
         {
           id: "opt_acik",
           text: "Açık cerrahiye dön (laparotomi)",
-          correct: true,
-          points: 15,
+          correct: false,
+          points: 5,
           feedback:
             "Kabul — Yaygın peritonit veya teknik zorluk varsa konversiyon endike. Lokal peritonit laparoskopik devam müsaade eder.",
         },
@@ -636,7 +639,7 @@ export const scenario_apandisit: Scenario = {
   },
 
   scoring: {
-    max_points: 230,
+    max_points: 246,
     passing_score: 145,
     grade_bands: { A: 200, B: 170, C: 145, D: 115 },
   },

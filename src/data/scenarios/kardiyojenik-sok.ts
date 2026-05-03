@@ -595,7 +595,7 @@ export const scenario_kardiyojenik_sok: Scenario = {
   },
 
   scoring: {
-    max_points: 295,
+    max_points: 230,
     passing_score: 175,
     grade_bands: {
       A: 250,
