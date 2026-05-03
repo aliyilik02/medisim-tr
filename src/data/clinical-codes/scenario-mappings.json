@@ -1,0 +1,66 @@
+{
+  "version": "0.1.0",
+  "status": "DRAFT_NEEDS_REVIEW",
+  "generated_at": "2026-05-04T03:00:00Z",
+  "mappings": [
+    {
+      "scenario_id": "kardiyoloji-stemi-001",
+      "primary_diagnosis": { "icd10": "I21.0", "snomed_ct": "401303003" }
+    },
+    {
+      "scenario_id": "kardi-kardiyojenik-sok-001",
+      "primary_diagnosis": { "icd10": "R57.0", "snomed_ct": "89138009" }
+    },
+    {
+      "scenario_id": "dahiliye-dka-001",
+      "primary_diagnosis": { "icd10": "E11.10", "snomed_ct": "420422005" }
+    },
+    {
+      "scenario_id": "dahiliye-hipoglisemi-001",
+      "primary_diagnosis": { "icd10": "E16.2", "snomed_ct": "302866003" }
+    },
+    {
+      "scenario_id": "acil-pulmoner-emboli-001",
+      "primary_diagnosis": { "icd10": "I26.99", "snomed_ct": "59282003" }
+    },
+    {
+      "scenario_id": "acil-anaflaksi-001",
+      "primary_diagnosis": { "icd10": "T78.2", "snomed_ct": "39579001" }
+    },
+    {
+      "scenario_id": "acil-iskemik-inme-001",
+      "primary_diagnosis": { "icd10": "I63.9", "snomed_ct": "422504002" }
+    },
+    {
+      "scenario_id": "pediatri-sepsis-001",
+      "primary_diagnosis": { "icd10": "P36.9", "snomed_ct": "91302008" }
+    },
+    {
+      "scenario_id": "pedi-bronsiyolit-001",
+      "primary_diagnosis": { "icd10": "J21.9", "snomed_ct": "4120002" }
+    },
+    {
+      "scenario_id": "cerrahi-apandisit-001",
+      "primary_diagnosis": { "icd10": "K35.80", "snomed_ct": "85189001" }
+    },
+    {
+      "scenario_id": "anestezi-rsi-001",
+      "primary_diagnosis": { "icd10": "S06.5", "snomed_ct": "21454007" }
+    },
+    {
+      "scenario_id": "kadin_dogum-preeklampsi-001",
+      "primary_diagnosis": { "icd10": "O14.1", "snomed_ct": "398254007" },
+      "related_conditions": [
+        { "icd10": "O15.0", "relationship": "complication" }
+      ]
+    },
+    {
+      "scenario_id": "hemsirelik-sepsis-001",
+      "primary_diagnosis": { "icd10": "A41.9", "snomed_ct": "91302008" }
+    },
+    {
+      "scenario_id": "askeri_tccc-patlama-001",
+      "primary_diagnosis": { "icd10": "T07" }
+    }
+  ]
+}
