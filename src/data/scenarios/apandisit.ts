@@ -387,8 +387,8 @@ export const scenario_apandisit: Scenario = {
         {
           id: "opt_acik",
           text: "Açık cerrahiye dön (laparotomi)",
-          correct: true,
-          points: 15,
+          correct: false,
+          points: 5,
           feedback:
             "Kabul — Yaygın peritonit veya teknik zorluk varsa konversiyon endike. Lokal peritonit laparoskopik devam müsaade eder.",
         },
