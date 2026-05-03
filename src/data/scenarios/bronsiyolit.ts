@@ -79,6 +79,7 @@ export const scenario_bronsiyolit: Scenario = {
     "nebulizator",
     "iv_kateter",
     "infant_tartisi",
+    "ambu",
   ],
 
   ekg_pattern: "normal",
