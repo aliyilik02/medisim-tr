@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+# ============================================================
+# MediSim TR — pre-push hook
+# ============================================================
+# Push öncesi tam test suite'i koşar (pre-commit yalnızca etkilenen
+# testleri koşar — bu son güvenlik katmanı). CI'a gitmeden önce
+# fail varsa burada yakalanır.
+# ============================================================
+
+echo "Pre-push: full test suite koşuyor..."
+npm test
