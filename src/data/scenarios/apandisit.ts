@@ -636,7 +636,7 @@ export const scenario_apandisit: Scenario = {
   },
 
   scoring: {
-    max_points: 230,
+    max_points: 246,
     passing_score: 145,
     grade_bands: { A: 200, B: 170, C: 145, D: 115 },
   },
