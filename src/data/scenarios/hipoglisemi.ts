@@ -35,6 +35,9 @@ export const scenario_hipoglisemi: Scenario = {
   reviewed_by: "ADA 2025, Endocrine Society 2009, TEMD 2024 uyumlu",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "E16.2", snomed_ct: "302866003" },
+
   patient: {
     age: 68,
     sex: "M",

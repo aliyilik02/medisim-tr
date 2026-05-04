@@ -76,9 +76,9 @@ describe("Clinical codes — RxNorm", () => {
   });
 });
 
-describe("Scenario code mappings — DRAFT izolasyonu", () => {
-  test("dosya status DRAFT_NEEDS_REVIEW", () => {
-    expect(scenarioMappings.status).toBe("DRAFT_NEEDS_REVIEW");
+describe("Scenario code mappings — REVIEWED_PENDING_ACTIVATION", () => {
+  test("dosya status REVIEWED_PENDING_ACTIVATION (kullanıcı onayı 2026-05-04)", () => {
+    expect(scenarioMappings.status).toBe("REVIEWED_PENDING_ACTIVATION");
   });
 
   test("her mapping geçerli senaryo ID'sine işaret ediyor", () => {
@@ -95,7 +95,7 @@ describe("Scenario code mappings — DRAFT izolasyonu", () => {
     }
   });
 
-  test("DRAFT mapping'lerin ICD-10 kodları kod listesinde mevcut", () => {
+  test("mapping'lerin ICD-10 kodları kod listesinde mevcut", () => {
     const known = new Set(icd10Data.codes.map((c) => c.code));
     for (const m of scenarioMappings.mappings) {
       expect(
@@ -105,14 +105,33 @@ describe("Scenario code mappings — DRAFT izolasyonu", () => {
     }
   });
 
-  test("DRAFT mappings senaryolarda referans EDİLMİYOR (engine bağı yok)", () => {
-    // Senaryo şemasında clinical_codes alanı varsa scenarioMappings ile çakışmayı önle.
-    // Şu an senaryo dosyalarında bu alan kullanılmıyor — DRAFT verisi engine'e bağlı değil.
+  test("tüm senaryolar Scenario.clinical_codes alanını taşıyor (Faz 9 enjeksiyon)", () => {
     for (const sc of ALL_SCENARIOS) {
       expect(
         sc.clinical_codes,
-        `${sc.id}: clinical_codes alanı senaryoda var — DRAFT henüz aktif değil, kullanıcı onayı sonrası ayrı PR olarak eklenmeli`
-      ).toBeUndefined();
+        `${sc.id}: clinical_codes alanı eksik — senaryo dosyasına ICD-10 eklenmeli`
+      ).toBeDefined();
+      expect(sc.clinical_codes!.icd10).toBeTruthy();
+    }
+  });
+
+  test("senaryodaki clinical_codes mappings.json ile birebir uyumlu", () => {
+    const mapById = new Map(
+      scenarioMappings.mappings.map((m) => [m.scenario_id, m.primary_diagnosis])
+    );
+    for (const sc of ALL_SCENARIOS) {
+      const expected = mapById.get(sc.id);
+      if (!expected) continue;
+      expect(
+        sc.clinical_codes!.icd10,
+        `${sc.id}: ICD-10 senaryoda ${sc.clinical_codes!.icd10}, mappings'te ${expected.icd10}`
+      ).toBe(expected.icd10);
+      if (expected.snomed_ct) {
+        expect(
+          sc.clinical_codes!.snomed_ct,
+          `${sc.id}: SNOMED CT senaryoda ${sc.clinical_codes!.snomed_ct}, mappings'te ${expected.snomed_ct}`
+        ).toBe(expected.snomed_ct);
+      }
     }
   });
 });

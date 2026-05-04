@@ -34,6 +34,9 @@ export const scenario_pulmoner_emboli: Scenario = {
   reviewed_by: "ESC 2019, PEITHO 2014, TKD 2020 uyumlu",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "I26.99", snomed_ct: "59282003" },
+
   patient: {
     age: 54,
     sex: "F",

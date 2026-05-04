@@ -26,6 +26,9 @@ export const scenario_pediatrik_sepsis: Scenario = {
   reviewed_by: "SSC 2020 Pediatric, AAP 2024, IDSA pediatric pneumonia",
   last_updated: "2026-04-26",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "P36.9", snomed_ct: "91302008" },
+
   medication_timing_overrides: {
     salin_09:      { onset_sec: 1,  peak_min: 0.083, duration_min: 0.5 },
     ringer_laktat: { onset_sec: 1,  peak_min: 0.083, duration_min: 0.5 },

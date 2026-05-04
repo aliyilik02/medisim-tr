@@ -29,6 +29,9 @@ export const scenario_preeklampsi: Scenario = {
   reviewed_by: "ACOG PB 222 (2020), WHO 2023 uyumlu",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "O14.1", snomed_ct: "398254007" },
+
   patient: {
     age: 32,
     sex: "F",

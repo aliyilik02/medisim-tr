@@ -1,7 +1,9 @@
 {
-  "version": "0.1.0",
-  "status": "DRAFT_NEEDS_REVIEW",
+  "version": "0.2.0-REVIEWED",
+  "status": "REVIEWED_PENDING_ACTIVATION",
   "generated_at": "2026-05-04T03:00:00Z",
+  "reviewed_by": "user-clinical-review-2026-05-04",
+  "reviewed_at": "2026-05-04T16:30:00Z",
   "mappings": [
     {
       "scenario_id": "kardiyoloji-stemi-001",

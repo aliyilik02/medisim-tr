@@ -27,6 +27,9 @@ export const scenario_anaflaksi: Scenario = {
   author: "MediSim TR Ekibi",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "T78.2", snomed_ct: "39579001" },
+
   patient: {
     age: 35,
     sex: "F",

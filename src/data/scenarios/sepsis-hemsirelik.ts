@@ -30,6 +30,9 @@ export const scenario_sepsis_hemsirelik: Scenario = {
   author: "MediSim TR Ekibi",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "A41.9", snomed_ct: "91302008" },
+
   patient: {
     age: 70,
     sex: "F",

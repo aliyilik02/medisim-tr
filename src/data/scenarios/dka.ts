@@ -41,6 +41,9 @@ export const scenario_dka: Scenario = {
   reviewed_by: "ADA/EASD 2024, JBDS-IP 2023, TEMD 2022, ISPAD 2022 uyumlu",
   last_updated: "2026-04-25",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "E11.10", snomed_ct: "420422005" },
+
   // Senaryo yazarının demo için ilaç zamanlaması override'ı.
   // Gerçek klinikte insülin onset 15 dk, peak 1 saat. Demo'da hasta monitöründe
   // glukoz düşüşünü canlı görmek için hızlandırılmış.

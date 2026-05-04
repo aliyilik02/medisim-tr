@@ -28,6 +28,9 @@ export const scenario_bronsiyolit: Scenario = {
   author: "MediSim TR Ekibi",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "J21.9", snomed_ct: "4120002" },
+
   patient: {
     age: 0, // 8 aylık — yıl olarak 0, history'de belirtilir
     sex: "M",

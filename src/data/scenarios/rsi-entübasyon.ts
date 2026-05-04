@@ -30,6 +30,9 @@ export const scenario_rsi_entübasyon: Scenario = {
   author: "MediSim TR Ekibi",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "S06.5", snomed_ct: "21454007" },
+
   patient: {
     age: 35,
     sex: "M",

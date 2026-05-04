@@ -27,6 +27,9 @@ export const scenario_apandisit: Scenario = {
   reviewed_by: "WSES Jerusalem Guidelines 2020 uyumlu",
   last_updated: "2026-04-27",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "K35.80", snomed_ct: "85189001" },
+
   patient: {
     age: 28,
     sex: "M",

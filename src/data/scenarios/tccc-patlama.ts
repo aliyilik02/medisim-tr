@@ -42,6 +42,10 @@ export const scenario_tccc_patlama: Scenario = {
     "TCCC CoTCCC 2024, JTS CPG 2020, NATO STANAG 2087, TSK Saha Tıbbı 2022 uyumlu",
   last_updated: "2026-04-27",
 
+  // ICD-10 (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  // SNOMED CT yok: T07 'Multiple injuries, unspecified' için stabil SNOMED eşleşmesi yok.
+  clinical_codes: { icd10: "T07" },
+
   patient: {
     age: 24,
     sex: "M",

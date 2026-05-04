@@ -27,6 +27,9 @@ export const scenario_stemi: Scenario = {
   reviewed_by: "ESC 2023, AHA/ACC 2022, TKD 2022 uyumlu",
   last_updated: "2026-04-23",
 
+  // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
+  clinical_codes: { icd10: "I21.0", snomed_ct: "401303003" },
+
   patient: {
     age: 62,
     sex: "M",
