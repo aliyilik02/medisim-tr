@@ -27,6 +27,11 @@ build/
 coverage/
 .vitest-cache/
 
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
 # TypeScript
 *.tsbuildinfo
 

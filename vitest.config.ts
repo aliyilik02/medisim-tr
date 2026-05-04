@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     environment: "happy-dom",
     include: ["tests/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["e2e/**", "node_modules/**"],
     setupFiles: [
       "tests/setup/clinical-protection.ts",
       "tests/setup/dom-setup.ts",
