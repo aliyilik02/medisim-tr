@@ -22,12 +22,12 @@ describe("Clinical rules — Türkiye 2024 DRAFT", () => {
     expect(typedSet.rules.length).toBeLessThanOrEqual(10);
   });
 
-  test("tüm kurallar DRAFT_NEEDS_REVIEW bayrağı taşıyor", () => {
+  test("tüm kurallar REVIEWED_PENDING_ACTIVATION bayrağı taşıyor (review tamam, aktivasyon bekliyor)", () => {
     for (const rule of typedSet.rules) {
       expect(
         rule.status,
-        `${rule.id}: status DRAFT_NEEDS_REVIEW olmalı`
-      ).toBe("DRAFT_NEEDS_REVIEW");
+        `${rule.id}: status REVIEWED_PENDING_ACTIVATION olmalı`
+      ).toBe("REVIEWED_PENDING_ACTIVATION");
     }
   });
 

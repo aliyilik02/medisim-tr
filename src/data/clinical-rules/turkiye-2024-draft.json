@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0-DRAFT",
+  "version": "0.2.0-REVIEWED",
   "status": "DRAFT",
   "generated_at": "2026-05-04T03:00:00Z",
   "generated_by": "Claude AI assistant — needs human review",
@@ -16,7 +16,9 @@
         "type": "min_difficulty",
         "description": "opt_ketamin min_difficulty: 2 olmalı"
       },
-      "status": "DRAFT_NEEDS_REVIEW",
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z",
       "notes": "Kullanıcı kararı 2026-05-03 oturumunda. TARD kılavuz: ülkemizde propofol-süks/mivakuryum/rok seçenekleri."
     },
     {
@@ -30,7 +32,9 @@
         "type": "decision_correct",
         "description": "opt_guvenli +30 primer, opt_rokuronyum_tercih +20 (kabul edilebilir alternatif). Pedagojik amaç: süks güvenli mesajı"
       },
-      "status": "DRAFT_NEEDS_REVIEW",
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z",
       "notes": "Kullanıcı kararı 2026-05-03. Walls Manual 2024 ile Türk pratiğinde yaygın hatayı düzeltme."
     },
     {
@@ -44,7 +48,9 @@
         "type": "min_difficulty",
         "description": "opt_glukagon min_difficulty: 4 olmalı"
       },
-      "status": "DRAFT_NEEDS_REVIEW",
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z",
       "notes": "Kullanıcı kararı 2026-05-03. BB öyküsü olmayan hastada glukagon endike değil."
     },
     {
@@ -58,7 +64,9 @@
         "type": "decision_correct",
         "description": "opt-alteplaz ve opt-tnk ikisi de correct: true, allow_multiple"
       },
-      "status": "DRAFT_NEEDS_REVIEW",
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z",
       "notes": "Kullanıcı kararı 2026-05-03. Türk acil pratik kaynağı: 'tenekteplaz yerine alteplaz önerilmektedir' ANCAK LVO+EVT adayında TNK öneriliyor."
     },
     {
@@ -72,7 +80,9 @@
         "type": "decision_correct",
         "description": "üç opsiyon allow_multiple, mevcut puan farkı korunur (Labetalol +25, Hidralazin +22, Nifedipin +20)"
       },
-      "status": "DRAFT_NEEDS_REVIEW",
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z",
       "notes": "Kullanıcı kararı. Türk MFTP çevirisi ACOG kılavuzunu üç ajan eşit kabul olarak listeler."
     },
     {
@@ -86,7 +96,9 @@
         "type": "decision_correct",
         "description": "opt_deksametazon_bekle correct: false, points: 5 (kısmi bilgi puanı)"
       },
-      "status": "DRAFT_NEEDS_REVIEW",
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z",
       "notes": "Kullanıcı kararı. Vakaya uygun değil (36 hf), iyi düşünme ödülü."
     },
     {
@@ -100,7 +112,9 @@
         "type": "decision_correct",
         "description": "V4R + V7-V9 allow_multiple, mevcut puanlar (+15, +12) korunur"
       },
-      "status": "DRAFT_NEEDS_REVIEW"
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z"
     },
     {
       "id": "tr-stemi-002",
@@ -113,7 +127,9 @@
         "type": "min_difficulty",
         "description": "opt_mekanik_destek min_difficulty: 4"
       },
-      "status": "DRAFT_NEEDS_REVIEW"
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z"
     },
     {
       "id": "tr-apandisit-001",
@@ -126,7 +142,9 @@
         "type": "decision_correct",
         "description": "USG + BT S1'de ikisi correct, allow_multiple. opt_goruntuleme_yok min_difficulty: 2"
       },
-      "status": "DRAFT_NEEDS_REVIEW"
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z"
     },
     {
       "id": "tr-apandisit-002",
@@ -139,7 +157,9 @@
         "type": "decision_correct",
         "description": "opt_acik correct: false, points: 5 (lokal peritonitte gereksiz konversiyon)"
       },
-      "status": "DRAFT_NEEDS_REVIEW"
+      "status": "REVIEWED_PENDING_ACTIVATION",
+      "reviewed_by": "user-clinical-review-2026-05-03",
+      "reviewed_at": "2026-05-04T16:15:00Z"
     }
   ]
 }

@@ -17,27 +17,27 @@ import type { ClinicalRule, ClinicalRuleSet } from "@/data/clinical-rules/schema
 
 const typedSet = ruleSet as ClinicalRuleSet;
 
-describe("Scenario validator — DRAFT kurallar", () => {
-  test("rapor 'passed: true' (DRAFT engine'i kırmaz)", () => {
+describe("Scenario validator — REVIEWED_PENDING_ACTIVATION kurallar", () => {
+  test("rapor 'passed: true' (review/draft engine'i kırmaz, sadece ACTIVE blok eder)", () => {
     const report = validateRuleSetAgainstScenarios(typedSet, ALL_SCENARIOS);
     expect(report.passed).toBe(true);
   });
 
-  test("tüm kurallar draft sayısına dahil", () => {
+  test("tüm kurallar reviewed sayısına dahil (henüz aktif değil)", () => {
     const report = validateRuleSetAgainstScenarios(typedSet, ALL_SCENARIOS);
-    expect(report.draft_rules).toBe(typedSet.rules.length);
+    expect(report.reviewed_rules).toBe(typedSet.rules.length);
     expect(report.active_rules).toBe(0);
-    expect(report.reviewed_rules).toBe(0);
+    expect(report.draft_rules).toBe(0);
   });
 
-  test("üretilen issues severity 'info' (DRAFT için)", () => {
+  test("üretilen issues severity 'warning' (REVIEWED_PENDING_ACTIVATION için)", () => {
     const report = validateRuleSetAgainstScenarios(typedSet, ALL_SCENARIOS);
     for (const issue of report.issues) {
-      expect(issue.severity).toBe("info");
+      expect(issue.severity).toBe("warning");
     }
   });
 
-  test("DRAFT kurallarda yapısal hata yok — bilinmeyen senaryo/step gözükmüyor", () => {
+  test("kurallarda yapısal hata yok — bilinmeyen senaryo/step gözükmüyor", () => {
     const report = validateRuleSetAgainstScenarios(typedSet, ALL_SCENARIOS);
     const structural = report.issues.filter(
       (i) => i.message.includes("bilinmeyen") || i.message.includes("olmayan")
@@ -93,14 +93,14 @@ describe("Scenario validator — ACTIVE simülasyonu (production hazır mı)", (
     expect(typeIssue!.severity).toBe("error");
   });
 
-  test("REVIEWED_PENDING_ACTIVATION severity 'warning'", () => {
+  test("DRAFT_NEEDS_REVIEW severity 'info' (geçmiş bayrak için backwards-compat)", () => {
     const fake: ClinicalRule = {
       ...typedSet.rules[0],
-      status: "REVIEWED_PENDING_ACTIVATION",
+      status: "DRAFT_NEEDS_REVIEW",
       affects_scenarios: ["bilinmeyen"],
     };
     const issues = validateRuleAgainstScenarios(fake, ALL_SCENARIOS);
-    expect(issues[0]?.severity).toBe("warning");
+    expect(issues[0]?.severity).toBe("info");
   });
 });
 
