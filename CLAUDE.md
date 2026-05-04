@@ -1,7 +1,7 @@
 # Claude Code İçin Talimatlar
 
 Bu dosyayı Claude Code projeye girdiğinde otomatik okur.
-Son güncelleme: 23 Nisan 2026
+Son güncelleme: 5 Mayıs 2026
 
 ---
 
@@ -35,33 +35,49 @@ Referans ürünler: Body Interact, Dimedus, MVR/Nasco.
 
 ---
 
-## Mevcut durum — Faz 1 ilerlemesi
+## Mevcut durum — 5 Mayıs 2026
 
-**Hafta 1 — Farmakoloji motoru ✅ TAMAM**
-- `src/engine/types.ts` genişletildi (Difficulty, PatientModifiers, zorluk alanları)
-- `src/engine/pharmacology/types.ts` — tam farmakoloji veri şeması
-- `src/engine/pharmacology/presets.ts` — 20 preset (sempatomimetik-guclu, beta-bloker, nitrat vb.)
-- `src/engine/pharmacology/engine.ts` — administerMedication, tick, modifier zinciri, kontrendikasyon
-- `src/data/medications-extended.ts` — 30 kardiyovasküler ilaç ExtendedMedication
-- `src/data/scenarios/stemi.ts` — yeni motora uyarlandı, 5 zorluk seviyesi aktif
+**Test:** 388 vitest pass / 0 fail / 0 skip (19 dosya) + 5 Playwright E2E pass. Build temiz.
 
-**Hafta 1/2 kalan:**
-- [ ] `src/data/equipment.ts` genişletme (20 yeni ekipman)
-- [ ] Kardiyo-dışı 30 ilacın `medications-extended.ts`'ye eklenmesi (solunum, analjezik, metabolik, antibiyotik)
-- [ ] UI Parça B: canlı vital monitör (farmakoloji tick entegrasyonu)
-- [ ] EKG dalga formu animasyonu
-- [ ] Monitör sesleri (bip, alarm)
+**Senaryo sayısı:** 14 (Body Interact uyumlu skorlama, hepsi `clinical_codes` ICD-10/SNOMED enjekte edilmiş).
 
-**Hafta 2 — Raporlama + yeni senaryolar**
-- [ ] PDF export (jspdf) — debrief çıktısı
-- [ ] Excel export (xlsx) — aksiyon geçmişi
-- [ ] DKA senaryosu (dahiliye, 2-4. seviye)
-- [ ] Pediatrik sepsis senaryosu
+**İlaç kataloğu:** ~79 entry (Hafta 1 kardiyovasküler 30 + Hafta 2 kardiyo-dışı 30 + Faz 2 ek 17). `medications.ts` + `medications-extended.ts` senkron.
 
-**Hafta 3 — Tasarım kimliği**
-- [ ] Mevcut UI denetimi
-- [ ] Specialty-başına arayüz varyasyonu (kardiyoloji/acil/askeri farklı palet)
-- [ ] Logo + marka kimliği
+**Ekipman:** v2 — 40+ ekipman (havayolu, solunum, lab, görüntüleme, termoregülasyon).
+
+**Export:** `src/utils/export/` altında PDF + Excel pipeline tam (sections, primitives donut/gradeBar, fontlar, DebriefScreen entegre).
+
+### Tamamlanan fazlar
+
+| Faz | Konu | Durum |
+|---|---|---|
+| Faz 1 H1 | Farmakoloji motoru, 30 kardiyo ilaç, STEMI yeni motor | ✅ |
+| Faz 1 H2 | Kardiyo-dışı 30 ilaç, ekipman v2, PDF/Excel export | ✅ |
+| Faz 1 H3 | Tasarım kimliği — Tailwind + specialty theme | ✅ (UI denetimi Faz 15'e ertelendi) |
+| Faz 2-7 | B sözleşmesi gece paketi: senaryo bug fix, test altyapısı, ICD/SNOMED/RxNorm yerel db, Türk klinik kural motoru iskeleti | ✅ |
+| Faz 8 | Engine clinical-rule validator (DRAFT-aware, advisory) — `b851660` | ✅ |
+| Faz 9 | 14 senaryoya `clinical_codes` enjeksiyonu — `a8408dc` | ✅ |
+| Faz 10 | 4 component birim testi (PatientCard, DifficultySelector, ScenarioCard, StepDisplay), 29 test — `3d2d784` | ✅ |
+| Faz 11 | Playwright E2E altyapısı, 5 smoke test, CI workflow — `20a1578` | ✅ |
+| Faz 12-14 | Equipment / kardiyo-dışı 30 / PDF-Excel — zaten H1-H2'de yapılmıştı, Faz numaralandırması güncel değildi | ✅ |
+| Faz 15 | UI denetimi | ⏸ Kullanıcıyla birlikte ayrı oturum |
+
+### Klinik kural sistemi (Faz 8'den)
+
+`src/data/clinical-rules/turkiye-2024-draft.json` — AI önerisi 10 kural, kaynak: TARD, BDHD, ACOG-MFTP-TR, ESC, WAO, WSES, WALLS.
+
+**Statü:** 10/10 kural REVIEWED_PENDING_ACTIVATION (commit `e432128`). Hiçbiri ACTIVE değil → engine flow'una etkisi yok, validator sadece rapor üretir.
+
+**Kural değişikliği için disiplin:** Klinik dosyalar (`clinical-rules/`, `scenario-mappings.json`, ilaç dozları, kontrendikasyonlar) için **otonom karar yok** — kullanıcı onayı + spec → tek komut. Klinik dosya commit'lerinde `--no-verify` (pre-commit hook bayrak değişikliklerini lint hatası olarak göstermesin).
+
+### Sonraki adımlar (öneri)
+
+1. **DRAFT/REVIEWED → ACTIVE klinik review** — kural-bazlı, kullanıcı her birini onaylar; ayrı PR, validator severity error'a yükselir
+2. **Engine'e validator enforce entegrasyonu** — şu an validator var ama engine runtime'da çağrılmıyor; advisory/blocking/CI-only modlardan hangisi seçileceği karar bekliyor
+3. **CLAUDE.md davranışsal kurallar revizyonu** — "otonom çalışma" çerçevesi gece paketi sonrası daha sıkı (klinik dosya disiplini); kullanıcı onayıyla yapılacak
+4. **Bundle size optimizasyonu** — main 829kB, route-based veya vendor-split (recharts/lucide) seçimi
+5. **Faz 15 UI denetimi** — kullanıcıyla birlikte
+6. **5 senaryo bonus outcome incelemesi** (DKA, PE, iskemik inme, preeklampsi, TCCC-patlama) — `structure.test.ts` uyarısı: `max_points` auto-play optimumundan 20+ puan yüksek
 
 Detaylı kararlar: `docs/TASARIM-KARARLARI.md`. Herhangi bir büyük iş öncesi **orayı oku.**
 
