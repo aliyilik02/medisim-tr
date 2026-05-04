@@ -59,18 +59,24 @@ Referans ürünler: Body Interact, Dimedus, MVR/Nasco.
 | Faz 9 | 14 senaryoya `clinical_codes` enjeksiyonu — `a8408dc` | ✅ |
 | Faz 10 | 4 component birim testi (PatientCard, DifficultySelector, ScenarioCard, StepDisplay), 29 test — `3d2d784` | ✅ |
 | Faz 11 | Playwright E2E altyapısı, 5 smoke test, CI workflow — `20a1578` | ✅ |
-| Faz 12-14 | Equipment / kardiyo-dışı 30 / PDF-Excel — zaten H1-H2'de yapılmıştı, Faz numaralandırması güncel değildi | ✅ |
+| Faz 12-14 | Equipment / kardiyo-dışı 30 / PDF-Excel — zaten H1-H2'de yapılmıştı, faz numaralandırması güncel değildi | ✅ |
 | Faz 15 | UI denetimi | ⏸ Kullanıcıyla birlikte ayrı oturum |
 
 ### Klinik kural sistemi (Faz 8'den)
 
 `src/data/clinical-rules/turkiye-2024-draft.json` — AI önerisi 10 kural, kaynak: TARD, BDHD, ACOG-MFTP-TR, ESC, WAO, WSES, WALLS.
 
-**Statü:** 10/10 kural REVIEWED_PENDING_ACTIVATION (commit `e432128`). Hiçbiri ACTIVE değil → engine flow'una etkisi yok, validator sadece rapor üretir.
+**Bayrak hiyerarşisi** (validator severity eşlemesi — `scenario-validator.ts:42-46`):
+
+- `DRAFT_NEEDS_REVIEW` → `info` (AI önerdi, klinik review bekliyor)
+- `REVIEWED_PENDING_ACTIVATION` → `warning` (insan review etti, manuel aktivasyon)
+- `ACTIVE` → `error` (canlı; engine + testler zorunlu kılar, CI fail edebilir)
+
+Mevcut durum: 10/10 kural REVIEWED_PENDING_ACTIVATION (commit `e432128`). Hiçbiri ACTIVE değil → engine flow'una etkisi yok, validator sadece rapor üretir.
 
 **Kural değişikliği için disiplin:** Klinik dosyalar (`clinical-rules/`, `scenario-mappings.json`, ilaç dozları, kontrendikasyonlar) için **otonom karar yok** — kullanıcı onayı + spec → tek komut. Klinik dosya commit'lerinde `--no-verify` (pre-commit hook bayrak değişikliklerini lint hatası olarak göstermesin).
 
-### Sonraki adımlar (öneri)
+### Sonraki adımlar (5 Mayıs 2026)
 
 1. **DRAFT/REVIEWED → ACTIVE klinik review** — kural-bazlı, kullanıcı her birini onaylar; ayrı PR, validator severity error'a yükselir
 2. **Engine'e validator enforce entegrasyonu** — şu an validator var ama engine runtime'da çağrılmıyor; advisory/blocking/CI-only modlardan hangisi seçileceği karar bekliyor
