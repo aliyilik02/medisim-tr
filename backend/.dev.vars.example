@@ -1,0 +1,5 @@
+# Local dev secrets — bu dosyayı `.dev.vars` olarak kopyala ve gerçek key'i gir.
+# `.dev.vars` .gitignore'da, commit edilmez.
+#
+# Google AI Studio key: https://aistudio.google.com/apikey (kart gerekmez)
+GEMINI_API_KEY=AIzaSy_REPLACE_ME

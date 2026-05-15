@@ -52,3 +52,9 @@ medisim-tr-*.zip
 *.tar.gz
 *.bak
 .claude/worktrees/
+
+# Backend (Cloudflare Worker) — Sprint B.0
+backend/node_modules/
+backend/.wrangler/
+backend/.dev.vars
+backend/dist/

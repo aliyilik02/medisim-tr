@@ -1,0 +1,20 @@
+name = "medisim-backend"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ─────────────────────────────────────────────────────────────
+# KV namespace — rate limit için. ID deploy öncesinde
+#   npx wrangler kv:namespace create RATE_LIMIT
+# çıktısından alınıp aşağı yazılır.
+# Local dev: npx wrangler dev otomatik local KV simülasyonu açar.
+# ─────────────────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "PLACEHOLDER_REPLACE_AFTER_KV_CREATE"
+
+# Secrets (.dev.vars local, `wrangler secret put` prod):
+#   GEMINI_API_KEY
+
+[observability]
+enabled = true
