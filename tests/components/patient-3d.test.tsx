@@ -28,6 +28,10 @@ vi.mock("@react-three/fiber", () => ({
     return <div data-testid={dataTestId} data-r3f-canvas />;
   },
   useFrame: () => undefined,
+  useThree: () => ({
+    camera: { position: { set: () => undefined }, lookAt: () => undefined },
+    size: { width: 1280, height: 720 },
+  }),
 }));
 
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";

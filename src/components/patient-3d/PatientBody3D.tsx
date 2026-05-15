@@ -1,7 +1,6 @@
-import { Suspense, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Bounds } from "@react-three/drei";
-import type { Group } from "three";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { PerspectiveCamera, type Group } from "three";
 import { TorsoMesh } from "./TorsoMesh";
 import { RegionMarker } from "./RegionMarker";
 import { BreathingController } from "./BreathingController";
@@ -14,6 +13,25 @@ interface Props {
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
   className?: string;
+}
+
+/** Canvas içinde default kamerayı manuel pozisyon + fov ile zorla.
+    Drei <PerspectiveCamera makeDefault> + Suspense + lazy chunk kombinasyonu
+    bazen yarış yapıyor; useEffect senkron pattern garantili. */
+function CameraRig({ position, fov }: { position: [number, number, number]; fov: number }) {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    camera.position.set(...position);
+    camera.lookAt(0, 0.5, 0);
+    if (camera instanceof PerspectiveCamera) {
+      camera.fov = fov;
+      camera.near = 0.1;
+      camera.far = 50;
+      camera.aspect = size.width / size.height;
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, size.width, size.height, position, fov]);
+  return null;
 }
 
 export function PatientBody3D({
@@ -35,13 +53,13 @@ export function PatientBody3D({
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-3d-canvas"
-        camera={{ position: [0, 0.3, 4.5], fov: 32 }}
         frameloop={breathing ? "always" : "demand"}
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         shadows
       >
         <color attach="background" args={["#0a0a0c"]} />
+        <CameraRig position={[0, 0.5, 7.0]} fov={32} />
 
         <ambientLight intensity={0.45} />
         <directionalLight
@@ -55,12 +73,7 @@ export function PatientBody3D({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={null}>
-          {/* Bounds: torso bbox'una göre kamera auto-fit. Markerlar Bounds
-              dışında render ediliyor ki bbox onları kapsamasın ama transform
-              torso ile ortak world space'te kaldığı için doğru yerde dururlar. */}
-          <Bounds fit clip margin={1.15}>
-            <TorsoMesh chestRef={chestRef} abdomenRef={abdomenRef} />
-          </Bounds>
+          <TorsoMesh chestRef={chestRef} abdomenRef={abdomenRef} />
           <BreathingController
             chestRef={chestRef}
             abdomenRef={abdomenRef}

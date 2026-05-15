@@ -61,16 +61,17 @@ export function TorsoMesh({ chestRef, abdomenRef }: Props) {
           <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
         </mesh>
 
-        {/* Sol üst kol — omuzdan 25° dışa-aşağı (raycast off) */}
-        <group position={[-0.55, 0.95, 0]} rotation={[0, 0, 0.42]}>
+        {/* Sol üst kol — omuzdan 25° dışa-aşağı (raycast off)
+            Z ekseni rotation negatif → sol omuzdan sola-aşağı */}
+        <group position={[-0.55, 0.95, 0]} rotation={[0, 0, -0.42]}>
           <mesh position={[0, -0.4, 0]} castShadow raycast={() => null}>
             <cylinderGeometry args={[0.14, 0.115, 0.75, 18]} />
             <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
           </mesh>
         </group>
 
-        {/* Sağ üst kol */}
-        <group position={[0.55, 0.95, 0]} rotation={[0, 0, -0.42]}>
+        {/* Sağ üst kol — pozitif rotation, sağ omuzdan sağa-aşağı */}
+        <group position={[0.55, 0.95, 0]} rotation={[0, 0, 0.42]}>
           <mesh position={[0, -0.4, 0]} castShadow raycast={() => null}>
             <cylinderGeometry args={[0.14, 0.115, 0.75, 18]} />
             <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />

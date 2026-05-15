@@ -11,7 +11,7 @@ export function PatientBody3DDemoPage() {
   const [breathing, setBreathing] = useState(true);
 
   return (
-    <div className="min-h-screen bg-ink-950 text-ink-50 flex flex-col">
+    <div className="h-screen bg-ink-950 text-ink-50 flex flex-col overflow-hidden">
       <header className="border-b border-ink-700/50 px-6 py-3 flex items-center gap-4">
         <Link
           to="/"
@@ -43,7 +43,7 @@ export function PatientBody3DDemoPage() {
         </button>
       </header>
 
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-h-0">
         <PatientBody3D regions={DEFAULT_REGIONS} breathing={breathing} />
       </div>
 
