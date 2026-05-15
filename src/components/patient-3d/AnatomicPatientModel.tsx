@@ -32,10 +32,10 @@ type ShaderRef = {
 
 const MODEL_URL = "/3d/patient-v1.glb";
 const BREATH_RATE_HZ = 0.25; // ~15/dk solunum
-const BREATH_AMPLITUDE = 0.03; // göğüs duvarı AP genişlemesi (~3 cm)
-                               // Sadece üçgen alan etkilendiği için
-                               // önceki uniform 0.022'den biraz arttı
-                               // ama gerçekçi.
+const BREATH_AMPLITUDE = 0.038; // göğüs duvarı AP genişlemesi (~3.8 cm)
+                                // Üçgen alan dar olduğu için bu değer
+                                // gözle ayırt edilebilir kalıyor ama
+                                // hâlâ fizyolojik sınırda (abartmıyor).
 
 useGLTF.preload(MODEL_URL);
 
