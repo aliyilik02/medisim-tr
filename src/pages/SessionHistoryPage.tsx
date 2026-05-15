@@ -101,7 +101,7 @@ function SessionRow({
       const { exportToExcel } = await import("@/utils/export/exportExcel");
       // Slim snapshot'ları cast ediyoruz — Excel sadece results, scoring, steps kullanır
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const blob = exportToExcel(saved.session_snapshot as any, saved.scenario_snapshot as any);
+      const blob = await exportToExcel(saved.session_snapshot as any, saved.scenario_snapshot as any);
       const d    = new Date(saved.played_at);
       const fmt  = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,"0")}-${d.getDate().toString().padStart(2,"0")}`;
       triggerDownload(blob, `medisim-${saved.scenario_id}-${fmt}.xlsx`);

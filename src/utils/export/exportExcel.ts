@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import type { SessionState, Scenario } from "@/engine/types";
 import {
   formatDateTime,
@@ -11,38 +11,41 @@ import {
   actionTypeLabel,
 } from "./helpers";
 
-// ── Hücre stilleri ────────────────────────────────────────────────
-// xlsx@0.18 community sürümünde .s mülkü desteklenmektedir;
-// görünürlük uygulama desteğine bağlıdır (LibreOffice / Google Sheets).
-type CellStyle = {
-  font?: { bold?: boolean; color?: { rgb: string }; sz?: number };
-  fill?: { fgColor: { rgb: string } };
-  alignment?: { horizontal?: string; vertical?: string };
+// ── Hücre stil reçeteleri (ExcelJS) ───────────────────────────────
+// xlsx@0.18 community sürümünde `.s` styling LibreOffice/Google'da
+// çalışıyordu, MS Excel'de değil. ExcelJS native styling — her ortamda
+// görünür.
+type StyleRecipe = {
+  font?: Partial<ExcelJS.Font>;
+  fill?: ExcelJS.Fill;
+  alignment?: Partial<ExcelJS.Alignment>;
 };
 
-function applyStyle(ws: XLSX.WorkSheet, ref: string, s: CellStyle): void {
-  if (ws[ref]) ws[ref].s = s;
+const S_HEADER: StyleRecipe = {
+  font: { bold: true, color: { argb: "FFFFFFFF" } },
+  fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF7CB342" } },
+  alignment: { horizontal: "center", vertical: "middle" },
+};
+const S_SECTION: StyleRecipe = {
+  font: { bold: true },
+  fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFECF0E8" } },
+};
+const S_GREEN: StyleRecipe = { font: { color: { argb: "FF10B981" } } };
+const S_RED: StyleRecipe = { font: { color: { argb: "FFDC3545" }, bold: true } };
+const S_RED_BG: StyleRecipe = {
+  fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFEBEB" } },
+};
+const S_BOLD: StyleRecipe = { font: { bold: true } };
+const S_LARGE_BOLD: StyleRecipe = { font: { bold: true, size: 13 } };
+
+function applyStyle(cell: ExcelJS.Cell, s: StyleRecipe): void {
+  if (s.font) cell.font = { ...cell.font, ...s.font };
+  if (s.fill) cell.fill = s.fill;
+  if (s.alignment) cell.alignment = { ...cell.alignment, ...s.alignment };
 }
 
-const S_HEADER: CellStyle = {
-  font: { bold: true, color: { rgb: "FFFFFFFF" } },
-  fill: { fgColor: { rgb: "FF7CB342" } },
-  alignment: { horizontal: "center", vertical: "center" },
-};
-const S_SECTION: CellStyle = {
-  font: { bold: true },
-  fill: { fgColor: { rgb: "FFECF0E8" } },
-};
-const S_GREEN: CellStyle = { font: { color: { rgb: "FF10B981" } } };
-const S_RED: CellStyle = { font: { color: { rgb: "FFDC3545" }, bold: true } };
-const S_RED_BG: CellStyle = { fill: { fgColor: { rgb: "FFFFEBEB" } } };
-const S_BOLD: CellStyle = { font: { bold: true } };
-const S_LARGE_BOLD: CellStyle = { font: { bold: true, sz: 13 } };
-
-function colW(wch: number): XLSX.ColInfo { return { wch }; }
-
 // ── Sayfa 1: Özet ─────────────────────────────────────────────────
-function buildOzetSheet(session: SessionState, scenario: Scenario): XLSX.WorkSheet {
+function buildOzetSheet(wb: ExcelJS.Workbook, session: SessionState, scenario: Scenario): void {
   const pct = formatPercent(session.total_score, scenario.scoring.max_points);
   const totalSec = session.results.length > 0
     ? session.results[session.results.length - 1].time_spent_sec
@@ -78,41 +81,45 @@ function buildOzetSheet(session: SessionState, scenario: Scenario): XLSX.WorkShe
     ["Tamamlanan Adım", session.completed_step_ids.length],
   ];
 
-  const ws = XLSX.utils.aoa_to_sheet(data);
+  const ws = wb.addWorksheet("Özet");
+  ws.addRows(data);
+  ws.columns = [{ width: 30 }, { width: 38 }];
 
-  applyStyle(ws, "A1", S_LARGE_BOLD);
-  applyStyle(ws, "A3", S_SECTION);
-  applyStyle(ws, "A11", S_SECTION);
-  applyStyle(ws, "A16", S_SECTION);
+  applyStyle(ws.getCell("A1"), S_LARGE_BOLD);
+  applyStyle(ws.getCell("A3"), S_SECTION);
+  applyStyle(ws.getCell("A11"), S_SECTION);
+  applyStyle(ws.getCell("A16"), S_SECTION);
 
   // Puan renklendir
   const scoreRowIdx = data.findIndex((r) => r[0] === "Toplam Puan") + 1;
-  if (scoreRowIdx > 0) applyStyle(ws, `B${scoreRowIdx}`, S_BOLD);
+  if (scoreRowIdx > 0) applyStyle(ws.getCell(`B${scoreRowIdx}`), S_BOLD);
 
   // Sonuç rengi
   const passRowIdx = data.findIndex((r) => r[0] === "Sonuç") + 1;
-  if (passRowIdx > 0) applyStyle(ws, `B${passRowIdx}`, passed ? S_GREEN : S_RED);
+  if (passRowIdx > 0) applyStyle(ws.getCell(`B${passRowIdx}`), passed ? S_GREEN : S_RED);
 
   // Not rengi
   const gradeRowIdx = data.findIndex((r) => r[0] === "Harf Notu") + 1;
-  if (gradeRowIdx > 0) applyStyle(ws, `B${gradeRowIdx}`, grade === "A" ? S_GREEN : grade === "F" ? S_RED : S_BOLD);
+  if (gradeRowIdx > 0) {
+    applyStyle(
+      ws.getCell(`B${gradeRowIdx}`),
+      grade === "A" ? S_GREEN : grade === "F" ? S_RED : S_BOLD,
+    );
+  }
 
   // Kritik hata rengi
   const errRowIdx = data.findIndex((r) => r[0] === "Kritik Hata Sayısı") + 1;
-  if (errRowIdx > 0 && totalErrors > 0) applyStyle(ws, `B${errRowIdx}`, S_RED);
-
-  ws["!cols"] = [colW(30), colW(38)];
-  return ws;
+  if (errRowIdx > 0 && totalErrors > 0) applyStyle(ws.getCell(`B${errRowIdx}`), S_RED);
 }
 
 // ── Sayfa 2: Adımlar ──────────────────────────────────────────────
-function buildAdimlarSheet(session: SessionState, scenario: Scenario): XLSX.WorkSheet {
+function buildAdimlarSheet(wb: ExcelJS.Workbook, session: SessionState, scenario: Scenario): void {
   const header = [
     "Sıra", "Adım ID", "Başlık", "Tip",
     "Puan", "Kümülatif Süre (sn)", "Adım Süresi (sn)", "Kritik Hata",
   ];
 
-  const rows = session.results.map((r, i) => {
+  const rows: (string | number)[][] = session.results.map((r, i) => {
     const step = scenario.steps.find((s) => s.id === r.step_id);
     const prevSec = i > 0 ? session.results[i - 1].time_spent_sec : 0;
     const stepSec = r.time_spent_sec - prevSec;
@@ -128,29 +135,32 @@ function buildAdimlarSheet(session: SessionState, scenario: Scenario): XLSX.Work
     ];
   });
 
-  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  const ws = wb.addWorksheet("Adımlar");
+  ws.addRow(header);
+  ws.addRows(rows);
+  ws.columns = [
+    { width: 6 }, { width: 22 }, { width: 40 }, { width: 12 },
+    { width: 10 }, { width: 22 }, { width: 20 }, { width: 14 },
+  ];
 
   const cols = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  cols.forEach((c) => applyStyle(ws, `${c}1`, S_HEADER));
+  cols.forEach((c) => applyStyle(ws.getCell(`${c}1`), S_HEADER));
 
   rows.forEach((r, i) => {
     const rowN = i + 2;
     const crit = r[7] as number;
-    const pts  = r[4] as number;
+    const pts = r[4] as number;
     if (crit > 0) {
-      cols.forEach((c) => applyStyle(ws, `${c}${rowN}`, S_RED_BG));
-      applyStyle(ws, `H${rowN}`, S_RED);
+      cols.forEach((c) => applyStyle(ws.getCell(`${c}${rowN}`), S_RED_BG));
+      applyStyle(ws.getCell(`H${rowN}`), S_RED);
     }
-    if (pts > 0) applyStyle(ws, `E${rowN}`, S_GREEN);
-    else if (pts < 0) applyStyle(ws, `E${rowN}`, S_RED);
+    if (pts > 0) applyStyle(ws.getCell(`E${rowN}`), S_GREEN);
+    else if (pts < 0) applyStyle(ws.getCell(`E${rowN}`), S_RED);
   });
-
-  ws["!cols"] = [colW(6), colW(22), colW(40), colW(12), colW(10), colW(22), colW(20), colW(14)];
-  return ws;
 }
 
 // ── Sayfa 3: Aksiyonlar ───────────────────────────────────────────
-function buildAksiyonlarSheet(session: SessionState, scenario: Scenario): XLSX.WorkSheet {
+function buildAksiyonlarSheet(wb: ExcelJS.Workbook, session: SessionState, scenario: Scenario): void {
   const header = [
     "Sıra", "Adım ID", "Adım Başlığı",
     "Aksiyon Tipi", "Hedef", "Doz",
@@ -182,38 +192,47 @@ function buildAksiyonlarSheet(session: SessionState, scenario: Scenario): XLSX.W
     });
   }
 
-  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  const ws = wb.addWorksheet("Aksiyonlar");
+  ws.addRow(header);
+  ws.addRows(rows);
+  ws.columns = [
+    { width: 6 }, { width: 22 }, { width: 35 }, { width: 20 },
+    { width: 22 }, { width: 12 }, { width: 14 }, { width: 18 },
+  ];
 
   const cols = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  cols.forEach((c) => applyStyle(ws, `${c}1`, S_HEADER));
+  cols.forEach((c) => applyStyle(ws.getCell(`${c}1`), S_HEADER));
 
   rows.forEach((r, i) => {
     const rowN = i + 2;
     const crit = r[7];
-    const pts  = r[6];
+    const pts = r[6];
     if (typeof crit === "number" && crit > 0) {
-      cols.forEach((c) => applyStyle(ws, `${c}${rowN}`, S_RED_BG));
-      applyStyle(ws, `H${rowN}`, S_RED);
+      cols.forEach((c) => applyStyle(ws.getCell(`${c}${rowN}`), S_RED_BG));
+      applyStyle(ws.getCell(`H${rowN}`), S_RED);
     }
     if (typeof pts === "number") {
-      if (pts > 0) applyStyle(ws, `G${rowN}`, S_GREEN);
-      else if (pts < 0) applyStyle(ws, `G${rowN}`, S_RED);
+      if (pts > 0) applyStyle(ws.getCell(`G${rowN}`), S_GREEN);
+      else if (pts < 0) applyStyle(ws.getCell(`G${rowN}`), S_RED);
     }
   });
-
-  ws["!cols"] = [colW(6), colW(22), colW(35), colW(20), colW(22), colW(12), colW(14), colW(18)];
-  return ws;
 }
 
 // ── Ana export fonksiyonu ─────────────────────────────────────────
 
-export function exportToExcel(session: SessionState, scenario: Scenario): Blob {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, buildOzetSheet(session, scenario), "Özet");
-  XLSX.utils.book_append_sheet(wb, buildAdimlarSheet(session, scenario), "Adımlar");
-  XLSX.utils.book_append_sheet(wb, buildAksiyonlarSheet(session, scenario), "Aksiyonlar");
+export async function exportToExcel(
+  session: SessionState,
+  scenario: Scenario,
+): Promise<Blob> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "MediSim TR";
+  wb.created = new Date();
 
-  const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  buildOzetSheet(wb, session, scenario);
+  buildAdimlarSheet(wb, session, scenario);
+  buildAksiyonlarSheet(wb, session, scenario);
+
+  const buf = await wb.xlsx.writeBuffer();
   return new Blob([buf], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });

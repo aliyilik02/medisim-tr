@@ -258,7 +258,7 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
     setExportError(null);
     try {
       const { exportToExcel, excelFilename } = await import("@/utils/export/exportExcel");
-      const blob = exportToExcel(session, scenario);
+      const blob = await exportToExcel(session, scenario);
       triggerDownload(blob, excelFilename(session, scenario));
     } catch (err) {
       console.error("[MediSim] Excel export error:", err);
