@@ -3,36 +3,21 @@
     "github": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
       }
     },
-    "playwright": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
-    },
     "context7": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
-    },
-    "shadcn": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "shadcn@canary", "registry:mcp"]
-    },
-    "pubmed": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-pubmed"]
-    },
-    "medcalc": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@medisim/medcalc-mcp"],
-      "note": "Henüz yayınlanmadı — hazır olduğunda aktif edilecek"
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
     }
   }
 }
