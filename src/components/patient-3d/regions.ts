@@ -19,11 +19,14 @@ export interface PatientRegion {
   side: RegionSide;
 }
 
+// Pozisyonlar Sprint B.1 anatomik model (patient-v1.glb) bbox'una göre:
+// x[-0.32, 0.32], y[-0.24, 0.78], z[-0.22, 0.10]. Ön yüzey z≈0.10.
+// Marker'lar küçük z offset ile model yüzeyinin önünde duruyor (z-fight yok).
 export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-front",
     label: "Göğüs Ön (Sternal)",
-    position: [0, 0.85, 0.28],
+    position: [0, 0.55, 0.13],
     placeholderNote:
       "Auskültasyon ve inspeksiyon notu Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -31,7 +34,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-left",
     label: "Sol Göğüs (Kardiyak Alan)",
-    position: [-0.3, 0.6, 0.25],
+    position: [-0.16, 0.4, 0.12],
     placeholderNote:
       "Kardiyak oskültasyon noktaları Sprint A sonrası klinik review'da işaretlenecek.",
     side: "anterior",
@@ -39,7 +42,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-right",
     label: "Sağ Göğüs (Pulmoner Alan)",
-    position: [0.3, 0.6, 0.25],
+    position: [0.16, 0.4, 0.12],
     placeholderNote:
       "Pulmoner alan dinleme notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -47,7 +50,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-upper",
     label: "Üst Karın (Epigastrik)",
-    position: [0, 0.1, 0.26],
+    position: [0, 0.1, 0.13],
     placeholderNote:
       "Epigastrik palpasyon ve oskültasyon bulguları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -55,7 +58,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-lower",
     label: "Alt Karın (Suprapubik)",
-    position: [0, -0.45, 0.24],
+    position: [0, -0.15, 0.12],
     placeholderNote:
       "Suprapubik bölge muayene notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
