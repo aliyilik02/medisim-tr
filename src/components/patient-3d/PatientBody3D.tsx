@@ -4,7 +4,6 @@ import { Html } from "@react-three/drei";
 import { PerspectiveCamera, type Group } from "three";
 import { AnatomicPatientModel } from "./AnatomicPatientModel";
 import { RegionMarker } from "./RegionMarker";
-import { BreathingController } from "./BreathingController";
 import { InspectionPanel } from "./InspectionPanel";
 import type { PatientRegion } from "./regions";
 
@@ -86,8 +85,7 @@ export function PatientBody3D({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={<LoadingFallback />}>
-          <AnatomicPatientModel ref={bodyRef} />
-          <BreathingController chestRef={bodyRef} enabled={breathing} />
+          <AnatomicPatientModel ref={bodyRef} breathing={breathing} />
           {regions.map((region) => (
             <RegionMarker
               key={region.id}
