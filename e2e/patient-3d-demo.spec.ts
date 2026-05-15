@@ -32,4 +32,19 @@ test.describe("Patient 3D demo route", () => {
     const panel = page.getByTestId("patient-3d-inspection-panel");
     await expect(panel).toHaveCount(0);
   });
+
+  test("anatomik glTF asset 200 OK döner", async ({ page }) => {
+    const responsePromise = page.waitForResponse(
+      (r) => r.url().endsWith("/3d/patient-v1.glb") && r.status() === 200,
+      { timeout: 15_000 },
+    );
+    await page.goto("/3d-demo");
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const contentLength = response.headers()["content-length"];
+    if (contentLength) {
+      // 1.07 MB glTF — şüpheli truncate / 0-byte response yakala
+      expect(Number(contentLength)).toBeGreaterThan(500_000);
+    }
+  });
 });

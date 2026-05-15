@@ -34,6 +34,18 @@ vi.mock("@react-three/fiber", () => ({
   }),
 }));
 
+// Drei useGLTF jsdom/happy-dom altında glTF parse edemez (fetch + binary
+// decode). Test ortamında stub'lıyoruz. preload no-op.
+vi.mock("@react-three/drei", () => {
+  const useGLTF = Object.assign(() => ({ scene: { traverse: () => undefined } }), {
+    preload: () => undefined,
+  });
+  return {
+    useGLTF,
+    Html: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  };
+});
+
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 
 describe("PatientBody3D — temel render", () => {
