@@ -13,7 +13,8 @@ test.describe("Patient 3D demo route", () => {
   test("route açılır, başlık görünür", async ({ page }) => {
     await page.goto("/3d-demo");
     await expect(page).toHaveURL(/\/3d-demo/);
-    await expect(page.getByText(/Patient Body 3D/i)).toBeVisible();
+    // Lazy chunk + WebGL init için cömert timeout (paralelde worker yarışı)
+    await expect(page.getByText(/Patient Body 3D/i)).toBeVisible({ timeout: 15_000 });
   });
 
   test("canvas DOM'da render edilir", async ({ page }) => {
