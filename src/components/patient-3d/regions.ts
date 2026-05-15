@@ -21,12 +21,14 @@ export interface PatientRegion {
 
 // Pozisyonlar Sprint B.1 anatomik model (patient-v1.glb) bbox'una göre:
 // x[-0.32, 0.32], y[-0.24, 0.78], z[-0.22, 0.10]. Ön yüzey z≈0.10.
-// Marker'lar küçük z offset ile model yüzeyinin önünde duruyor (z-fight yok).
+// Sprint B.1.1: marker'lar deri yüzeyinin hemen önüne yapışsın (z anterior
+// yüzey + marker yarıçapı ~0.018). Yan göğüsler için yan yüzey daha içeri
+// (z≈0.06), orta hattaki marker'lar full anterior'da.
 export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-front",
     label: "Göğüs Ön (Sternal)",
-    position: [0, 0.55, 0.13],
+    position: [0, 0.55, 0.115],
     placeholderNote:
       "Auskültasyon ve inspeksiyon notu Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -34,7 +36,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-left",
     label: "Sol Göğüs (Kardiyak Alan)",
-    position: [-0.16, 0.4, 0.12],
+    position: [-0.16, 0.4, 0.085],
     placeholderNote:
       "Kardiyak oskültasyon noktaları Sprint A sonrası klinik review'da işaretlenecek.",
     side: "anterior",
@@ -42,7 +44,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-right",
     label: "Sağ Göğüs (Pulmoner Alan)",
-    position: [0.16, 0.4, 0.12],
+    position: [0.16, 0.4, 0.085],
     placeholderNote:
       "Pulmoner alan dinleme notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -50,7 +52,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-upper",
     label: "Üst Karın (Epigastrik)",
-    position: [0, 0.1, 0.13],
+    position: [0, 0.1, 0.115],
     placeholderNote:
       "Epigastrik palpasyon ve oskültasyon bulguları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -58,7 +60,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-lower",
     label: "Alt Karın (Suprapubik)",
-    position: [0, -0.15, 0.12],
+    position: [0, -0.08, 0.095],
     placeholderNote:
       "Suprapubik bölge muayene notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
