@@ -19,16 +19,23 @@ type ShaderRef = {
 // Yazar: MaceLogice (Sketchfab)
 // Bbox: x[-0.32, 0.32], y[-0.24, 0.78], z[-0.22, 0.10]
 // ============================================================
-// Sprint B.1.1: solunum animasyonu shader-tabanlı vertex displacement.
-// smoothstep(0.0, 0.5, y) ağırlık → kalça 0, karın ~%18, göğüs üst %100.
-// Normal yönünde sin(uTime * 2π * rate) × amplitude × weight.
+// Sprint B.1.1 (revize): solunum animasyonu shader-tabanlı vertex
+// displacement. Anatomik üçgen referans noktası:
+//   chest-front [0, 0.55, 0.115] (sternum)
+//   chest-left  [-0.16, 0.4, 0.085] (kardiyak)
+//   chest-right [0.16, 0.4, 0.085] (pulmoner)
+// Bu üçgenin merkezinden 3D mesafe ile falloff — sadece göğüs ön
+// duvarı oscillation yapar; omuz/kol/karın/kalça SABİT (gerçek
+// fizyolojide inspirium omuzu kaldırmaz, paradoksal nefes hariç).
 // CPU vertex manipulation YOK (60fps koruması).
 // ============================================================
 
 const MODEL_URL = "/3d/patient-v1.glb";
 const BREATH_RATE_HZ = 0.25; // ~15/dk solunum
-const BREATH_AMPLITUDE = 0.022; // anterior-posterior eksende max displacement
-                                // (≈ 2 cm fizyolojik torso AP genişlemesi)
+const BREATH_AMPLITUDE = 0.03; // göğüs duvarı AP genişlemesi (~3 cm)
+                               // Sadece üçgen alan etkilendiği için
+                               // önceki uniform 0.022'den biraz arttı
+                               // ama gerçekçi.
 
 useGLTF.preload(MODEL_URL);
 
@@ -67,9 +74,14 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
               .replace(
                 "#include <begin_vertex>",
                 `#include <begin_vertex>
-                 // Sprint B.1.1: solunum displacement
-                 // weight: kalça 0 → karın hafif → göğüs üst tam
-                 float bWeight = smoothstep(0.0, 0.5, position.y);
+                 // Göğüs üçgen merkezi etrafında 3D mesafe falloff.
+                 // World space distance gerekir — vertex local position
+                 // Sketchfab transform chain'i yüzünden chest center
+                 // (scene-space) koordinatlarıyla doğrudan eşleşmiyordu.
+                 vec4 bWorldPos = modelMatrix * vec4(transformed, 1.0);
+                 vec3 bChestCenter = vec3(0.0, 0.45, 0.095);
+                 float bDist = distance(bWorldPos.xyz, bChestCenter);
+                 float bWeight = 1.0 - smoothstep(0.10, 0.25, bDist);
                  float bPhase = sin(uTime * ${(BREATH_RATE_HZ * 2 * Math.PI).toFixed(4)});
                  transformed += normal * bWeight * bPhase * uBreathAmplitude;`,
               );
