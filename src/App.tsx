@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Link, NavLink, useLocation } from "react-router-dom";
 import { HomePage } from "@/pages/HomePage";
 import { ScenarioListPage } from "@/pages/ScenarioListPage";
@@ -7,14 +8,22 @@ import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/cn";
 
+// Sprint A — 3D demo route lazy yüklenir. three/R3F bundle main'i şişirmesin.
+const PatientBody3DDemoPage = lazy(() =>
+  import("@/pages/PatientBody3DDemoPage").then((m) => ({
+    default: m.PatientBody3DDemoPage,
+  }))
+);
+
 export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
+  const is3dDemo = location.pathname.startsWith("/3d-demo");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && <Header />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -23,9 +32,23 @@ export function App() {
           <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
           <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
           <Route path="/gecmis" element={<SessionHistoryPage />} />
+          <Route
+            path="/3d-demo"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                    3D yükleniyor…
+                  </div>
+                }
+              >
+                <PatientBody3DDemoPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && <Footer />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && <Footer />}
     </div>
   );
 }
