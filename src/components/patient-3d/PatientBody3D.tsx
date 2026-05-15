@@ -1,5 +1,6 @@
 import { Suspense, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
+import { Bounds } from "@react-three/drei";
 import type { Group } from "three";
 import { TorsoMesh } from "./TorsoMesh";
 import { RegionMarker } from "./RegionMarker";
@@ -22,7 +23,8 @@ export function PatientBody3D({
   className,
 }: Props) {
   const [selected, setSelected] = useState<PatientRegion | null>(null);
-  const torsoRef = useRef<Group>(null);
+  const chestRef = useRef<Group>(null);
+  const abdomenRef = useRef<Group>(null);
 
   const handleSelect = (region: PatientRegion) => {
     setSelected(region);
@@ -33,7 +35,7 @@ export function PatientBody3D({
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-3d-canvas"
-        camera={{ position: [0, 0.2, 2.6], fov: 38 }}
+        camera={{ position: [0, 0.3, 4.5], fov: 32 }}
         frameloop={breathing ? "always" : "demand"}
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
@@ -41,7 +43,7 @@ export function PatientBody3D({
       >
         <color attach="background" args={["#0a0a0c"]} />
 
-        <ambientLight intensity={0.4} />
+        <ambientLight intensity={0.45} />
         <directionalLight
           position={[2, 3, 4]}
           intensity={0.9}
@@ -53,18 +55,25 @@ export function PatientBody3D({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={null}>
-          <group>
-            <TorsoMesh ref={torsoRef} />
-            <BreathingController targetRef={torsoRef} enabled={breathing} />
-            {regions.map((region) => (
-              <RegionMarker
-                key={region.id}
-                region={region}
-                selected={selected?.id === region.id}
-                onSelect={handleSelect}
-              />
-            ))}
-          </group>
+          {/* Bounds: torso bbox'una göre kamera auto-fit. Markerlar Bounds
+              dışında render ediliyor ki bbox onları kapsamasın ama transform
+              torso ile ortak world space'te kaldığı için doğru yerde dururlar. */}
+          <Bounds fit clip margin={1.15}>
+            <TorsoMesh chestRef={chestRef} abdomenRef={abdomenRef} />
+          </Bounds>
+          <BreathingController
+            chestRef={chestRef}
+            abdomenRef={abdomenRef}
+            enabled={breathing}
+          />
+          {regions.map((region) => (
+            <RegionMarker
+              key={region.id}
+              region={region}
+              selected={selected?.id === region.id}
+              onSelect={handleSelect}
+            />
+          ))}
         </Suspense>
       </Canvas>
 

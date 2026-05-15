@@ -1,51 +1,108 @@
-import { forwardRef } from "react";
+import type { RefObject } from "react";
+import { RoundedBox } from "@react-three/drei";
 import type { Group } from "three";
 
-// Procedural torso: göğüs (sphere) + karın (cylinder) + omuz uçları (sphere).
-// CapsuleGeometry kullanılmıyor — three.js sürümleri arası uyumluluk için
-// sadece Sphere + Cylinder kombinasyonu. Toplam vertex ~ 1.5k.
+// ============================================================
+// Procedural torso — anatomik orantı (Sprint A.1)
+// ============================================================
+// Parçalar: kafa + boyun + göğüs (V-şekli) + karın + omuz/deltoid +
+// üst kol stub'ları. Tüm parçalar aynı meshStandardMaterial reçetesi.
+// Üst kol'lar görsel — raycast={() => null} ile marker tıklamaya
+// karışmıyor. Yüz/saç/el/ayak detayı yok (out of scope).
+// chestRef ve abdomenRef breathing animation için ayrı pivot'lar.
+// ============================================================
 
-export const TorsoMesh = forwardRef<Group>((_props, ref) => {
-  const skinColor = "#d4a487";
+const SKIN = "#d4a896";
+const ROUGHNESS = 0.6;
+const METALNESS = 0;
+
+interface Props {
+  chestRef: RefObject<Group>;
+  abdomenRef: RefObject<Group>;
+}
+
+export function TorsoMesh({ chestRef, abdomenRef }: Props) {
   return (
-    <group ref={ref}>
-      {/* Göğüs kafesi — hafif yatay elipsoid */}
-      <mesh position={[0, 0.55, 0]} scale={[0.95, 0.85, 0.55]} castShadow receiveShadow>
-        <sphereGeometry args={[0.55, 24, 16]} />
-        <meshStandardMaterial color={skinColor} roughness={0.85} metalness={0.05} />
-      </mesh>
+    <group>
+      {/* Göğüs bloğu — kafa, boyun, göğüs, omuzlar, kollar (breathing: göğüs > karın) */}
+      <group ref={chestRef}>
+        {/* Kafa */}
+        <mesh position={[0, 1.55, 0]} castShadow>
+          <sphereGeometry args={[0.3, 32, 24]} />
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </mesh>
 
-      {/* Karın — sphere → cylinder geçişi için hafif daraltılmış silindir */}
-      <mesh position={[0, -0.05, 0]} scale={[0.95, 1, 0.55]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.48, 0.42, 0.85, 24, 1, false]} />
-        <meshStandardMaterial color={skinColor} roughness={0.85} metalness={0.05} />
-      </mesh>
+        {/* Boyun */}
+        <mesh position={[0, 1.22, 0]} castShadow>
+          <cylinderGeometry args={[0.13, 0.16, 0.3, 20]} />
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </mesh>
 
-      {/* Alt karın yuvarlatma */}
-      <mesh position={[0, -0.55, 0]} scale={[0.85, 0.5, 0.5]} castShadow receiveShadow>
-        <sphereGeometry args={[0.5, 20, 14]} />
-        <meshStandardMaterial color={skinColor} roughness={0.85} metalness={0.05} />
-      </mesh>
+        {/* Göğüs — RoundedBox, V-şekli üst kısmı */}
+        <RoundedBox
+          args={[1.0, 0.7, 0.5]}
+          radius={0.12}
+          smoothness={4}
+          position={[0, 0.7, 0]}
+          castShadow
+        >
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </RoundedBox>
 
-      {/* Sol omuz */}
-      <mesh position={[-0.62, 0.78, 0]} castShadow receiveShadow>
-        <sphereGeometry args={[0.22, 16, 12]} />
-        <meshStandardMaterial color={skinColor} roughness={0.85} metalness={0.05} />
-      </mesh>
+        {/* Sol deltoid */}
+        <mesh position={[-0.55, 0.95, 0]} castShadow>
+          <sphereGeometry args={[0.22, 20, 16]} />
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </mesh>
 
-      {/* Sağ omuz */}
-      <mesh position={[0.62, 0.78, 0]} castShadow receiveShadow>
-        <sphereGeometry args={[0.22, 16, 12]} />
-        <meshStandardMaterial color={skinColor} roughness={0.85} metalness={0.05} />
-      </mesh>
+        {/* Sağ deltoid */}
+        <mesh position={[0.55, 0.95, 0]} castShadow>
+          <sphereGeometry args={[0.22, 20, 16]} />
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </mesh>
 
-      {/* Boyun tabanı (cylinder, kısa) */}
-      <mesh position={[0, 1.05, 0]} castShadow>
-        <cylinderGeometry args={[0.16, 0.2, 0.25, 16]} />
-        <meshStandardMaterial color={skinColor} roughness={0.85} metalness={0.05} />
-      </mesh>
+        {/* Sol üst kol — omuzdan 25° dışa-aşağı (raycast off) */}
+        <group position={[-0.55, 0.95, 0]} rotation={[0, 0, 0.42]}>
+          <mesh position={[0, -0.4, 0]} castShadow raycast={() => null}>
+            <cylinderGeometry args={[0.14, 0.115, 0.75, 18]} />
+            <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+          </mesh>
+        </group>
+
+        {/* Sağ üst kol */}
+        <group position={[0.55, 0.95, 0]} rotation={[0, 0, -0.42]}>
+          <mesh position={[0, -0.4, 0]} castShadow raycast={() => null}>
+            <cylinderGeometry args={[0.14, 0.115, 0.75, 18]} />
+            <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* Karın bloğu — kostal geçiş + bel + alt karın yuvarlatma */}
+      <group ref={abdomenRef}>
+        {/* Göğüs-karın geçişi (kostal kemer) */}
+        <mesh position={[0, 0.3, 0]} scale={[0.95, 1, 0.55]} castShadow>
+          <cylinderGeometry args={[0.46, 0.42, 0.2, 24]} />
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </mesh>
+
+        {/* Bel — RoundedBox, V-şeklinin alt darlığı */}
+        <RoundedBox
+          args={[0.78, 0.65, 0.46]}
+          radius={0.1}
+          smoothness={4}
+          position={[0, -0.15, 0]}
+          castShadow
+        >
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </RoundedBox>
+
+        {/* Alt karın yuvarlatma (kalça başlangıcı) */}
+        <mesh position={[0, -0.6, 0]} scale={[0.85, 0.55, 0.5]} castShadow>
+          <sphereGeometry args={[0.46, 24, 16]} />
+          <meshStandardMaterial color={SKIN} roughness={ROUGHNESS} metalness={METALNESS} />
+        </mesh>
+      </group>
     </group>
   );
-});
-
-TorsoMesh.displayName = "TorsoMesh";
+}

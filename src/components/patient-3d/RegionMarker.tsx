@@ -39,7 +39,7 @@ export function RegionMarker({ region, selected, onSelect }: Props) {
       onPointerOver={handleEnter}
       onPointerOut={handleLeave}
     >
-      <sphereGeometry args={[0.05, 16, 12]} />
+      <sphereGeometry args={[0.035, 16, 12]} />
       <meshStandardMaterial
         color={selected ? activeColor : baseColor}
         emissive={emissive}
