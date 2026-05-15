@@ -1,7 +1,8 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
+import { Html } from "@react-three/drei";
 import { PerspectiveCamera, type Group } from "three";
-import { TorsoMesh } from "./TorsoMesh";
+import { AnatomicPatientModel } from "./AnatomicPatientModel";
 import { RegionMarker } from "./RegionMarker";
 import { BreathingController } from "./BreathingController";
 import { InspectionPanel } from "./InspectionPanel";
@@ -16,13 +17,14 @@ interface Props {
 }
 
 /** Canvas içinde default kamerayı manuel pozisyon + fov ile zorla.
-    Drei <PerspectiveCamera makeDefault> + Suspense + lazy chunk kombinasyonu
-    bazen yarış yapıyor; useEffect senkron pattern garantili. */
+    Drei makeDefault + Suspense + lazy chunk kombinasyonu yarış yapıyor;
+    useThree+useEffect pattern garantili. Model bbox y[-0.24, 0.78],
+    center y=0.27 → camera y=0.27 lookAt aynı. */
 function CameraRig({ position, fov }: { position: [number, number, number]; fov: number }) {
   const { camera, size } = useThree();
   useEffect(() => {
     camera.position.set(...position);
-    camera.lookAt(0, 0.5, 0);
+    camera.lookAt(0, 0.27, 0);
     if (camera instanceof PerspectiveCamera) {
       camera.fov = fov;
       camera.near = 0.1;
@@ -34,6 +36,17 @@ function CameraRig({ position, fov }: { position: [number, number, number]; fov:
   return null;
 }
 
+function LoadingFallback() {
+  return (
+    <Html center>
+      <div className="flex items-center gap-3 text-ink-300 font-mono text-[11px] uppercase tracking-[0.15em]">
+        <div className="w-3 h-3 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
+        Hasta yükleniyor…
+      </div>
+    </Html>
+  );
+}
+
 export function PatientBody3D({
   regions,
   breathing = true,
@@ -41,8 +54,7 @@ export function PatientBody3D({
   className,
 }: Props) {
   const [selected, setSelected] = useState<PatientRegion | null>(null);
-  const chestRef = useRef<Group>(null);
-  const abdomenRef = useRef<Group>(null);
+  const bodyRef = useRef<Group>(null);
 
   const handleSelect = (region: PatientRegion) => {
     setSelected(region);
@@ -59,12 +71,13 @@ export function PatientBody3D({
         shadows
       >
         <color attach="background" args={["#0a0a0c"]} />
-        <CameraRig position={[0, 0.5, 7.0]} fov={32} />
+        {/* Model height ~1.02 birim, %65 hedef → view 1.57, fov 32 → dist ≈ 2.73 */}
+        <CameraRig position={[0, 0.27, 2.73]} fov={32} />
 
-        <ambientLight intensity={0.45} />
+        <ambientLight intensity={0.5} />
         <directionalLight
           position={[2, 3, 4]}
-          intensity={0.9}
+          intensity={0.85}
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
@@ -72,13 +85,9 @@ export function PatientBody3D({
         <directionalLight position={[-2, 1, 1]} intensity={0.3} color="#7cb342" />
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
-        <Suspense fallback={null}>
-          <TorsoMesh chestRef={chestRef} abdomenRef={abdomenRef} />
-          <BreathingController
-            chestRef={chestRef}
-            abdomenRef={abdomenRef}
-            enabled={breathing}
-          />
+        <Suspense fallback={<LoadingFallback />}>
+          <AnatomicPatientModel ref={bodyRef} />
+          <BreathingController chestRef={bodyRef} enabled={breathing} />
           {regions.map((region) => (
             <RegionMarker
               key={region.id}
