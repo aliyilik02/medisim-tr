@@ -8,6 +8,8 @@
 // kapsamında YOK.
 // ============================================================
 
+import type { ProcedureKind } from "./procedures/types";
+
 export type RegionSide = "anterior" | "lateral" | "posterior";
 
 export interface PatientRegion {
@@ -17,6 +19,8 @@ export interface PatientRegion {
   position: [number, number, number];
   placeholderNote: string;
   side: RegionSide;
+  /** Sprint B.2: Bu bölgede tetiklenebilen 3D prosedürler. */
+  availableProcedures?: ProcedureKind[];
 }
 
 // Pozisyonlar Sprint B.1 anatomik model (patient-v1.glb) bbox'una göre:
@@ -32,6 +36,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     placeholderNote:
       "Auskültasyon ve inspeksiyon notu Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
+    availableProcedures: ["stethoscope"],
   },
   {
     id: "chest-left",
@@ -40,6 +45,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     placeholderNote:
       "Kardiyak oskültasyon noktaları Sprint A sonrası klinik review'da işaretlenecek.",
     side: "anterior",
+    availableProcedures: ["stethoscope"],
   },
   {
     id: "chest-right",
@@ -48,6 +54,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     placeholderNote:
       "Pulmoner alan dinleme notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
+    availableProcedures: ["stethoscope"],
   },
   {
     id: "abdomen-upper",

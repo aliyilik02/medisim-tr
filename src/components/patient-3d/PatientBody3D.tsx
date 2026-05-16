@@ -5,13 +5,18 @@ import { PerspectiveCamera, type Group } from "three";
 import { AnatomicPatientModel } from "./AnatomicPatientModel";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
+import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
+import type { ProcedureContext, ProcedureKind } from "./procedures/types";
 import type { PatientRegion } from "./regions";
+import type { ActionRef } from "@/engine/types";
 
 interface Props {
   regions: PatientRegion[];
   breathing?: boolean;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
+  /** Sprint B.2.1: Prosedür animasyonu tamamlandığında engine'e iletilecek ActionRef. */
+  onProcedureComplete?: (action: ActionRef) => void;
   className?: string;
 }
 
@@ -46,13 +51,19 @@ function LoadingFallback() {
   );
 }
 
+// Prosedür tamamlandıktan sonra overlay sahnede kaç ms daha kalsın
+// (kullanıcı sonucu görsün, ses cue çalsın). Sonra unmount.
+const PROCEDURE_REST_MS = 800;
+
 export function PatientBody3D({
   regions,
   breathing = true,
   onRegionSelect,
+  onProcedureComplete,
   className,
 }: Props) {
   const [selected, setSelected] = useState<PatientRegion | null>(null);
+  const [activeProcedure, setActiveProcedure] = useState<ProcedureContext | null>(null);
   const bodyRef = useRef<Group>(null);
 
   const handleSelect = (region: PatientRegion) => {
@@ -60,11 +71,30 @@ export function PatientBody3D({
     onRegionSelect?.(region);
   };
 
+  const handleStartProcedure = (kind: ProcedureKind, region: PatientRegion) => {
+    setSelected(null);
+    setActiveProcedure({
+      kind,
+      regionId: region.id,
+      targetPosition: region.position,
+    });
+  };
+
+  const handleProcedureComplete = (context: ProcedureContext) => {
+    const action: ActionRef = {
+      type: "procedure",
+      target_id: context.kind,
+      site: context.regionId,
+    };
+    onProcedureComplete?.(action);
+    window.setTimeout(() => setActiveProcedure(null), PROCEDURE_REST_MS);
+  };
+
   return (
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-3d-canvas"
-        frameloop={breathing ? "always" : "demand"}
+        frameloop={breathing || activeProcedure ? "always" : "demand"}
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         shadows
@@ -94,10 +124,15 @@ export function PatientBody3D({
               onSelect={handleSelect}
             />
           ))}
+          <ProcedureOverlay active={activeProcedure} onComplete={handleProcedureComplete} />
         </Suspense>
       </Canvas>
 
-      <InspectionPanel region={selected} onClose={() => setSelected(null)} />
+      <InspectionPanel
+        region={selected}
+        onClose={() => setSelected(null)}
+        onStartProcedure={handleStartProcedure}
+      />
     </div>
   );
 }
