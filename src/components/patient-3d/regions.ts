@@ -70,7 +70,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-upper",
     label: "Üst Karın (Epigastrik)",
-    position: [0, 0.38, 0.095],
+    position: [0, 0.34, 0.095],
     placeholderNote:
       "Epigastrik palpasyon ve oskültasyon bulguları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
