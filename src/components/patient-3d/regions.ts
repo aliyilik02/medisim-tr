@@ -23,19 +23,18 @@ export interface PatientRegion {
   availableProcedures?: ProcedureKind[];
 }
 
-// Pozisyonlar Sprint B.1 anatomik model (patient-v1.glb) bbox'una göre:
-// x[-0.32, 0.32], y[-0.24, 0.78], z[-0.22, 0.10]. Ön yüzey z≈0.10.
-// Sprint B.1.1: marker'lar deri yüzeyinin hemen önüne yapışsın (z anterior
-// yüzey + marker yarıçapı ~0.018). Yan göğüsler için yan yüzey daha içeri
-// (z≈0.06), orta hattaki marker'lar full anterior'da.
-// Sprint B.2.2: face-mouth region eklendi (oksijen maskesi için).
-//   Yüz/ağız yaklaşık [0, 0.71, 0.10]; gerçek anatomik nokta klinik
-//   review sonrası güncellenecek.
+// Sprint B.2.3 koordinat alanı (patient-v2.glb wrapper-transformed):
+// AnatomicPatientModel scale 0.107 + y+0.49 uyguluyor → world bbox
+// x[-0.20, 0.20], y[-0.24, 0.78], z[-0.08, 0.09]. v2 tam beden,
+// proporsiyonlar v1 torso'dan farklı; aşağıdaki koordinatlar v2
+// anatomisine göre yeniden ayarlandı.
+// Hâlâ PLACEHOLDER — klinik review sonrası gerçek anatomik landmark'lara
+// göre fine-tune edilecek.
 export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "face-mouth",
     label: "Yüz / Ağız",
-    position: [0, 0.71, 0.10],
+    position: [0, 0.68, 0.090],
     placeholderNote:
       "Hava yolu değerlendirmesi ve maske takma noktası. Klinik review sonrası genişletilecek.",
     side: "anterior",
@@ -44,7 +43,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-front",
     label: "Göğüs Ön (Sternal)",
-    position: [0, 0.55, 0.115],
+    position: [0, 0.50, 0.115],
     placeholderNote:
       "Auskültasyon ve inspeksiyon notu Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -53,7 +52,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-left",
     label: "Sol Göğüs (Kardiyak Alan)",
-    position: [-0.16, 0.4, 0.085],
+    position: [-0.07, 0.44, 0.110],
     placeholderNote:
       "Kardiyak oskültasyon noktaları Sprint A sonrası klinik review'da işaretlenecek.",
     side: "anterior",
@@ -62,7 +61,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-right",
     label: "Sağ Göğüs (Pulmoner Alan)",
-    position: [0.16, 0.4, 0.085],
+    position: [0.07, 0.44, 0.110],
     placeholderNote:
       "Pulmoner alan dinleme notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -71,7 +70,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-upper",
     label: "Üst Karın (Epigastrik)",
-    position: [0, 0.1, 0.115],
+    position: [0, 0.38, 0.095],
     placeholderNote:
       "Epigastrik palpasyon ve oskültasyon bulguları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -79,7 +78,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-lower",
     label: "Alt Karın (Suprapubik)",
-    position: [0, -0.08, 0.095],
+    position: [0, 0.22, 0.095],
     placeholderNote:
       "Suprapubik bölge muayene notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
