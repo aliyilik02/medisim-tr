@@ -28,7 +28,19 @@ export interface PatientRegion {
 // Sprint B.1.1: marker'lar deri yüzeyinin hemen önüne yapışsın (z anterior
 // yüzey + marker yarıçapı ~0.018). Yan göğüsler için yan yüzey daha içeri
 // (z≈0.06), orta hattaki marker'lar full anterior'da.
+// Sprint B.2.2: face-mouth region eklendi (oksijen maskesi için).
+//   Yüz/ağız yaklaşık [0, 0.71, 0.10]; gerçek anatomik nokta klinik
+//   review sonrası güncellenecek.
 export const DEFAULT_REGIONS: PatientRegion[] = [
+  {
+    id: "face-mouth",
+    label: "Yüz / Ağız",
+    position: [0, 0.71, 0.10],
+    placeholderNote:
+      "Hava yolu değerlendirmesi ve maske takma noktası. Klinik review sonrası genişletilecek.",
+    side: "anterior",
+    availableProcedures: ["oxygen_mask"],
+  },
   {
     id: "chest-front",
     label: "Göğüs Ön (Sternal)",

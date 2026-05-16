@@ -92,10 +92,10 @@ describe("InspectionPanel — bilgi kartı", () => {
 });
 
 describe("regions data integrity", () => {
-  test("5 placeholder bölge tanımlı, id'ler unique", () => {
-    expect(DEFAULT_REGIONS).toHaveLength(5);
+  test("6 placeholder bölge tanımlı, id'ler unique", () => {
+    expect(DEFAULT_REGIONS).toHaveLength(6);
     const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
-    expect(ids.size).toBe(5);
+    expect(ids.size).toBe(6);
   });
 
   test("her bölgenin label, position, placeholderNote, side alanları var", () => {
@@ -103,7 +103,7 @@ describe("regions data integrity", () => {
       expect(region.id).toBeTruthy();
       expect(region.label).toBeTruthy();
       expect(region.position).toHaveLength(3);
-      expect(region.placeholderNote).toMatch(/Sprint A sonrası klinik review/);
+      expect(region.placeholderNote).toMatch(/klinik review/i);
       expect(["anterior", "lateral", "posterior"]).toContain(region.side);
     }
   });

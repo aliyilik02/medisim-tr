@@ -32,6 +32,18 @@ vi.mock("@/components/patient-3d/procedures/StethoscopeProcedure", () => ({
   ),
 }));
 
+vi.mock("@/components/patient-3d/procedures/OxygenMaskProcedure", () => ({
+  OxygenMaskProcedure: (props: {
+    targetPosition: [number, number, number];
+    onComplete: () => void;
+  }) => (
+    <div
+      data-testid="oxygen-mask-procedure-mock"
+      data-target={props.targetPosition.join(",")}
+    />
+  ),
+}));
+
 import { ProcedureOverlay } from "@/components/patient-3d/procedures/ProcedureOverlay";
 
 describe("InspectionPanel — prosedür butonları", () => {
@@ -100,13 +112,29 @@ describe("ProcedureOverlay — dispatcher", () => {
     expect(mock.dataset.target).toBe("0,0.55,0.115");
   });
 
-  test("active.kind switch'te yoksa null döner (B.2.1: oxygen_mask henüz yok)", () => {
-    const { container } = render(
+  test("active.kind=oxygen_mask ise OxygenMaskProcedure mount edilir", () => {
+    render(
       <ProcedureOverlay
         active={{
           kind: "oxygen_mask",
           regionId: "face-mouth",
           targetPosition: [0, 0.71, 0.1],
+        }}
+        onComplete={() => undefined}
+      />,
+    );
+    const mock = screen.getByTestId("oxygen-mask-procedure-mock");
+    expect(mock).toBeInTheDocument();
+    expect(mock.dataset.target).toBe("0,0.71,0.1");
+  });
+
+  test("active.kind switch'te yoksa null döner (B.2.3 defibrillator henüz yok)", () => {
+    const { container } = render(
+      <ProcedureOverlay
+        active={{
+          kind: "defibrillator",
+          regionId: "chest-front",
+          targetPosition: [0, 0.55, 0.115],
         }}
         onComplete={() => undefined}
       />,
@@ -131,6 +159,20 @@ describe("regions data integrity — prosedür eşlemesi", () => {
       const region = DEFAULT_REGIONS.find((r) => r.id === id);
       expect(region, `region ${id} bulunamadı`).toBeDefined();
       expect(region!.availableProcedures ?? []).not.toContain("stethoscope");
+    }
+  });
+
+  test("face-mouth bölgesi oxygen_mask destekler", () => {
+    const region = DEFAULT_REGIONS.find((r) => r.id === "face-mouth");
+    expect(region, "face-mouth region bulunamadı").toBeDefined();
+    expect(region!.availableProcedures ?? []).toContain("oxygen_mask");
+  });
+
+  test("chest-* bölgelerinde oxygen_mask yok (yanlış yere bağlanmasın)", () => {
+    const chestIds = ["chest-front", "chest-left", "chest-right"];
+    for (const id of chestIds) {
+      const region = DEFAULT_REGIONS.find((r) => r.id === id);
+      expect(region!.availableProcedures ?? []).not.toContain("oxygen_mask");
     }
   });
 });

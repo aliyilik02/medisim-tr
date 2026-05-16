@@ -1,5 +1,6 @@
 import type { ProcedureContext } from "./types";
 import { StethoscopeProcedure } from "./StethoscopeProcedure";
+import { OxygenMaskProcedure } from "./OxygenMaskProcedure";
 
 // ============================================================
 // ProcedureOverlay — generic prosedür dispatcher (Sprint B.2.1)
@@ -30,7 +31,13 @@ export function ProcedureOverlay({ active, onComplete }: Props) {
           onComplete={handleComplete}
         />
       );
-    // B.2.2: case "oxygen_mask"
+    case "oxygen_mask":
+      return (
+        <OxygenMaskProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
     // B.2.3: case "defibrillator"
     default:
       return null;
