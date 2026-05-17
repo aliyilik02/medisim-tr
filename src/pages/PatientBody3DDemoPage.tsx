@@ -1,9 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Waves } from "lucide-react";
+import { ChevronLeft, Waves, Droplet } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
+import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import type { ActionRef } from "@/engine/types";
+
+const SKIN_TINT_CYCLE: SkinTint[] = ["normal", "cyanosis", "jaundice", "pallor"];
+const SKIN_TINT_LABEL: Record<SkinTint, string> = {
+  normal: "Normal",
+  cyanosis: "Siyanoz",
+  jaundice: "İkter",
+  pallor: "Solgun",
+};
 
 // Sprint A — Standalone 3D demo. Senaryo motoruna bağlı değil.
 // Sadece doğrudan URL ile erişilir: /3d-demo
@@ -17,7 +26,13 @@ interface ProcedureLogEntry {
 
 export function PatientBody3DDemoPage() {
   const [breathing, setBreathing] = useState(true);
+  const [skinTint, setSkinTint] = useState<SkinTint>("normal");
   const [log, setLog] = useState<ProcedureLogEntry[]>([]);
+
+  const cycleSkinTint = () => {
+    const idx = SKIN_TINT_CYCLE.indexOf(skinTint);
+    setSkinTint(SKIN_TINT_CYCLE[(idx + 1) % SKIN_TINT_CYCLE.length]);
+  };
 
   const handleProcedureComplete = (action: ActionRef) => {
     const entry: ProcedureLogEntry = {
@@ -50,6 +65,15 @@ export function PatientBody3DDemoPage() {
         </div>
         <button
           type="button"
+          onClick={cycleSkinTint}
+          className="px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] border bg-ink-900 border-ink-700 text-ink-300 hover:text-ink-100 hover:border-ink-500 transition flex items-center gap-2"
+          title="Cilt tonu cycle (normal → siyanoz → ikter → solgun)"
+        >
+          <Droplet className="w-3.5 h-3.5" />
+          {SKIN_TINT_LABEL[skinTint]}
+        </button>
+        <button
+          type="button"
           onClick={() => setBreathing((b) => !b)}
           className={`px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] border transition flex items-center gap-2 ${
             breathing
@@ -67,6 +91,7 @@ export function PatientBody3DDemoPage() {
         <PatientBody3D
           regions={DEFAULT_REGIONS}
           breathing={breathing}
+          skinTint={skinTint}
           onProcedureComplete={handleProcedureComplete}
         />
 

@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { PerspectiveCamera, type Group } from "three";
-import { AnatomicPatientModel } from "./AnatomicPatientModel";
+import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
 import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
@@ -13,6 +13,8 @@ import type { ActionRef } from "@/engine/types";
 interface Props {
   regions: PatientRegion[];
   breathing?: boolean;
+  /** Sprint B.4.1: Cilt tonu — vital değişimine göre senaryo motorundan gelir. */
+  skinTint?: SkinTint;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
   /** Sprint B.2.1: Prosedür animasyonu tamamlandığında engine'e iletilecek ActionRef. */
@@ -58,6 +60,7 @@ const PROCEDURE_REST_MS = 800;
 export function PatientBody3D({
   regions,
   breathing = true,
+  skinTint = "normal",
   onRegionSelect,
   onProcedureComplete,
   className,
@@ -115,7 +118,7 @@ export function PatientBody3D({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={<LoadingFallback />}>
-          <AnatomicPatientModel ref={bodyRef} breathing={breathing} />
+          <AnatomicPatientModel ref={bodyRef} breathing={breathing} skinTint={skinTint} />
           {regions.map((region) => (
             <RegionMarker
               key={region.id}
