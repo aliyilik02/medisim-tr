@@ -88,10 +88,12 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
                  // total vücutun küçük bir parçası, geniş radius omuz/karın/
                  // boyun'u da kapsıyordu ("tüm üst vücut şişiyor" bug).
                  vec4 bWorldPos = modelMatrix * vec4(transformed, 1.0);
-                 vec3 bChestCenter = vec3(0.0, 0.48, 0.090);
+                 // Chest center: anatomik 4. ICS / nipple hizası (Vitruvian
+                 // 0.75 oranı → world y=0.523). Falloff göğüs kafesi sınırları
+                 // (yaklaşık ±5 cm) içinde. Referans:
+                 // memory/medisim_anatomik_landmark.md
+                 vec3 bChestCenter = vec3(0.0, 0.523, 0.085);
                  float bDist = distance(bWorldPos.xyz, bChestCenter);
-                 // Sıkı falloff: 0.03'e kadar tam etki, 0.07'de sıfır.
-                 // Sadece göğüs lokalize — üst karın/omuz etki almaz.
                  float bWeight = 1.0 - smoothstep(0.03, 0.07, bDist);
                  float bPhase = sin(uTime * ${(BREATH_RATE_HZ * 2 * Math.PI).toFixed(4)});
                  transformed += normal * bWeight * bPhase * uBreathAmplitude;`,

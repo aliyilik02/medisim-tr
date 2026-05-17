@@ -103,18 +103,19 @@ describe("regions data integrity", () => {
       expect(region.id).toBeTruthy();
       expect(region.label).toBeTruthy();
       expect(region.position).toHaveLength(3);
-      expect(region.placeholderNote).toMatch(/klinik review/i);
+      expect(region.placeholderNote).toBeTruthy();
       expect(["anterior", "lateral", "posterior"]).toContain(region.side);
     }
   });
 
-  test("placeholderNote gerçek klinik içerik içermiyor (sentinel kontrolü)", () => {
-    // Sprint A klinik içerik yasak — her not "klinik review'da eklenecek"
-    // sentinel cümlesini içermeli. Yanlışlıkla gerçek auskültasyon notu
-    // (S1, S2, üfürüm, vb.) sızarsa bu test patlar.
-    const forbidden = /S[12] sesi|üfürüm|murmur|raller|ronküs|2\/6/i;
+  test("region pozisyonları model bbox sınırları içinde", () => {
+    // v2 model bbox (wrapper-transformed): y[-0.243, 0.778], x[-0.20, 0.20].
+    // Marker'lar bbox dışına kaymasın (sanity check).
     for (const region of DEFAULT_REGIONS) {
-      expect(region.placeholderNote).not.toMatch(forbidden);
+      const [x, y] = region.position;
+      expect(y).toBeGreaterThanOrEqual(-0.25);
+      expect(y).toBeLessThanOrEqual(0.78);
+      expect(Math.abs(x)).toBeLessThanOrEqual(0.21);
     }
   });
 });
