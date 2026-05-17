@@ -9,6 +9,7 @@ import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
 import type { ProcedureContext, ProcedureKind } from "./procedures/types";
 import type { PatientRegion } from "./regions";
 import type { ActionRef } from "@/engine/types";
+import { playAuscultation, stopAuscultation } from "./auscultationAudio";
 
 interface Props {
   regions: PatientRegion[];
@@ -90,8 +91,22 @@ export function PatientBody3D({
       site: context.regionId,
     };
     onProcedureComplete?.(action);
+
+    // Sprint B.4.7: Stetoskop için region'un ses ID'sini çal (5 saniye).
+    if (context.kind === "stethoscope") {
+      const region = regions.find((r) => r.id === context.regionId);
+      if (region?.auscultationSoundId) {
+        playAuscultation(region.auscultationSoundId, 5000);
+      }
+    }
+
     window.setTimeout(() => setActiveProcedure(null), PROCEDURE_REST_MS);
   };
+
+  // Component unmount'ta çalan sesi durdur (memory leak önle).
+  useEffect(() => {
+    return () => stopAuscultation();
+  }, []);
 
   return (
     <div className={`relative w-full h-full ${className ?? ""}`}>

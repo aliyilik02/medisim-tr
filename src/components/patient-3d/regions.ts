@@ -20,6 +20,12 @@ export interface PatientRegion {
   side: RegionSide;
   /** Sprint B.2: Bu bölgede tetiklenebilen 3D prosedürler. */
   availableProcedures?: ProcedureKind[];
+  /**
+   * Sprint B.4.7: Stetoskop ile dinleme tetiklendiğinde çalınacak ses ID'si
+   * (public/sounds/auscultation/{auscultationSoundId}.ogg). Senaryo motoru
+   * ileride patolojiye göre override edebilir.
+   */
+  auscultationSoundId?: string;
 }
 
 export const DEFAULT_REGIONS: PatientRegion[] = [
@@ -43,6 +49,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
       "Sternum orta hat; Erb noktası (3. ICS sol sternal kenar) S1+S2 dinleme.",
     side: "anterior",
     availableProcedures: ["stethoscope"],
+    auscultationSoundId: "heart_normal",
   },
   {
     // Mitral / Apex — 5. ICS sol midclavicular
@@ -54,6 +61,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
       "Mitral oskültasyon: 5. interkostal aralık, sol midklavikular hat. S1 burada en güçlü.",
     side: "anterior",
     availableProcedures: ["stethoscope"],
+    auscultationSoundId: "heart_61bpm",
   },
   {
     // Aortic — 2. ICS sağ sternal kenar
@@ -65,6 +73,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
       "Aortik oskültasyon: 2. interkostal aralık, sağ sternal kenar. Aort kapağı, aort darlığı üfürümü.",
     side: "anterior",
     availableProcedures: ["stethoscope"],
+    auscultationSoundId: "lung_crackles",
   },
   {
     // Epigastrium — xiphoid + umbilicus arası, 8-head canon 0.66 → y = 0.431
