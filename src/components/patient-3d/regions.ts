@@ -34,7 +34,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "face-mouth",
     label: "Yüz / Ağız",
-    position: [0, 0.68, 0.090],
+    position: [0, 0.67, 0.090],
     placeholderNote:
       "Hava yolu değerlendirmesi ve maske takma noktası. Klinik review sonrası genişletilecek.",
     side: "anterior",
@@ -52,7 +52,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-left",
     label: "Sol Göğüs (Kardiyak Alan)",
-    position: [-0.07, 0.44, 0.110],
+    position: [-0.06, 0.51, 0.110],
     placeholderNote:
       "Kardiyak oskültasyon noktaları Sprint A sonrası klinik review'da işaretlenecek.",
     side: "anterior",
@@ -61,7 +61,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "chest-right",
     label: "Sağ Göğüs (Pulmoner Alan)",
-    position: [0.07, 0.44, 0.110],
+    position: [0.06, 0.51, 0.110],
     placeholderNote:
       "Pulmoner alan dinleme notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",
@@ -78,7 +78,7 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
   {
     id: "abdomen-lower",
     label: "Alt Karın (Suprapubik)",
-    position: [0, 0.22, 0.095],
+    position: [0, 0.27, 0.095],
     placeholderNote:
       "Suprapubik bölge muayene notları Sprint A sonrası klinik review'da eklenecek.",
     side: "anterior",

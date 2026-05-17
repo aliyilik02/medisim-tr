@@ -37,10 +37,10 @@ const MODEL_URL = "/3d/patient-v2.glb";
 const MODEL_SCALE = 0.107;           // 9.53 birim → 1.02 birim (v1 ile aynı)
 const MODEL_Y_OFFSET = 0.49;         // bbox center'ı world y=0.27'ye çek (v1 center)
 const BREATH_RATE_HZ = 0.25; // ~15/dk solunum
-const BREATH_AMPLITUDE_WORLD = 0.015; // göğüs duvarı AP genişlemesi world space (~1.5 cm)
-                                       // Sprint B.2.3 v2 tam beden için ayarlandı — 3.8 cm
-                                       // torso modelinde fizyolojik üst sınırdı ama tam beden
-                                       // proporsiyonunda görsel olarak abartılı kalıyordu.
+const BREATH_AMPLITUDE_WORLD = 0.010; // göğüs duvarı AP genişlemesi world space (~1 cm)
+                                       // Sprint B.2.3'te 1.5 cm idi, hala görsel olarak fazla
+                                       // ("çok alçalıp yükseliyor"). 1 cm normal sakin solunum
+                                       // (gerçek 0.5-1 cm AP genişleme aralığında).
 // Shader displacement local space'te uygulanır, sonra modelMatrix scale wrap'lar.
 // World space'te 0.038 birim hareket için local amplitude = 0.038 / MODEL_SCALE.
 const BREATH_AMPLITUDE_LOCAL = BREATH_AMPLITUDE_WORLD / MODEL_SCALE;
@@ -88,11 +88,11 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
                  // total vücutun küçük bir parçası, geniş radius omuz/karın/
                  // boyun'u da kapsıyordu ("tüm üst vücut şişiyor" bug).
                  vec4 bWorldPos = modelMatrix * vec4(transformed, 1.0);
-                 vec3 bChestCenter = vec3(0.0, 0.46, 0.088);
+                 vec3 bChestCenter = vec3(0.0, 0.48, 0.090);
                  float bDist = distance(bWorldPos.xyz, bChestCenter);
-                 // Falloff yumuşak fade: 0.05'e kadar tam etki, 0.13'te sıfır.
-                 // Yan kenarları smooth, balon-patlama efekti yerine doğal lift.
-                 float bWeight = 1.0 - smoothstep(0.05, 0.13, bDist);
+                 // Sıkı falloff: 0.03'e kadar tam etki, 0.07'de sıfır.
+                 // Sadece göğüs lokalize — üst karın/omuz etki almaz.
+                 float bWeight = 1.0 - smoothstep(0.03, 0.07, bDist);
                  float bPhase = sin(uTime * ${(BREATH_RATE_HZ * 2 * Math.PI).toFixed(4)});
                  transformed += normal * bWeight * bPhase * uBreathAmplitude;`,
               );
