@@ -602,7 +602,7 @@ interface MediSimScenario {
 
 ## BÖLÜM 11 — AKSİYON YOL HARİTASI (12 AY)
 
-**Güncel durum (20 Mayıs 2026):**
+**Güncel durum (21 Mayıs 2026):**
 
 | Sprint | Konu | Durum | Notlar |
 |--------|------|-------|--------|
@@ -614,7 +614,7 @@ interface MediSimScenario {
 | **B.2** | **AI hasta diyaloğu UI** | **🎯 SIRADAKİ** | Gemini 2.5 Flash + Calgary-Cambridge; B.0 kurulumu önce gerekiyor |
 | B.3 | Vital signs HUD + 12-derivasyon EKG | ⏸ | Sıraya alındı |
 | B.4 | Engine binding + Z-Anatomy multi-mesh + clipping plane | ⏸ | Z-Anatomy CC BY-SA download bekliyor |
-| B.5 | Auskültasyon ses altyapısı | 🔄 partial | Kod hazır (`auscultationAudio.ts`, region `auscultationSoundId`, SOUNDS-LICENSE.md); 4 ses dosyası (Wikimedia CC BY-SA) kullanıcı manuel indirme bekliyor |
+| B.5 | Auskültasyon ses + 20 marker + atıf UI | ✅ | 21 May 2026: 4 Wikimedia ses dosyası entegre (lung_wheeze/lung_crackles/heart_normal/heart_61bpm), 6→20 anatomik marker (5 kardiyak APE-T-M + 4 akciğer lobu + 6 karın kadrant + 2 karotis + 2 femoral), marker boyutu 0.018→0.010, z+karotis kalibrasyon, MediaAttributions UI atıf paneli (`/3d-demo` + `/dialog-3d-demo`) |
 | C.1 | Tailwind v4 + shadcn/ui + marka kimliği | ⏸ | Mevcut Tailwind v3'ten geçiş |
 | C.2 | Senaryo authoring UI (React Flow + JSON Schema) | ⏸ | Sıraya alındı |
 | C.3 | Astro 5 landing | ⏸ | Sıraya alındı |
@@ -634,11 +634,11 @@ interface MediSimScenario {
 - `medisim_rakip_analiz.md` — Body Interact + Gaumard + Laerdal + CAE + Anatomage
 - `medisim_animasyon_teknikleri.md` — R3F morph/breathing/eye/audio + asset gereksinimi
 
-**Test/build:** 415 vitest pass / 0 fail (22 dosya) + 9 Playwright E2E pass. Prod build temiz.
+**Test/build:** 430 vitest pass / 0 fail (24 dosya) + 8 Playwright E2E pass. Prod build temiz.
 
 **Eksik/bekleyen:**
 - Kullanıcı (Ali Bey) → Ready Player Me full-body avatar indirme + manuel
-- Kullanıcı → 4 oskültasyon ses dosyası manuel indirme (Wikimedia URL'leri verildi)
+- Kullanıcı → Sketchfab/BodyParts3D tek tek CC BY organ modeli (kalp/akciğer/karaciğer) — Splanchnology Z-Anatomy generic mesh yerine
 - Cloudflare BAA Workers/DO yazılı doğrulama (B.2 prod öncesi)
 
 ---

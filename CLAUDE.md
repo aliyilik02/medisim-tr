@@ -4,7 +4,7 @@
 > **Memory vault:** [`docs/memory/README.md`](docs/memory/README.md) (Obsidian-uyumlu, görev tipine göre lazy read).
 > Detaylı içerik orada — bu dosya 70 satır, sadece kritik kurallar.
 
-Son güncelleme: 20 Mayıs 2026
+Son güncelleme: 21 Mayıs 2026
 
 ## Ajanın görevi
 
@@ -18,26 +18,28 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 4. Her iş sonunda 2-3 cümle Türkçe rapor. Teknik monolog yok.
 5. Token disiplini: küçük sprintte plan modu/agent açma. Direkt Read+Edit. Memory dosyalarını **sadece görev için gerekirse** Read et (her seansta otomatik yükleme yok).
 
-## Mevcut Durum (20 Mayıs 2026 — gece seansı sonu)
+## Mevcut Durum (21 Mayıs 2026)
 
-**Test:** 429 vitest + 8 Playwright E2E pass. Build temiz.
+**Test:** 430 vitest + 8 Playwright E2E pass. Build temiz.
 **Sprint:** Master rapor Bölüm 11 —
 - ✅ A/A.1/B.1/B.1.1 — manken + marker + breathing
 - ✅ B.2 — AI hasta diyaloğu (Gemini 2.5 Flash backend `/api/chat` SSE canlı; mock fallback otomatik)
 - ✅ B.3 — Vital HUD (PALS yaş alarm) + 12-Lead EKG modal
-- ✅ B.4 — Anatomik atlas kesim (anterior z-plane) + Splanchnology mesh **filter çalışıyor ama Splanchnology asset ham** (Default.001/Organ.001 generic, organ ayırma net değil — yarın Sketchfab tek tek CC BY model)
+- ✅ B.4 — Anatomik atlas kesim (anterior z-plane) + Splanchnology mesh filter v3 (LINES gizle + Mucosa hide + kalp animasyon hedefi sıkı)
+- ✅ B.5 — 4 oskültasyon ses (Wikimedia CC BY/BY-SA) + 20 anatomik marker (5 kardiyak APE-T-M + 4 akciğer lobu + 6 karın kadrant + 2 karotis + 2 femoral) + MediaAttributions UI atıf paneli
 - ✅ D.1 hafif — `vitalsToVisual` (SpO2<88→siyanoz, SBP<90→solgun) + `useVitalsTick` session entegrasyonu; tam Pulse Engine sidecar D.1 ileride
 - ✅ Skill paketi — 5 yeni domain skill (vital-signs-hud, z-anatomy-binding, pulse-engine-binding, rpm-avatar, tccc-scenarios)
 - ✅ Cloudflare MCP (docs+bindings) + Obsidian MCP semantic search
 - ✅ Playwright e2e smoke + `.claude/agents/3d-vision-tester.md` custom agent + `test:visual` script
-- 🔄 B.5 — oskültasyon ses **dosyaları manuel indirme bekliyor** (4 Wikimedia URL `public/sounds/auscultation/SOUNDS-LICENSE.md`'de)
+- ✅ anatomy-internal.glb — KHR_materials_pbrSpecularGlossiness temizlendi (gltf-transform metalrough+meshopt)
 - 🔄 D.2 RPM avatar — kullanıcı GLB indirmeye başlamıştı, devamı bekliyor (göz/ağız blendshape)
+- 🔄 Splanchnology — Z-Anatomy mesh çalışıyor ama generic "Default.001/Organ.001" mesh'ler nedeniyle organ ayrımı sınırlı; tek tek Sketchfab/BodyParts3D CC BY model alternatifi `LICENSE-3D.md` rehberinde
 - ⏸ Senaryo motor TAM entegrasyon — action UI (`/dialog-3d-demo` step engine + action submit) bekliyor
+- ⏸ C.1 Tailwind v3 → v4 + shadcn/ui geçiş
 
 **Demo route'lar:** `/3d-demo`, `/dialog-demo`, `/dialog-3d-demo` (tam paket).
 
-**Yarın sırada:** (1) ses dosyaları indir → B.5 kapat, (2) RPM avatar entegrasyon → D.2 göz/ağız, (3) Splanchnology yerine Sketchfab tek tek organ modelleri (kalp+akciğer+karaciğer ayrı CC BY).
-**Demo route'lar:** `/3d-demo`, `/dialog-demo`, `/dialog-3d-demo`.
+**Yarın sırada:** (1) RPM avatar entegrasyon → D.2 göz/ağız, (2) Splanchnology yerine tek tek CC BY organ modelleri, (3) C.1 Tailwind v4 migration, (4) Cloudflare BAA prod kurulum (B.0).
 
 ## Stack (Master Rapor onaylı)
 
