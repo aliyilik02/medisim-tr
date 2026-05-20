@@ -1,39 +1,35 @@
 // ============================================================
-// InternalOrgans — Sprint B.4 (Z-Anatomy gerçek mesh)
+// InternalOrgans — Sprint B.4 (Z-Anatomy Splanchnology mesh)
 // ============================================================
 // Asset: public/3d/anatomy-internal.glb (~3.55 MB, ~100k vertex)
 // Lisans: CC BY-SA 4.0 — atıf src/components/patient-3d/LICENSE-3D.md
 // Kaynak: "Splanchnology" by Z-Anatomy
-//   https://sketchfab.com/3d-models/splanchnology-5cfafb312f504815aa3fec55735607a6
-// Köken: BodyParts3D (DBCLS Japan), TA2-2019 etiketli yapılar
 //
-// Optimize: gltf-transform optimize --simplify-ratio 0.05 (95% azaltma) +
-//   weld + dedup + meshopt compress (49.93 MB → 3.55 MB).
+// FILTER STRATEJİSİ (b1b6b96 organ kaybolma fix sonrası):
+//   1. HIDE_PATTERNS: kemik/kas/bağ/peritoneum/suture/teeth → kesin gizle
+//   2. SHOW_PATTERNS whitelist (generic organ + spesifik organ adları):
+//      organ, default, lung, heart, liver, stomach, spleen, intestine,
+//      colon, pancreas, kidney, bladder, esophagus, trachea, gland,
+//      thyroid, mucosa, ductus, bronchi
+//   3. alphaMode=BLEND + vertex>100k = cavity/membran → gizle
+//      (Peritoneum, büyük serous membran, anatomik organ değil)
+//   4. Debug log dev modunda her mesh için (DEBUG_MESH=true)
 //
-// İçerik (materiyel adları):
-//   Lung, Bronchi, Heart (Default), Intestine, Liver, Stomach, Spleen,
-//   Cartilage, Ductus, Gland, Ligament, Mucosa, Muscles, Bone
-//
-// Wrapper transform: Splanchnology raw y[0.0092, 1.70545] (insan boyu),
-//   patient-v2 world bbox y[-0.243, 0.778]'a sığdırılır.
-//   scale = 1.021 / 1.696 = 0.602
-//   yOffset = -0.243 - (0.0092 × 0.602) = -0.249
-//
-// Animasyonlar (placeholder primitive'lerden devam):
-//   - Akciğer (material adında "Lung" geçen mesh'ler): RR/60 Hz, ±5% scale
-//   - Kalp (material "Heart" veya "Default" — splanchnology'de heart mesh büyük
-//     ve "Default" material kullanıyor): HR/60 Hz, ±8% scale
+// Önceden MAX_MESH_SIZE=0.35 raw birim filter vardı; gerçek karaciğer/
+// akciğer 0.4+ olabildiği için organlar kayboldu. Kaldırıldı.
 // ============================================================
 
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { Box3, Vector3 } from "three";
 import type { Mesh, Group, MeshStandardMaterial } from "three";
 
 const MODEL_URL = "/3d/anatomy-internal.glb";
 const MODEL_SCALE = 0.602;
 const MODEL_Y_OFFSET = -0.249;
+
+// Debug log — dev console'a mesh kararlarını yaz (problem teşhisi için)
+const DEBUG_MESH = import.meta.env.DEV;
 
 useGLTF.preload(MODEL_URL);
 
@@ -44,38 +40,49 @@ interface Props {
   rr?: number;
   /** Görünür mü? clipping aktifken true, kapalıyken false. */
   visible?: boolean;
+  /** Debug: filter bypass et, TÜM mesh'leri göster (ayar için). */
+  debugShowAll?: boolean;
 }
 
-export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
+export function InternalOrgans({
+  hr = 75,
+  rr = 14,
+  visible = true,
+  debugShowAll = false,
+}: Props) {
   const { scene } = useGLTF(MODEL_URL);
   const groupRef = useRef<Group>(null);
   const heartMeshes = useRef<Mesh[]>([]);
   const lungMeshes = useRef<Mesh[]>([]);
 
-  // Mesh kategorize + büyük dış shell'leri (plevra/cavity/body) gizle.
-  // Splanchnology paketinde organ + dış zar + iskelet birlikte gelir;
-  // sadece visseral organları göstermek için filter uygulanır.
   useEffect(() => {
     const hearts: Mesh[] = [];
     const lungs: Mesh[] = [];
 
-    // Material adına göre kesin gizle
-    const HIDE_PATTERNS = ["bone", "muscle", "cartilage", "ligament", "pleura", "fascia"];
-    // Whitelist — sadece bu organlar görünür kalır (visceral)
-    const SHOW_PATTERNS = [
-      "lung", "bronchi", "heart", "default",
-      "liver", "hepar", "stomach", "gaster",
-      "spleen", "lien", "intestine", "colon",
-      "pancreas", "kidney", "ren", "bladder", "vesica",
-      "esophagus", "trachea", "gland", "thyroid", "mucosa",
+    // Material adına göre kesin gizle (chuma6oy ile çakışan yapılar)
+    const HIDE_PATTERNS = [
+      "bone", "muscle", "cartilage", "ligament",
+      "peritoneum", "suture", "teeth", "fascia",
     ];
 
-    // Çok büyük mesh = dış zar/cavity, gerçek organ değil
-    // Splanchnology raw birimde gerçek organlar < 0.35 (yaklaşık 25-30 cm)
-    const MAX_MESH_SIZE = 0.35;
+    // Görünür organ adları (Splanchnology generic + spesifik)
+    const SHOW_PATTERNS = [
+      "organ", "default",       // Splanchnology generic adlar
+      "lung", "bronchi", "trachea",
+      "heart",
+      "liver", "hepar",
+      "stomach", "gaster",
+      "spleen", "lien",
+      "intestine", "colon",
+      "pancreas",
+      "kidney", "ren",
+      "bladder", "vesica",
+      "esophagus", "esofagus",
+      "gland", "thyroid",
+      "mucosa", "ductus",
+    ];
 
-    const bbox = new Box3();
-    const size = new Vector3();
+    const decisions: Array<{ name: string; mat: string; visible: boolean; reason: string }> = [];
 
     scene.traverse((obj) => {
       if (!(obj as Mesh).isMesh) return;
@@ -83,61 +90,72 @@ export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
       const mat = mesh.material as MeshStandardMaterial | MeshStandardMaterial[];
       const matName = (Array.isArray(mat) ? mat[0]?.name : mat?.name) ?? "";
       const matLower = matName.toLowerCase();
+      const vertexCount = mesh.geometry.attributes.position.count;
+      const alphaMode = !Array.isArray(mat) && mat?.transparent ? "BLEND" : "OPAQUE";
 
-      // 1) Hide pattern eşleşirse: gizle
-      if (HIDE_PATTERNS.some((p) => matLower.includes(p))) {
-        mesh.visible = false;
-        return;
+      let shouldShow = true;
+      let reason = "default";
+
+      if (debugShowAll) {
+        shouldShow = true;
+        reason = "debugShowAll";
+      } else if (HIDE_PATTERNS.some((p) => matLower.includes(p))) {
+        shouldShow = false;
+        reason = "HIDE_PATTERNS";
+      } else if (!SHOW_PATTERNS.some((p) => matLower.includes(p))) {
+        shouldShow = false;
+        reason = "not in SHOW_PATTERNS";
+      } else if (alphaMode === "BLEND" && vertexCount > 100_000) {
+        shouldShow = false;
+        reason = `BLEND+vertex>100k (cavity/membran), v=${vertexCount}`;
       }
 
-      // 2) Whitelist'te DEĞİLSE: gizle (default-deny)
-      if (!SHOW_PATTERNS.some((p) => matLower.includes(p))) {
-        mesh.visible = false;
-        return;
-      }
+      mesh.visible = shouldShow;
+      decisions.push({ name: mesh.name || "(unnamed)", mat: matName, visible: shouldShow, reason });
 
-      // 3) Mesh boyutu kontrol — devasa shell'ler bypass eder (whitelist'e
-      //    rağmen 'lung' isimli bir cavity mesh varsa boyut filter yakalar)
-      mesh.geometry.computeBoundingBox();
-      if (mesh.geometry.boundingBox) {
-        bbox.copy(mesh.geometry.boundingBox);
-        bbox.getSize(size);
-        if (Math.max(size.x, size.y, size.z) > MAX_MESH_SIZE) {
-          mesh.visible = false;
-          return;
-        }
-      }
+      if (!shouldShow) return;
 
-      // 4) Kalp ve akciğer animasyon hedefleri
+      // Animasyon hedefleri
       if (
-        (matLower.includes("heart") || matLower.includes("default")) &&
-        mesh.geometry.attributes.position.count > 30000
+        (matLower.includes("heart") ||
+          matLower.includes("default") ||
+          matLower.includes("organ")) &&
+        vertexCount > 20_000
       ) {
         hearts.push(mesh);
       }
-      if (matLower.includes("lung")) {
+      if (matLower.includes("lung") || matLower.includes("bronchi")) {
         lungs.push(mesh);
       }
 
-      // 5) Material clone + renk override (specular-glossiness ile uyumlu)
+      // Renk override (specular-glossiness ile uyumlu setHex + needsUpdate)
       if (!Array.isArray(mat) && mat) {
         const cloned = mat.clone();
         if (matLower.includes("lung")) {
-          cloned.color.setHex(0xeb8d9e); // canlı pembe akciğer
-        } else if (matLower.includes("heart") || matLower.includes("default")) {
-          cloned.color.setHex(0xc73824); // canlı kırmızı kalp
+          cloned.color.setHex(0xeb8d9e);
+        } else if (matLower.includes("heart")) {
+          cloned.color.setHex(0xc73824);
         } else if (matLower.includes("intestine") || matLower.includes("colon")) {
-          cloned.color.setHex(0xd9a78a); // bağırsak
+          cloned.color.setHex(0xd9a78a);
         } else if (matLower.includes("liver") || matLower.includes("hepar")) {
-          cloned.color.setHex(0x935028); // karaciğer
+          cloned.color.setHex(0x935028);
         } else if (matLower.includes("stomach") || matLower.includes("gaster")) {
-          cloned.color.setHex(0xd98a96); // mide
+          cloned.color.setHex(0xd98a96);
         } else if (matLower.includes("spleen") || matLower.includes("lien")) {
-          cloned.color.setHex(0x8b4570); // dalak
+          cloned.color.setHex(0x8b4570);
         } else if (matLower.includes("kidney") || matLower.includes("ren")) {
-          cloned.color.setHex(0x8c4a3a); // böbrek
+          cloned.color.setHex(0x8c4a3a);
         } else if (matLower.includes("bronchi") || matLower.includes("trachea")) {
-          cloned.color.setHex(0xe0c4ad); // trakea/bronş
+          cloned.color.setHex(0xe0c4ad);
+        } else if (matLower.includes("gland") || matLower.includes("thyroid")) {
+          cloned.color.setHex(0xc88a72);
+        } else if (matLower.includes("mucosa")) {
+          cloned.color.setHex(0xe8a8a8);
+        } else if (matLower.includes("ductus")) {
+          cloned.color.setHex(0xc4a48c);
+        } else if (matLower.includes("organ") || matLower.includes("default")) {
+          // Splanchnology generic — büyük mesh genelde kalp/akciğer kombo
+          cloned.color.setHex(0xb86056);
         }
         cloned.needsUpdate = true;
         mesh.material = cloned;
@@ -146,13 +164,21 @@ export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
 
     heartMeshes.current = hearts;
     lungMeshes.current = lungs;
-  }, [scene]);
+
+    if (DEBUG_MESH) {
+      // eslint-disable-next-line no-console
+      console.table(decisions);
+      // eslint-disable-next-line no-console
+      console.log(
+        `[InternalOrgans] heart targets: ${hearts.length}, lung targets: ${lungs.length}`,
+      );
+    }
+  }, [scene, debugShowAll]);
 
   useFrame((state) => {
     if (!visible) return;
     const t = state.clock.getElapsedTime();
 
-    // Kalp pulsate — HR/60 Hz, ±8%
     if (heartMeshes.current.length > 0) {
       const phase = Math.sin(t * 2 * Math.PI * (hr / 60));
       const scale = 1 + phase * 0.08;
@@ -161,7 +187,6 @@ export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
       }
     }
 
-    // Akciğer breathing — RR/60 Hz, ±5%
     if (lungMeshes.current.length > 0) {
       const phase = Math.sin(t * 2 * Math.PI * (rr / 60));
       const scale = 1 + phase * 0.05;
@@ -171,8 +196,6 @@ export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
     }
   });
 
-  // useMemo + clone scene → mesh material modifikasyonu cache'lenmiş
-  // gltf'i etkilemesin (aynı asset başka component'ta kullanılırsa).
   const sceneInstance = useMemo(() => scene, [scene]);
 
   if (!visible) return null;

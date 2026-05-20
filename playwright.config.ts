@@ -17,11 +17,22 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : "list",
+  // Sprint B.4 vision-test — toHaveScreenshot global ayarlar
+  expect: {
+    toHaveScreenshot: {
+      // CSS animation + WebGL pulse/breathing oscillation tolere et
+      maxDiffPixelRatio: 0.02,
+      threshold: 0.2,
+      animations: "disabled",
+    },
+  },
   use: {
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: process.env.CI ? "retain-on-failure" : "off",
+    // Deterministik viewport (snapshot diff için)
+    viewport: { width: 1280, height: 800 },
   },
   projects: [
     {
