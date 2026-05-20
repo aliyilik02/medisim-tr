@@ -16,6 +16,8 @@ interface Props {
   breathing?: boolean;
   /** Sprint B.4.1: Cilt tonu — vital değişimine göre senaryo motorundan gelir. */
   skinTint?: SkinTint;
+  /** Sprint B.2 entegrasyon: hasta konuşurken ağız bölgesi shader oscillation. */
+  speaking?: boolean;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
   /** Sprint B.2.1: Prosedür animasyonu tamamlandığında engine'e iletilecek ActionRef. */
@@ -62,6 +64,7 @@ export function PatientBody3D({
   regions,
   breathing = true,
   skinTint = "normal",
+  speaking = false,
   onRegionSelect,
   onProcedureComplete,
   className,
@@ -112,7 +115,7 @@ export function PatientBody3D({
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-3d-canvas"
-        frameloop={breathing || activeProcedure ? "always" : "demand"}
+        frameloop={breathing || activeProcedure || speaking ? "always" : "demand"}
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         shadows
@@ -133,7 +136,12 @@ export function PatientBody3D({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={<LoadingFallback />}>
-          <AnatomicPatientModel ref={bodyRef} breathing={breathing} skinTint={skinTint} />
+          <AnatomicPatientModel
+            ref={bodyRef}
+            breathing={breathing}
+            skinTint={skinTint}
+            speaking={speaking}
+          />
           {regions.map((region) => (
             <RegionMarker
               key={region.id}

@@ -21,6 +21,9 @@ import {
 interface Props {
   scenario: Scenario;
   onClose?: () => void;
+  /** Sprint B.2 entegrasyon: hasta yanıt üretirken (thinking + son yanıtın
+   *  ilk 3-4 saniyesi) true. 3D model ağız animasyonu için kullanılır. */
+  onSpeakingChange?: (speaking: boolean) => void;
 }
 
 const STAGES: CalgaryStage[] = [
@@ -31,12 +34,19 @@ const STAGES: CalgaryStage[] = [
   "closing",
 ];
 
-export function DialogChat({ scenario, onClose }: Props) {
+export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
   const [turns, setTurns] = useState<DialogTurn[]>([]);
   const [currentStage, setCurrentStage] = useState<CalgaryStage>("initiating");
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Hasta konuşma süresi tahmini — kelime sayısı × 350 ms (Türkçe ortalama
+  // okuma + konuşma hızı; gerçek TTS gelince audio duration'a bağlanır).
+  const estimateSpeakingMs = (text: string): number => {
+    const words = text.trim().split(/\s+/).length;
+    return Math.max(800, Math.min(words * 350, 6000));
+  };
 
   // Auto scroll
   useEffect(() => {
@@ -75,6 +85,13 @@ export function DialogChat({ scenario, onClose }: Props) {
       );
       setTurns((prev) => [...prev, reply]);
       setThinking(false);
+
+      // 3D model ağız animasyonu — hasta "konuşma" süresince aktif
+      onSpeakingChange?.(true);
+      const speakMs = estimateSpeakingMs(reply.text);
+      window.setTimeout(() => {
+        onSpeakingChange?.(false);
+      }, speakMs);
     }, 600 + Math.random() * 600);
   };
 

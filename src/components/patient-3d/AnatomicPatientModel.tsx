@@ -52,10 +52,16 @@ interface Props {
   breathing?: boolean;
   /** Cilt tonu preset'i. Vital değişimine göre PatientBody3D'den geçilir. */
   skinTint?: SkinTint;
+  /**
+   * Sprint B.2 entegrasyon: hasta konuşuyor mu? true iken ağız bölgesinde
+   * shader oscillation (mock lipsync). RPM avatar geldiğinde mouthOpen
+   * blendshape ile değiştirilecek.
+   */
+  speaking?: boolean;
 }
 
 export const AnatomicPatientModel = forwardRef<Group, Props>(
-  ({ breathing = true, skinTint = "normal" }, ref) => {
+  ({ breathing = true, skinTint = "normal", speaking = false }, ref) => {
     const { scene } = useGLTF(MODEL_URL);
     const shaderRef = useRef<ShaderRef | null>(null);
 
@@ -72,6 +78,7 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
             shader.uniforms.uTime = { value: 0 };
             shader.uniforms.uBreathAmplitude = { value: BREATH_AMPLITUDE_LOCAL };
             shader.uniforms.uSkinTint = { value: SKIN_TINT_PRESETS[skinTint] };
+            shader.uniforms.uSpeaking = { value: speaking ? 1.0 : 0.0 };
 
             // Vertex shader: çift-center breathing displacement
             shader.vertexShader = shader.vertexShader
@@ -79,7 +86,8 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
                 "#include <common>",
                 `#include <common>
                  uniform float uTime;
-                 uniform float uBreathAmplitude;`,
+                 uniform float uBreathAmplitude;
+                 uniform float uSpeaking;`,
               )
               .replace(
                 "#include <begin_vertex>",
@@ -102,7 +110,19 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
 
                  float bPhase = sin(uTime * ${(BREATH_RATE_HZ * 2 * Math.PI).toFixed(4)});
                  float bTotalWeight = bChestWeight + bAbdomenWeight;
-                 transformed += normal * bTotalWeight * bPhase * uBreathAmplitude;`,
+                 transformed += normal * bTotalWeight * bPhase * uBreathAmplitude;
+
+                 // Sprint B.2 entegrasyon: mock lipsync — ağız bölgesinde küçük
+                 // oscillation (chuma6oy modelinde ağız ayrı mesh değil, bu yüzden
+                 // shader hilesi). RPM avatar geldiğinde mouthOpen blendshape ile
+                 // değiştirilecek.
+                 vec3 mMouthCenter = vec3(0.0, 0.658, 0.090);  // ağız hizası (8-head 0.89)
+                 float mMouthDist = distance(bWorldPos.xyz, mMouthCenter);
+                 float mMouthWeight = 1.0 - smoothstep(0.015, 0.035, mMouthDist);
+                 // 4-5 Hz hızlı titreşim (konuşma syllable rate'i)
+                 float mMouthPhase = sin(uTime * 28.0) * 0.5 + 0.5;
+                 float mMouthAmp = 0.012 / 0.107; // 1.2cm world, local space
+                 transformed += normal * mMouthWeight * mMouthPhase * mMouthAmp * uSpeaking;`,
               );
 
             // Fragment shader: cilt tonu tint multiply
@@ -140,6 +160,13 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
         shaderRef.current.uniforms.uSkinTint.value = SKIN_TINT_PRESETS[skinTint];
       }
     }, [skinTint]);
+
+    // Speaking flag — hasta konuşurken ağız oscillation aktif
+    useEffect(() => {
+      if (shaderRef.current) {
+        shaderRef.current.uniforms.uSpeaking.value = speaking ? 1.0 : 0.0;
+      }
+    }, [speaking]);
 
     useFrame((state) => {
       if (shaderRef.current) {
