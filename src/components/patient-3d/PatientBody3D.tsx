@@ -85,19 +85,25 @@ export function PatientBody3D({
   const [activeProcedure, setActiveProcedure] = useState<ProcedureContext | null>(null);
   const bodyRef = useRef<Group>(null);
 
-  // Sprint B.4: Skin clipping plane.
-  // Model world y bbox = [-0.243, 0.778], height = 1.021.
-  // skinClipLevel 1.0 → clip plane y_max üstünde (etkisiz).
-  // skinClipLevel 0.0 → clip plane y_min altında (tüm cilt clipped).
-  // Plane normal aşağı bakar (0, -1, 0); constant = clipY.
-  const clipY = useMemo(() => {
-    return -0.243 + skinClipLevel * 1.021;
+  // Sprint B.4 — Anatomik atlas tarzı clipping:
+  // Anterior cilt kaldırılır, baş + kollar + bacaklar + sırt görünür kalır.
+  // Model world z bbox ≈ [-0.08, 0.09]. Plane normal (0, 0, -1) anterior'a bakar.
+  // skinClipLevel=1.0 → zClip=0.09 (etkisiz, hiçbir şey clip)
+  // skinClipLevel=0.0 → zClip=-0.08 (tüm anterior clip, sadece sırt görünür)
+  //
+  // Bonus üst sınır: clip sadece chest+abdomen seviyesinde (y 0.20-0.65 arası).
+  // Bunun için ikinci bir plane (y normal) eklemek gerekir. Şimdilik tek plane
+  // yeterli — kafa kısmen clip olur ama görsel olarak daha iyi y range kontrolü
+  // ileride eklenebilir.
+  const zClip = useMemo(() => {
+    return 0.09 - (1 - skinClipLevel) * 0.17;
   }, [skinClipLevel]);
 
   const clippingPlanes = useMemo(() => {
-    if (skinClipLevel >= 1.0) return undefined; // clipping yok
-    return [new Plane(new Vector3(0, -1, 0), clipY)];
-  }, [clipY, skinClipLevel]);
+    if (skinClipLevel >= 0.99) return undefined; // clipping yok
+    // Plane normal (0, 0, -1), z > zClip clipped (anterior tarafı kalkar)
+    return [new Plane(new Vector3(0, 0, -1), zClip)];
+  }, [zClip, skinClipLevel]);
 
   const showOrgans = skinClipLevel < 0.95;
 
