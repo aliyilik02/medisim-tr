@@ -5,6 +5,42 @@ Yeni model eklerken bu dosyaya da bir bölüm ekleyin.
 
 ---
 
+## Önerilen CC BY tek tek organ kaynakları (planlı)
+
+Z-Anatomy Splanchnology mesh'i generic ("Default", "Organ" gibi) — kalp/karaciğer/mide ayrımı belirsiz. Yarın yerine geçecek tek tek model adayları (her biri CC BY, ticari kullanım izinli, atıf yeterli):
+
+### Kalp (heart.glb)
+- **Sketchfab — "Anatomy of the Heart" by Nicolae Berbece** (CC BY 4.0)  
+  https://sketchfab.com/3d-models/anatomy-of-the-heart-c8d75f31fdfc4ada925ab14d3ea3fb14
+- **BodyParts3D — FMA7088 Heart** (CC BY-SA 2.1 JP)  
+  https://lifesciencedb.jp/bp3d/?lng=en
+
+### Akciğer (lungs.glb)
+- **Sketchfab — "Lungs" by Hassan Tahir** (CC BY 4.0)  
+  https://sketchfab.com/3d-models/lungs-2cb98d3eeaff48e2b6f8f5e8c2ec9f8e
+- **BodyParts3D — FMA7195 Lung** + **FMA7393 Bronchial tree**
+
+### Karaciğer (liver.glb)
+- **Sketchfab — "Liver" by Anatomy 3D** (CC BY 4.0)
+- **BodyParts3D — FMA7197 Liver**
+
+### Mide (stomach.glb)
+- **BodyParts3D — FMA7148 Stomach**
+
+### Böbrek (kidneys.glb)
+- **BodyParts3D — FMA7203 Kidney**
+
+### Pipeline (asset hazır olunca)
+1. İndir `.glb` veya `.gltf+bin` paketi → `@gltf-transform/cli optimize` ile sıkıştır
+2. `public/3d/organs/<organ>.glb` altına koy
+3. `OrganModel` component'ini `<OrganModel url="/3d/organs/heart.glb" ... />` şeklinde kullan
+4. Bu dosyaya ayrı bir bölüm ekleyip atıf metnini yaz
+5. `MediaAttributions.tsx` ATTRIBUTIONS dizisine eklemeyi unutma
+
+**Lisans tercihi:** CC BY 4.0 > CC BY 3.0 > CC BY-SA 4.0 (ShareAlike viral, dikkat). CC BY-NC asla kullanma — ticari kullanım engellenir.
+
+---
+
 ## anatomy-internal.glb (Sprint B.4 — iç organlar)
 
 **Eser:** "Splanchnology" (iç organ sistemi — TA2-2019 etiketli)
