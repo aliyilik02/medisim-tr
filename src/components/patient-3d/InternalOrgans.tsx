@@ -28,6 +28,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import { Box3, Vector3 } from "three";
 import type { Mesh, Group, MeshStandardMaterial } from "three";
 
 const MODEL_URL = "/3d/anatomy-internal.glb";
@@ -51,61 +52,95 @@ export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
   const heartMeshes = useRef<Mesh[]>([]);
   const lungMeshes = useRef<Mesh[]>([]);
 
-  // Mesh'leri material adına göre kategorize et + chuma6oy ile çakışan
-  // yapıları (kemik/kas/bağ/kıkırdak) gizle.
+  // Mesh kategorize + büyük dış shell'leri (plevra/cavity/body) gizle.
+  // Splanchnology paketinde organ + dış zar + iskelet birlikte gelir;
+  // sadece visseral organları göstermek için filter uygulanır.
   useEffect(() => {
     const hearts: Mesh[] = [];
     const lungs: Mesh[] = [];
 
-    // Bu material'lardaki mesh'ler chuma6oy dış cildiyle çakışır — gizle:
-    const HIDE_PATTERNS = ["bone", "muscle", "cartilage", "ligament"];
+    // Material adına göre kesin gizle
+    const HIDE_PATTERNS = ["bone", "muscle", "cartilage", "ligament", "pleura", "fascia"];
+    // Whitelist — sadece bu organlar görünür kalır (visceral)
+    const SHOW_PATTERNS = [
+      "lung", "bronchi", "heart", "default",
+      "liver", "hepar", "stomach", "gaster",
+      "spleen", "lien", "intestine", "colon",
+      "pancreas", "kidney", "ren", "bladder", "vesica",
+      "esophagus", "trachea", "gland", "thyroid", "mucosa",
+    ];
+
+    // Çok büyük mesh = dış zar/cavity, gerçek organ değil
+    // Splanchnology raw birimde gerçek organlar < 0.35 (yaklaşık 25-30 cm)
+    const MAX_MESH_SIZE = 0.35;
+
+    const bbox = new Box3();
+    const size = new Vector3();
 
     scene.traverse((obj) => {
-      if ((obj as Mesh).isMesh) {
-        const mesh = obj as Mesh;
-        const mat = mesh.material as MeshStandardMaterial | MeshStandardMaterial[];
-        const matName = (Array.isArray(mat) ? mat[0]?.name : mat?.name) ?? "";
-        const matLower = matName.toLowerCase();
+      if (!(obj as Mesh).isMesh) return;
+      const mesh = obj as Mesh;
+      const mat = mesh.material as MeshStandardMaterial | MeshStandardMaterial[];
+      const matName = (Array.isArray(mat) ? mat[0]?.name : mat?.name) ?? "";
+      const matLower = matName.toLowerCase();
 
-        // Görünmeyecek mesh'ler (kemik/kas/bağ/kıkırdak)
-        if (HIDE_PATTERNS.some((p) => matLower.includes(p))) {
+      // 1) Hide pattern eşleşirse: gizle
+      if (HIDE_PATTERNS.some((p) => matLower.includes(p))) {
+        mesh.visible = false;
+        return;
+      }
+
+      // 2) Whitelist'te DEĞİLSE: gizle (default-deny)
+      if (!SHOW_PATTERNS.some((p) => matLower.includes(p))) {
+        mesh.visible = false;
+        return;
+      }
+
+      // 3) Mesh boyutu kontrol — devasa shell'ler bypass eder (whitelist'e
+      //    rağmen 'lung' isimli bir cavity mesh varsa boyut filter yakalar)
+      mesh.geometry.computeBoundingBox();
+      if (mesh.geometry.boundingBox) {
+        bbox.copy(mesh.geometry.boundingBox);
+        bbox.getSize(size);
+        if (Math.max(size.x, size.y, size.z) > MAX_MESH_SIZE) {
           mesh.visible = false;
           return;
         }
+      }
 
-        // Heart genelde "Default" material + büyük mesh (vertex>30k)
-        if (
-          (matLower.includes("heart") || matLower.includes("default")) &&
-          mesh.geometry.attributes.position.count > 30000
-        ) {
-          hearts.push(mesh);
-        }
+      // 4) Kalp ve akciğer animasyon hedefleri
+      if (
+        (matLower.includes("heart") || matLower.includes("default")) &&
+        mesh.geometry.attributes.position.count > 30000
+      ) {
+        hearts.push(mesh);
+      }
+      if (matLower.includes("lung")) {
+        lungs.push(mesh);
+      }
 
-        // Akciğer
+      // 5) Material clone + renk override (specular-glossiness ile uyumlu)
+      if (!Array.isArray(mat) && mat) {
+        const cloned = mat.clone();
         if (matLower.includes("lung")) {
-          lungs.push(mesh);
+          cloned.color.setHex(0xeb8d9e); // canlı pembe akciğer
+        } else if (matLower.includes("heart") || matLower.includes("default")) {
+          cloned.color.setHex(0xc73824); // canlı kırmızı kalp
+        } else if (matLower.includes("intestine") || matLower.includes("colon")) {
+          cloned.color.setHex(0xd9a78a); // bağırsak
+        } else if (matLower.includes("liver") || matLower.includes("hepar")) {
+          cloned.color.setHex(0x935028); // karaciğer
+        } else if (matLower.includes("stomach") || matLower.includes("gaster")) {
+          cloned.color.setHex(0xd98a96); // mide
+        } else if (matLower.includes("spleen") || matLower.includes("lien")) {
+          cloned.color.setHex(0x8b4570); // dalak
+        } else if (matLower.includes("kidney") || matLower.includes("ren")) {
+          cloned.color.setHex(0x8c4a3a); // böbrek
+        } else if (matLower.includes("bronchi") || matLower.includes("trachea")) {
+          cloned.color.setHex(0xe0c4ad); // trakea/bronş
         }
-
-        // Material'ı clone et (paylaşımlı material'ları ayır)
-        if (!Array.isArray(mat) && mat) {
-          const cloned = mat.clone();
-          // Anatomik organ rengini biraz canlandır (Sketchfab varsayılan
-          // soluk olabilir, klinik atlas görünümü için doygunluk artır)
-          if (matLower.includes("lung")) {
-            cloned.color.setRGB(0.92, 0.55, 0.62); // pembe akciğer
-          } else if (matLower.includes("heart") || matLower.includes("default")) {
-            cloned.color.setRGB(0.78, 0.22, 0.18); // koyu kırmızı kalp
-          } else if (matLower.includes("intestine")) {
-            cloned.color.setRGB(0.85, 0.65, 0.55); // bağırsak ten/pembe
-          } else if (matLower.includes("liver") || matLower.includes("hepar")) {
-            cloned.color.setRGB(0.58, 0.30, 0.20); // karaciğer kahverengi
-          } else if (matLower.includes("stomach") || matLower.includes("gaster")) {
-            cloned.color.setRGB(0.85, 0.55, 0.60); // mide pembe
-          } else if (matLower.includes("spleen") || matLower.includes("lien")) {
-            cloned.color.setRGB(0.55, 0.30, 0.45); // dalak mor
-          }
-          mesh.material = cloned;
-        }
+        cloned.needsUpdate = true;
+        mesh.material = cloned;
       }
     });
 
