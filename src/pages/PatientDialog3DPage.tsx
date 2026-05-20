@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Waves, Droplet, Scissors } from "lucide-react";
+import { ChevronLeft, Waves, Droplet, Scissors, Wand2 } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
+import { vitalsToVisual } from "@/clinical/visual-mapping";
 import type { ActionRef } from "@/engine/types";
 
 // ============================================================
@@ -32,11 +33,30 @@ const SKIN_TINT_OPTIONS: { value: SkinTint; label: string; emoji: string }[] = [
 export function PatientDialog3DPage() {
   const [scenarioId, setScenarioId] = useState<string>(SCENARIOS[0].id);
   const [breathing, setBreathing] = useState(true);
-  const [skinTint, setSkinTint] = useState<SkinTint>("normal");
+  const [manualSkinTint, setManualSkinTint] = useState<SkinTint | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [skinClipLevel, setSkinClipLevel] = useState(1.0);
+  const [autoTint, setAutoTint] = useState(true);
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
+
+  // Sprint D.1 hafif — visual mapping: vital → cilt tonu otomatik
+  // SpO2 < 88 → siyanoz, SBP < 90 → solgun, aksi normal.
+  // Auto mode kapalıysa manuel butonlar geçerli.
+  const autoVisualParams = useMemo(
+    () => vitalsToVisual(scenario.initial_vitals),
+    [scenario.initial_vitals],
+  );
+
+  const skinTint: SkinTint = autoTint
+    ? autoVisualParams.skinTint
+    : (manualSkinTint ?? "normal");
+
+  // Senaryo değişince auto mode'a geri dön (manuel override sıfırla)
+  useEffect(() => {
+    setManualSkinTint(null);
+    setAutoTint(true);
+  }, [scenarioId]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleProcedureComplete = (_action: ActionRef) => {
@@ -116,22 +136,44 @@ export function PatientDialog3DPage() {
 
             {/* Kontrol bar */}
             <div className="bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-lg p-2 flex flex-col gap-1.5 w-[200px] shadow-xl">
-              {/* Cilt tonu dropdown */}
+              {/* Cilt tonu — Auto (vital'a göre) + manuel override */}
               <div>
-                <label className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-500 flex items-center gap-1 mb-1">
-                  <Droplet className="w-2.5 h-2.5 text-brand" />
-                  Cilt Tonu
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-500 flex items-center gap-1">
+                    <Droplet className="w-2.5 h-2.5 text-brand" />
+                    Cilt Tonu
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAutoTint(!autoTint);
+                      if (!autoTint) setManualSkinTint(null);
+                    }}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[8px] uppercase transition ${
+                      autoTint
+                        ? "bg-clinical-stable/15 text-clinical-stable border border-clinical-stable/30"
+                        : "bg-ink-800 text-ink-400 border border-ink-700 hover:text-ink-100"
+                    }`}
+                    title={autoTint ? "Vital'a göre otomatik" : "Manuel"}
+                  >
+                    <Wand2 className="w-2.5 h-2.5" />
+                    {autoTint ? "Auto" : "Manuel"}
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-1">
                   {SKIN_TINT_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setSkinTint(opt.value)}
+                      onClick={() => {
+                        setManualSkinTint(opt.value);
+                        setAutoTint(false);
+                      }}
+                      disabled={autoTint && skinTint !== opt.value}
                       className={`px-2 py-1 rounded font-mono text-[10px] transition flex items-center gap-1 justify-center ${
                         skinTint === opt.value
                           ? "bg-brand/20 text-brand-light border border-brand/50"
-                          : "bg-ink-800/60 text-ink-400 border border-ink-700 hover:text-ink-100 hover:border-ink-500"
+                          : "bg-ink-800/60 text-ink-400 border border-ink-700 hover:text-ink-100 hover:border-ink-500 disabled:opacity-40 disabled:cursor-not-allowed"
                       }`}
                     >
                       <span className="text-[10px]">{opt.emoji}</span>
