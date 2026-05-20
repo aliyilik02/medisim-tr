@@ -165,11 +165,13 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
       }
     }, [breathing]);
 
-    // Skin tint runtime update (preset değişirse compile yeniden olmasın)
+    // Cilt tonu yumuşak geçiş — current → target lerp (~1.5sn)
+    // useEffect target güncelliyor; useFrame her frame current'i lerp ediyor.
+    const currentTintRef = useRef<[number, number, number]>([1, 1, 1]);
+    const targetTintRef = useRef<[number, number, number]>(SKIN_TINT_PRESETS[skinTint]);
+
     useEffect(() => {
-      if (shaderRef.current) {
-        shaderRef.current.uniforms.uSkinTint.value = SKIN_TINT_PRESETS[skinTint];
-      }
+      targetTintRef.current = SKIN_TINT_PRESETS[skinTint];
     }, [skinTint]);
 
     // Speaking flag — hasta konuşurken ağız oscillation aktif
@@ -179,10 +181,18 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
       }
     }, [speaking]);
 
-    useFrame((state) => {
-      if (shaderRef.current) {
-        shaderRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
-      }
+    useFrame((state, delta) => {
+      if (!shaderRef.current) return;
+      shaderRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
+
+      // Skin tint lerp — 1.5sn yumuşak geçiş (clamp delta-based)
+      const lerpSpeed = Math.min(delta / 1.5, 1.0);
+      const cur = currentTintRef.current;
+      const tgt = targetTintRef.current;
+      cur[0] += (tgt[0] - cur[0]) * lerpSpeed;
+      cur[1] += (tgt[1] - cur[1]) * lerpSpeed;
+      cur[2] += (tgt[2] - cur[2]) * lerpSpeed;
+      shaderRef.current.uniforms.uSkinTint.value = cur;
     });
 
     return (
