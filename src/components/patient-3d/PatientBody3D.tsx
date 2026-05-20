@@ -2,16 +2,26 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { PerspectiveCamera, type Group } from "three";
-import { AnatomicPatientModel } from "./AnatomicPatientModel";
+import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
+import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
+import type { ProcedureContext, ProcedureKind } from "./procedures/types";
 import type { PatientRegion } from "./regions";
+import type { ActionRef } from "@/engine/types";
+import { playAuscultation, stopAuscultation } from "./auscultationAudio";
 
 interface Props {
   regions: PatientRegion[];
   breathing?: boolean;
+  /** Sprint B.4.1: Cilt tonu — vital değişimine göre senaryo motorundan gelir. */
+  skinTint?: SkinTint;
+  /** Sprint B.2 entegrasyon: hasta konuşurken ağız bölgesi shader oscillation. */
+  speaking?: boolean;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
+  /** Sprint B.2.1: Prosedür animasyonu tamamlandığında engine'e iletilecek ActionRef. */
+  onProcedureComplete?: (action: ActionRef) => void;
   className?: string;
 }
 
@@ -46,13 +56,21 @@ function LoadingFallback() {
   );
 }
 
+// Prosedür tamamlandıktan sonra overlay sahnede kaç ms daha kalsın
+// (kullanıcı sonucu görsün, ses cue çalsın). Sonra unmount.
+const PROCEDURE_REST_MS = 800;
+
 export function PatientBody3D({
   regions,
   breathing = true,
+  skinTint = "normal",
+  speaking = false,
   onRegionSelect,
+  onProcedureComplete,
   className,
 }: Props) {
   const [selected, setSelected] = useState<PatientRegion | null>(null);
+  const [activeProcedure, setActiveProcedure] = useState<ProcedureContext | null>(null);
   const bodyRef = useRef<Group>(null);
 
   const handleSelect = (region: PatientRegion) => {
@@ -60,11 +78,44 @@ export function PatientBody3D({
     onRegionSelect?.(region);
   };
 
+  const handleStartProcedure = (kind: ProcedureKind, region: PatientRegion) => {
+    setSelected(null);
+    setActiveProcedure({
+      kind,
+      regionId: region.id,
+      targetPosition: region.position,
+    });
+  };
+
+  const handleProcedureComplete = (context: ProcedureContext) => {
+    const action: ActionRef = {
+      type: "procedure",
+      target_id: context.kind,
+      site: context.regionId,
+    };
+    onProcedureComplete?.(action);
+
+    // Sprint B.4.7: Stetoskop için region'un ses ID'sini çal (5 saniye).
+    if (context.kind === "stethoscope") {
+      const region = regions.find((r) => r.id === context.regionId);
+      if (region?.auscultationSoundId) {
+        playAuscultation(region.auscultationSoundId, 5000);
+      }
+    }
+
+    window.setTimeout(() => setActiveProcedure(null), PROCEDURE_REST_MS);
+  };
+
+  // Component unmount'ta çalan sesi durdur (memory leak önle).
+  useEffect(() => {
+    return () => stopAuscultation();
+  }, []);
+
   return (
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-3d-canvas"
-        frameloop={breathing ? "always" : "demand"}
+        frameloop={breathing || activeProcedure || speaking ? "always" : "demand"}
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         shadows
@@ -85,7 +136,12 @@ export function PatientBody3D({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={<LoadingFallback />}>
-          <AnatomicPatientModel ref={bodyRef} breathing={breathing} />
+          <AnatomicPatientModel
+            ref={bodyRef}
+            breathing={breathing}
+            skinTint={skinTint}
+            speaking={speaking}
+          />
           {regions.map((region) => (
             <RegionMarker
               key={region.id}
@@ -94,10 +150,15 @@ export function PatientBody3D({
               onSelect={handleSelect}
             />
           ))}
+          <ProcedureOverlay active={activeProcedure} onComplete={handleProcedureComplete} />
         </Suspense>
       </Canvas>
 
-      <InspectionPanel region={selected} onClose={() => setSelected(null)} />
+      <InspectionPanel
+        region={selected}
+        onClose={() => setSelected(null)}
+        onStartProcedure={handleStartProcedure}
+      />
     </div>
   );
 }

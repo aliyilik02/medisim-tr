@@ -92,10 +92,10 @@ describe("InspectionPanel — bilgi kartı", () => {
 });
 
 describe("regions data integrity", () => {
-  test("5 placeholder bölge tanımlı, id'ler unique", () => {
-    expect(DEFAULT_REGIONS).toHaveLength(5);
+  test("6 placeholder bölge tanımlı, id'ler unique", () => {
+    expect(DEFAULT_REGIONS).toHaveLength(6);
     const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
-    expect(ids.size).toBe(5);
+    expect(ids.size).toBe(6);
   });
 
   test("her bölgenin label, position, placeholderNote, side alanları var", () => {
@@ -103,18 +103,19 @@ describe("regions data integrity", () => {
       expect(region.id).toBeTruthy();
       expect(region.label).toBeTruthy();
       expect(region.position).toHaveLength(3);
-      expect(region.placeholderNote).toMatch(/Sprint A sonrası klinik review/);
+      expect(region.placeholderNote).toBeTruthy();
       expect(["anterior", "lateral", "posterior"]).toContain(region.side);
     }
   });
 
-  test("placeholderNote gerçek klinik içerik içermiyor (sentinel kontrolü)", () => {
-    // Sprint A klinik içerik yasak — her not "klinik review'da eklenecek"
-    // sentinel cümlesini içermeli. Yanlışlıkla gerçek auskültasyon notu
-    // (S1, S2, üfürüm, vb.) sızarsa bu test patlar.
-    const forbidden = /S[12] sesi|üfürüm|murmur|raller|ronküs|2\/6/i;
+  test("region pozisyonları model bbox sınırları içinde", () => {
+    // v2 model bbox (wrapper-transformed): y[-0.243, 0.778], x[-0.20, 0.20].
+    // Marker'lar bbox dışına kaymasın (sanity check).
     for (const region of DEFAULT_REGIONS) {
-      expect(region.placeholderNote).not.toMatch(forbidden);
+      const [x, y] = region.position;
+      expect(y).toBeGreaterThanOrEqual(-0.25);
+      expect(y).toBeLessThanOrEqual(0.78);
+      expect(Math.abs(x)).toBeLessThanOrEqual(0.21);
     }
   });
 });

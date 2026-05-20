@@ -15,15 +15,31 @@ const PatientBody3DDemoPage = lazy(() =>
   }))
 );
 
+// Sprint B.2 — AI hasta diyaloğu demo (mock backend).
+const DialogDemoPage = lazy(() =>
+  import("@/pages/DialogDemoPage").then((m) => ({
+    default: m.DialogDemoPage,
+  }))
+);
+
+// Sprint B.2 entegrasyon — 3D model + AI diyalog yan yana, mock lipsync.
+const PatientDialog3DPage = lazy(() =>
+  import("@/pages/PatientDialog3DPage").then((m) => ({
+    default: m.PatientDialog3DPage,
+  }))
+);
+
 export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
   const is3dDemo = location.pathname.startsWith("/3d-demo");
+  const isDialogDemo = location.pathname.startsWith("/dialog-demo");
+  const isDialog3d = location.pathname.startsWith("/dialog-3d-demo");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && <Header />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -46,9 +62,37 @@ export function App() {
               </Suspense>
             }
           />
+          <Route
+            path="/dialog-demo"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                    Diyalog yükleniyor…
+                  </div>
+                }
+              >
+                <DialogDemoPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/dialog-3d-demo"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                    3D + Diyalog yükleniyor…
+                  </div>
+                }
+              >
+                <PatientDialog3DPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && <Footer />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && <Footer />}
     </div>
   );
 }
