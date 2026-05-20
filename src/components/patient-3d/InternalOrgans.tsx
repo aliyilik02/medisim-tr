@@ -51,41 +51,59 @@ export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
   const heartMeshes = useRef<Mesh[]>([]);
   const lungMeshes = useRef<Mesh[]>([]);
 
-  // Mesh'leri material adına göre kategorize et + base scale kaydet
+  // Mesh'leri material adına göre kategorize et + chuma6oy ile çakışan
+  // yapıları (kemik/kas/bağ/kıkırdak) gizle.
   useEffect(() => {
     const hearts: Mesh[] = [];
     const lungs: Mesh[] = [];
+
+    // Bu material'lardaki mesh'ler chuma6oy dış cildiyle çakışır — gizle:
+    const HIDE_PATTERNS = ["bone", "muscle", "cartilage", "ligament"];
 
     scene.traverse((obj) => {
       if ((obj as Mesh).isMesh) {
         const mesh = obj as Mesh;
         const mat = mesh.material as MeshStandardMaterial | MeshStandardMaterial[];
-        const matName = Array.isArray(mat)
-          ? mat[0]?.name ?? ""
-          : mat?.name ?? "";
+        const matName = (Array.isArray(mat) ? mat[0]?.name : mat?.name) ?? "";
+        const matLower = matName.toLowerCase();
 
-        // Heart genelde "Default" veya "Heart" material — büyük mesh (vertex>50k)
-        // Splanchnology'de tipik. Default material adı tek başına yeterli değil
-        // (başka kullanımlar var) → vertex sayısı + material adı kombinasyonu.
+        // Görünmeyecek mesh'ler (kemik/kas/bağ/kıkırdak)
+        if (HIDE_PATTERNS.some((p) => matLower.includes(p))) {
+          mesh.visible = false;
+          return;
+        }
+
+        // Heart genelde "Default" material + büyük mesh (vertex>30k)
         if (
-          (matName.toLowerCase().includes("heart") ||
-            matName.toLowerCase().includes("default")) &&
+          (matLower.includes("heart") || matLower.includes("default")) &&
           mesh.geometry.attributes.position.count > 30000
         ) {
           hearts.push(mesh);
         }
 
         // Akciğer
-        if (matName.toLowerCase().includes("lung")) {
+        if (matLower.includes("lung")) {
           lungs.push(mesh);
         }
 
-        // Material'ı clone et (paylaşımlı material'ları ayır) ve hafif tweak
+        // Material'ı clone et (paylaşımlı material'ları ayır)
         if (!Array.isArray(mat) && mat) {
           const cloned = mat.clone();
-          // Sketchfab specular-glossiness → metalness-roughness conversion
-          // pbrSpecularGlossiness extension'ı drei tarafından handle edilir,
-          // burada sadece görsel tweak.
+          // Anatomik organ rengini biraz canlandır (Sketchfab varsayılan
+          // soluk olabilir, klinik atlas görünümü için doygunluk artır)
+          if (matLower.includes("lung")) {
+            cloned.color.setRGB(0.92, 0.55, 0.62); // pembe akciğer
+          } else if (matLower.includes("heart") || matLower.includes("default")) {
+            cloned.color.setRGB(0.78, 0.22, 0.18); // koyu kırmızı kalp
+          } else if (matLower.includes("intestine")) {
+            cloned.color.setRGB(0.85, 0.65, 0.55); // bağırsak ten/pembe
+          } else if (matLower.includes("liver") || matLower.includes("hepar")) {
+            cloned.color.setRGB(0.58, 0.30, 0.20); // karaciğer kahverengi
+          } else if (matLower.includes("stomach") || matLower.includes("gaster")) {
+            cloned.color.setRGB(0.85, 0.55, 0.60); // mide pembe
+          } else if (matLower.includes("spleen") || matLower.includes("lien")) {
+            cloned.color.setRGB(0.55, 0.30, 0.45); // dalak mor
+          }
           mesh.material = cloned;
         }
       }
