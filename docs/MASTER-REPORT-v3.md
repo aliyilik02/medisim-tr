@@ -2,6 +2,8 @@
 ## Claude Code Referans Manuali + Klinik/Anatomik Standartlar Rehberi
 
 > Bu doküman, önceki iki raporun (3D motor + AI + Cloudflare karar raporu, Claude Code + tasarım stack + rakipler raporu) **tüm somut kararlarını koruyup**, üzerine **Bölüm 9: Klinik ve Anatomik Standartlar Rehberi**'ni ekler. Claude Code'un her kodlama oturumunda referans alacağı tek master dosyadır.
+>
+> **Son güncelleme:** 20 Mayıs 2026 — Bölüm 11 sprint tablosu güncel duruma çekildi (B.5 ses altyapısı kod hazır, D.2 fizyolojik animasyon erken parçaları tamamlandı). Stack/standartlar/klinik kurallar (Bölüm 2-10) değişmedi.
 
 ---
 
@@ -9,7 +11,16 @@
 
 **Üç cümlede MediSim TR konumu:** R3F + WebGPU + Cloudflare Workers + Gemini 2.5 Flash mimarisinde kalıyoruz; Body Interact'ın 22 Nisan 2026'da İngilizce/İspanyolca beta olarak başlattığı AI-Driven Conversations'a karşı **6–12 aylık Türkçe pencere**miz var; Z-Anatomy CC BY-SA + Pulse Physiology Engine + UÇEP-2020 + TEPDAD 2025 standartları üzerine kurulu yerli içerik bizi taklit edilemez yapacak.
 
+**20 Mayıs 2026 itibarıyla yapıldı (önceki 2 hafta):**
+- B.5 oskültasyon ses servisi altyapısı (`auscultationAudio.ts` + region `auscultationSoundId`); ses dosyaları (Wikimedia CC BY-SA) kullanıcı tarafından manuel indirme bekliyor
+- D.2 erken parçaları: cilt tonu shader (4 preset — normal/siyanoz/ikter/solgun), çift center solunum (chest + abdomen diafragma simülasyonu)
+- A.1 anatomik landmark düzeltme: TA2-2019 / 8-head canon ile marker koordinatları rehesaplama (memory `medisim_anatomik_landmark.md`)
+- Memory paketi: 5 referans dosyası (anatomik landmark, klinik anatomi, sağlık standartları, rakip analizi, animasyon teknikleri) + master rapor pointer
+- CLAUDE.md master rapor v3.0 ile senkronize (172 satır silindi, 111 eklendi)
+- Procedure altyapısı (stetoskop + O2 maskesi animasyonu) — B.5 ile D.2 sınırında, rapor adlandırmasında yok ama temel oldu
+
 **Hemen (0–4 hafta):**
+- Ready Player Me avatar entegrasyonu → D.2'yi tamamla (göz blink + ağız + pupil)
 - Sprint B.2: AI hasta diyaloğu UI (Gemini 2.5 Flash + Calgary-Cambridge process)
 - Cloudflare ticari ekibinden BAA/Veri İşleyici Sözleşmesi **yazılı** doğrulama (Workers/DO/Workers AI kapsamı)
 - KVKK 24 Kasım 2025 Üretken Yapay Zekâ Rehberi (64 sayfa) ile iç uyum kontrolü
@@ -591,26 +602,44 @@ interface MediSimScenario {
 
 ## BÖLÜM 11 — AKSİYON YOL HARİTASI (12 AY)
 
-| Sprint | Konu | Durum |
-|--------|------|-------|
-| A | Procedural mannequin + marker + breathing | ✅ TAMAM |
-| A.1 | Anatomik orantı düzeltme | ✅ TAMAM |
-| B.0 | Cloudflare Workers + Gemini Flash backend | 🔄 DEVAM |
-| B.1 | Sketchfab anatomik torso CC BY | ✅ TAMAM |
-| B.1.1 | Marker yüzey + shader breathing | ✅ TAMAM |
-| **B.2** | **AI hasta diyaloğu UI** | **🎯 SIRADAKİ** |
-| B.3 | Vital signs HUD + 12-derivasyon EKG | Sıraya alındı |
-| B.4 | Engine binding + Z-Anatomy + clipping plane | Sıraya alındı |
-| B.5 | Auskültasyon ses (PASCAL Heart Sounds CC0) | Sıraya alındı |
-| C.1 | Tailwind v4 + shadcn/ui + marka | Sıraya alındı |
-| C.2 | Senaryo authoring UI (React Flow + JSON Schema) | Sıraya alındı |
-| C.3 | Astro 5 landing | Sıraya alındı |
-| D.1 | Pulse Physiology Engine entegrasyonu | Sıraya alındı |
-| D.2 | Fizyolojik animasyon paketi | Sıraya alındı |
-| D.3 | Custom MCP'ler | Sıraya alındı |
-| D.4 | Subagent ekiplemesi | Sıraya alındı |
-| E | TR üniversite pilot, KVKK VKED, TEPDAD eşliği | 3–6 ay |
-| F | Çok dilli ihracat (EN, AR), VR/AR | 6–12 ay |
+**Güncel durum (20 Mayıs 2026):**
+
+| Sprint | Konu | Durum | Notlar |
+|--------|------|-------|--------|
+| A | Procedural mannequin + marker + breathing | ✅ | İlk iskelet (procedural sphere'ler) → Sprint B.1'de gerçek anatomik modele evrildi |
+| A.1 | Anatomik orantı düzeltme | ✅ | 20 May 2026: TA2-2019 / 8-head canon ile marker koordinatları rehesaplandı; memory `medisim_anatomik_landmark.md` |
+| B.0 | Cloudflare Workers + Gemini Flash backend | ⏸ | Henüz başlamadı; B.2 öncesi kurulum gerekecek |
+| B.1 | Sketchfab anatomik torso CC BY | ✅ | chuma6oy "Male full body anatomy" `patient-v2.glb` (CC BY 4.0, 1.33 MB, 154k vertex, gltf-transform optimize) |
+| B.1.1 | Marker yüzey + shader breathing | ✅ | 6 region marker + falloff shader (chest + abdomen çift center) |
+| **B.2** | **AI hasta diyaloğu UI** | **🎯 SIRADAKİ** | Gemini 2.5 Flash + Calgary-Cambridge; B.0 kurulumu önce gerekiyor |
+| B.3 | Vital signs HUD + 12-derivasyon EKG | ⏸ | Sıraya alındı |
+| B.4 | Engine binding + Z-Anatomy multi-mesh + clipping plane | ⏸ | Z-Anatomy CC BY-SA download bekliyor |
+| B.5 | Auskültasyon ses altyapısı | 🔄 partial | Kod hazır (`auscultationAudio.ts`, region `auscultationSoundId`, SOUNDS-LICENSE.md); 4 ses dosyası (Wikimedia CC BY-SA) kullanıcı manuel indirme bekliyor |
+| C.1 | Tailwind v4 + shadcn/ui + marka kimliği | ⏸ | Mevcut Tailwind v3'ten geçiş |
+| C.2 | Senaryo authoring UI (React Flow + JSON Schema) | ⏸ | Sıraya alındı |
+| C.3 | Astro 5 landing | ⏸ | Sıraya alındı |
+| D.1 | Pulse Physiology Engine entegrasyonu (Node sidecar) | ⏸ | Apache 2.0, validation kanıtlı |
+| D.2 | Fizyolojik animasyon paketi | 🔄 partial | **Tamam:** cilt tonu shader 4 preset (siyanoz/ikter/solgun/normal), çift-center solunum (diafragma). **Bekliyor:** RPM avatar göz blink + ağız + pupil + jugular dolgunluk + peristaltik + ödem + SSS |
+| D.2.x | Procedure altyapısı (stetoskop + O2 maskesi) | ✅ | `ProcedureOverlay` dispatcher + `useProcedureAnimation` hook + 2 prosedür komponenti; rapor adlandırmasında yok, B.5+D.2 sınırı |
+| D.3 | Custom MCP'ler (`medisim-scenario-engine`, `medisim-anatomy`, `medisim-drugs`) | ⏸ | Sıraya alındı |
+| D.4 | Subagent ekiplemesi + paralel worktree | ⏸ | Sıraya alındı |
+| E | TR üniversite pilot, KVKK VKED, TEPDAD eşliği | 3–6 ay | — |
+| F | Çok dilli ihracat (EN, AR), VR/AR opsiyonu | 6–12 ay | — |
+
+**Bu seansta üretilen referans dokümanlar (memory):**
+- `medisim_master_referans.md` — bu master rapora pointer + güncel sprint özeti
+- `medisim_anatomik_landmark.md` — 3D world koordinat tablosu (8-head canon, APE-to-Man auskültasyon)
+- `medisim_anatomi_klinik.md` — karın 9 bölge + toraks + vasküler + deri/yanık
+- `medisim_saglik_standartlari.md` — ICD/SNOMED/FHIR + Türkiye USS/MHRS/SUT + KVKK ÜYZ 2025
+- `medisim_rakip_analiz.md` — Body Interact + Gaumard + Laerdal + CAE + Anatomage
+- `medisim_animasyon_teknikleri.md` — R3F morph/breathing/eye/audio + asset gereksinimi
+
+**Test/build:** 415 vitest pass / 0 fail (22 dosya) + 9 Playwright E2E pass. Prod build temiz.
+
+**Eksik/bekleyen:**
+- Kullanıcı (Ali Bey) → Ready Player Me full-body avatar indirme + manuel
+- Kullanıcı → 4 oskültasyon ses dosyası manuel indirme (Wikimedia URL'leri verildi)
+- Cloudflare BAA Workers/DO yazılı doğrulama (B.2 prod öncesi)
 
 ---
 
