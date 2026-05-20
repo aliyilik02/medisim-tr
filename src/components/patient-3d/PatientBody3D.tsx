@@ -1,8 +1,9 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { PerspectiveCamera, type Group } from "three";
+import { PerspectiveCamera, Plane, Vector3, type Group } from "three";
 import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
+import { InternalOrgans } from "./InternalOrgans";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
 import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
@@ -18,6 +19,15 @@ interface Props {
   skinTint?: SkinTint;
   /** Sprint B.2 entegrasyon: hasta konuşurken ağız bölgesi shader oscillation. */
   speaking?: boolean;
+  /**
+   * Sprint B.4 — Cilt kesim seviyesi (0.0-1.0).
+   * 1.0 = cilt tamamen kapalı (default).
+   * 0.0 = cilt tamamen açık, iç organlar görünür.
+   * Slider ile yukarıdan aşağıya kademeli açılma.
+   */
+  skinClipLevel?: number;
+  /** B.4 — Kalp/akciğer animasyon hızı için vital'ler. */
+  organVitals?: { hr: number; rr: number };
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
   /** Sprint B.2.1: Prosedür animasyonu tamamlandığında engine'e iletilecek ActionRef. */
@@ -65,6 +75,8 @@ export function PatientBody3D({
   breathing = true,
   skinTint = "normal",
   speaking = false,
+  skinClipLevel = 1.0,
+  organVitals,
   onRegionSelect,
   onProcedureComplete,
   className,
@@ -72,6 +84,22 @@ export function PatientBody3D({
   const [selected, setSelected] = useState<PatientRegion | null>(null);
   const [activeProcedure, setActiveProcedure] = useState<ProcedureContext | null>(null);
   const bodyRef = useRef<Group>(null);
+
+  // Sprint B.4: Skin clipping plane.
+  // Model world y bbox = [-0.243, 0.778], height = 1.021.
+  // skinClipLevel 1.0 → clip plane y_max üstünde (etkisiz).
+  // skinClipLevel 0.0 → clip plane y_min altında (tüm cilt clipped).
+  // Plane normal aşağı bakar (0, -1, 0); constant = clipY.
+  const clipY = useMemo(() => {
+    return -0.243 + skinClipLevel * 1.021;
+  }, [skinClipLevel]);
+
+  const clippingPlanes = useMemo(() => {
+    if (skinClipLevel >= 1.0) return undefined; // clipping yok
+    return [new Plane(new Vector3(0, -1, 0), clipY)];
+  }, [clipY, skinClipLevel]);
+
+  const showOrgans = skinClipLevel < 0.95;
 
   const handleSelect = (region: PatientRegion) => {
     setSelected(region);
@@ -117,7 +145,11 @@ export function PatientBody3D({
         data-testid="patient-3d-canvas"
         frameloop={breathing || activeProcedure || speaking ? "always" : "demand"}
         dpr={[1, 2]}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        gl={{
+          localClippingEnabled: true,
+          antialias: true,
+          powerPreference: "high-performance",
+        }}
         shadows
       >
         <color attach="background" args={["#0a0a0c"]} />
@@ -141,7 +173,15 @@ export function PatientBody3D({
             breathing={breathing}
             skinTint={skinTint}
             speaking={speaking}
+            clippingPlanes={clippingPlanes}
           />
+          {showOrgans && (
+            <InternalOrgans
+              hr={organVitals?.hr ?? 75}
+              rr={organVitals?.rr ?? 14}
+              visible={showOrgans}
+            />
+          )}
           {regions.map((region) => (
             <RegionMarker
               key={region.id}

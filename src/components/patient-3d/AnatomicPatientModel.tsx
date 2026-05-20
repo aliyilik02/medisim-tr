@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { MeshStandardMaterial, type Group } from "three";
+import { MeshStandardMaterial, type Group, type Plane } from "three";
 
 // onBeforeCompile callback'inin Three.js dahili shader objesinin tipi.
 type ShaderRef = {
@@ -58,10 +58,15 @@ interface Props {
    * blendshape ile değiştirilecek.
    */
   speaking?: boolean;
+  /**
+   * Sprint B.4 — Skin clipping planes. Cilt altı organları görünür yapmak için.
+   * Boş array → clipping yok (default).
+   */
+  clippingPlanes?: Plane[];
 }
 
 export const AnatomicPatientModel = forwardRef<Group, Props>(
-  ({ breathing = true, skinTint = "normal", speaking = false }, ref) => {
+  ({ breathing = true, skinTint = "normal", speaking = false, clippingPlanes }, ref) => {
     const { scene } = useGLTF(MODEL_URL);
     const shaderRef = useRef<ShaderRef | null>(null);
 
@@ -73,6 +78,12 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
             color: "#d4a896",
             roughness: 0.72,
             metalness: 0.0,
+            // Sprint B.4: clipping planes — cilt altı organlar
+            clippingPlanes: clippingPlanes ?? [],
+            clipShadows: true,
+            side: 2, // DoubleSide — clip iç yüzey görünmesin
+            transparent: !!clippingPlanes && clippingPlanes.length > 0,
+            opacity: !!clippingPlanes && clippingPlanes.length > 0 ? 0.92 : 1.0,
           });
           mat.onBeforeCompile = (shader) => {
             shader.uniforms.uTime = { value: 0 };
@@ -143,7 +154,7 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
           mesh.material = mat;
         }
       });
-    }, [scene, skinTint]);
+    }, [scene, skinTint, clippingPlanes]);
 
     // Breathing toggle
     useEffect(() => {

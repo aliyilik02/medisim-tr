@@ -1,21 +1,23 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Waves, Droplet } from "lucide-react";
+import { ChevronLeft, Waves, Droplet, Scissors } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
+import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import type { ActionRef } from "@/engine/types";
 
 // ============================================================
-// PatientDialog3DPage — Sprint B.2 entegre demo
+// PatientDialog3DPage — Sprint B.2 + B.3 + B.4 entegre demo
 // ============================================================
-// 3D anatomik model + AI hasta diyalog yan yana.
-// Hasta yanıt verirken AnatomicPatientModel shader'da ağız bölgesi
-// oscillation (mock lipsync). RPM avatar geldiğinde gerçek
-// mouthOpen blendshape'e geçilecek.
+// 3D anatomik model + AI hasta diyalog + Vital HUD + Cilt kesim.
 // Route: /dialog-3d-demo
+//
+// B.2: Gemini hasta diyaloğu (sağ panel) + mock lipsync (3D shader).
+// B.3: Sağ üst CompactVitalsHUD (PALS yaş bazlı + 12-Lead modal).
+// B.4: Sol alt Cilt Kesim slider — iç organlar (kalp/akciğer/karaciğer/...)
 // ============================================================
 
 const SKIN_TINT_CYCLE: SkinTint[] = ["normal", "cyanosis", "jaundice", "pallor"];
@@ -31,6 +33,7 @@ export function PatientDialog3DPage() {
   const [breathing, setBreathing] = useState(true);
   const [skinTint, setSkinTint] = useState<SkinTint>("normal");
   const [speaking, setSpeaking] = useState(false);
+  const [skinClipLevel, setSkinClipLevel] = useState(1.0); // 1=kapalı, 0=tüm açık
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
 
@@ -57,7 +60,7 @@ export function PatientDialog3DPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">
-            Sprint B.2 · 3D + AI Hasta Diyaloğu
+            Sprint B.2-B.4 · 3D + AI + Vital + Anatomi
           </div>
           <h1 className="font-display text-base leading-tight truncate">
             {scenario.title}
@@ -106,8 +109,14 @@ export function PatientDialog3DPage() {
             breathing={breathing}
             skinTint={skinTint}
             speaking={speaking}
+            skinClipLevel={skinClipLevel}
+            organVitals={{
+              hr: scenario.initial_vitals.hr,
+              rr: scenario.initial_vitals.rr,
+            }}
             onProcedureComplete={handleProcedureComplete}
           />
+
           {/* Speaking indicator */}
           {speaking && (
             <div
@@ -118,6 +127,45 @@ export function PatientDialog3DPage() {
               Hasta konuşuyor
             </div>
           )}
+
+          {/* B.3: Vital HUD sağ üst */}
+          <div className="absolute top-4 right-4">
+            <CompactVitalsHUD
+              vitals={scenario.initial_vitals}
+              patientAge={scenario.patient.age}
+              ecgPattern={scenario.ekg_pattern}
+            />
+          </div>
+
+          {/* B.4: Cilt Kesim slider sol alt */}
+          <div
+            className="absolute bottom-4 left-4 bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-lg p-3 w-[240px]"
+            data-testid="skin-clip-control"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Scissors className="w-3.5 h-3.5 text-brand" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-brand">
+                Cilt Kesim
+              </span>
+              <span className="ml-auto font-mono text-[10px] text-ink-400">
+                {Math.round((1 - skinClipLevel) * 100)}% açık
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.02"
+              value={skinClipLevel}
+              onChange={(e) => setSkinClipLevel(parseFloat(e.target.value))}
+              className="w-full accent-brand"
+              aria-label="Cilt kesim seviyesi"
+            />
+            <div className="flex justify-between font-mono text-[8px] text-ink-500 mt-1">
+              <span>← Tüm aç</span>
+              <span>Kapalı →</span>
+            </div>
+          </div>
         </div>
 
         {/* Sağ: Dialog Chat */}

@@ -15,8 +15,10 @@ import {
   AGE_GROUP_LABEL,
   type VitalStatus,
 } from "@/clinical/vital-thresholds";
-import { Activity, AlertTriangle } from "lucide-react";
+import { Activity, AlertTriangle, Maximize2, X } from "lucide-react";
+import { useState } from "react";
 import { EcgStrip } from "@/components/EcgStrip";
+import { TwelveLeadEcg } from "@/components/TwelveLeadEcg";
 
 interface Props {
   vitals: PatientVitals;
@@ -44,6 +46,7 @@ export function CompactVitalsHUD({
   ecgPattern = "normal",
   className,
 }: Props) {
+  const [showTwelveLead, setShowTwelveLead] = useState(false);
   const statuses = evaluateVitals(vitals, patientAge);
   const worst = worstVitalStatus(statuses);
   const ageGroup = getAgeGroup(patientAge);
@@ -117,9 +120,20 @@ export function CompactVitalsHUD({
       <div className="border-t border-ink-700/40 pt-2">
         <div className="text-[8px] uppercase tracking-[0.15em] text-ink-500 mb-1 flex items-center justify-between">
           <span>EKG (Lead II)</span>
-          {ecgPattern !== "normal" && (
-            <span className="text-clinical-warning">{ecgPattern}</span>
-          )}
+          <div className="flex items-center gap-1">
+            {ecgPattern !== "normal" && (
+              <span className="text-clinical-warning">{ecgPattern}</span>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowTwelveLead(true)}
+              className="text-ink-400 hover:text-brand-light transition px-1 py-0.5 rounded hover:bg-ink-800 flex items-center gap-1 text-[8px] uppercase tracking-[0.1em]"
+              title="12-derivasyon EKG aç"
+            >
+              <Maximize2 className="w-2.5 h-2.5" />
+              12-Lead
+            </button>
+          </div>
         </div>
         <div className="h-14 bg-black rounded border border-ink-700/40 overflow-hidden">
           <EcgStrip hr={vitals.hr} pattern={ecgPattern} />
@@ -133,7 +147,62 @@ export function CompactVitalsHUD({
           Kritik vital
         </div>
       )}
+
+      {/* 12-Lead EKG modal */}
+      {showTwelveLead && (
+        <TwelveLeadModal
+          onClose={() => setShowTwelveLead(false)}
+          hr={vitals.hr}
+          pattern={ecgPattern}
+        />
+      )}
     </aside>
+  );
+}
+
+function TwelveLeadModal({
+  hr,
+  pattern,
+  onClose,
+}: {
+  hr: number;
+  pattern: string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-ink-950/95 backdrop-blur-sm flex items-center justify-center p-8"
+      onClick={onClose}
+      data-testid="twelve-lead-modal"
+    >
+      <div
+        className="bg-ink-950 border border-ink-700/60 rounded-xl p-6 max-w-6xl w-full shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between mb-4">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">
+              12-Derivasyon EKG
+            </div>
+            <h2 className="font-display text-xl text-ink-50">
+              HR {hr}/dk · Pattern: {pattern}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-ink-400 hover:text-ink-100 p-2 rounded hover:bg-ink-800 transition"
+            aria-label="Kapat"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </header>
+        <TwelveLeadEcg hr={hr} pattern={pattern} />
+        <div className="mt-4 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 text-center">
+          Klinik karar destek değildir · Eğitim amaçlı simülasyon
+        </div>
+      </div>
+    </div>
   );
 }
 
