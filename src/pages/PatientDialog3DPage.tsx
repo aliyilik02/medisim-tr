@@ -9,8 +9,18 @@ import { MediaAttributions } from "@/components/patient-3d/MediaAttributions";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
-import { startSession, type SessionState, type ActionRef } from "@/engine";
+import {
+  startSession,
+  evaluateAction,
+  applyVitalsChange,
+  completeStep,
+  pickNextStep,
+  getCurrentStep,
+  type SessionState,
+  type ActionRef,
+} from "@/engine";
 import { useVitalsTick } from "@/hooks/useVitalsTick";
+import { ActionHistoryPanel, type ActionLogEntry } from "@/components/dialog/ActionHistoryPanel";
 
 // ============================================================
 // PatientDialog3DPage — Sprint B.2 + B.3 + B.4 entegre demo
@@ -42,14 +52,15 @@ export function PatientDialog3DPage() {
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
 
-  // Sprint senaryo motor mini-entegrasyon — startSession + useVitalsTick
-  // canlı vital değişimi (pharmacology engine farmakokinetik tick).
-  // Şimdilik action UI yok → vital baseline'da kalır, ama altyapı hazır.
+  // Sprint senaryo motor TAM entegrasyon — startSession + useVitalsTick
+  // + evaluateAction (action submit) → vital değişimi canlı, step ilerler.
   const [session, setSession] = useState<SessionState | null>(null);
+  const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
 
   useEffect(() => {
-    // Senaryo değişince yeni session başlat
+    // Senaryo değişince yeni session başlat + action log temizle
     setSession(startSession(scenario, "egitim", scenario.difficulty));
+    setActionLog([]);
   }, [scenario]);
 
   useVitalsTick({
@@ -77,9 +88,89 @@ export function PatientDialog3DPage() {
     setAutoTint(true);
   }, [scenarioId]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleProcedureComplete = (_action: ActionRef) => {
-    // İleride scenario engine'e iletilebilir
+  const handleProcedureComplete = (action: ActionRef) => {
+    if (!session) return;
+    const step = getCurrentStep(scenario, session);
+    const ts = Date.now();
+
+    // Mevcut adım aksiyon kabul etmiyorsa (decision/info veya null) — bilgi log'u
+    if (!step || step.kind !== "action") {
+      setActionLog((prev) =>
+        [
+          {
+            action,
+            points: 0,
+            feedback: step
+              ? "Bu adımda doktor müdahalesi beklenmiyor (karar/bilgi adımı)."
+              : "Senaryo tamamlandı — yeni eylem değerlendirilmez.",
+            critical: false,
+            matched: false,
+            ts,
+          },
+          ...prev,
+        ].slice(0, 10),
+      );
+      return;
+    }
+
+    const evaluation = evaluateAction(
+      step,
+      action,
+      scenario,
+      session.selected_difficulty,
+    );
+
+    setSession((prev) => {
+      if (!prev) return prev;
+      let s = prev;
+
+      // Statik vital değişimi — baseline'a işle, görünür vitals da güncelle
+      // (pharmacology tick farmakokinetiği baseline üstüne ekleyecek)
+      if (evaluation.vitals_change) {
+        s = {
+          ...s,
+          baseline_vitals: applyVitalsChange(
+            s.baseline_vitals,
+            evaluation.vitals_change,
+          ),
+          vitals: applyVitalsChange(s.vitals, evaluation.vitals_change),
+        };
+      }
+
+      // Eşleşen outcome varsa adımı tamamla, sonraki adıma geç
+      if (evaluation.matched_outcome) {
+        const nextStepId = pickNextStep(
+          scenario,
+          step.id,
+          evaluation.unlocks,
+          s.selected_difficulty,
+        );
+        s = completeStep(
+          s,
+          step.id,
+          evaluation.points,
+          [action],
+          evaluation.critical ? 1 : 0,
+          nextStepId,
+        );
+      }
+
+      return s;
+    });
+
+    setActionLog((prev) =>
+      [
+        {
+          action,
+          points: evaluation.points,
+          feedback: evaluation.feedback,
+          critical: evaluation.critical,
+          matched: evaluation.matched_outcome !== null,
+          ts,
+        },
+        ...prev,
+      ].slice(0, 10),
+    );
   };
 
   return (
@@ -217,6 +308,13 @@ export function PatientDialog3DPage() {
               </button>
             </div>
           </div>
+
+          {/* SOL ORTA: Action History — 3D bölgeye tıklayıp prosedür
+              tetiklendiğinde engine evaluateAction sonucu burada görünür */}
+          <ActionHistoryPanel
+            entries={actionLog}
+            className="absolute bottom-[120px] left-4 w-[260px] shadow-xl"
+          />
 
           {/* SOL ALT: Cilt Kesim slider */}
           <div
