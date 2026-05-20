@@ -66,10 +66,12 @@ export function InternalOrgans({
     const hearts: Mesh[] = [];
     const lungs: Mesh[] = [];
 
-    // Material adına göre kesin gizle (chuma6oy ile çakışan yapılar)
+    // Material adına göre kesin gizle (chuma6oy ile çakışan yapılar +
+    // sindirim iç yüzey membranları görsel olarak organ değil)
     const HIDE_PATTERNS = [
       "bone", "muscle", "cartilage", "ligament",
       "peritoneum", "suture", "teeth", "fascia",
+      "mucosa",  // sindirim iç yüzey — opaque shell, gerçek organ değil
     ];
 
     // Görünür organ adları (Splanchnology generic + spesifik)
@@ -86,7 +88,7 @@ export function InternalOrgans({
       "bladder", "vesica",
       "esophagus", "esofagus",
       "gland", "thyroid",
-      "mucosa", "ductus",
+      "ductus",
     ];
 
     const decisions: Array<{
@@ -105,6 +107,9 @@ export function InternalOrgans({
       const matLower = matName.toLowerCase();
       const vertexCount = mesh.geometry.attributes.position.count;
       const alphaMode = !Array.isArray(mat) && mat?.transparent ? "BLEND" : "OPAQUE";
+      // LINES (mode 1) ve POINTS (mode 0) — axis helper / wireframe gürültü.
+      // Three.js Mesh.type === "Mesh", LineSegments → "LineSegments".
+      const isLineGeometry = mesh.type !== "Mesh";
 
       // Mesh bbox boyutu — pleura/cavity shell'lerini yakala
       mesh.geometry.computeBoundingBox();
@@ -122,6 +127,9 @@ export function InternalOrgans({
       if (debugShowAll) {
         shouldShow = true;
         reason = "debugShowAll";
+      } else if (isLineGeometry) {
+        shouldShow = false;
+        reason = `line geometry (${mesh.type})`;
       } else if (maxDim > MAX_ORGAN_SIZE_RAW) {
         shouldShow = false;
         reason = `too big (maxDim=${maxDim.toFixed(2)} > ${MAX_ORGAN_SIZE_RAW})`;
@@ -148,12 +156,17 @@ export function InternalOrgans({
       if (!shouldShow) return;
 
       // Animasyon hedefleri
-      if (
-        (matLower.includes("heart") ||
-          matLower.includes("default") ||
-          matLower.includes("organ")) &&
-        vertexCount > 20_000
-      ) {
+      // Kalp: direkt "heart" eşleşmesi öncelikli; Splanchnology generic
+      // "default"/"organ" mesh'leri çoğu kez kalp+karaciğer+mide kombosudur.
+      // Sıkı vertex aralığı (5k-30k) gerçek kalbin boyutuna yakın.
+      const isHeartLikely =
+        matLower.includes("heart") ||
+        (
+          (matLower === "default.001" || matLower === "organ.001") &&
+          vertexCount >= 5_000 &&
+          vertexCount <= 30_000
+        );
+      if (isHeartLikely) {
         hearts.push(mesh);
       }
       if (matLower.includes("lung") || matLower.includes("bronchi")) {
