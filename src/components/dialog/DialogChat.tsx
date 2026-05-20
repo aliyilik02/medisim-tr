@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, RotateCcw } from "lucide-react";
+import { Send, RotateCcw, Cpu, Database } from "lucide-react";
 import type { Scenario } from "@/engine";
 import {
   generateMockResponse,
@@ -9,13 +9,15 @@ import {
   type DialogTurn,
   type CalgaryStage,
 } from "./mockDialogResponder";
+import { streamChat, pingBackend, type ChatMessage } from "./geminiBackend";
+import { buildPatientPersona } from "./personaBuilder";
 
 // ============================================================
-// DialogChat — Sprint B.2 erken iskelet
+// DialogChat — Sprint B.2 (Gemini bağlı)
 // ============================================================
 // Calgary-Cambridge 5 aşama process backbone + chat UI.
-// Backend mock (mockDialogResponder); Gemini 2.5 Flash entegrasyonu
-// B.0 backend kurulumu sonrası eklenecek.
+// Backend mode: ping başarılı ise Gemini 2.5 Flash, başarısız/error ise
+// mockDialogResponder fallback. Header'da rozet ile gösterilir.
 // ============================================================
 
 interface Props {
@@ -34,12 +36,28 @@ const STAGES: CalgaryStage[] = [
   "closing",
 ];
 
+type BackendMode = "checking" | "gemini" | "mock";
+
 export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
   const [turns, setTurns] = useState<DialogTurn[]>([]);
   const [currentStage, setCurrentStage] = useState<CalgaryStage>("initiating");
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [backendMode, setBackendMode] = useState<BackendMode>("checking");
+  const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // İlk render'da backend health check
+  useEffect(() => {
+    let cancelled = false;
+    pingBackend().then((ok) => {
+      if (!cancelled) setBackendMode(ok ? "gemini" : "mock");
+    });
+    return () => {
+      cancelled = true;
+      abortRef.current?.abort();
+    };
+  }, []);
 
   // Hasta konuşma süresi tahmini — kelime sayısı × 350 ms (Türkçe ortalama
   // okuma + konuşma hızı; gerçek TTS gelince audio duration'a bağlanır).
@@ -63,9 +81,74 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
     }
   }, [turns.length, currentStage]);
 
+  // Mock fallback — backend yokken veya hata sonrası
+  const runMockResponse = (history: DialogTurn[], text: string) => {
+    window.setTimeout(() => {
+      const reply = generateMockResponse({ scenario, history, currentStage }, text);
+      setTurns((prev) => [...prev, reply]);
+      setThinking(false);
+      onSpeakingChange?.(true);
+      const speakMs = estimateSpeakingMs(reply.text);
+      window.setTimeout(() => onSpeakingChange?.(false), speakMs);
+    }, 600 + Math.random() * 600);
+  };
+
+  // Gemini stream — backend bağlı durumda
+  const runGeminiResponse = async (history: DialogTurn[], _text: string) => {
+    const persona = buildPatientPersona(scenario);
+    const messages: ChatMessage[] = history.map((t) => ({
+      role: t.role === "student" ? "user" : "assistant",
+      content: t.text,
+    }));
+
+    // Placeholder patient turn — streaming sırasında bu turn güncellenir
+    const placeholderTurn: DialogTurn = {
+      role: "patient",
+      text: "",
+      at: Date.now(),
+    };
+    setTurns((prev) => [...prev, placeholderTurn]);
+
+    let accumulatedText = "";
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
+    await streamChat(
+      { scenario_id: scenario.id, patient_persona: persona, messages },
+      {
+        onText: (delta) => {
+          accumulatedText += delta;
+          setTurns((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { ...placeholderTurn, text: accumulatedText };
+            return next;
+          });
+        },
+        onDone: () => {
+          setThinking(false);
+          if (accumulatedText.length > 0) {
+            onSpeakingChange?.(true);
+            const speakMs = estimateSpeakingMs(accumulatedText);
+            window.setTimeout(() => onSpeakingChange?.(false), speakMs);
+          }
+        },
+        onError: (err, detail) => {
+          // eslint-disable-next-line no-console
+          console.warn("[gemini]", err, detail);
+          // Placeholder turn'ü sil, mock fallback ile devam
+          setTurns((prev) => prev.slice(0, -1));
+          runMockResponse(history, _text);
+          // Bu seans için mode'u mock'a düşür (tekrarlayan hata önlenir)
+          setBackendMode("mock");
+        },
+      },
+      abortRef.current.signal,
+    );
+  };
+
   const handleSend = (text?: string) => {
     const t = (text ?? input).trim();
-    if (!t || thinking) return;
+    if (!t || thinking || backendMode === "checking") return;
 
     const studentTurn: DialogTurn = {
       role: "student",
@@ -73,26 +156,16 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
       at: Date.now(),
       stage: currentStage,
     };
-    setTurns((prev) => [...prev, studentTurn]);
+    const newHistory = [...turns, studentTurn];
+    setTurns(newHistory);
     setInput("");
     setThinking(true);
 
-    // Mock latency simulation (Gemini'ye geçildiğinde gerçek)
-    window.setTimeout(() => {
-      const reply = generateMockResponse(
-        { scenario, history: [...turns, studentTurn], currentStage },
-        t,
-      );
-      setTurns((prev) => [...prev, reply]);
-      setThinking(false);
-
-      // 3D model ağız animasyonu — hasta "konuşma" süresince aktif
-      onSpeakingChange?.(true);
-      const speakMs = estimateSpeakingMs(reply.text);
-      window.setTimeout(() => {
-        onSpeakingChange?.(false);
-      }, speakMs);
-    }, 600 + Math.random() * 600);
+    if (backendMode === "gemini") {
+      runGeminiResponse(newHistory, t);
+    } else {
+      runMockResponse(newHistory, t);
+    }
   };
 
   const handleReset = () => {
@@ -108,8 +181,9 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
       {/* Header */}
       <header className="border-b border-ink-700/50 px-6 py-3 flex items-center gap-4">
         <div className="flex-1">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">
-            Sprint B.2 · AI Hasta Diyaloğu (mock)
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand flex items-center gap-2">
+            Sprint B.2 · AI Hasta Diyaloğu
+            <BackendBadge mode={backendMode} />
           </div>
           <h1 className="font-display text-lg leading-tight">
             {scenario.title}
@@ -228,9 +302,34 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
 
       {/* Disclaimer */}
       <div className="border-t border-ink-700/30 px-6 py-1.5 font-mono text-[9px] uppercase tracking-[0.15em] text-ink-600">
-        Eğitim amaçlıdır · Klinik karar destek değildir · Mock backend (Gemini entegrasyonu B.0 sonrası)
+        Eğitim amaçlıdır · Klinik karar destek değildir · {backendMode === "gemini" ? "Gemini 2.5 Flash" : "Mock backend"}
       </div>
     </div>
+  );
+}
+
+function BackendBadge({ mode }: { mode: BackendMode }) {
+  if (mode === "checking") {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-ink-800 text-ink-400 text-[9px] normal-case">
+        <span className="w-1.5 h-1.5 rounded-full bg-ink-500 animate-pulse" />
+        bağlanıyor
+      </span>
+    );
+  }
+  if (mode === "gemini") {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-clinical-stable/15 text-clinical-stable border border-clinical-stable/30 text-[9px] normal-case">
+        <Cpu className="w-2.5 h-2.5" />
+        Gemini
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-clinical-warning/15 text-clinical-warning border border-clinical-warning/30 text-[9px] normal-case">
+      <Database className="w-2.5 h-2.5" />
+      Mock
+    </span>
   );
 }
 

@@ -58,3 +58,4 @@ backend/node_modules/
 backend/.wrangler/
 backend/.dev.vars
 backend/dist/
+docs/memory/.obsidian/
