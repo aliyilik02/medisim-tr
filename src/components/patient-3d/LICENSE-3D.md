@@ -5,6 +5,52 @@ Yeni model eklerken bu dosyaya da bir bölüm ekleyin.
 
 ---
 
+## anatomy-internal.glb (Sprint B.4 — iç organlar)
+
+**Eser:** "Splanchnology" (iç organ sistemi — TA2-2019 etiketli)
+**Kaynak:** https://sketchfab.com/3d-models/splanchnology-5cfafb312f504815aa3fec55735607a6
+**Yazar:** Z-Anatomy — https://sketchfab.com/Z-Anatomy
+**Lisans:** [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/) (**Attribution-ShareAlike** — viral!)
+**Köken:** BodyParts3D (Kousaku Okubo, Database Center for Life Science, Japan)
+**Eklenme tarihi:** 2026-05-20 (Sprint B.4)
+
+### Atıf metni (uygulamada görünür yere ekle)
+
+> This work is based on "Splanchnology" (https://sketchfab.com/3d-models/splanchnology-5cfafb312f504815aa3fec55735607a6) by Z-Anatomy (https://sketchfab.com/Z-Anatomy) licensed under CC BY-SA 4.0. Derivative based on BodyParts3D (DBCLS Japan).
+
+### ⚠️ CC BY-SA viral lisans uyarısı
+
+- Türetilmiş eserler **aynı CC BY-SA 4.0 lisansla** dağıtılmalı.
+- **SaaS hizmet "yayın" sayılırsa** türetilmiş model paylaşım yükümlülüğü doğar.
+- **Hukuki gri alan** — ürün lansmanı öncesi hukuk danışmanı onayı şart.
+- Master rapor Bölüm 10 (Telif/IP) referansı.
+
+### Teknik bilgi
+
+- Format: glTF 2.0 binary (`.glb`)
+- Boyut: **3.55 MB** (optimize sonrası)
+- Orijinal: 49.93 MB scene.gltf + scene.bin (1M unique vertex, 2M triangle)
+- Optimize: `gltf-transform optimize --simplify-ratio 0.05` (95% azaltma) +
+  `dedup + weld + meshopt compress` → **~100k vertex**
+- Raw bbox: x[-0.33, 0.33], y[0.009, 1.705], z[-0.11, 0.14]
+- Wrapper transform (`InternalOrgans.tsx`): scale 0.602 + yOffset -0.249 →
+  patient-v2 world bbox y[-0.243, 0.778] ile aligned
+- Material'lar (specular-glossiness extension): Lung, Bronchi, Heart (Default),
+  Intestine, Liver, Stomach, Spleen, Cartilage, Ductus, Gland, Ligament,
+  Mucosa, Muscles, Bone
+
+### Animasyonlar
+
+- **Kalp pulsate:** HR/60 Hz, ±%8 scale (`material.name` "Heart"/"Default" + vertex>30k)
+- **Akciğer breathing:** RR/60 Hz, ±%5 scale (`material.name` "Lung")
+- D.1 Pulse Engine sonrası gerçek BPM/RR'a bağlanacak.
+
+### Kaynak klasör
+
+`public/3d/splanchnology-source/` (gitignore'da — repo'ya commit edilmez).
+
+---
+
 ## patient-v1.glb
 
 **Eser:** "Male Torso"

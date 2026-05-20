@@ -59,3 +59,5 @@ backend/.wrangler/
 backend/.dev.vars
 backend/dist/
 docs/memory/.obsidian/
+public/3d/splanchnology-source/
+public/3d/splanchnology.zip

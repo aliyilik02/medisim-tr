@@ -1,18 +1,40 @@
 // ============================================================
-// InternalOrgans — Sprint B.4 — Placeholder iç organlar
+// InternalOrgans — Sprint B.4 (Z-Anatomy gerçek mesh)
 // ============================================================
-// Primitive geometri ile kalp, akciğer, karaciğer, mide, dalak.
-// Cilt clipping aktifken görünür. Sonra Z-Anatomy CC BY-SA 4.0
-// gerçek mesh ile değiştirilir (z-anatomy-binding skill referans).
+// Asset: public/3d/anatomy-internal.glb (~3.55 MB, ~100k vertex)
+// Lisans: CC BY-SA 4.0 — atıf src/components/patient-3d/LICENSE-3D.md
+// Kaynak: "Splanchnology" by Z-Anatomy
+//   https://sketchfab.com/3d-models/splanchnology-5cfafb312f504815aa3fec55735607a6
+// Köken: BodyParts3D (DBCLS Japan), TA2-2019 etiketli yapılar
 //
-// Koordinatlar: docs/memory/medisim_anatomik_landmark.md +
-// medisim_anatomi_klinik.md'den (organ projeksiyon).
-// Animasyonlar: kalp pulsate (HR), akciğer breathing (RR).
+// Optimize: gltf-transform optimize --simplify-ratio 0.05 (95% azaltma) +
+//   weld + dedup + meshopt compress (49.93 MB → 3.55 MB).
+//
+// İçerik (materiyel adları):
+//   Lung, Bronchi, Heart (Default), Intestine, Liver, Stomach, Spleen,
+//   Cartilage, Ductus, Gland, Ligament, Mucosa, Muscles, Bone
+//
+// Wrapper transform: Splanchnology raw y[0.0092, 1.70545] (insan boyu),
+//   patient-v2 world bbox y[-0.243, 0.778]'a sığdırılır.
+//   scale = 1.021 / 1.696 = 0.602
+//   yOffset = -0.243 - (0.0092 × 0.602) = -0.249
+//
+// Animasyonlar (placeholder primitive'lerden devam):
+//   - Akciğer (material adında "Lung" geçen mesh'ler): RR/60 Hz, ±5% scale
+//   - Kalp (material "Heart" veya "Default" — splanchnology'de heart mesh büyük
+//     ve "Default" material kullanıyor): HR/60 Hz, ±8% scale
 // ============================================================
 
-import { useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import type { Mesh } from "three";
+import { useGLTF } from "@react-three/drei";
+import type { Mesh, Group, MeshStandardMaterial } from "three";
+
+const MODEL_URL = "/3d/anatomy-internal.glb";
+const MODEL_SCALE = 0.602;
+const MODEL_Y_OFFSET = -0.249;
+
+useGLTF.preload(MODEL_URL);
 
 interface Props {
   /** Heart rate (BPM) — kalp pulsate frequency. */
@@ -24,91 +46,87 @@ interface Props {
 }
 
 export function InternalOrgans({ hr = 75, rr = 14, visible = true }: Props) {
-  const heartRef = useRef<Mesh>(null);
-  const lungLeftRef = useRef<Mesh>(null);
-  const lungRightRef = useRef<Mesh>(null);
+  const { scene } = useGLTF(MODEL_URL);
+  const groupRef = useRef<Group>(null);
+  const heartMeshes = useRef<Mesh[]>([]);
+  const lungMeshes = useRef<Mesh[]>([]);
+
+  // Mesh'leri material adına göre kategorize et + base scale kaydet
+  useEffect(() => {
+    const hearts: Mesh[] = [];
+    const lungs: Mesh[] = [];
+
+    scene.traverse((obj) => {
+      if ((obj as Mesh).isMesh) {
+        const mesh = obj as Mesh;
+        const mat = mesh.material as MeshStandardMaterial | MeshStandardMaterial[];
+        const matName = Array.isArray(mat)
+          ? mat[0]?.name ?? ""
+          : mat?.name ?? "";
+
+        // Heart genelde "Default" veya "Heart" material — büyük mesh (vertex>50k)
+        // Splanchnology'de tipik. Default material adı tek başına yeterli değil
+        // (başka kullanımlar var) → vertex sayısı + material adı kombinasyonu.
+        if (
+          (matName.toLowerCase().includes("heart") ||
+            matName.toLowerCase().includes("default")) &&
+          mesh.geometry.attributes.position.count > 30000
+        ) {
+          hearts.push(mesh);
+        }
+
+        // Akciğer
+        if (matName.toLowerCase().includes("lung")) {
+          lungs.push(mesh);
+        }
+
+        // Material'ı clone et (paylaşımlı material'ları ayır) ve hafif tweak
+        if (!Array.isArray(mat) && mat) {
+          const cloned = mat.clone();
+          // Sketchfab specular-glossiness → metalness-roughness conversion
+          // pbrSpecularGlossiness extension'ı drei tarafından handle edilir,
+          // burada sadece görsel tweak.
+          mesh.material = cloned;
+        }
+      }
+    });
+
+    heartMeshes.current = hearts;
+    lungMeshes.current = lungs;
+  }, [scene]);
 
   useFrame((state) => {
     if (!visible) return;
     const t = state.clock.getElapsedTime();
 
-    // Kalp pulsate — HR/60 = Hz
-    if (heartRef.current) {
+    // Kalp pulsate — HR/60 Hz, ±8%
+    if (heartMeshes.current.length > 0) {
       const phase = Math.sin(t * 2 * Math.PI * (hr / 60));
-      const scale = 1 + phase * 0.08; // ±%8 boy değişimi
-      heartRef.current.scale.set(scale, scale, scale);
+      const scale = 1 + phase * 0.08;
+      for (const mesh of heartMeshes.current) {
+        mesh.scale.setScalar(scale);
+      }
     }
 
-    // Akciğer breathing — RR/60 = Hz
-    if (lungLeftRef.current && lungRightRef.current) {
+    // Akciğer breathing — RR/60 Hz, ±5%
+    if (lungMeshes.current.length > 0) {
       const phase = Math.sin(t * 2 * Math.PI * (rr / 60));
-      const scale = 1 + phase * 0.12; // ±%12 boy değişimi
-      lungLeftRef.current.scale.set(scale, scale, scale);
-      lungRightRef.current.scale.set(scale, scale, scale);
+      const scale = 1 + phase * 0.05;
+      for (const mesh of lungMeshes.current) {
+        mesh.scale.setScalar(scale);
+      }
     }
   });
+
+  // useMemo + clone scene → mesh material modifikasyonu cache'lenmiş
+  // gltf'i etkilemesin (aynı asset başka component'ta kullanılırsa).
+  const sceneInstance = useMemo(() => scene, [scene]);
 
   if (!visible) return null;
 
   return (
-    <group>
-      {/* Kalp — 4. ICS sol, sternum arkası */}
-      <mesh ref={heartRef} position={[-0.02, 0.50, 0.05]}>
-        <sphereGeometry args={[0.04, 24, 16]} />
-        <meshStandardMaterial
-          color="#a83232"
-          roughness={0.4}
-          metalness={0.1}
-          emissive="#3a0808"
-          emissiveIntensity={0.3}
-        />
-      </mesh>
-
-      {/* Sağ akciğer — sağ hemithoraks (sahnede ekrandan baktığımızda sol) */}
-      <mesh ref={lungRightRef} position={[0.10, 0.53, 0.03]}>
-        <sphereGeometry args={[0.05, 16, 12]} />
-        <meshStandardMaterial
-          color="#f0a0a0"
-          roughness={0.7}
-          opacity={0.92}
-          transparent
-        />
-      </mesh>
-
-      {/* Sol akciğer — sol hemithoraks */}
-      <mesh ref={lungLeftRef} position={[-0.10, 0.53, 0.03]}>
-        <sphereGeometry args={[0.045, 16, 12]} />
-        <meshStandardMaterial
-          color="#f0a0a0"
-          roughness={0.7}
-          opacity={0.92}
-          transparent
-        />
-      </mesh>
-
-      {/* Karaciğer — sağ üst kadran (RUQ), sahnede +x */}
-      <mesh position={[0.06, 0.40, 0.04]} rotation={[0, 0, -0.2]}>
-        <boxGeometry args={[0.10, 0.06, 0.07]} />
-        <meshStandardMaterial color="#6b3a1a" roughness={0.6} />
-      </mesh>
-
-      {/* Mide — sol üst kadran (LUQ) */}
-      <mesh position={[-0.05, 0.40, 0.04]}>
-        <sphereGeometry args={[0.035, 16, 12]} />
-        <meshStandardMaterial color="#c97b8a" roughness={0.5} />
-      </mesh>
-
-      {/* Dalak — LUQ posterolateral */}
-      <mesh position={[-0.10, 0.42, 0.02]}>
-        <sphereGeometry args={[0.025, 16, 12]} />
-        <meshStandardMaterial color="#8b4570" roughness={0.5} />
-      </mesh>
-
-      {/* İnce bağırsak — orta abdomen, paketlenmiş tüp */}
-      <mesh position={[0, 0.32, 0.04]}>
-        <sphereGeometry args={[0.05, 16, 12]} />
-        <meshStandardMaterial color="#d4a8a0" roughness={0.6} opacity={0.85} transparent />
-      </mesh>
+    <group ref={groupRef} scale={MODEL_SCALE} position={[0, MODEL_Y_OFFSET, 0]}>
+      <primitive object={sceneInstance} />
     </group>
   );
 }
