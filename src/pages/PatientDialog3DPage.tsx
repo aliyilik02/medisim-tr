@@ -17,6 +17,7 @@ import {
   completeStep,
   pickNextStep,
   getCurrentStep,
+  finalizeSession,
   type SessionState,
   type ActionRef,
   type Step,
@@ -24,6 +25,7 @@ import {
 import { useVitalsTick } from "@/hooks/useVitalsTick";
 import { ActionHistoryPanel, type ActionLogEntry } from "@/components/dialog/ActionHistoryPanel";
 import { CurrentStepPanel } from "@/components/dialog/CurrentStepPanel";
+import { DebriefModal } from "@/components/dialog/DebriefModal";
 
 // ============================================================
 // PatientDialog3DPage — Sprint B.2 + B.3 + B.4 entegre demo
@@ -59,12 +61,21 @@ export function PatientDialog3DPage() {
   // + evaluateAction (action submit) → vital değişimi canlı, step ilerler.
   const [session, setSession] = useState<SessionState | null>(null);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
+  const [debriefOpen, setDebriefOpen] = useState(false);
 
   useEffect(() => {
-    // Senaryo değişince yeni session başlat + action log temizle
+    // Senaryo değişince yeni session başlat + action log + debrief temizle
     setSession(startSession(scenario, "egitim", scenario.difficulty));
     setActionLog([]);
+    setDebriefOpen(false);
   }, [scenario]);
+
+  // Senaryo finished olunca otomatik finalize + debrief modal aç
+  useEffect(() => {
+    if (!session || !session.finished || session.grade) return;
+    setSession((prev) => (prev ? finalizeSession(prev, scenario, "completed") : prev));
+    setDebriefOpen(true);
+  }, [session, scenario]);
 
   useVitalsTick({
     scenario,
@@ -265,6 +276,12 @@ export function PatientDialog3DPage() {
     });
   };
 
+  const handleRestart = () => {
+    setSession(startSession(scenario, "egitim", scenario.difficulty));
+    setActionLog([]);
+    setDebriefOpen(false);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-ink-950 text-ink-50 overflow-hidden">
       {/* Header — kompakt, sade */}
@@ -456,6 +473,17 @@ export function PatientDialog3DPage() {
           />
         </div>
       </div>
+
+      {/* Debrief — senaryo finished olunca otomatik açılır */}
+      {session && (
+        <DebriefModal
+          open={debriefOpen}
+          scenario={scenario}
+          session={session}
+          onRestart={handleRestart}
+          onClose={() => setDebriefOpen(false)}
+        />
+      )}
     </div>
   );
 }
