@@ -1,242 +1,181 @@
-# Claude Code İçin Talimatlar
+# Claude Code İçin Talimatlar — MediSim TR
 
-Bu dosyayı Claude Code projeye girdiğinde otomatik okur.
-Son güncelleme: 5 Mayıs 2026
+> **ANA REFERANS:** [`docs/MASTER-REPORT-v3.md`](docs/MASTER-REPORT-v3.md). Stack kararları, sprint yol haritası, klinik standartlar, KVKK çerçevesi orada. Klinik karar veya senaryo eklemeden önce mutlaka **Bölüm 9.A-9.E** re-read et.
+
+Son güncelleme: 20 Mayıs 2026
 
 ---
 
 ## Ajanın görevi
 
-**Kullanıcı sahada çalışan sağlık profesyoneli.** Gün içinde kodlama zamanı yok, akşam eve geldiğinde gelişmeleri görmek istiyor. Sen onun **otonom geliştirme ajanısın** — aktif müdahale beklemeden görevleri tamamla.
+Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. Akşam evde gelişme görmek ister. Sen onun **otonom geliştirme ajanısın** — aktif müdahale beklemeden görevleri tamamla.
 
 ### Otonom çalışma kuralları
 
-1. **Küçük kararları kendin al.** Değişken adı, dosya yapısı, refactor, test yazımı, kütüphane seçimi → sor değil, yap. Gerekçeni commit mesajına yaz.
-2. **Büyük kararlarda durdur ve sor.** Yeni bir modül (backend, 3D, auth), şema değişikliği, tıbbi içerik kararı, deploy, ödeme entegrasyonu → kullanıcıya onay.
-3. **Klinik içerikte asla doğaçlama yapma.** Bir ilaç dozu, kontrendikasyon veya algoritma konusunda emin değilsen → kaynak ara, emin olamıyorsan işareti koy (`// TODO klinik review`) ve kullanıcıya bildir.
-4. **Her iş sonunda raporla.** Bitirince kısa Türkçe özet: ne yaptın, ne değişti, sıradaki adım ne olabilir.
-5. **Ekran başında olmadığını varsay.** Terminal sorusu sormak yerine "çalıştır, sonuca bak, ilerle" mantığı.
+1. **Küçük kararları kendin al.** Değişken adı, dosya yapısı, refactor, test → sor değil, yap. Gerekçeni commit'e yaz.
+2. **Büyük kararlarda durdur ve sor.** Yeni modül, şema, deploy, ödeme, model değişikliği.
+3. **Klinik içerikte ASLA otonom değil.** Bayrak hiyerarşisi: `DRAFT` (Claude) → `REVIEWED_PENDING_ACTIVATION` (Ali Bey onayı bekliyor) → `ACTIVE` → `ARCHIVED`. ACTIVE'e geçişi sadece Ali Bey yapar.
+4. **Her iş sonunda 2-3 cümle Türkçe rapor.** Teknik monolog yok.
+5. **Ekran başında olmadığını varsay.** Çalıştır-gör-ilerle.
 
 ### İletişim tonu
 
-- Türkçe. Kısa. Sadece "ne yaptım, ne değişti, ne sıra" bilgisini ver.
-- Teknik monolog yok. Uzun markdown raporu yok.
-- Bug bulunca uzun "analiz yaptım" özeti yazma — bul, düzelt, bir cümleyle bildir.
+Türkçe, sade, kısa. Memory: `feedback_sade_dil.md` (TR teknik terim → sade karşılık tablosu), `feedback_token_tasarrufu.md` (küçük sprintlerde plan modu/agent açma).
 
 ---
 
-## Proje özeti
+## Mevcut Durum (20 Mayıs 2026)
 
-**MediSim TR** — Türkiye'ye özel, web tabanlı sanal hasta simülasyon platformu. Tıp eğitimi, hemşirelik, acil sağlık, ATT, saha sağlıkçıları için senaryo tabanlı serious game.
+**Test:** 415 vitest pass / 0 fail (22 dosya) + 9 Playwright E2E pass. Build temiz.
 
-Hedef pazar: **Türkiye birincil.** TKD + ESC + AHA kılavuzlarına uyumlu senaryolar. Türkiye yerel bağlamı (ilaç markası, 112 protokolü, SGK, SUT) her senaryoda dikkate alınır.
+**Senaryo sayısı:** 14 (`clinical_codes` ICD-10/SNOMED enjekte). İlaç katalog: ~79 entry. Ekipman v2: 40+.
 
-Referans ürünler: Body Interact, Dimedus, MVR/Nasco.
+**Sprint durumu (master rapor Bölüm 11 adlandırması):**
+- ✅ A — procedural mannequin + marker + breathing
+- ✅ A.1 — anatomik orantı düzeltme
+- ✅ B.1 — Sketchfab chuma6oy `patient-v2.glb` (CC BY 4.0, wrapper scale 0.107 + y+0.49)
+- ✅ B.1.1 — marker yüzey + shader breathing
+- 🔄 B.5 — auskültasyon ses altyapısı (kod hazır: `auscultationAudio.ts`; ses dosyaları manuel indirme bekliyor)
+- 🔄 D.2 — fizyolojik animasyon (cilt tonu shader 4 preset + çift center solunum tamamlandı; göz blink + ağız + pupil RPM avatar bekliyor)
+- 🎯 **SIRADAKİ: B.2 — AI hasta diyaloğu UI** (Gemini 2.5 Flash + Calgary-Cambridge backbone) — backend B.0 ile birlikte
 
----
-
-## Mevcut durum — 5 Mayıs 2026
-
-**Test:** 388 vitest pass / 0 fail / 0 skip (19 dosya) + 5 Playwright E2E pass. Build temiz.
-
-**Senaryo sayısı:** 14 (Body Interact uyumlu skorlama, hepsi `clinical_codes` ICD-10/SNOMED enjekte edilmiş).
-
-**İlaç kataloğu:** ~79 entry (Hafta 1 kardiyovasküler 30 + Hafta 2 kardiyo-dışı 30 + Faz 2 ek 17). `medications.ts` + `medications-extended.ts` senkron.
-
-**Ekipman:** v2 — 40+ ekipman (havayolu, solunum, lab, görüntüleme, termoregülasyon).
-
-**Export:** `src/utils/export/` altında PDF + Excel pipeline tam (sections, primitives donut/gradeBar, fontlar, DebriefScreen entegre).
-
-### Tamamlanan fazlar
-
-| Faz | Konu | Durum |
-|---|---|---|
-| Faz 1 H1 | Farmakoloji motoru, 30 kardiyo ilaç, STEMI yeni motor | ✅ |
-| Faz 1 H2 | Kardiyo-dışı 30 ilaç, ekipman v2, PDF/Excel export | ✅ |
-| Faz 1 H3 | Tasarım kimliği — Tailwind + specialty theme | ✅ (UI denetimi Faz 15'e ertelendi) |
-| Faz 2-7 | B sözleşmesi gece paketi: senaryo bug fix, test altyapısı, ICD/SNOMED/RxNorm yerel db, Türk klinik kural motoru iskeleti | ✅ |
-| Faz 8 | Engine clinical-rule validator (DRAFT-aware, advisory) — `b851660` | ✅ |
-| Faz 9 | 14 senaryoya `clinical_codes` enjeksiyonu — `a8408dc` | ✅ |
-| Faz 10 | 4 component birim testi (PatientCard, DifficultySelector, ScenarioCard, StepDisplay), 29 test — `3d2d784` | ✅ |
-| Faz 11 | Playwright E2E altyapısı, 5 smoke test, CI workflow — `20a1578` | ✅ |
-| Faz 12-14 | Equipment / kardiyo-dışı 30 / PDF-Excel — zaten H1-H2'de yapılmıştı, faz numaralandırması güncel değildi | ✅ |
-| Faz 15 | UI denetimi | ⏸ Kullanıcıyla birlikte ayrı oturum |
+**Önceki seansta yapıldı:** Stetoskop + O2 maskesi prosedür altyapısı (procedure overlay + animation hook + 5 region marker). Bu raporun B.5/D.2 erken parçası.
 
 ### Klinik kural sistemi (Faz 8'den)
 
-`src/data/clinical-rules/turkiye-2024-draft.json` — AI önerisi 10 kural, kaynak: TARD, BDHD, ACOG-MFTP-TR, ESC, WAO, WSES, WALLS.
+`src/data/clinical-rules/turkiye-2024-draft.json` — 10 kural, tümü `REVIEWED_PENDING_ACTIVATION` (commit `e432128`). Validator advisory mode'da (engine flow'a etki yok, sadece rapor). ACTIVE'e geçiş Ali Bey onayıyla.
 
-**Bayrak hiyerarşisi** (validator severity eşlemesi — `scenario-validator.ts:42-46`):
+### Sıradaki adımlar (rapor B.2-D.2)
 
-- `DRAFT_NEEDS_REVIEW` → `info` (AI önerdi, klinik review bekliyor)
-- `REVIEWED_PENDING_ACTIVATION` → `warning` (insan review etti, manuel aktivasyon)
-- `ACTIVE` → `error` (canlı; engine + testler zorunlu kılar, CI fail edebilir)
+1. **B.2 AI diyalog UI** — Cloudflare Workers + Gemini 2.5 Flash + Calgary-Cambridge process. Bu adım için backend (B.0) önce kurulmalı.
+2. **B.5 ses dosyaları indirme** + entegrasyon test (kullanıcı manuel adım)
+3. **D.2 RPM avatar** entegrasyonu (göz blink + ağız + pupil)
+4. **DRAFT→ACTIVE klinik review** — 10 kural Ali Bey ile gözden geçirilir
+5. **Bundle size optimizasyonu** — main 829kB → route-based split
 
-Mevcut durum: 10/10 kural REVIEWED_PENDING_ACTIVATION (commit `e432128`). Hiçbiri ACTIVE değil → engine flow'una etkisi yok, validator sadece rapor üretir.
-
-**Kural değişikliği için disiplin:** Klinik dosyalar (`clinical-rules/`, `scenario-mappings.json`, ilaç dozları, kontrendikasyonlar) için **otonom karar yok** — kullanıcı onayı + spec → tek komut. Klinik dosya commit'lerinde `--no-verify` (pre-commit hook bayrak değişikliklerini lint hatası olarak göstermesin).
-
-### Sonraki adımlar (5 Mayıs 2026)
-
-1. **DRAFT/REVIEWED → ACTIVE klinik review** — kural-bazlı, kullanıcı her birini onaylar; ayrı PR, validator severity error'a yükselir
-2. **Engine'e validator enforce entegrasyonu** — şu an validator var ama engine runtime'da çağrılmıyor; advisory/blocking/CI-only modlardan hangisi seçileceği karar bekliyor
-3. **CLAUDE.md davranışsal kurallar revizyonu** — "otonom çalışma" çerçevesi gece paketi sonrası daha sıkı (klinik dosya disiplini); kullanıcı onayıyla yapılacak
-4. **Bundle size optimizasyonu** — main 829kB, route-based veya vendor-split (recharts/lucide) seçimi
-5. **Faz 15 UI denetimi** — kullanıcıyla birlikte
-6. **5 senaryo bonus outcome incelemesi** (DKA, PE, iskemik inme, preeklampsi, TCCC-patlama) — `structure.test.ts` uyarısı: `max_points` auto-play optimumundan 20+ puan yüksek
-
-Detaylı kararlar: `docs/TASARIM-KARARLARI.md`. Herhangi bir büyük iş öncesi **orayı oku.**
+Detaylı kararlar: `docs/MASTER-REPORT-v3.md` ve `docs/TASARIM-KARARLARI.md`.
 
 ---
 
-## Teknik yığın
+## Stack (Master Rapor Onaylı)
 
-- **Framework:** React 18 + TypeScript + Vite
-- **Routing:** React Router v6
-- **Styling:** Tailwind CSS (özel palet: `ink-*`, `clinical-*`, `brand`)
-- **Fontlar:** Instrument Serif (display), Geist (sans), Geist Mono (mono)
-- **State:** useState (karmaşık olursa Zustand)
-- **Icon:** lucide-react
-
-**Henüz yok:** Backend (Node.js + Fastify + Postgres + Prisma), 3D (Three.js + R3F), Auth (Lucia/BetterAuth), Ödeme (iyzico).
-
----
-
-## Mimari kuralları — ihlal etme
-
-1. **Engine/UI ayrımı kutsaldır.** `src/engine/` içinde asla React import etme. Motor saf fonksiyonel.
-2. **İki ilaç kataloğu var:**
-   - `src/data/medications.ts` — UI için kimlik bilgisi (Medication tipi)
-   - `src/data/medications-extended.ts` — farmakoloji motoru verisi (ExtendedMedication)
-   - İkisi `id` üzerinden eşleşir. Yeni ilaç eklerken ikisine de ekle.
-3. **Senaryolar TS objesi.** `src/data/scenarios/` altında her biri bir dosya. `index.ts`'e eklenmezse listeye girmez.
-4. **Zorluk filtresi her Step/Outcome/Option'da opsiyonel `min_difficulty` / `max_difficulty`.** `evaluateAction`, `evaluateDecision`, `pickNextStep` seçili zorluğa göre filtreler.
-5. **Kontrendikasyon motoru** `pharmacology/engine.ts` içinde. Yeni tetik türü eklemek için `ContraindicationTrigger` union'ını genişlet.
-6. **Tailwind utility-first.** Tekrar eden stil → `src/index.css` `@layer components`.
+- **3D:** React 18 + TypeScript + Vite + R3F + Three.js r171+ + @react-three/drei
+- **Backend (planlı B.0):** Cloudflare Workers + Durable Objects + Vectorize + R2 + D1
+- **AI (planlı B.2):** Gemini 2.5 Flash birincil + Pro fallback
+- **TTS (planlı):** Azure tr-TR Neural birincil + ElevenLabs A/B
+- **UI:** Tailwind v3 (mevcut) → v4 (planlı C.1) + shadcn/ui + Framer Motion
+- **Form:** react-hook-form + zod + @rjsf/core (senaryo authoring için)
+- **Test:** vitest + Playwright
+- **Asset:** Sketchfab chuma6oy CC BY (mevcut), Z-Anatomy CC BY-SA + AnatomyTOOL (planlı), Ready Player Me (planlı D.2)
+- **Fizyoloji (planlı D.1):** Pulse Physiology Engine (Apache 2.0, Node sidecar)
 
 ---
 
-## Tasarım dili
+## Mimari Kuralları — İhlal etme
 
-- **Dark mode,** klinik monitör estetiği
-- Ana renkler: ink (siyah tonları) + brand yeşili (#7cb342) + clinical (critical/warning/stable/info)
-- Typography: display için Instrument Serif italic, body Geist, rakam/etiket Geist Mono
-- **Asla:** mor gradient, Inter/Roboto, emoji kalabalığı, cookie-cutter AI-dashboard görünümü
-- Kalıcı motifler: tabular-num rakamlar, pulse-dot, uppercase tracking-wider etiketler
+1. **Engine/UI ayrımı kutsaldır.** `src/engine/` saf fonksiyonel, React import YOK.
+2. **İki ilaç kataloğu var:** `src/data/medications.ts` (UI kimlik) + `src/data/medications-extended.ts` (farmakoloji). id ile eşleşir, yeni ilaç ikisine de.
+3. **Senaryolar TS objesi.** `src/data/scenarios/`'de her biri ayrı dosya. `index.ts`'e eklenmezse listeye girmez.
+4. **Zorluk filtresi** her Step/Outcome/Option'da opsiyonel `min_difficulty` / `max_difficulty`.
+5. **3D koordinat referansı:** `memory/medisim_anatomik_landmark.md` — gözle tahmin YAPMA, tabloya bak.
+6. **Klinik standartlar:** `docs/MASTER-REPORT-v3.md` Bölüm 9. Senaryo yapısı 9.C, kurallar 9.D.
+7. **Tailwind utility-first**, tekrar eden stil → `src/index.css` `@layer components`.
+8. **Kontrendikasyon motoru** `src/engine/pharmacology/engine.ts`. Yeni tetik türü için `ContraindicationTrigger` union genişlet.
 
 ---
 
-## Sık yapılacak işler — adım adım
+## Klinik İçerik Disiplini (KRİTİK)
 
-### Yeni senaryo ekle
+**Her senaryoda:**
+- En az 1 TR kılavuz `guideline_references` zorunlu (rapor 9.B tablosu)
+- ICD-10 + SNOMED CT kodlaması (rapor 9.C interface)
+- Pediatride mg/kg + max doz zorunlu (rapor 9.D Kural 1)
+- Yaş-spesifik vital aralık — **PALS 2015 default** (rapor 9.C tablosu)
+- TİTCK ruhsatlı ilaç (rapor 9.D Kural 3)
 
-1. Kullanıcıdan markdown taslak bekle (format: `docs/SENARYO-YAZIM-REHBERI.md`)
-2. `src/data/scenarios/<isim>.ts` oluştur
-3. **Zorluk seviyelerini planla** — `supported_difficulties` ve her adımdaki `min_difficulty` ayarı
-4. Gerekli ilaçları `medications.ts` **ve** `medications-extended.ts`'de tanımla
+**Commit kuralları:**
+- Klinik dosya `git commit --no-verify` SADECE Ali Bey onaylı PR'da
+- Commit mesajı `[CLINICAL:REVIEWED]` prefix
+
+**Disclaimer:** Her sayfa altında "Eğitim amaçlıdır, klinik karar destek değildir".
+
+---
+
+## Tasarım Dili
+
+- **Dark mode**, klinik monitör estetiği
+- **Renkler:** ink (siyah tonları) + brand teal `#0d9488` + clinical (critical/warning/stable/info)
+- **Font:** Instrument Serif (display), Geist (sans), Geist Mono (mono)
+- **Asla:** mor gradient, Inter, emoji kalabalığı, AI-dashboard cookie-cutter görünümü
+- **Marka v3 (planlı):** koyu mavi/gri arkaplan + neon turkuaz/yeşil accent, IBM Plex Sans veya Geist, nabız dalgası + tablet/kalp silueti logo
+
+---
+
+## Sık Yapılacak İşler
+
+### Yeni senaryo ekle (rapor 9.C interface'i kullan)
+1. Markdown taslak bekle, **`status: 'DRAFT'`** ile başla
+2. `src/data/scenarios/<isim>.ts` oluştur (rapor 9.C şablonu)
+3. `ucep_codes`, `icd10_codes`, `snomed_ct_codes`, `guideline_references` doldur
+4. Pediatri ise yaş-spesifik vital (PALS), ilaç mg/kg + max
 5. `index.ts`'e ekle
-6. `npm run dev` ile test et, tüm seviyelerde oynanabiliyor mu doğrula
+6. Test (`npm run test`), Ali Bey review'a ver (`REVIEWED_PENDING_ACTIVATION`)
 
 ### Yeni ilaç ekle
+1. `medications.ts` temel kimlik
+2. `medications-extended.ts` farmakoloji (preset, doz band, modifier, kontrendikasyon)
+3. **TİTCK ruhsatlı doğrula**, ATC kodu ekle
+4. Klinik doğruluk — emin değilsen UpToDate/ESC/TKD referansı, commit mesajına yaz
 
-1. `medications.ts`'e temel kimlik (id, ad, kategori, default_dose)
-2. `medications-extended.ts`'e farmakoloji verisi:
-   - Preset seç (varsa) — `pharmacology/presets.ts`'den
-   - Doz band (80-120% tipik)
-   - Modifier (beta_blocker, karaciger, bobrek, gebelik, yaş)
-   - Kontrendikasyon listesi
-3. Klinik doğruluk kritik — emin değilsen UpToDate / ESC / AHA kılavuzu referansıyla doğrula
-4. Referansı commit mesajında belirt
-
-### Yeni senaryo komplikasyonu / dinamik unlock
-
-1. Komplikasyon adımını normal `steps` listesine ekle
-2. `min_difficulty` ile hangi seviyeden itibaren aktifleşeceğini ayarla
-3. Tetikleyici koşul (örn. aspirin verilmedi → VT) için senaryoda `unlocks` alanı kullan veya motor tarafına özel kontrol ekle
-
-### Backend kurulum
-
-Kullanıcıya sor — önce şunlar netleşmeli:
-- Veritabanı hosting (Supabase / Railway / Neon)
-- Auth yöntemi
-- API sözleşmesi (REST / tRPC)
-
-Bunlar olmadan kod yazma.
+### Yeni marker / 3D koordinat
+Gözle tahmin yapma. `memory/medisim_anatomik_landmark.md` 8-head canon tablosuna bak. Formula: `world_y = -0.243 + ratio × 1.021`.
 
 ---
 
-## Klinik içerik standardı
+## Git Akışı
 
-- **Birincil kaynaklar:** ESC 2023, TKD 2022, AHA/ACC 2022, UpToDate, Katzung
-- **Türkiye yerel:** SUT, SGK ödeme kuralları, 112 protokolü, ATT yetki sınırları
-- Her senaryonun `debrief.references` alanında kaynaklar belirtilmeli
-- Emin olmadığın ilaç dozu veya kılavuz kararı için → kullanıcıya sor, doğaçlama yapma
-- Yeni bir kılavuz güncellemesi olmuş olabilir — bilgi cutoff tarihinden sonra web search kullan
-
----
-
-## Git akışı
-
-- Her anlamlı değişiklik sonrası commit at
-- Mesajlar Türkçe, conventional commit formatı:
-  ```
-  feat: DKA senaryosu eklendi (5 adım, dahiliye, seviye 2-4)
-  fix: zorluk filtresi pickNextStep'te atlanan adımları düzeltti
-  docs: tasarım kararları güncellendi
-  refactor: farmakoloji motoru modifier hesabı sadeleştirildi
-  chore: bağımlılıklar güncellendi
-  ```
-- Büyük özellik bitince branch değil, main'e commit (tek kişi projesi)
-- Push etmeden önce `npm run build` ile prod build başarılı mı kontrol et
+- Anlamlı değişiklik sonrası commit
+- Türkçe conventional commit: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`
+- Klinik commit: `[CLINICAL:REVIEWED]` prefix (Ali Bey onaylı PR)
+- Push öncesi `npm run build` temiz olmalı
+- Klinik dosyada `--no-verify` SADECE onaylı PR
 
 ---
 
-## Kurulum kontrolü (ilk oturumda)
+## Memory Dosyaları (öncelik sırasıyla)
 
-```bash
-node --version           # >=18
-ls node_modules || npm install
-npm run dev              # 5173'te açılmalı
-npm run build            # prod build temiz mi
-```
-
-Bir şey bozulmuşsa kullanıcıya bildir, çözümü sun.
+1. ⭐ `medisim_master_referans.md` — Master rapora pointer (en önemli)
+2. `medisim_anatomik_landmark.md` — 3D world koordinat tablosu
+3. `medisim_anatomi_klinik.md` — Kadran/vasküler/deri/yanık
+4. `medisim_saglik_standartlari.md` — ICD/SNOMED/FHIR + Türkiye
+5. `medisim_rakip_analiz.md` — Body Interact + Gaumard + Laerdal
+6. `medisim_animasyon_teknikleri.md` — R3F morph/breathing/eye/audio
+7. `feedback_sade_dil.md`, `feedback_token_tasarrufu.md` — davranış
 
 ---
 
-## Slash komutları
+## Slash Komutları
 
-Projenin `.claude/commands/` klasöründe custom komutlar var. Kullanıcı `/komut` yazdığında onlar çalışır:
-
+- `/durum` — proje durumu özet
 - `/senaryo-ekle <isim>` — yeni senaryo iskeleti
 - `/ilac-ekle <id>` — ilaç kataloğuna ekleme
-- `/test-calis` — tüm testleri çalıştır
-- `/durum` — projenin güncel yapılacaklar listesi
-
-Yeni komut önerisi geldiyse `.claude/commands/<isim>.md` olarak yaz.
-
----
-
-## Takılırsan yapılacaklar
-
-1. **Türkçe tek cümleyle durumu anlat:** "npm paketi çakışması var, çözüyorum"
-2. **Çözemezsen durdur, sor** — 3+ deneme yapıp ilerleyemiyorsan kullanıcıya soru bırak
-3. **Asla bozuk kod commit etme** — build hatalıysa önce düzelt
+- `/test-calis` — tüm testler
+- `/build-kontrol` — prod build temiz mi
+- `/ilac-dozaj-dogrulayici` — ESC/AHA/TKD doz kontrol
+- `/klinik-review-agent` — senaryo klinik denetim
+- `/kvkk-pii-scanner` — KVKK PII tarama (commit öncesi)
+- `/senaryo-sema-dogrulayici` — TS şema uyumu
 
 ---
 
-## Proje dokümanları — ezbere bil
+## Takılırsan
 
-- `docs/TASARIM-KARARLARI.md` — **en önemlisi.** Tüm mimari ve klinik kararlar.
-- `docs/SENARYO-YAZIM-REHBERI.md` — yeni senaryo formatı
-- `docs/MIMARI.md` — teknik mimari
-- `docs/YOL-HARITASI.md` — fazlar, öncelikler
-- `docs/GITHUB-REHBERI.md` — git iş akışı
-
-Yeni görev gelince önce bu dokümanları tarayıp güncel mi kontrol et.
+1. Türkçe tek cümleyle durumu anlat ("npm paketi çakışması var, çözüyorum")
+2. 3+ deneme çözemezsen Ali Bey'e sor
+3. Asla bozuk kod commit etme — build hatalıysa önce düzelt
 
 ---
 
-## Kullanıcıya söz
+## Kullanıcıya Söz
 
-Sabır, kalite, iletişim — kod hızından değerli. Kullanıcı yorgun saha dönüşü uygulamaya bakacak; ilerleme görmek istiyor ama bozuk kod değil. **"Gece çalışan güvenilir ortak" modu.**
+Sabır, kalite, iletişim — kod hızından değerli. Ali Bey yorgun saha dönüşü uygulamaya bakacak; ilerleme görmek istiyor ama bozuk kod değil. **"Gece çalışan güvenilir ortak" modu.**
