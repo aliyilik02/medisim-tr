@@ -48,7 +48,7 @@ import { ProcedureOverlay } from "@/components/patient-3d/procedures/ProcedureOv
 
 describe("InspectionPanel — prosedür butonları", () => {
   test("availableProcedures varsa procedure-list render edilir", () => {
-    const region = DEFAULT_REGIONS.find((r) => r.id === "chest-front")!;
+    const region = DEFAULT_REGIONS.find((r) => r.id === "chest-aortic")!;
     render(<InspectionPanel region={region} onClose={() => undefined} />);
     expect(screen.getByTestId("procedure-list")).toBeInTheDocument();
     expect(screen.getByTestId("procedure-button-stethoscope")).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe("InspectionPanel — prosedür butonları", () => {
   });
 
   test("availableProcedures yoksa procedure-list render edilmez", () => {
-    const region = DEFAULT_REGIONS.find((r) => r.id === "abdomen-upper")!;
+    const region = DEFAULT_REGIONS.find((r) => r.id === "abdomen-epigastric")!;
     render(<InspectionPanel region={region} onClose={() => undefined} />);
     expect(screen.queryByTestId("procedure-list")).not.toBeInTheDocument();
     expect(
@@ -65,7 +65,7 @@ describe("InspectionPanel — prosedür butonları", () => {
   });
 
   test("buton tıklaması onStartProcedure'u doğru parametrelerle çağırır", () => {
-    const region = DEFAULT_REGIONS.find((r) => r.id === "chest-left")!;
+    const region = DEFAULT_REGIONS.find((r) => r.id === "chest-mitral")!;
     const onStart = vi.fn();
     render(
       <InspectionPanel
@@ -80,7 +80,7 @@ describe("InspectionPanel — prosedür butonları", () => {
   });
 
   test("onStartProcedure verilmediğinde tıklama crash etmez", () => {
-    const region = DEFAULT_REGIONS.find((r) => r.id === "chest-right")!;
+    const region = DEFAULT_REGIONS.find((r) => r.id === "chest-pulmonic")!;
     render(<InspectionPanel region={region} onClose={() => undefined} />);
     expect(() =>
       fireEvent.click(screen.getByTestId("procedure-button-stethoscope")),
@@ -101,7 +101,7 @@ describe("ProcedureOverlay — dispatcher", () => {
       <ProcedureOverlay
         active={{
           kind: "stethoscope",
-          regionId: "chest-front",
+          regionId: "chest-aortic",
           targetPosition: [0, 0.55, 0.115],
         }}
         onComplete={() => undefined}
@@ -133,7 +133,7 @@ describe("ProcedureOverlay — dispatcher", () => {
       <ProcedureOverlay
         active={{
           kind: "defibrillator",
-          regionId: "chest-front",
+          regionId: "chest-aortic",
           targetPosition: [0, 0.55, 0.115],
         }}
         onComplete={() => undefined}
@@ -144,9 +144,29 @@ describe("ProcedureOverlay — dispatcher", () => {
 });
 
 describe("regions data integrity — prosedür eşlemesi", () => {
-  test("chest-front / chest-left / chest-right stetoskop destekler", () => {
-    const chestIds = ["chest-front", "chest-left", "chest-right"];
-    for (const id of chestIds) {
+  test("5 kardiyak odak (APE-T-M) stetoskop destekler", () => {
+    const cardiacIds = [
+      "chest-aortic",
+      "chest-pulmonic",
+      "chest-erb",
+      "chest-tricuspid",
+      "chest-mitral",
+    ];
+    for (const id of cardiacIds) {
+      const region = DEFAULT_REGIONS.find((r) => r.id === id);
+      expect(region, `region ${id} bulunamadı`).toBeDefined();
+      expect(region!.availableProcedures ?? []).toContain("stethoscope");
+    }
+  });
+
+  test("4 akciğer lobu (anterior) stetoskop destekler", () => {
+    const lungIds = [
+      "lung-upper-right",
+      "lung-upper-left",
+      "lung-lower-right",
+      "lung-lower-left",
+    ];
+    for (const id of lungIds) {
       const region = DEFAULT_REGIONS.find((r) => r.id === id);
       expect(region, `region ${id} bulunamadı`).toBeDefined();
       expect(region!.availableProcedures ?? []).toContain("stethoscope");
@@ -154,7 +174,14 @@ describe("regions data integrity — prosedür eşlemesi", () => {
   });
 
   test("abdomen-* bölgelerinde stetoskop yok", () => {
-    const abdomenIds = ["abdomen-upper", "abdomen-lower"];
+    const abdomenIds = [
+      "abdomen-epigastric",
+      "abdomen-ruq",
+      "abdomen-luq",
+      "abdomen-rlq",
+      "abdomen-llq",
+      "abdomen-suprapubic",
+    ];
     for (const id of abdomenIds) {
       const region = DEFAULT_REGIONS.find((r) => r.id === id);
       expect(region, `region ${id} bulunamadı`).toBeDefined();
@@ -168,9 +195,15 @@ describe("regions data integrity — prosedür eşlemesi", () => {
     expect(region!.availableProcedures ?? []).toContain("oxygen_mask");
   });
 
-  test("chest-* bölgelerinde oxygen_mask yok (yanlış yere bağlanmasın)", () => {
-    const chestIds = ["chest-front", "chest-left", "chest-right"];
-    for (const id of chestIds) {
+  test("kardiyak/akciğer odaklarında oxygen_mask yok (yanlış yere bağlanmasın)", () => {
+    const auscultIds = [
+      "chest-aortic",
+      "chest-pulmonic",
+      "chest-mitral",
+      "lung-upper-right",
+      "lung-lower-left",
+    ];
+    for (const id of auscultIds) {
       const region = DEFAULT_REGIONS.find((r) => r.id === id);
       expect(region!.availableProcedures ?? []).not.toContain("oxygen_mask");
     }

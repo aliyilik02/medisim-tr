@@ -5,6 +5,7 @@ import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
+import { MediaAttributions } from "@/components/patient-3d/MediaAttributions";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
@@ -245,6 +246,11 @@ export function PatientDialog3DPage() {
               <span>← Anatomik kesit</span>
               <span>Cilt kapalı →</span>
             </div>
+          </div>
+
+          {/* SAĞ ALT: Medya atıfları (CC BY / BY-SA) */}
+          <div className="absolute bottom-3 right-3 z-10">
+            <MediaAttributions />
           </div>
         </div>
 

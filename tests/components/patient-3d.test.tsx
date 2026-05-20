@@ -92,10 +92,10 @@ describe("InspectionPanel — bilgi kartı", () => {
 });
 
 describe("regions data integrity", () => {
-  test("6 placeholder bölge tanımlı, id'ler unique", () => {
-    expect(DEFAULT_REGIONS).toHaveLength(6);
+  test("20 anatomik bölge tanımlı, id'ler unique", () => {
+    expect(DEFAULT_REGIONS).toHaveLength(20);
     const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
-    expect(ids.size).toBe(6);
+    expect(ids.size).toBe(20);
   });
 
   test("her bölgenin label, position, placeholderNote, side alanları var", () => {
