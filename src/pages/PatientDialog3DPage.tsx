@@ -5,7 +5,6 @@ import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
-import { MediaAttributions } from "@/components/patient-3d/MediaAttributions";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
@@ -324,9 +323,8 @@ export function PatientDialog3DPage() {
             />
           </div>
 
-          {/* SAĞ ÜST: Kontrol kümesi (cilt tonu + solunum + speaking) */}
+          {/* SAĞ ÜST: Speaking indicator + Solunum toggle */}
           <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
-            {/* Speaking indicator */}
             {speaking && (
               <div
                 className="px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-brand-light shadow-lg"
@@ -336,69 +334,67 @@ export function PatientDialog3DPage() {
                 Hasta konuşuyor
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => setBreathing((b) => !b)}
+              className={`px-3 py-1.5 rounded font-mono text-[10px] uppercase tracking-[0.1em] border transition flex items-center gap-2 backdrop-blur-md shadow-lg ${
+                breathing
+                  ? "bg-brand/15 border-brand/50 text-brand-light"
+                  : "bg-ink-900/85 border-ink-700 text-ink-400 hover:text-ink-100"
+              }`}
+            >
+              <Waves className="w-3 h-3" />
+              Solunum {breathing ? "açık" : "kapalı"}
+            </button>
+          </div>
 
-            {/* Kontrol bar */}
-            <div className="bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-lg p-2 flex flex-col gap-1.5 w-[200px] shadow-xl">
-              {/* Cilt tonu — Auto (vital'a göre) + manuel override */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-500 flex items-center gap-1">
-                    <Droplet className="w-2.5 h-2.5 text-brand" />
-                    Cilt Tonu
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAutoTint(!autoTint);
-                      if (!autoTint) setManualSkinTint(null);
-                    }}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[8px] uppercase transition ${
-                      autoTint
-                        ? "bg-clinical-stable/15 text-clinical-stable border border-clinical-stable/30"
-                        : "bg-ink-800 text-ink-400 border border-ink-700 hover:text-ink-100"
-                    }`}
-                    title={autoTint ? "Vital'a göre otomatik" : "Manuel"}
-                  >
-                    <Wand2 className="w-2.5 h-2.5" />
-                    {autoTint ? "Auto" : "Manuel"}
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-1">
-                  {SKIN_TINT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setManualSkinTint(opt.value);
-                        setAutoTint(false);
-                      }}
-                      disabled={autoTint && skinTint !== opt.value}
-                      className={`px-2 py-1 rounded font-mono text-[10px] transition flex items-center gap-1 justify-center ${
-                        skinTint === opt.value
-                          ? "bg-brand/20 text-brand-light border border-brand/50"
-                          : "bg-ink-800/60 text-ink-400 border border-ink-700 hover:text-ink-100 hover:border-ink-500 disabled:opacity-40 disabled:cursor-not-allowed"
-                      }`}
-                    >
-                      <span className="text-[10px]">{opt.emoji}</span>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Solunum toggle */}
+          {/* SAĞ ALT: Cilt Tonu kontrol — Auto (vital'a göre) + manuel override */}
+          <div
+            className="absolute bottom-4 right-4 bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-lg p-2.5 w-[200px] shadow-xl"
+            data-testid="skin-tint-control"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-500 flex items-center gap-1">
+                <Droplet className="w-2.5 h-2.5 text-brand" />
+                Cilt Tonu
+              </label>
               <button
                 type="button"
-                onClick={() => setBreathing((b) => !b)}
-                className={`px-3 py-1.5 rounded font-mono text-[10px] uppercase tracking-[0.1em] border transition flex items-center gap-2 ${
-                  breathing
-                    ? "bg-brand/15 border-brand/50 text-brand-light"
-                    : "bg-ink-800/60 border-ink-700 text-ink-400 hover:text-ink-100"
+                onClick={() => {
+                  setAutoTint(!autoTint);
+                  if (!autoTint) setManualSkinTint(null);
+                }}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[8px] uppercase transition ${
+                  autoTint
+                    ? "bg-clinical-stable/15 text-clinical-stable border border-clinical-stable/30"
+                    : "bg-ink-800 text-ink-400 border border-ink-700 hover:text-ink-100"
                 }`}
+                title={autoTint ? "Vital'a göre otomatik" : "Manuel"}
               >
-                <Waves className="w-3 h-3" />
-                Solunum {breathing ? "açık" : "kapalı"}
+                <Wand2 className="w-2.5 h-2.5" />
+                {autoTint ? "Auto" : "Manuel"}
               </button>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {SKIN_TINT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setManualSkinTint(opt.value);
+                    setAutoTint(false);
+                  }}
+                  disabled={autoTint && skinTint !== opt.value}
+                  className={`px-2 py-1 rounded font-mono text-[10px] transition flex items-center gap-1 justify-center ${
+                    skinTint === opt.value
+                      ? "bg-brand/20 text-brand-light border border-brand/50"
+                      : "bg-ink-800/60 text-ink-400 border border-ink-700 hover:text-ink-100 hover:border-ink-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                  }`}
+                >
+                  <span className="text-[10px]">{opt.emoji}</span>
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -449,10 +445,6 @@ export function PatientDialog3DPage() {
             </div>
           </div>
 
-          {/* SAĞ ALT: Medya atıfları (CC BY / BY-SA) */}
-          <div className="absolute bottom-3 right-3 z-10">
-            <MediaAttributions />
-          </div>
         </div>
 
         {/* Sağ panel: Dialog Chat */}

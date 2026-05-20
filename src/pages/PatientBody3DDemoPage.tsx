@@ -5,7 +5,6 @@ import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
-import { MediaAttributions } from "@/components/patient-3d/MediaAttributions";
 import { SCENARIOS } from "@/data/scenarios";
 import type { ActionRef } from "@/engine/types";
 
@@ -133,13 +132,10 @@ export function PatientBody3DDemoPage() {
 
       <footer className="border-t border-ink-700/50 px-6 py-2 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 flex items-center justify-between gap-4">
         <span className="truncate">Bölge konumları placeholder · Sprint A sonrası klinik review</span>
-        <div className="flex items-center gap-4 shrink-0">
-          <span className="hidden md:inline">
-            5 bölge · stetoskop chest-* aktif ·{" "}
-            {breathing ? "60fps target" : "demand frameloop"}
-          </span>
-          <MediaAttributions />
-        </div>
+        <span className="shrink-0 hidden md:inline">
+          5 bölge · stetoskop chest-* aktif ·{" "}
+          {breathing ? "60fps target" : "demand frameloop"}
+        </span>
       </footer>
     </div>
   );
