@@ -12,15 +12,19 @@ import { vitalsToVisual } from "@/clinical/visual-mapping";
 import {
   startSession,
   evaluateAction,
+  evaluateDecision,
+  evaluateDecisionMulti,
   applyVitalsChange,
   completeStep,
   pickNextStep,
   getCurrentStep,
   type SessionState,
   type ActionRef,
+  type Step,
 } from "@/engine";
 import { useVitalsTick } from "@/hooks/useVitalsTick";
 import { ActionHistoryPanel, type ActionLogEntry } from "@/components/dialog/ActionHistoryPanel";
+import { CurrentStepPanel } from "@/components/dialog/CurrentStepPanel";
 
 // ============================================================
 // PatientDialog3DPage — Sprint B.2 + B.3 + B.4 entegre demo
@@ -173,6 +177,95 @@ export function PatientDialog3DPage() {
     );
   };
 
+  const handleDecisionSubmit = (step: Step, selectedOptionIds: string[]) => {
+    if (!session || step.kind !== "decision") return;
+    const ts = Date.now();
+    const allowMultiple = step.allow_multiple === true;
+
+    let totalPoints = 0;
+    let feedback = "";
+    let critical = false;
+    let unlocks: string[] = [];
+
+    if (allowMultiple) {
+      const evalResult = evaluateDecisionMulti(
+        step,
+        selectedOptionIds,
+        session.selected_difficulty,
+        scenario,
+      );
+      if (!evalResult) return;
+      totalPoints = evalResult.points;
+      feedback = evalResult.feedback;
+      critical = evalResult.selected_options.some((o) => o.critical === true);
+      // Multi-choice'da unlock yok — linear akış
+    } else {
+      const optId = selectedOptionIds[0];
+      if (!optId) return;
+      const evalResult = evaluateDecision(
+        step,
+        optId,
+        session.selected_difficulty,
+        scenario,
+      );
+      if (!evalResult) return;
+      totalPoints = evalResult.points;
+      feedback = evalResult.feedback;
+      critical = evalResult.option.critical === true;
+    }
+
+    // Decision step her zaman ilerler (geri dönüş yok)
+    setSession((prev) => {
+      if (!prev) return prev;
+      const nextStepId = pickNextStep(
+        scenario,
+        step.id,
+        unlocks,
+        prev.selected_difficulty,
+      );
+      return completeStep(
+        prev,
+        step.id,
+        totalPoints,
+        [], // decision'da action ref yok
+        critical ? 1 : 0,
+        nextStepId,
+      );
+    });
+
+    const decisionAction: ActionRef = {
+      type: "decision",
+      target_id: selectedOptionIds.join(","),
+    };
+    setActionLog((prev) =>
+      [
+        {
+          action: decisionAction,
+          points: totalPoints,
+          feedback,
+          critical,
+          matched: totalPoints > 0,
+          ts,
+        },
+        ...prev,
+      ].slice(0, 10),
+    );
+  };
+
+  const handleInfoContinue = (step: Step) => {
+    if (!session || step.kind !== "info") return;
+    setSession((prev) => {
+      if (!prev) return prev;
+      const nextStepId = pickNextStep(
+        scenario,
+        step.id,
+        [],
+        prev.selected_difficulty,
+      );
+      return completeStep(prev, step.id, 0, [], 0, nextStepId);
+    });
+  };
+
   return (
     <div className="h-screen flex flex-col bg-ink-950 text-ink-50 overflow-hidden">
       {/* Header — kompakt, sade */}
@@ -314,6 +407,16 @@ export function PatientDialog3DPage() {
           <ActionHistoryPanel
             entries={actionLog}
             className="absolute bottom-[120px] left-4 w-[260px] shadow-xl"
+          />
+
+          {/* ALT ORTA: Mevcut step paneli — decision options / info continue
+              / action hint / finished score */}
+          <CurrentStepPanel
+            scenario={scenario}
+            session={session}
+            onDecisionSubmit={handleDecisionSubmit}
+            onInfoContinue={handleInfoContinue}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[360px] max-w-[calc(100%-2rem)]"
           />
 
           {/* SOL ALT: Cilt Kesim slider */}
