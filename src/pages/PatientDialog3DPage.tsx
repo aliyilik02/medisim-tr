@@ -26,6 +26,7 @@ import { useVitalsTick } from "@/hooks/useVitalsTick";
 import { ActionHistoryPanel, type ActionLogEntry } from "@/components/dialog/ActionHistoryPanel";
 import { CurrentStepPanel } from "@/components/dialog/CurrentStepPanel";
 import { DebriefModal } from "@/components/dialog/DebriefModal";
+import { Toaster, pushToast, type ToastKind } from "@/components/dialog/Toaster";
 
 // ============================================================
 // PatientDialog3DPage — Sprint B.2 + B.3 + B.4 entegre demo
@@ -39,6 +40,26 @@ import { DebriefModal } from "@/components/dialog/DebriefModal";
 //   [Sol alt]    Cilt kesim slider (anatomik atlas)
 //   [Sağ panel]  DialogChat (420px)
 // ============================================================
+
+function pickToastKind(points: number, matched: boolean, critical: boolean): ToastKind {
+  if (critical) return "critical";
+  if (matched && points > 0) return "success";
+  if (points < 0) return "warning";
+  return "info";
+}
+
+function pickToastTitle(kind: ToastKind): string {
+  switch (kind) {
+    case "critical":
+      return "Kritik Hata";
+    case "success":
+      return "Doğru Adım";
+    case "warning":
+      return "Hatalı Aksiyon";
+    case "info":
+      return "Bilgi";
+  }
+}
 
 const SKIN_TINT_OPTIONS: { value: SkinTint; label: string; emoji: string }[] = [
   { value: "normal",   label: "Normal",  emoji: "🟢" },
@@ -172,6 +193,7 @@ export function PatientDialog3DPage() {
       return s;
     });
 
+    const matched = evaluation.matched_outcome !== null;
     setActionLog((prev) =>
       [
         {
@@ -179,12 +201,22 @@ export function PatientDialog3DPage() {
           points: evaluation.points,
           feedback: evaluation.feedback,
           critical: evaluation.critical,
-          matched: evaluation.matched_outcome !== null,
+          matched,
           ts,
         },
         ...prev,
       ].slice(0, 10),
     );
+
+    const kind = pickToastKind(evaluation.points, matched, evaluation.critical);
+    pushToast({
+      kind,
+      title: pickToastTitle(kind),
+      body: evaluation.feedback.length > 90
+        ? `${evaluation.feedback.slice(0, 90)}…`
+        : evaluation.feedback,
+      points: evaluation.points,
+    });
   };
 
   const handleDecisionSubmit = (step: Step, selectedOptionIds: string[]) => {
@@ -247,6 +279,7 @@ export function PatientDialog3DPage() {
       type: "decision",
       target_id: selectedOptionIds.join(","),
     };
+    const matched = totalPoints > 0;
     setActionLog((prev) =>
       [
         {
@@ -254,12 +287,20 @@ export function PatientDialog3DPage() {
           points: totalPoints,
           feedback,
           critical,
-          matched: totalPoints > 0,
+          matched,
           ts,
         },
         ...prev,
       ].slice(0, 10),
     );
+
+    const kind = pickToastKind(totalPoints, matched, critical);
+    pushToast({
+      kind,
+      title: pickToastTitle(kind),
+      body: feedback.length > 90 ? `${feedback.slice(0, 90)}…` : feedback,
+      points: totalPoints,
+    });
   };
 
   const handleInfoContinue = (step: Step) => {
@@ -484,6 +525,9 @@ export function PatientDialog3DPage() {
           onClose={() => setDebriefOpen(false)}
         />
       )}
+
+      {/* Action feedback toast'ları — sağ üst overlay */}
+      <Toaster />
     </div>
   );
 }
