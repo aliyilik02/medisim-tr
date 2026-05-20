@@ -8,7 +8,8 @@ import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
-import type { ActionRef } from "@/engine/types";
+import { startSession, type SessionState, type ActionRef } from "@/engine";
+import { useVitalsTick } from "@/hooks/useVitalsTick";
 
 // ============================================================
 // PatientDialog3DPage — Sprint B.2 + B.3 + B.4 entegre demo
@@ -40,12 +41,29 @@ export function PatientDialog3DPage() {
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
 
-  // Sprint D.1 hafif — visual mapping: vital → cilt tonu otomatik
-  // SpO2 < 88 → siyanoz, SBP < 90 → solgun, aksi normal.
-  // Auto mode kapalıysa manuel butonlar geçerli.
+  // Sprint senaryo motor mini-entegrasyon — startSession + useVitalsTick
+  // canlı vital değişimi (pharmacology engine farmakokinetik tick).
+  // Şimdilik action UI yok → vital baseline'da kalır, ama altyapı hazır.
+  const [session, setSession] = useState<SessionState | null>(null);
+
+  useEffect(() => {
+    // Senaryo değişince yeni session başlat
+    setSession(startSession(scenario, "egitim", scenario.difficulty));
+  }, [scenario]);
+
+  useVitalsTick({
+    scenario,
+    session,
+    setSession,
+  });
+
+  // Canlı vital (session varsa) veya statik fallback
+  const liveVitals = session?.vitals ?? scenario.initial_vitals;
+
+  // Visual mapping: live vital → cilt tonu otomatik
   const autoVisualParams = useMemo(
-    () => vitalsToVisual(scenario.initial_vitals),
-    [scenario.initial_vitals],
+    () => vitalsToVisual(liveVitals),
+    [liveVitals],
   );
 
   const skinTint: SkinTint = autoTint
@@ -106,16 +124,16 @@ export function PatientDialog3DPage() {
             speaking={speaking}
             skinClipLevel={skinClipLevel}
             organVitals={{
-              hr: scenario.initial_vitals.hr,
-              rr: scenario.initial_vitals.rr,
+              hr: liveVitals.hr,
+              rr: liveVitals.rr,
             }}
             onProcedureComplete={handleProcedureComplete}
           />
 
-          {/* SOL ÜST: Vital Monitor */}
+          {/* SOL ÜST: Vital Monitor — canlı session vital'leri */}
           <div className="absolute top-4 left-4">
             <CompactVitalsHUD
-              vitals={scenario.initial_vitals}
+              vitals={liveVitals}
               patientAge={scenario.patient.age}
               ecgPattern={scenario.ekg_pattern}
             />

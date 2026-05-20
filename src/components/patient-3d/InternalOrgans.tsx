@@ -22,7 +22,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { Box3, Vector3 } from "three";
+import { Vector3 } from "three";
 import type { Mesh, Group, MeshStandardMaterial } from "three";
 
 // Raw birim — gerçek anatomik organ < 0.30 (yaklaşık 30 cm).
@@ -89,7 +89,13 @@ export function InternalOrgans({
       "mucosa", "ductus",
     ];
 
-    const decisions: Array<{ name: string; mat: string; visible: boolean; reason: string }> = [];
+    const decisions: Array<{
+      name: string;
+      mat: string;
+      size: string;
+      visible: boolean;
+      reason: string;
+    }> = [];
 
     scene.traverse((obj) => {
       if (!(obj as Mesh).isMesh) return;
