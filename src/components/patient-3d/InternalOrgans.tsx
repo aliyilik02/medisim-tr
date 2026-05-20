@@ -22,7 +22,14 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import { Box3, Vector3 } from "three";
 import type { Mesh, Group, MeshStandardMaterial } from "three";
+
+// Raw birim — gerçek anatomik organ < 0.30 (yaklaşık 30 cm).
+// Bunu aşan mesh'ler genelde pleura, peritoneum, body cavity shell'i.
+// Önceki commit'te kaldırılmıştı, ekran görüntüsünde devasa akciğer
+// shell'lerinin patladığı görülünce geri getirildi.
+const MAX_ORGAN_SIZE_RAW = 0.30;
 
 const MODEL_URL = "/3d/anatomy-internal.glb";
 const MODEL_SCALE = 0.602;
@@ -93,12 +100,25 @@ export function InternalOrgans({
       const vertexCount = mesh.geometry.attributes.position.count;
       const alphaMode = !Array.isArray(mat) && mat?.transparent ? "BLEND" : "OPAQUE";
 
+      // Mesh bbox boyutu — pleura/cavity shell'lerini yakala
+      mesh.geometry.computeBoundingBox();
+      const meshBox = mesh.geometry.boundingBox;
+      let maxDim = 0;
+      if (meshBox) {
+        const sizeVec = new Vector3();
+        meshBox.getSize(sizeVec);
+        maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
+      }
+
       let shouldShow = true;
       let reason = "default";
 
       if (debugShowAll) {
         shouldShow = true;
         reason = "debugShowAll";
+      } else if (maxDim > MAX_ORGAN_SIZE_RAW) {
+        shouldShow = false;
+        reason = `too big (maxDim=${maxDim.toFixed(2)} > ${MAX_ORGAN_SIZE_RAW})`;
       } else if (HIDE_PATTERNS.some((p) => matLower.includes(p))) {
         shouldShow = false;
         reason = "HIDE_PATTERNS";
@@ -111,7 +131,13 @@ export function InternalOrgans({
       }
 
       mesh.visible = shouldShow;
-      decisions.push({ name: mesh.name || "(unnamed)", mat: matName, visible: shouldShow, reason });
+      decisions.push({
+        name: mesh.name || "(unnamed)",
+        mat: matName,
+        size: maxDim.toFixed(3),
+        visible: shouldShow,
+        reason,
+      });
 
       if (!shouldShow) return;
 
