@@ -3,8 +3,13 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, Waves, Droplet } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
+import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
+import { SCENARIOS } from "@/data/scenarios";
 import type { ActionRef } from "@/engine/types";
+
+// Sprint B.3: standalone demo'da örnek vital'ler için ilk senaryo kullanılır
+const DEMO_SCENARIO = SCENARIOS[0]; // STEMI
 
 const SKIN_TINT_CYCLE: SkinTint[] = ["normal", "cyanosis", "jaundice", "pallor"];
 const SKIN_TINT_LABEL: Record<SkinTint, string> = {
@@ -94,6 +99,15 @@ export function PatientBody3DDemoPage() {
           skinTint={skinTint}
           onProcedureComplete={handleProcedureComplete}
         />
+
+        {/* Sprint B.3 — Vital HUD sağ üst overlay */}
+        <div className="absolute top-4 right-4">
+          <CompactVitalsHUD
+            vitals={DEMO_SCENARIO.initial_vitals}
+            patientAge={DEMO_SCENARIO.patient.age}
+            ecgPattern={DEMO_SCENARIO.ekg_pattern}
+          />
+        </div>
 
         {log.length > 0 && (
           <aside
