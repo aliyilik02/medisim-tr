@@ -32,14 +32,23 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 - ✅ Cloudflare MCP (docs+bindings) + Obsidian MCP semantic search
 - ✅ Playwright e2e smoke + `.claude/agents/3d-vision-tester.md` custom agent + `test:visual` script
 - ✅ anatomy-internal.glb — KHR_materials_pbrSpecularGlossiness temizlendi (gltf-transform metalrough+meshopt)
+- ✅ Senaryo motor TAM entegrasyon — `/dialog-3d-demo` action submit + decision/info UI + DebriefModal + Toaster:
+  * ActionHistoryPanel (sol orta) — engine evaluation log son 10 entry
+  * CurrentStepPanel (alt-orta) — step.kind'a göre action hint / decision option / info continue / finished
+  * DebriefModal — session.finished → finalizeSession + grade A-F + skor + kritik hatalar + adım sonuçları + restart
+  * Toaster (sağ üst) — 3sn action feedback popup, success/warning/critical/info kind
+- ✅ Layout polish — cilt tonu kontrolü sağ alta taşındı, MediaAttributions UI'dan kaldırıldı (atıf LICENSE dosyalarında)
+- ✅ OrganModel skeleton + LICENSE-3D.md CC BY indirme rehberi (Sketchfab/BodyParts3D kalp/akciğer/karaciğer adayları)
 - 🔄 D.2 RPM avatar — kullanıcı GLB indirmeye başlamıştı, devamı bekliyor (göz/ağız blendshape)
-- 🔄 Splanchnology — Z-Anatomy mesh çalışıyor ama generic "Default.001/Organ.001" mesh'ler nedeniyle organ ayrımı sınırlı; tek tek Sketchfab/BodyParts3D CC BY model alternatifi `LICENSE-3D.md` rehberinde
-- ⏸ Senaryo motor TAM entegrasyon — action UI (`/dialog-3d-demo` step engine + action submit) bekliyor
-- ⏸ C.1 Tailwind v3 → v4 + shadcn/ui geçiş
+- 🔄 Splanchnology — Z-Anatomy mesh çalışıyor ama generic "Default.001/Organ.001" mesh'ler nedeniyle organ ayrımı sınırlı; tek tek Sketchfab/BodyParts3D CC BY model alternatifi `LICENSE-3D.md` rehberinde, `OrganModel.tsx` skeleton hazır
+- ⏸ C.1 Tailwind v3 → v4 + shadcn/ui geçiş — 2-4 saatlik dedicated iş, visual regression riski
+- ⏸ B.0 Cloudflare Workers/DO prod (BAA + secret kurulumu)
 
 **Demo route'lar:** `/3d-demo`, `/dialog-demo`, `/dialog-3d-demo` (tam paket).
 
-**Yarın sırada:** (1) RPM avatar entegrasyon → D.2 göz/ağız, (2) Splanchnology yerine tek tek CC BY organ modelleri, (3) C.1 Tailwind v4 migration, (4) Cloudflare BAA prod kurulum (B.0).
+**Branch akışı:** Aktif gelişme `feat/backend-cf-worker` üstünde. Bu seansın işleri `claude/vibrant-newton-e326e8` branch'ında, GitHub'a push edildi → PR'ı `feat/backend-cf-worker`'a aç.
+
+**Yarın sırada:** (1) RPM avatar entegrasyon → D.2 göz/ağız, (2) Splanchnology yerine tek tek CC BY organ modelleri (`OrganModel` ile entegre), (3) E2E test (Playwright action/decision flow), (4) Vital trend sparkline (HR/RR mini grafik), (5) C.1 Tailwind v4 migration, (6) Cloudflare BAA prod kurulum (B.0).
 
 ## Stack (Master Rapor onaylı)
 
