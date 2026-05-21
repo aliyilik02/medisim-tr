@@ -34,6 +34,26 @@ test.describe("Ana akış", () => {
     // Hasta paneli render olmuş olmalı
     await expect(page.getByText(/yaş/i).first()).toBeVisible({ timeout: 10_000 });
   });
+
+  test("HomePage 3D Demo Beta bölümü — 3 demo kartı görünür + Tam Paket linki çalışır", async ({ page }) => {
+    await page.goto("/");
+    // Yeni demo bölümü başlığı
+    await expect(page.getByText(/3D Klinik Simülasyon · Beta/i)).toBeVisible();
+    // "Tam Paket" rozetli kart
+    await expect(page.getByText(/Tam Paket/i)).toBeVisible();
+    // 3 demo link'i — dialog-3d-demo (vurgulu), 3d-demo, dialog-demo
+    const dialogDemo3D = page.getByRole("link", { name: /3D Hasta \+ AI Diyalog/i });
+    await expect(dialogDemo3D).toBeVisible();
+    await expect(dialogDemo3D).toHaveAttribute("href", "/dialog-3d-demo");
+  });
+
+  test("Footer 'Hakkında & Lisanslar' linki çalışır", async ({ page }) => {
+    await page.goto("/");
+    const link = page.getByRole("link", { name: /Hakkında & Lisanslar/i });
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page).toHaveURL(/\/hakkinda/);
+  });
 });
 
 test.describe("Geçmiş ve editör sayfaları smoke", () => {
