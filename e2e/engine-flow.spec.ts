@@ -121,6 +121,57 @@ test.describe("dialog-3d-demo — engine entegrasyon", () => {
     }
   });
 
+  test("MarkerDevPanel toggle: 'Dev' butonu görünür, tıklanınca panel açılır", async ({ page }) => {
+    const devToggle = page.getByTestId("marker-dev-toggle");
+    await expect(devToggle).toBeVisible();
+    await devToggle.click();
+    const panel = page.getByTestId("marker-dev-panel");
+    await expect(panel).toBeVisible();
+    // Region selector + 3 slider + 3 buton
+    await expect(page.getByTestId("marker-dev-select")).toBeVisible();
+    await expect(page.getByTestId("marker-dev-slider-x")).toBeVisible();
+    await expect(page.getByTestId("marker-dev-slider-y")).toBeVisible();
+    await expect(page.getByTestId("marker-dev-slider-z")).toBeVisible();
+    await expect(page.getByTestId("marker-dev-export")).toBeVisible();
+  });
+
+  test("MarkerDevPanel slider değişimi localStorage'a override yazar", async ({ page }) => {
+    await page.getByTestId("marker-dev-toggle").click();
+
+    // Y slider'ı değiştir
+    const ySlider = page.getByTestId("marker-dev-slider-y");
+    await expect(ySlider).toBeVisible();
+
+    // ChangeValue via JS — native input event ile
+    await ySlider.evaluate((el: HTMLInputElement) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      setter?.call(el, "0.5");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    // localStorage 'medisim.marker_overrides_v1' anahtarı yazılmalı
+    const stored = await page.evaluate(() =>
+      window.localStorage.getItem("medisim.marker_overrides_v1"),
+    );
+    expect(stored).toBeTruthy();
+    const parsed = JSON.parse(stored!);
+    expect(Object.keys(parsed).length).toBeGreaterThan(0);
+
+    // Tümünü sıfırla
+    const resetAll = page.getByTestId("marker-dev-reset-all");
+    await expect(resetAll).toBeEnabled();
+    await resetAll.click();
+
+    const afterReset = await page.evaluate(() =>
+      window.localStorage.getItem("medisim.marker_overrides_v1"),
+    );
+    expect(afterReset).toBeNull();
+  });
+
   test("CurrentStepPanel decision step ise option butonları görünür", async ({ page }) => {
     // Senaryoları sırayla deneyip decision'a denk gelen ilkini bul
     const select = page.locator("select").first();
