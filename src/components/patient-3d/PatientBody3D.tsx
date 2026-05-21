@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { PerspectiveCamera, Plane, Vector3, type Group } from "three";
@@ -70,7 +70,7 @@ function LoadingFallback() {
 // (kullanıcı sonucu görsün, ses cue çalsın). Sonra unmount.
 const PROCEDURE_REST_MS = 800;
 
-export function PatientBody3D({
+function PatientBody3DImpl({
   regions,
   breathing = true,
   skinTint = "normal",
@@ -208,3 +208,10 @@ export function PatientBody3D({
     </div>
   );
 }
+
+// React.memo — props değişmedikçe yeniden render etme. Vital tick (333ms-1s)
+// PatientDialog3DPage'i tetikler ama organVitals object her tick'te yeni
+// reference oluşturur. PatientDialog3DPage'de useMemo({hr, rr}) ile veya
+// hr/rr değişmedikçe stabil tutulmalı. Mevcut prop'lar (regions, breathing,
+// skinTint, ...) primitive veya stable reference → memo etkili.
+export const PatientBody3D = memo(PatientBody3DImpl);

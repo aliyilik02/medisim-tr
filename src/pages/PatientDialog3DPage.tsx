@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Waves, Droplet, Scissors, Wand2 } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
@@ -130,6 +130,13 @@ export function PatientDialog3DPage() {
   // Canlı vital (session varsa) veya statik fallback
   const liveVitals = session?.vitals ?? scenario.initial_vitals;
 
+  // organVitals memoize — sadece hr/rr değişince yeni obje (PatientBody3D
+  // React.memo etkili olabilsin)
+  const organVitalsMemo = useMemo(
+    () => ({ hr: liveVitals.hr, rr: liveVitals.rr }),
+    [liveVitals.hr, liveVitals.rr],
+  );
+
   // Vital history — session.vitals değiştikçe sparkline için append (max 60 entry)
   useEffect(() => {
     setVitalsHistory((prev) => {
@@ -175,7 +182,7 @@ export function PatientDialog3DPage() {
     setAutoTint(true);
   }, [scenarioId]);
 
-  const handleProcedureComplete = (action: ActionRef) => {
+  const handleProcedureComplete = useCallback((action: ActionRef) => {
     if (!session) return;
     const step = getCurrentStep(scenario, session);
     const ts = Date.now();
@@ -269,9 +276,9 @@ export function PatientDialog3DPage() {
         : evaluation.feedback,
       points: evaluation.points,
     });
-  };
+  }, [session, scenario]);
 
-  const handleDecisionSubmit = (step: Step, selectedOptionIds: string[]) => {
+  const handleDecisionSubmit = useCallback((step: Step, selectedOptionIds: string[]) => {
     if (!session || step.kind !== "decision") return;
     const ts = Date.now();
     const allowMultiple = step.allow_multiple === true;
@@ -353,9 +360,9 @@ export function PatientDialog3DPage() {
       body: feedback.length > 90 ? `${feedback.slice(0, 90)}…` : feedback,
       points: totalPoints,
     });
-  };
+  }, [session, scenario]);
 
-  const handleInfoContinue = (step: Step) => {
+  const handleInfoContinue = useCallback((step: Step) => {
     if (!session || step.kind !== "info") return;
     setSession((prev) => {
       if (!prev) return prev;
@@ -367,13 +374,13 @@ export function PatientDialog3DPage() {
       );
       return completeStep(prev, step.id, 0, [], 0, nextStepId);
     });
-  };
+  }, [session, scenario]);
 
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
     setSession(startSession(scenario, "egitim", scenario.difficulty));
     setActionLog([]);
     setDebriefOpen(false);
-  };
+  }, [scenario]);
 
   return (
     <div className="h-screen flex flex-col bg-ink-950 text-ink-50 overflow-hidden">
@@ -417,10 +424,7 @@ export function PatientDialog3DPage() {
             skinTint={skinTint}
             speaking={speaking}
             skinClipLevel={skinClipLevel}
-            organVitals={{
-              hr: liveVitals.hr,
-              rr: liveVitals.rr,
-            }}
+            organVitals={organVitalsMemo}
             onProcedureComplete={handleProcedureComplete}
           />
 
