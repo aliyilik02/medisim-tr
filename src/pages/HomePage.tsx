@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, GraduationCap, Stethoscope, Timer } from "lucide-react";
+import { ArrowRight, GraduationCap, Stethoscope, Timer, Sparkles, MessageSquare, Box } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
 import { getStats, listSessions } from "@/storage/sessionHistory";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
@@ -195,6 +195,81 @@ export function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ── 3D Demo / Beta özellikler ────────────────────────────── */}
+      <section className="mb-16">
+        <div className="flex items-baseline justify-between mb-6">
+          <h2 className="t-title text-ink-50 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-brand" />
+            3D Klinik Simülasyon · Beta
+          </h2>
+          <div className="font-mono text-[10px] text-ink-600 uppercase tracking-[0.15em]">
+            / Sprint B.5+
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-3">
+          <Link
+            to="/dialog-3d-demo"
+            className="group relative flex flex-col bg-ink-900 border border-brand/40 rounded-lg p-5 hover:border-brand transition-all duration-200"
+            style={{ borderLeftWidth: 2 }}
+          >
+            <div className="absolute top-3 right-3 font-mono text-[8px] uppercase tracking-[0.15em] text-brand bg-brand/10 px-1.5 py-0.5 rounded">
+              Tam Paket
+            </div>
+            <div className="w-10 h-10 rounded-md bg-brand/15 text-brand flex items-center justify-center mb-3">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <h3 className="font-display text-base text-ink-50 mb-1">
+              3D Hasta + AI Diyalog
+            </h3>
+            <p className="t-caption text-ink-400 leading-relaxed">
+              20 anatomik marker + Gemini hasta diyaloğu + Vital HUD + EKG +
+              cilt kesim + senaryo motor entegre.
+            </p>
+            <div className="mt-3 flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-brand-light group-hover:gap-2 transition-all">
+              Aç <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
+          <Link
+            to="/3d-demo"
+            className="group flex flex-col bg-ink-900 border border-ink-700 rounded-lg p-5 hover:border-ink-500 transition-all duration-200"
+            style={{ borderLeftWidth: 2 }}
+          >
+            <div className="w-10 h-10 rounded-md bg-ink-800 text-ink-300 flex items-center justify-center mb-3">
+              <Box className="w-5 h-5" />
+            </div>
+            <h3 className="font-display text-base text-ink-50 mb-1">
+              3D Hasta — Standalone
+            </h3>
+            <p className="t-caption text-ink-400 leading-relaxed">
+              3D anatomik manken + 20 marker + breathing + cilt tonu +
+              oskültasyon. Senaryo motoru olmadan.
+            </p>
+            <div className="mt-3 flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-400 group-hover:gap-2 group-hover:text-ink-200 transition-all">
+              Aç <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
+          <Link
+            to="/dialog-demo"
+            className="group flex flex-col bg-ink-900 border border-ink-700 rounded-lg p-5 hover:border-ink-500 transition-all duration-200"
+            style={{ borderLeftWidth: 2 }}
+          >
+            <div className="w-10 h-10 rounded-md bg-ink-800 text-ink-300 flex items-center justify-center mb-3">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <h3 className="font-display text-base text-ink-50 mb-1">
+              AI Hasta Diyalog
+            </h3>
+            <p className="t-caption text-ink-400 leading-relaxed">
+              Calgary-Cambridge 5 aşama hasta görüşmesi. Gemini 2.5 Flash
+              + mock fallback.
+            </p>
+            <div className="mt-3 flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-400 group-hover:gap-2 group-hover:text-ink-200 transition-all">
+              Aç <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
+        </div>
+      </section>
 
       {/* ── Öne çıkan senaryolar ────────────────────────────────── */}
       <section>

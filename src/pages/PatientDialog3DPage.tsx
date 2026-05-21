@@ -27,6 +27,7 @@ import { ActionHistoryPanel, type ActionLogEntry } from "@/components/dialog/Act
 import { CurrentStepPanel } from "@/components/dialog/CurrentStepPanel";
 import { DebriefModal } from "@/components/dialog/DebriefModal";
 import { Toaster, pushToast, type ToastKind } from "@/components/dialog/Toaster";
+import { saveSession } from "@/storage/sessionHistory";
 
 // ============================================================
 // PatientDialog3DPage — Sprint B.2 + B.3 + B.4 entegre demo
@@ -93,11 +94,20 @@ export function PatientDialog3DPage() {
     setVitalsHistory([]);
   }, [scenario]);
 
-  // Senaryo finished olunca otomatik finalize + debrief modal aç
+  // Senaryo finished olunca otomatik finalize + debrief modal aç +
+  // localStorage'a kaydet (SessionHistoryPage + HomePage stats için)
   useEffect(() => {
     if (!session || !session.finished || session.grade) return;
-    setSession((prev) => (prev ? finalizeSession(prev, scenario, "completed") : prev));
+    const finalized = finalizeSession(session, scenario, "completed");
+    setSession(finalized);
     setDebriefOpen(true);
+    try {
+      saveSession(finalized, scenario);
+    } catch (err) {
+      // localStorage quota veya parsing hatası — sessizce log
+      // eslint-disable-next-line no-console
+      console.warn("[PatientDialog3DPage] saveSession failed:", err);
+    }
   }, [session, scenario]);
 
   useVitalsTick({
