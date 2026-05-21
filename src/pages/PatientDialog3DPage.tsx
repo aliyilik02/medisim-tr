@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, Waves, Droplet, Scissors, Wand2 } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
-import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
+import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
@@ -83,12 +83,14 @@ export function PatientDialog3DPage() {
   const [session, setSession] = useState<SessionState | null>(null);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
   const [debriefOpen, setDebriefOpen] = useState(false);
+  const [vitalsHistory, setVitalsHistory] = useState<VitalHistoryEntry[]>([]);
 
   useEffect(() => {
-    // Senaryo değişince yeni session başlat + action log + debrief temizle
+    // Senaryo değişince yeni session başlat + action log + debrief + history temizle
     setSession(startSession(scenario, "egitim", scenario.difficulty));
     setActionLog([]);
     setDebriefOpen(false);
+    setVitalsHistory([]);
   }, [scenario]);
 
   // Senaryo finished olunca otomatik finalize + debrief modal aç
@@ -106,6 +108,35 @@ export function PatientDialog3DPage() {
 
   // Canlı vital (session varsa) veya statik fallback
   const liveVitals = session?.vitals ?? scenario.initial_vitals;
+
+  // Vital history — session.vitals değiştikçe sparkline için append (max 60 entry)
+  useEffect(() => {
+    setVitalsHistory((prev) => {
+      const last = prev[prev.length - 1];
+      // Aynı snapshot tekrar push edilmesin (deep compare yerine birkaç field check)
+      if (
+        last &&
+        last.hr === liveVitals.hr &&
+        last.rr === liveVitals.rr &&
+        last.sbp === liveVitals.bp_systolic &&
+        last.spo2 === liveVitals.spo2
+      ) {
+        return prev;
+      }
+      const entry: VitalHistoryEntry = {
+        ts: Date.now(),
+        hr: liveVitals.hr,
+        rr: liveVitals.rr,
+        sbp: liveVitals.bp_systolic,
+        dbp: liveVitals.bp_diastolic,
+        spo2: liveVitals.spo2,
+        temp: liveVitals.temp,
+        gcs: liveVitals.gcs,
+      };
+      const next = [...prev, entry];
+      return next.length > 60 ? next.slice(-60) : next;
+    });
+  }, [liveVitals]);
 
   // Visual mapping: live vital → cilt tonu otomatik
   const autoVisualParams = useMemo(
@@ -372,12 +403,13 @@ export function PatientDialog3DPage() {
             onProcedureComplete={handleProcedureComplete}
           />
 
-          {/* SOL ÜST: Vital Monitor — canlı session vital'leri */}
+          {/* SOL ÜST: Vital Monitor — canlı session vital'leri + sparkline trend */}
           <div className="absolute top-4 left-4">
             <CompactVitalsHUD
               vitals={liveVitals}
               patientAge={scenario.patient.age}
               ecgPattern={scenario.ekg_pattern}
+              history={vitalsHistory}
             />
           </div>
 

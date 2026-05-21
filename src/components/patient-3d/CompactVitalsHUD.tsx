@@ -19,12 +19,29 @@ import { Activity, AlertTriangle, Maximize2, X } from "lucide-react";
 import { useState } from "react";
 import { EcgStrip } from "@/components/EcgStrip";
 import { TwelveLeadEcg } from "@/components/TwelveLeadEcg";
+import { VitalSparkline } from "@/components/patient-3d/VitalSparkline";
+
+/** Son N tick için kaydedilen vital snapshot. PatientDialog3DPage'de
+ *  session.vitals değiştikçe append edilir, max 60 entry (~60 saniye).
+ */
+export interface VitalHistoryEntry {
+  ts: number;
+  hr: number;
+  rr: number;
+  sbp: number;
+  dbp: number;
+  spo2: number;
+  temp: number;
+  gcs?: number;
+}
 
 interface Props {
   vitals: PatientVitals;
   patientAge: number;
   /** Senaryo ekg_pattern (örn. "stemi", "afib"). EcgStrip'e geçilir. */
   ecgPattern?: string;
+  /** Son N tick vital geçmişi — VitalSparkline için. undefined ise sparkline render edilmez. */
+  history?: VitalHistoryEntry[];
   className?: string;
 }
 
@@ -44,6 +61,7 @@ export function CompactVitalsHUD({
   vitals,
   patientAge,
   ecgPattern = "normal",
+  history,
   className,
 }: Props) {
   const [showTwelveLead, setShowTwelveLead] = useState(false);
@@ -81,30 +99,35 @@ export function CompactVitalsHUD({
           value={vitals.hr}
           unit="/dk"
           status={statuses.hr}
+          spark={history?.map((h) => h.hr)}
         />
         <VitalCell
           label="TA"
           value={`${vitals.bp_systolic}/${vitals.bp_diastolic}`}
           unit={`MAP ${map}`}
           status={statuses.sbp}
+          spark={history?.map((h) => h.sbp)}
         />
         <VitalCell
           label="SpO₂"
           value={vitals.spo2}
           unit="%"
           status={statuses.spo2}
+          spark={history?.map((h) => h.spo2)}
         />
         <VitalCell
           label="SS"
           value={vitals.rr}
           unit="/dk"
           status={statuses.rr}
+          spark={history?.map((h) => h.rr)}
         />
         <VitalCell
           label="Sıcaklık"
           value={vitals.temp.toFixed(1)}
           unit="°C"
           status={statuses.temp}
+          spark={history?.map((h) => h.temp)}
         />
         {vitals.gcs !== undefined && (
           <VitalCell
@@ -211,9 +234,12 @@ interface VitalCellProps {
   value: string | number;
   unit: string;
   status: VitalStatus;
+  /** Son N tick sparkline değerleri — undef/boş ise grafik render edilmez */
+  spark?: number[];
 }
 
-function VitalCell({ label, value, unit, status }: VitalCellProps) {
+function VitalCell({ label, value, unit, status, spark }: VitalCellProps) {
+  const hasSpark = spark !== undefined && spark.length >= 2;
   return (
     <div className="bg-ink-950/60 rounded px-2 py-1.5 border border-ink-700/40">
       <div className="flex items-center justify-between mb-0.5">
@@ -222,8 +248,19 @@ function VitalCell({ label, value, unit, status }: VitalCellProps) {
         </span>
         <span className="text-ink-600 text-[8px]">{unit}</span>
       </div>
-      <div className={`text-base font-bold tabular-nums leading-none ${STATUS_COLOR[status]}`}>
-        {value}
+      <div className="flex items-end justify-between gap-1.5">
+        <div className={`text-base font-bold tabular-nums leading-none ${STATUS_COLOR[status]}`}>
+          {value}
+        </div>
+        {hasSpark && (
+          <VitalSparkline
+            values={spark}
+            width={44}
+            height={12}
+            className={STATUS_COLOR[status]}
+            data-testid={`vital-spark-${label.toLowerCase()}`}
+          />
+        )}
       </div>
     </div>
   );
