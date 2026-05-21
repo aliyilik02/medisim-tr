@@ -2,9 +2,16 @@ name: Test
 
 on:
   push:
-    branches: [master, 'fix/**', 'feature/**']
+    branches:
+      - master
+      - 'fix/**'
+      - 'feature/**'
+      - 'feat/**'
+      - 'claude/**'
+      - 'test-**'
   pull_request:
-    branches: [master]
+    # Tüm hedef branch'lere açılan PR'larda çalışsın (master + feat/backend-cf-worker)
+  workflow_dispatch:
 
 jobs:
   test:
@@ -67,6 +74,7 @@ jobs:
         run: npm run test:e2e
         env:
           CI: 'true'
+        timeout-minutes: 10
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
