@@ -22,8 +22,9 @@ test.describe("Patient 3D demo route", () => {
     // R3F Canvas <canvas> elementini DOM'a basar. WebGL context kurmaya
     // çalıştığı için "domcontentloaded" yerine "load"u bekliyoruz.
     await page.waitForLoadState("load");
-    const canvas = page.locator('canvas');
-    await expect(canvas).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(2000); // Lazy chunk + Three.js init
+    const canvas = page.locator('canvas').first();
+    await expect(canvas).toBeVisible({ timeout: 15_000 });
   });
 
   test("inspection panel başlangıçta render edilmez", async ({ page }) => {
@@ -34,16 +35,18 @@ test.describe("Patient 3D demo route", () => {
   });
 
   test("anatomik glTF asset 200 OK döner", async ({ page }) => {
+    // Sprint B.1 → B.2.3: patient-v1.glb (chuma6oy CC BY → MaceLogice) yerine
+    // patient-v2.glb (chuma6oy CC BY 4.0, optimize edilmiş 1.33 MB).
     const responsePromise = page.waitForResponse(
-      (r) => r.url().endsWith("/3d/patient-v1.glb") && r.status() === 200,
-      { timeout: 15_000 },
+      (r) => /\/3d\/patient-v\d\.glb/.test(r.url()) && r.status() === 200,
+      { timeout: 20_000 },
     );
     await page.goto("/3d-demo");
     const response = await responsePromise;
     expect(response.status()).toBe(200);
     const contentLength = response.headers()["content-length"];
     if (contentLength) {
-      // 1.07 MB glTF — şüpheli truncate / 0-byte response yakala
+      // ~1.07 MB (v1) veya ~1.33 MB (v2) glTF — truncate / 0-byte response yakala
       expect(Number(contentLength)).toBeGreaterThan(500_000);
     }
   });

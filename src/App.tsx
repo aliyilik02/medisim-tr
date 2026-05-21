@@ -5,6 +5,7 @@ import { ScenarioListPage } from "@/pages/ScenarioListPage";
 import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
 import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
 import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
+import { AboutPage } from "@/pages/AboutPage";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -48,6 +49,7 @@ export function App() {
           <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
           <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
           <Route path="/gecmis" element={<SessionHistoryPage />} />
+          <Route path="/hakkinda" element={<AboutPage />} />
           <Route
             path="/3d-demo"
             element={
@@ -121,6 +123,7 @@ function Header() {
             { to: "/", label: "Ana Sayfa", exact: true },
             { to: "/senaryolar", label: "Senaryolar" },
             { to: "/gecmis", label: "Geçmiş" },
+            { to: "/hakkinda", label: "Hakkında" },
           ].map(({ to, label, exact }) => (
             <NavLink
               key={to}
@@ -164,9 +167,17 @@ function Footer() {
         <div className="font-mono text-xs uppercase tracking-wider">
           MediSim TR · Eğitim amaçlıdır · Klinik karar yerine geçmez
         </div>
-        <div className="flex items-center gap-2">
-          <span className="pulse-dot" />
-          <span className="font-mono text-xs">sistem aktif</span>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/hakkinda"
+            className="font-mono text-xs uppercase tracking-wider text-ink-400 hover:text-brand-light transition"
+          >
+            Hakkında & Lisanslar
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="pulse-dot" />
+            <span className="font-mono text-xs">sistem aktif</span>
+          </div>
         </div>
       </div>
     </footer>
