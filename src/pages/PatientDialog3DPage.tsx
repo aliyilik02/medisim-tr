@@ -5,6 +5,8 @@ import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
+import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
+import { useMarkerOverrides } from "@/hooks/useMarkerOverrides";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
@@ -85,6 +87,15 @@ export function PatientDialog3DPage() {
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
   const [debriefOpen, setDebriefOpen] = useState(false);
   const [vitalsHistory, setVitalsHistory] = useState<VitalHistoryEntry[]>([]);
+
+  // Marker dev panel (URL ?dev=1 veya Alt+D ile aç) — localStorage override
+  const {
+    regions: effectiveRegions,
+    overrides,
+    updateMarker,
+    resetMarker,
+    resetAll: resetAllMarkers,
+  } = useMarkerOverrides(DEFAULT_REGIONS);
 
   useEffect(() => {
     // Senaryo değişince yeni session başlat + action log + debrief + history temizle
@@ -401,7 +412,7 @@ export function PatientDialog3DPage() {
         {/* Sol: 3D Model — full alan */}
         <div className="flex-1 relative min-w-0 border-r border-ink-700/50 bg-gradient-to-b from-ink-950 to-ink-900/60">
           <PatientBody3D
-            regions={DEFAULT_REGIONS}
+            regions={effectiveRegions}
             breathing={breathing}
             skinTint={skinTint}
             speaking={speaking}
@@ -570,6 +581,16 @@ export function PatientDialog3DPage() {
 
       {/* Action feedback toast'ları — sağ üst overlay */}
       <Toaster />
+
+      {/* Marker dev panel — geliştirici için runtime X/Y/Z ayar.
+          URL ?dev=1 veya Alt+D ile açılır. localStorage'a kaydeder. */}
+      <MarkerDevPanel
+        regions={effectiveRegions}
+        overrides={overrides}
+        onUpdate={updateMarker}
+        onResetMarker={resetMarker}
+        onResetAll={resetAllMarkers}
+      />
     </div>
   );
 }
