@@ -16,7 +16,7 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 2. Büyük kararlarda durdur ve sor (yeni modül, şema, deploy, ödeme, model değişikliği).
 3. **Klinik içerikte ASLA otonom değil.** Bayrak: `DRAFT` → `REVIEWED_PENDING_ACTIVATION` → `ACTIVE`. ACTIVE'e geçişi sadece Ali Bey yapar.
 4. Her iş sonunda 2-3 cümle Türkçe rapor. Teknik monolog yok.
-5. Token disiplini: küçük sprintte plan modu/agent açma. Direkt Read+Edit. Memory dosyalarını **sadece görev için gerekirse** Read et (her seansta otomatik yükleme yok).
+5. Token disiplini: küçük sprintte plan modu/agent açma. Direkt Read+Edit. **Önce skill, sonra memory** — bilgi skill'de varsa memory'yi açma (`docs/memory/README.md` "Skill mi Memory mi" karar tablosu). Memory'de `Grep` keyword + `Read offset/limit`, baştan sona okuma. Aynı dosyayı iki kez Read etme.
 
 ## Mevcut Durum (21 Mayıs 2026 — gece seansı)
 

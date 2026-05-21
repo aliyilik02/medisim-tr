@@ -134,6 +134,10 @@ function OrganMeshInner({
   const { scene } = useGLTF(url);
   const groupRef = useRef<Group>(null);
   const breatheMeshesRef = useRef<Mesh[]>([]);
+  // memory-dispose-material: opacity/color her değiştiğinde material clone'lanır;
+  // eski clone'ları dispose etmezsek slider hareketi memory büyütür (leak).
+  // Ref ile takip et + useEffect cleanup'ta dispose.
+  const clonedMaterialsRef = useRef<MeshStandardMaterial[]>([]);
 
   // Mesh-split for secondary rotation. useMemo + side-effect (Object3D.add reparent).
   // Three.js add() önceki parent'tan otomatik remove → idempotent.
@@ -175,8 +179,13 @@ function OrganMeshInner({
     return { lower, upper, cutoff };
   }, [scene, secondaryRotation, splitRatio]);
 
-  // Renk + opacity (material clone)
+  // Renk + opacity (material clone). Eski clone'lar dispose edilir
+  // (memory-dispose-material — slider sürüklerken leak engellenir).
   useEffect(() => {
+    // Önceki clone'ları temizle
+    for (const m of clonedMaterialsRef.current) m.dispose();
+    clonedMaterialsRef.current = [];
+
     scene.traverse((obj) => {
       if (!(obj as Mesh).isMesh) return;
       const mesh = obj as Mesh;
@@ -192,7 +201,14 @@ function OrganMeshInner({
       cloned.depthWrite = !isTransparent;
       cloned.needsUpdate = true;
       mesh.material = cloned;
+      clonedMaterialsRef.current.push(cloned);
     });
+
+    return () => {
+      // Component unmount veya deps değişiminde: clone'ları dispose
+      for (const m of clonedMaterialsRef.current) m.dispose();
+      clonedMaterialsRef.current = [];
+    };
   }, [scene, color, opacity]);
 
   // Breathe cache (mesh-level alt %80)
@@ -260,16 +276,24 @@ function OrganMeshInner({
     [scale, position, rotation],
   );
 
+  // Split mode pivot position'ları — her render'da yeni array referansı
+  // oluşturmamak için useMemo. (r3f-best-practices: perf-avoid-inline-objects)
+  const upperPivotPosition = useMemo<[number, number, number]>(
+    () => [0, splitResult?.cutoff ?? 0, 0],
+    [splitResult?.cutoff],
+  );
+  const upperPivotOffset = useMemo<[number, number, number]>(
+    () => [0, -(splitResult?.cutoff ?? 0), 0],
+    [splitResult?.cutoff],
+  );
+
   // Split mode: lower + (upper @ cutoff pivot, secondary rotation)
   if (splitResult && secondaryRotation) {
     return (
       <group ref={groupRef} {...groupProps}>
         <primitive object={splitResult.lower} />
-        <group
-          rotation={secondaryRotation}
-          position={[0, splitResult.cutoff, 0]}
-        >
-          <group position={[0, -splitResult.cutoff, 0]}>
+        <group rotation={secondaryRotation} position={upperPivotPosition}>
+          <group position={upperPivotOffset}>
             <primitive object={splitResult.upper} />
           </group>
         </group>

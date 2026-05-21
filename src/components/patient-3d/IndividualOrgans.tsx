@@ -21,7 +21,16 @@
 // ============================================================
 
 import { useMemo } from "react";
+import { useGLTF } from "@react-three/drei";
 import { OrganModel, type OrganAnimation } from "./OrganModel";
+
+// drei-use-gltf: 3 organ glb'sini ilk render öncesi preload et.
+// Kullanıcı /dialog-3d-demo açar açmaz IndividualOrgans mount edilirse
+// burada listed URL'ler Suspense öncesi fetch + parse edilir → blocking
+// fallback azalır. URL listesi DEFAULT_ORGAN_CONFIGS ile senkron tutulur.
+useGLTF.preload("/3d/organs/heart.glb");
+useGLTF.preload("/3d/organs/lungs.glb");
+useGLTF.preload("/3d/organs/liver.glb");
 
 export type OrganId = "heart" | "lungs" | "liver";
 

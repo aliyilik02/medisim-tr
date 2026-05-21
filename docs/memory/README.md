@@ -47,18 +47,43 @@
 ## Skill'ler (`.claude/skills/`)
 
 Domain skill'leri otomatik yüklenir (CLAUDE.md'de listelenmiş):
-- `patient-anatomy` → marker koordinat
+- `patient-anatomy` → marker koordinat **+ organ pozisyon/rotation/scale + view-by-view sanity (v2, refs/ ile)**
 - `calgary-cambridge` → anamnez yapısı
 - `kvkk-compliance` → veri koruma pre-commit
-- `r3f-medical` → 3D pattern
+- `r3f-medical` → MediSim-spesifik 3D pattern (breathing shader, skin tint, region marker)
 - `medical-terminology` → TDK/TAKAD
+- **`three-best-practices`** → Three.js 120+ kural (memory disposal, render loop, draw call, GLTF, shader, WebGPU, mobile)
+- **`r3f-best-practices`** → R3F 70+ kural (perf-never-set-state-in-useframe, Drei, Suspense, Zustand)
 
-## Token Disiplini
+## Skill mi, Memory mi? (önce skill, sonra memory)
 
-- **CLAUDE.md** her seansta yüklenir → kısa (~60 satır)
-- **Bu README** her seansta yüklenir → "hangi memory ne için" haritası
-- **Detaylı memory dosyaları** sadece görev için gerektiğinde Read edilir
-- Master rapor 600+ satır → ilgili bölüme (9.A vb.) atla, baştan sona okuma
+Token tasarrufu için: skill bir bilgiyi içeriyorsa onu kullan; memory'yi sadece skill yetmediğinde aç.
+
+| Görev | Önce bu skill'e bak | Sonra memory'ye (gerekirse) |
+|---|---|---|
+| Marker / organ koordinat | `patient-anatomy` (tablo + view-by-view + tipik hatalar) | `medisim_anatomik_landmark.md` (TAM tablo) sadece tüm noktaları listelemen gerekirse |
+| 3D component yaz / opt | `r3f-medical` + `r3f-best-practices` + `three-best-practices` | `medisim_animasyon_teknikleri.md` sadece MediSim-spesifik pattern arıyorsan |
+| Klinik tablo / vital | `vital-signs-hud` + `ilac-dozaj-dogrulayici` | `medisim_saglik_standartlari.md` ICD/SNOMED arıyorsan |
+| Senaryo yaz | `klinik-senaryo-yazar` + `medical-terminology` | `medisim_anatomi_klinik.md` `physical_exam` field için |
+| Asker/TCCC senaryo | `tccc-scenarios` (MARCH-PAWS + TR eşdeğer) | – (skill yeterli) |
+| KVKK / commit | `kvkk-compliance` skill | `medisim_saglik_standartlari.md` ÜYZ 2025 detay |
+
+## Token Disiplini — okuma stratejisi
+
+1. **CLAUDE.md + bu README** her seansta otomatik yüklü → kısa
+2. **Skill metadata** her seansta otomatik yüklü → trigger description'lardan görev için uygun skill'i seç
+3. **Skill tetiklenince SKILL.md (~200 satır) yüklenir** → çoğu görev burada biter
+4. **Skill references/** içine `Read` SADECE skill yetmezse (skill kendi linkler)
+5. **Memory dosyaları** SADECE skill bilgi vermiyorsa → bu README tablosundan ilgili dosyayı seç
+6. **Master rapor** 600+ satır → `Grep` ile keyword ara (`Grep pattern path=docs/MASTER-REPORT-v3.md`), sonra `Read offset/limit` ile o bölümü oku — **asla baştan sona okuma**
+
+### Pratik kurallar
+
+- **Önce Grep, sonra Read.** Büyük dosyada keyword ile pozisyonu bul, `Read offset/limit` ile dar pencere oku.
+- **Read'de `limit` parametresi kullan** — özellikle 200+ satırlı dosyalarda. İlk 80 satır çoğu zaman yeter.
+- **Aynı bilgiyi iki kez Read etme** — context'te zaten var. Aynı dosyayı tekrar görmek gerektiyse Grep ile spot kontrol.
+- **Otomatik yüklenen Skill listesini ezberle** — system reminder'da skill description'lar geliyor; oradan trigger eşleştirme yapıp doğrudan Skill'i kullan. Lojik şüpheliyse SKILL.md'yi `Read` ile aç.
+- **Glob ile dosya keşfi**, `ls` Bash'e gitmek yerine. Glob daha hızlı + token verimli.
 
 ## Obsidian Setup (opsiyonel, MCP için)
 
