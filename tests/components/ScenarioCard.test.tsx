@@ -23,8 +23,19 @@ describe("ScenarioCard", () => {
 
   test("doğru oyna URL'i içerir", () => {
     renderInRouter(<ScenarioCard scenario={stemi} />);
-    const link = screen.getByRole("link");
-    expect(link.getAttribute("href")).toBe("/oyna/kardiyoloji-stemi-001");
+    // Kart 2 link içerir: ana /oyna ve sağ üst /dialog-3d-demo
+    const oynaLink = screen.getByRole("link", {
+      name: /klasik modda aç/i,
+    });
+    expect(oynaLink.getAttribute("href")).toBe("/oyna/kardiyoloji-stemi-001");
+  });
+
+  test("3D Hasta linki /dialog-3d-demo?scenario=... olarak görünür", () => {
+    renderInRouter(<ScenarioCard scenario={stemi} />);
+    const link3d = screen.getByRole("link", { name: /3D hasta modu/i });
+    expect(link3d.getAttribute("href")).toBe(
+      "/dialog-3d-demo?scenario=kardiyoloji-stemi-001",
+    );
   });
 
   test("zorluk seviyesi aria-label'da", () => {
@@ -58,7 +69,7 @@ describe("ScenarioCard — pediatri farklı specialty", () => {
 
   test("href pediatri senaryosunu hedefler", () => {
     renderInRouter(<ScenarioCard scenario={bron} />);
-    const link = screen.getByRole("link");
-    expect(link.getAttribute("href")).toBe("/oyna/pedi-bronsiyolit-001");
+    const oynaLink = screen.getByRole("link", { name: /klasik modda aç/i });
+    expect(oynaLink.getAttribute("href")).toBe("/oyna/pedi-bronsiyolit-001");
   });
 });
