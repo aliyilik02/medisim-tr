@@ -59,6 +59,13 @@ export function dismissToast(id: number) {
   publish();
 }
 
+/** Test helper — tüm aktif toast'ları temizle. Vitest beforeEach'te kullanılır. */
+export function dismissAllToasts() {
+  if (currentState.toasts.length === 0) return;
+  currentState = { toasts: [] };
+  publish();
+}
+
 export function useToasts(): Toast[] {
   const [state, setState] = useState<ToasterState>(currentState);
   useEffect(() => {
