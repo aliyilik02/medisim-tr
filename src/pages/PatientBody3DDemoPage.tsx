@@ -5,6 +5,8 @@ import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
+import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
+import { useMarkerOverrides } from "@/hooks/useMarkerOverrides";
 import { SCENARIOS } from "@/data/scenarios";
 import type { ActionRef } from "@/engine/types";
 
@@ -33,6 +35,15 @@ export function PatientBody3DDemoPage() {
   const [breathing, setBreathing] = useState(true);
   const [skinTint, setSkinTint] = useState<SkinTint>("normal");
   const [log, setLog] = useState<ProcedureLogEntry[]>([]);
+
+  // Marker dev panel (URL ?dev=1 veya Alt+D ile aç) — localStorage override
+  const {
+    regions: effectiveRegions,
+    overrides,
+    updateMarker,
+    resetMarker,
+    resetAll: resetAllMarkers,
+  } = useMarkerOverrides(DEFAULT_REGIONS);
 
   const cycleSkinTint = () => {
     const idx = SKIN_TINT_CYCLE.indexOf(skinTint);
@@ -94,7 +105,7 @@ export function PatientBody3DDemoPage() {
 
       <div className="flex-1 relative min-h-0">
         <PatientBody3D
-          regions={DEFAULT_REGIONS}
+          regions={effectiveRegions}
           breathing={breathing}
           skinTint={skinTint}
           onProcedureComplete={handleProcedureComplete}
@@ -137,6 +148,15 @@ export function PatientBody3DDemoPage() {
           {breathing ? "60fps target" : "demand frameloop"}
         </span>
       </footer>
+
+      {/* Marker dev panel — runtime X/Y/Z ayar (Alt+D veya ?dev=1) */}
+      <MarkerDevPanel
+        regions={effectiveRegions}
+        overrides={overrides}
+        onUpdate={updateMarker}
+        onResetMarker={resetMarker}
+        onResetAll={resetAllMarkers}
+      />
     </div>
   );
 }
