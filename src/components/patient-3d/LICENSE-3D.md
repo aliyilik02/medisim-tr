@@ -5,6 +5,52 @@ Yeni model eklerken bu dosyaya da bir bölüm ekleyin.
 
 ---
 
+## organs/heart.glb · organs/lungs.glb · organs/liver.glb  (Sprint B.5+)
+
+**Durum:** İndirildi (2026-05-21), `IndividualOrgans.tsx` ile sahneye bağlandı. Splanchnology mesh yerine bu 3 dosya `PatientBody3D` içinde varsayılan iç organ kümesini oluşturur.
+
+### TODO — atıf detayı doldur (commit öncesi)
+
+Kullanıcı (Ali Bey) bu 3 dosyayı indirdi; spesifik Sketchfab / BodyParts3D kaynak URL ve yazar adlarını aşağıdaki şablona yerleştirmek gerekiyor. CC BY 4.0 modeli ise hem kullanıcı kredi düşmeli hem `MediaAttributions.tsx`'e link eklemeli (UI'dan kaldırıldı ama LICENSE referansı bırakılmalı).
+
+```
+### heart.glb
+- Kaynak URL: TBD
+- Yazar: TBD
+- Lisans: TBD (tercih: CC BY 4.0)
+- Eklenme: 2026-05-21
+- Boyut: 144 KB
+- Atıf metni: "This work is based on '<title>' (<url>) by <author> licensed under CC-BY-4.0"
+
+### lungs.glb
+- Kaynak URL: TBD
+- Yazar: TBD
+- Lisans: TBD
+- Eklenme: 2026-05-21
+- Boyut: 371 KB
+
+### liver.glb
+- Kaynak URL: TBD
+- Yazar: TBD
+- Lisans: TBD
+- Eklenme: 2026-05-21
+- Boyut: 365 KB
+```
+
+### Pozisyon ve scale (IndividualOrgans.tsx — runtime override edilebilir)
+
+| Organ | position (x, y, z) | scale | animation |
+|---|---|---|---|
+| Kalp | (−0.02, 0.523, 0.06) — 4. ICS sol sternal | 0.08 | pulse, rate=hr |
+| Akciğer | ( 0.00, 0.555, 0.04) — chest cavity merkez | 0.12 | breathe, rate=rr |
+| Karaciğer | (+0.08, 0.450, 0.05) — RUQ kosta altı | 0.10 | none |
+
+Pozisyon kaynak: `docs/memory/medisim_anatomik_landmark.md` (8-head canon).
+Scale ilk değerleri Sketchfab "1 unit = 1 m" varsayımına göre — modelin gerçek
+ölçeğine bağlı olarak `IndividualOrgans.tsx` içinde elden ayarlanabilir.
+
+---
+
 ## Önerilen CC BY tek tek organ kaynakları (planlı)
 
 Z-Anatomy Splanchnology mesh'i generic ("Default", "Organ" gibi) — kalp/karaciğer/mide ayrımı belirsiz. Yarın yerine geçecek tek tek model adayları (her biri CC BY, ticari kullanım izinli, atıf yeterli):

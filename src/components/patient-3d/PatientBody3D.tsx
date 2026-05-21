@@ -1,9 +1,9 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
+import { Html, OrbitControls } from "@react-three/drei";
 import { PerspectiveCamera, Plane, Vector3, type Group } from "three";
 import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
-import { InternalOrgans } from "./InternalOrgans";
+import { IndividualOrgans, type OrganOverrideMap } from "./IndividualOrgans";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
 import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
@@ -28,6 +28,10 @@ interface Props {
   skinClipLevel?: number;
   /** B.4 — Kalp/akciğer animasyon hızı için vital'ler. */
   organVitals?: { hr: number; rr: number };
+  /** B.5+ — IndividualOrgans runtime scale/pozisyon override (OrganDevPanel). */
+  organOverrides?: OrganOverrideMap;
+  /** B.5+ — Kamera açı preset (anterior/posterior/right/left/superior/inferior). */
+  cameraView?: CameraView;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
   /** Sprint B.2.1: Prosedür animasyonu tamamlandığında engine'e iletilecek ActionRef. */
@@ -35,24 +39,79 @@ interface Props {
   className?: string;
 }
 
-/** Canvas içinde default kamerayı manuel pozisyon + fov ile zorla.
-    Drei makeDefault + Suspense + lazy chunk kombinasyonu yarış yapıyor;
-    useThree+useEffect pattern garantili. Model bbox y[-0.24, 0.78],
-    center y=0.27 → camera y=0.27 lookAt aynı. */
-function CameraRig({ position, fov }: { position: [number, number, number]; fov: number }) {
+/** Önceden tanımlı kamera açıları — 8-head canon, model center y=0.27. */
+export type CameraView =
+  | "anterior"
+  | "posterior"
+  | "right"
+  | "left"
+  | "superior"
+  | "inferior";
+
+interface CameraPreset {
+  position: [number, number, number];
+  target: [number, number, number];
+  fov: number;
+}
+
+export const CAMERA_PRESETS: Record<CameraView, CameraPreset> = {
+  anterior:  { position: [0, 0.27, 2.73],   target: [0, 0.27, 0], fov: 32 },
+  posterior: { position: [0, 0.27, -2.73],  target: [0, 0.27, 0], fov: 32 },
+  right:     { position: [2.73, 0.27, 0.01], target: [0, 0.27, 0], fov: 32 },
+  left:      { position: [-2.73, 0.27, 0.01], target: [0, 0.27, 0], fov: 32 },
+  superior:  { position: [0, 3.2, 0.05],     target: [0, 0.27, 0], fov: 32 },
+  inferior:  { position: [0, -2.6, 0.05],    target: [0, 0.27, 0], fov: 32 },
+};
+
+/** OrbitControls'ı ref ile kontrol eden kamera yöneticisi.
+    `view` değişimi → camera.position + controls.target + fov güncellenir.
+    Mouse drag ile orbit drei OrbitControls tarafından handled. */
+interface OrbitControlsLike {
+  target: Vector3;
+  update: () => void;
+}
+
+function CameraController({ view }: { view: CameraView }) {
+  // drei OrbitControls ref tipi three-stdlib OrbitControls class; alt küme
+  // (target/update) için runtime cast yeterli — useRef<unknown>.
+  const controlsRef = useRef<unknown>(null);
   const { camera, size } = useThree();
+  const preset = CAMERA_PRESETS[view];
+
   useEffect(() => {
-    camera.position.set(...position);
-    camera.lookAt(0, 0.27, 0);
+    camera.position.set(
+      preset.position[0],
+      preset.position[1],
+      preset.position[2],
+    );
     if (camera instanceof PerspectiveCamera) {
-      camera.fov = fov;
+      camera.fov = preset.fov;
       camera.near = 0.1;
       camera.far = 50;
       camera.aspect = size.width / size.height;
       camera.updateProjectionMatrix();
     }
-  }, [camera, size.width, size.height, position, fov]);
-  return null;
+    const c = controlsRef.current as OrbitControlsLike | null;
+    if (c && c.target && typeof c.update === "function") {
+      c.target.set(preset.target[0], preset.target[1], preset.target[2]);
+      c.update();
+    } else {
+      camera.lookAt(preset.target[0], preset.target[1], preset.target[2]);
+    }
+  }, [camera, size.width, size.height, preset]);
+
+  return (
+    <OrbitControls
+      // @ts-expect-error — drei ref tipi tam OrbitControls class; alt küme cast'i
+      ref={controlsRef}
+      makeDefault
+      enableDamping
+      dampingFactor={0.08}
+      minDistance={0.6}
+      maxDistance={6}
+      target={preset.target}
+    />
+  );
 }
 
 function LoadingFallback() {
@@ -77,6 +136,8 @@ function PatientBody3DImpl({
   speaking = false,
   skinClipLevel = 1.0,
   organVitals,
+  organOverrides,
+  cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
   className,
@@ -105,7 +166,10 @@ function PatientBody3DImpl({
     return [new Plane(new Vector3(0, 0, -1), zClip)];
   }, [zClip, skinClipLevel]);
 
-  const showOrgans = skinClipLevel < 0.95;
+  // skinClipLevel 1.0 → cilt kapalı, organlar render edilmez (performans).
+  // 1.0 altında IndividualOrgans içindeki computeOrganOpacity ile yumuşak
+  // fade — tam görünürlük 0.45 ve altında. Bu sayede 0.45'te smooth geçiş.
+  const showOrgans = skinClipLevel < 0.999;
 
   const handleSelect = (region: PatientRegion) => {
     setSelected(region);
@@ -159,8 +223,9 @@ function PatientBody3DImpl({
         shadows
       >
         <color attach="background" args={["#0a0a0c"]} />
-        {/* Model height ~1.02 birim, %65 hedef → view 1.57, fov 32 → dist ≈ 2.73 */}
-        <CameraRig position={[0, 0.27, 2.73]} fov={32} />
+        {/* CameraController = preset uygulayan + OrbitControls'ı içeren tek
+            sorumluluk. Mouse drag ile orbit aktif, zoom 0.6–6 birim aralık. */}
+        <CameraController view={cameraView} />
 
         <ambientLight intensity={0.5} />
         <directionalLight
@@ -182,10 +247,12 @@ function PatientBody3DImpl({
             clippingPlanes={clippingPlanes}
           />
           {showOrgans && (
-            <InternalOrgans
+            <IndividualOrgans
               hr={organVitals?.hr ?? 75}
               rr={organVitals?.rr ?? 14}
               visible={showOrgans}
+              overrides={organOverrides}
+              skinClipLevel={skinClipLevel}
             />
           )}
           {regions.map((region) => (

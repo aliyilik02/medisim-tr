@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Waves, Droplet, Scissors, Wand2 } from "lucide-react";
-import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
+import { PatientBody3D, type CameraView } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
+import { OrganDevPanel } from "@/components/patient-3d/OrganDevPanel";
 import { useMarkerOverrides } from "@/hooks/useMarkerOverrides";
+import { useOrganOverrides } from "@/hooks/useOrganOverrides";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
@@ -71,6 +73,16 @@ const SKIN_TINT_OPTIONS: { value: SkinTint; label: string; emoji: string }[] = [
   { value: "pallor",   label: "Solgun",  emoji: "⚪" },
 ];
 
+// Kamera açı butonları — klinik standart kısaltma (A/P/R/L/S/I).
+const VIEW_OPTIONS: { value: CameraView; letter: string; label: string }[] = [
+  { value: "anterior",  letter: "A", label: "Ön (Anterior)" },
+  { value: "posterior", letter: "P", label: "Arka (Posterior)" },
+  { value: "right",     letter: "R", label: "Sağ yan (Right lateral)" },
+  { value: "left",      letter: "L", label: "Sol yan (Left lateral)" },
+  { value: "superior",  letter: "S", label: "Üstten (Superior)" },
+  { value: "inferior",  letter: "I", label: "Alttan (Inferior)" },
+];
+
 export function PatientDialog3DPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   // URL'de ?scenario=id varsa o senaryo ile aç (ScenarioPlayPage'den
@@ -99,6 +111,7 @@ export function PatientDialog3DPage() {
   const [speaking, setSpeaking] = useState(false);
   const [skinClipLevel, setSkinClipLevel] = useState(1.0);
   const [autoTint, setAutoTint] = useState(true);
+  const [cameraView, setCameraView] = useState<CameraView>("anterior");
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
 
@@ -117,6 +130,14 @@ export function PatientDialog3DPage() {
     resetMarker,
     resetAll: resetAllMarkers,
   } = useMarkerOverrides(DEFAULT_REGIONS);
+
+  // Organ dev panel (Alt+O ile aç) — IndividualOrgans scale/pozisyon override
+  const {
+    overrides: organOverrides,
+    updateOrgan,
+    resetOrgan,
+    resetAll: resetAllOrgans,
+  } = useOrganOverrides();
 
   useEffect(() => {
     // Senaryo değişince yeni session başlat + action log + debrief + history temizle
@@ -422,6 +443,32 @@ export function PatientDialog3DPage() {
             {scenario.title}
           </h1>
         </div>
+        {/* Kamera açı seçici — 6 preset (A/P/R/L/S/I) + drag orbit aktif */}
+        <div
+          className="flex items-center gap-0.5 mr-2 border border-ink-700 rounded p-0.5 bg-ink-900"
+          data-testid="view-angle-selector"
+          title="Kamera açısı — fareyle sürükleyerek de döndürebilirsin"
+        >
+          {VIEW_OPTIONS.map((opt) => {
+            const active = cameraView === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setCameraView(opt.value)}
+                title={opt.label}
+                className={`w-6 h-6 rounded font-mono text-[10px] uppercase font-bold tracking-wide transition ${
+                  active
+                    ? "bg-brand text-ink-950"
+                    : "text-ink-400 hover:text-ink-100 hover:bg-ink-800"
+                }`}
+                data-testid={`view-angle-${opt.value}`}
+              >
+                {opt.letter}
+              </button>
+            );
+          })}
+        </div>
         <select
           value={scenarioId}
           onChange={(e) => setScenarioId(e.target.value)}
@@ -446,6 +493,8 @@ export function PatientDialog3DPage() {
             speaking={speaking}
             skinClipLevel={skinClipLevel}
             organVitals={organVitalsMemo}
+            organOverrides={organOverrides}
+            cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />
 
@@ -615,6 +664,15 @@ export function PatientDialog3DPage() {
         onUpdate={updateMarker}
         onResetMarker={resetMarker}
         onResetAll={resetAllMarkers}
+      />
+
+      {/* Organ dev panel — IndividualOrgans scale/pozisyon ayar.
+          URL ?dev=1 veya Alt+O ile açılır. JSON Export → IndividualOrgans.tsx. */}
+      <OrganDevPanel
+        overrides={organOverrides}
+        onUpdate={updateOrgan}
+        onReset={resetOrgan}
+        onResetAll={resetAllOrgans}
       />
     </div>
   );

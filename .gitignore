@@ -61,3 +61,5 @@ backend/dist/
 docs/memory/.obsidian/
 public/3d/splanchnology-source/
 public/3d/splanchnology.zip
+# 3D organ ham asset klasörleri — optimize edilmiş .glb'ler `public/3d/organs/`'da
+public/3d/organs-source/
