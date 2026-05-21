@@ -18,9 +18,9 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 4. Her iş sonunda 2-3 cümle Türkçe rapor. Teknik monolog yok.
 5. Token disiplini: küçük sprintte plan modu/agent açma. Direkt Read+Edit. Memory dosyalarını **sadece görev için gerekirse** Read et (her seansta otomatik yükleme yok).
 
-## Mevcut Durum (21 Mayıs 2026)
+## Mevcut Durum (21 Mayıs 2026 — gece seansı)
 
-**Test:** 430 vitest + 8 Playwright E2E pass. Build temiz.
+**Test:** 504 vitest + 42 Playwright E2E pass. Build temiz. 35 commit `claude/vibrant-newton-e326e8` branch'inde, GitHub'a push edildi.
 **Sprint:** Master rapor Bölüm 11 —
 - ✅ A/A.1/B.1/B.1.1 — manken + marker + breathing
 - ✅ B.2 — AI hasta diyaloğu (Gemini 2.5 Flash backend `/api/chat` SSE canlı; mock fallback otomatik)
@@ -48,7 +48,11 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 
 **Branch akışı:** Aktif gelişme `feat/backend-cf-worker` üstünde. Bu seansın işleri `claude/vibrant-newton-e326e8` branch'ında, GitHub'a push edildi → PR'ı `feat/backend-cf-worker`'a aç.
 
-**Yarın sırada:** (1) RPM avatar entegrasyon → D.2 göz/ağız, (2) Splanchnology yerine tek tek CC BY organ modelleri (`OrganModel` ile entegre), (3) E2E test (Playwright action/decision flow), (4) Vital trend sparkline (HR/RR mini grafik), (5) C.1 Tailwind v4 migration, (6) Cloudflare BAA prod kurulum (B.0).
+**Yarın sırada:** (1) RPM avatar entegrasyon → D.2 göz/ağız (Ali Bey manuel GLB indirme), (2) Splanchnology yerine tek tek CC BY organ modelleri (`OrganModel` ile entegre — Ali Bey indirme), (3) C.1 Tailwind v4 migration (büyük scope, dedicated tur), (4) Cloudflare BAA prod kurulum (B.0, Ali Bey hesap + secret).
+
+**PR açma:** https://github.com/aliyilik02/medisim-tr/pull/new/claude/vibrant-newton-e326e8 → base `feat/backend-cf-worker` (Ali Bey 1 tık).
+
+**Bu seansın özet (35 commit):** `CHANGELOG.md` v0.3.0 başlığı altında detaylı — 20 marker + ses + atıf + engine UI tam akış (Action submit + Decision/Info + Debrief + Toast + Sparkline + MarkerDevPanel) + /hakkinda + HomePage 3D demo bölümü + 156 yeni vitest + 17 yeni e2e + Vite manualChunks + React.memo perf + CI workflow genişletme.
 
 ## Stack (Master Rapor onaylı)
 
