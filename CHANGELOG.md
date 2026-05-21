@@ -5,7 +5,7 @@ Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 
 ## [v0.3.0] — 2026-05-21 (Sprint B.5+)
 
-**Tema:** 3D klinik simülasyon canlı; senaryo motoru tam UI entegrasyon; debrief + toast + sparkline; geliştirici araçları; **504 vitest + 42 Playwright e2e** test kapsamı.
+**Tema:** 3D klinik simülasyon canlı; senaryo motoru tam UI entegrasyon; debrief + toast + sparkline; geliştirici araçları; **/oyna ↔ /dialog-3d-demo entegrasyon**; **527 vitest + 42 Playwright e2e** test kapsamı.
 
 ### ✨ Eklendi
 
@@ -23,6 +23,13 @@ Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 #### Sayfa / Route'lar
 - **`/hakkinda`** — proje bilgisi + KVKK + klinik standartlar (PALS, Calgary-Cambridge, TCCC v5, TA2-2019) + CC BY/BY-SA görünür atıfları (3D modeller, sesler, fontlar, yazılım)
 - **HomePage** — "3D Klinik Simülasyon · Beta" yeni bölümü; 3 demo route kartı (`/dialog-3d-demo` Tam Paket vurgulu)
+- **Header v0.3 · beta badge** — MediSim TR logosu yanı sıra sürüm rozeti
+
+#### Senaryo ↔ 3D Hasta entegrasyonu
+- **`/oyna/:id` üst barı** — 'Çık' yanına 'Box · 3D Hasta' butonu → `/dialog-3d-demo?scenario={id}` (brand teal vurgulu)
+- **`/senaryolar` senaryo kartları** — hover'da sağ üst köşede '3D Hasta' badge → `/dialog-3d-demo?scenario={id}`
+- **`/dialog-3d-demo` URL query desteği** — `?scenario=id` ile direkt senaryo seçimi; dropdown değişimi URL'i senkronize (paylaşılabilir link)
+- Bilinmeyen scenario id → SCENARIOS[0] fallback
 
 #### Test / CI
 - **504 vitest** birim/regresyon/yapı testi (32 dosya — önceki 348 + 156 yeni)

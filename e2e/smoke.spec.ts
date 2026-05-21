@@ -54,6 +54,51 @@ test.describe("Ana akış", () => {
     await link.click();
     await expect(page).toHaveURL(/\/hakkinda/);
   });
+
+  test("/senaryolar — kart hover '3D Hasta' linki + doğru href", async ({ page }) => {
+    await page.goto("/senaryolar");
+    await page.waitForLoadState("load");
+
+    // İlk senaryo kartını bul
+    const firstCard = page
+      .locator('a[href^="/oyna/"]')
+      .first();
+    await expect(firstCard).toBeVisible();
+
+    // Aynı kart içinde '3D hasta modu' aria-label'lı badge link olmalı
+    const allCards = page.locator('div.group:has(a[href^="/oyna/"])');
+    const firstCardContainer = allCards.first();
+    const dev3dLink = firstCardContainer.getByRole("link", {
+      name: /3D hasta modu/i,
+    });
+
+    // Hover ile görünür yap
+    await firstCardContainer.hover();
+    await expect(dev3dLink).toHaveAttribute(
+      "href",
+      /\/dialog-3d-demo\?scenario=/,
+    );
+  });
+
+  test("/oyna/:id sayfasında '3D Hasta' butonu görünür", async ({ page }) => {
+    // STEMI senaryosunu başlat
+    await page.goto("/oyna/kardiyoloji-stemi-001");
+    await page.waitForLoadState("load");
+
+    // Mod seçim ekranında 'Eğitim' butonuna tıkla
+    const egitimBtn = page.getByRole("button", { name: /Eğitim/i }).first();
+    await expect(egitimBtn).toBeVisible({ timeout: 10_000 });
+    await egitimBtn.click();
+    await page.waitForTimeout(1500);
+
+    // Üst barda '3D Hasta' linki olmalı
+    const link3d = page.getByRole("link", { name: /3D Hasta/i });
+    await expect(link3d).toBeVisible();
+    await expect(link3d).toHaveAttribute(
+      "href",
+      "/dialog-3d-demo?scenario=kardiyoloji-stemi-001",
+    );
+  });
 });
 
 test.describe("Geçmiş ve editör sayfaları smoke", () => {
