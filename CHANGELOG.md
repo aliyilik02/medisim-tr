@@ -5,7 +5,7 @@ Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 
 ## [v0.3.0] — 2026-05-21 (Sprint B.5+)
 
-**Tema:** 3D klinik simülasyon canlı; senaryo motoru tam UI entegrasyon; debrief + toast + sparkline; geliştirici araçları.
+**Tema:** 3D klinik simülasyon canlı; senaryo motoru tam UI entegrasyon; debrief + toast + sparkline; geliştirici araçları; **504 vitest + 42 Playwright e2e** test kapsamı.
 
 ### ✨ Eklendi
 
@@ -25,8 +25,11 @@ Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 - **HomePage** — "3D Klinik Simülasyon · Beta" yeni bölümü; 3 demo route kartı (`/dialog-3d-demo` Tam Paket vurgulu)
 
 #### Test / CI
-- **475 vitest** birim/regresyon/yapı testi (29 dosya — önceki 415 + 60 yeni component+motor testi)
-- **25 Playwright E2E** test (smoke + 3d-demo + engine-flow yeni 8 test: CurrentStepPanel, ActionHistoryPanel, Toaster, cilt tonu konumu, sparkline, senaryo değişimi, decision flow)
+- **504 vitest** birim/regresyon/yapı testi (32 dosya — önceki 348 + 156 yeni)
+  - Toaster (8), VitalSparkline (9), ActionHistoryPanel (9), CurrentStepPanel (9), DebriefModal (10), DialogChat (6), useMarkerOverrides (10), AboutPage (13) ve daha fazla
+  - happy-dom v20 localStorage mock pattern (`vi.stubGlobal` ile minimal Storage)
+- **42 Playwright E2E** test (smoke + 3d-demo + engine-flow + about-page + dialog-demo)
+  - HomePage 3D Demo Beta bölümü, Footer Hakkında linki, MarkerDevPanel toggle + slider + localStorage override, /hakkinda 12+ atıf öğesi, /dialog-demo Calgary stepper + Sıfırla
 - **GitHub Actions CI** — `feat/**` + `claude/**` branch'leri tetik listesine eklendi; workflow_dispatch + e2e timeout 10dk
 
 ### 🛠 Değişti
@@ -56,6 +59,8 @@ Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 ### 🏗 Altyapı
 
 - **Worktree branch `claude/vibrant-newton-e326e8`** rebase → `feat/backend-cf-worker` üstüne (16 commit context conflict çözüldü: PatientBody3DDemoPage.tsx + PatientDialog3DPage.tsx)
+- **React.memo + useCallback** — PatientBody3D memoize, handlers stable reference; vital tick'lerinde gereksiz re-render skip
+- **Vite manualChunks** — three (730kB), export-pdf (575kB), export-excel (938kB lazy), react (160kB), vendor (450kB); chunkSizeWarningLimit: 800
 - Stash'te kullanıcı WIP: `dialog-WIP — DialogChat + geminiBackend + vite.config` (rebase sonrası redundant olabilir, manuel inceleme)
 
 ### 📝 Beklenen / Manuel
