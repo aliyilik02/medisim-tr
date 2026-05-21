@@ -58,6 +58,7 @@ import {
   Volume2,
   VolumeX,
   Layers,
+  Box,
 } from "lucide-react";
 
 const SOUND_STORAGE_KEY = "medisim_sound_enabled";
@@ -486,6 +487,17 @@ export function ScenarioPlayPage() {
             <ArrowLeft className="w-4 h-4" />
             Çık
           </button>
+
+          <div className="h-4 w-px bg-ink-700" />
+
+          <Link
+            to={`/dialog-3d-demo?scenario=${scenario.id}`}
+            className="flex items-center gap-1.5 text-sm text-brand-light hover:text-brand font-medium transition border border-brand/30 hover:border-brand/60 bg-brand/10 hover:bg-brand/15 rounded px-2.5 py-1"
+            title="Bu senaryoyu 3D hasta + AI diyaloğu paketinde aç"
+          >
+            <Box className="w-3.5 h-3.5" />
+            3D Hasta
+          </Link>
 
           <div className="h-4 w-px bg-ink-700" />
 

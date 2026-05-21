@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Waves, Droplet, Scissors, Wand2 } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
@@ -72,7 +72,28 @@ const SKIN_TINT_OPTIONS: { value: SkinTint; label: string; emoji: string }[] = [
 ];
 
 export function PatientDialog3DPage() {
-  const [scenarioId, setScenarioId] = useState<string>(SCENARIOS[0].id);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // URL'de ?scenario=id varsa o senaryo ile aç (ScenarioPlayPage'den
+  // "3D Hasta" linki bunu kullanır). Bilinmeyen id ise ilk senaryoya fallback.
+  const initialScenarioId = (() => {
+    const fromUrl = searchParams.get("scenario");
+    if (fromUrl && SCENARIOS.some((s) => s.id === fromUrl)) return fromUrl;
+    return SCENARIOS[0].id;
+  })();
+  const [scenarioId, setScenarioIdState] = useState<string>(initialScenarioId);
+
+  // Senaryo değişince URL query'sini de güncelle (paylaşılabilir link)
+  const setScenarioId = useCallback(
+    (next: string) => {
+      setScenarioIdState(next);
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("scenario", next);
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
   const [breathing, setBreathing] = useState(true);
   const [manualSkinTint, setManualSkinTint] = useState<SkinTint | null>(null);
   const [speaking, setSpeaking] = useState(false);
