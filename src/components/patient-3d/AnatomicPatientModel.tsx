@@ -33,7 +33,10 @@ const MODEL_URL = "/3d/patient-v2.glb";
 const MODEL_SCALE = 0.107;
 const MODEL_Y_OFFSET = 0.49;
 const BREATH_RATE_HZ = 0.25; // ~15/dk
-const BREATH_AMPLITUDE_WORLD = 0.010; // 1 cm AP expansion (fizyolojik sakin)
+// Sakin solunum AP expansion fizyolojik olarak 4-7 mm; v1'de 1 cm gözle
+// abartılı görünüyordu. 0.006 (6mm) daha doğal — chest center'ında belli
+// olur ama abdomen'a yayılınca subtle.
+const BREATH_AMPLITUDE_WORLD = 0.006;
 const BREATH_AMPLITUDE_LOCAL = BREATH_AMPLITUDE_WORLD / MODEL_SCALE;
 
 useGLTF.preload(MODEL_URL);
@@ -87,7 +90,14 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
           });
           mat.onBeforeCompile = (shader) => {
             shader.uniforms.uTime = { value: 0 };
-            shader.uniforms.uBreathAmplitude = { value: BREATH_AMPLITUDE_LOCAL };
+            // BUG FIX: cilt kesim slider'ı clippingPlanes değiştirir → bu
+            // useMemo'nun deps'i olduğu için material RECREATE olur, onBeforeCompile
+            // tekrar çağrılır, uniform'lar default'a döner. uBreathAmplitude
+            // initial değeri "breathing" toggle state'ini takip etmeli — yoksa
+            // solunum kapalı iken clip slider hareketi solunumu yeniden başlatır.
+            shader.uniforms.uBreathAmplitude = {
+              value: breathing ? BREATH_AMPLITUDE_LOCAL : 0,
+            };
             shader.uniforms.uSkinTint = { value: SKIN_TINT_PRESETS[skinTint] };
             shader.uniforms.uSpeaking = { value: speaking ? 1.0 : 0.0 };
 

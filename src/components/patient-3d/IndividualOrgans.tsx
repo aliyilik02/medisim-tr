@@ -104,12 +104,21 @@ export const DEFAULT_ORGAN_CONFIGS: Record<OrganId, OrganConfig> = {
 /** Render sırası — z-fight önlemek için back-to-front. */
 const RENDER_ORDER: OrganId[] = ["lungs", "liver", "heart"];
 
-/** Cilt kesim seviyesini organ opacity'sine map'le. */
+/** Cilt kesim seviyesini organ opacity'sine map'le.
+ *
+ *  Aralık geniş tutuldu — organlar cilt biraz açıldığında bile (sCL 0.85
+ *  civarında) hafif gözükmeye başlar, %60 açıklıkta (sCL ≤ 0.40) tam
+ *  opak olur. Bu "yumuşak belirginleşme" hissi verir, binary değil.
+ *
+ *  Curve: cubic ease-in (yavaş başlar, hızlı bitirir) — anatomik atlas
+ *  fade-in görüntüsü daha doğal.
+ */
 export function computeOrganOpacity(skinClipLevel: number): number {
   if (skinClipLevel >= 1.0) return 0;
-  if (skinClipLevel <= 0.45) return 1;
-  // 0.45 → 1.0 arasında lineer fade out
-  return (1.0 - skinClipLevel) / (1.0 - 0.45);
+  if (skinClipLevel <= 0.4) return 1;
+  // 0.4 → 1.0 arasında 0 → 1 lineer t, sonra cubic ease for natural fade
+  const t = (1.0 - skinClipLevel) / (1.0 - 0.4);
+  return t * t * (3 - 2 * t); // smoothstep
 }
 
 interface Props {

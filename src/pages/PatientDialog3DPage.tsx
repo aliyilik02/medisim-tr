@@ -618,10 +618,10 @@ export function PatientDialog3DPage() {
               type="range"
               min="0"
               max="1"
-              step="0.02"
+              step="0.005"
               value={skinClipLevel}
               onChange={(e) => setSkinClipLevel(parseFloat(e.target.value))}
-              className="w-full accent-brand cursor-pointer"
+              className="w-full accent-brand cursor-pointer transition-all duration-150"
               aria-label="Cilt kesim seviyesi"
             />
             <div className="flex justify-between font-mono text-[8px] text-ink-500 mt-1">
