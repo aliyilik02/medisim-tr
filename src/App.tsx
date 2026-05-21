@@ -109,8 +109,14 @@ function Header() {
             <div className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-clinical-stable rounded-full animate-heartbeat" />
           </div>
           <div>
-            <div className="font-display text-lg leading-none">
+            <div className="font-display text-lg leading-none flex items-center gap-2">
               MediSim <span className="text-brand">TR</span>
+              <span
+                className="font-mono text-[8px] uppercase tracking-[0.18em] bg-brand/15 text-brand-light border border-brand/30 px-1.5 py-0.5 rounded"
+                title="Sprint B.5+ — 3D klinik simülasyon beta"
+              >
+                v0.3 · beta
+              </span>
             </div>
             <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-500 mt-0.5 hidden sm:block">
               Sanal Hasta Platformu
