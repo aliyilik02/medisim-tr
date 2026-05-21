@@ -46,6 +46,12 @@ export function pushToast(
   return id;
 }
 
+// Dev/test helper — Playwright e2e veya tarayıcı console'dan
+// pushToast'u tetiklemek için window'a expose et (sadece DEV build).
+if (typeof window !== "undefined" && import.meta.env.DEV) {
+  (window as unknown as { __medisim_pushToast?: typeof pushToast }).__medisim_pushToast = pushToast;
+}
+
 export function dismissToast(id: number) {
   currentState = {
     toasts: currentState.toasts.filter((t) => t.id !== id),
