@@ -175,6 +175,10 @@ export function IndividualOrgans({
             : cfg.animationKind === "breathe"
               ? { kind: "breathe", rate: rr }
               : { kind: "none" };
+        // Transparent z-sort: akciğer en arka (0), karaciğer orta (1),
+        // kalp en ön (2). Skin clip fade sırasında transparency aktif
+        // olduğunda Three.js render queue bu sıralamayı kullanır.
+        const renderOrder = id === "lungs" ? 0 : id === "liver" ? 1 : 2;
         return (
           <OrganModel
             key={id}
@@ -187,6 +191,7 @@ export function IndividualOrgans({
             animation={animation}
             visible={visible && cfg.visible}
             opacity={opacity}
+            renderOrder={renderOrder}
           />
         );
       })}

@@ -1,5 +1,5 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import { PerspectiveCamera, Plane, Vector3, type Group } from "three";
 import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
@@ -78,12 +78,31 @@ function CameraController({ view }: { view: CameraView }) {
   const { camera, size } = useThree();
   const preset = CAMERA_PRESETS[view];
 
+  // Target ref'leri — preset değişiminde güncellenir, useFrame lerp eder.
+  // Bu sayede A/P/R/L buton tıklaması anlık ekran değişimi değil, ~600ms
+  // yumuşak orbit geçişi.
+  const targetPosRef = useRef(
+    new Vector3(preset.position[0], preset.position[1], preset.position[2]),
+  );
+  const targetLookRef = useRef(
+    new Vector3(preset.target[0], preset.target[1], preset.target[2]),
+  );
+  const transitioningRef = useRef(false);
+
+  // Preset değişimi: yeni target'lar set, transition başlat. FOV/aspect
+  // hemen güncellenir (görüntü oranı kayması anlık daha iyi).
   useEffect(() => {
-    camera.position.set(
+    targetPosRef.current.set(
       preset.position[0],
       preset.position[1],
       preset.position[2],
     );
+    targetLookRef.current.set(
+      preset.target[0],
+      preset.target[1],
+      preset.target[2],
+    );
+    transitioningRef.current = true;
     if (camera instanceof PerspectiveCamera) {
       camera.fov = preset.fov;
       camera.near = 0.1;
@@ -91,14 +110,29 @@ function CameraController({ view }: { view: CameraView }) {
       camera.aspect = size.width / size.height;
       camera.updateProjectionMatrix();
     }
+  }, [camera, size.width, size.height, preset]);
+
+  // Lerp kamera + controls.target. delta-tabanlı hız → frame rate'den bağımsız
+  // ~3.5Hz lerp ≈ 0.4-0.6sn full transition. Mesafe küçük olunca snap + flag off.
+  useFrame((_, delta) => {
+    if (!transitioningRef.current) return;
+    const lerpSpeed = Math.min(delta * 3.5, 1);
+    camera.position.lerp(targetPosRef.current, lerpSpeed);
     const c = controlsRef.current as OrbitControlsLike | null;
     if (c && c.target && typeof c.update === "function") {
-      c.target.set(preset.target[0], preset.target[1], preset.target[2]);
+      c.target.lerp(targetLookRef.current, lerpSpeed);
       c.update();
     } else {
-      camera.lookAt(preset.target[0], preset.target[1], preset.target[2]);
+      camera.lookAt(targetLookRef.current);
     }
-  }, [camera, size.width, size.height, preset]);
+    // Bitiş — kullanıcı mouse drag yaparsa transitioning durur,
+    // OrbitControls kontrol alır.
+    if (camera.position.distanceTo(targetPosRef.current) < 0.005) {
+      camera.position.copy(targetPosRef.current);
+      if (c?.target) c.target.copy(targetLookRef.current);
+      transitioningRef.current = false;
+    }
+  });
 
   return (
     <OrbitControls

@@ -56,6 +56,11 @@ interface Props {
   visible?: boolean;
   /** Material opacity (0-1). <1 olunca transparent=true ile fade. Default 1. */
   opacity?: number;
+  /**
+   * Render order — transparent çoklu organda sıralamayı zorla. Düşük değer
+   * arka, yüksek değer ön. Akciğer (arka) 0, karaciğer 1, kalp 2 önerilir.
+   */
+  renderOrder?: number;
 }
 
 export function OrganModel({
@@ -69,6 +74,7 @@ export function OrganModel({
   animation = { kind: "none" },
   visible = true,
   opacity = 1.0,
+  renderOrder = 0,
 }: Props) {
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -99,6 +105,7 @@ export function OrganModel({
       animation={animation}
       visible={visible}
       opacity={opacity}
+      renderOrder={renderOrder}
     />
   );
 }
@@ -114,6 +121,7 @@ interface InnerProps {
   animation: OrganAnimation;
   visible: boolean;
   opacity: number;
+  renderOrder: number;
 }
 
 // Breath animation cutoff: alt yüzde X (akciğer dokusu) scale, üst sabit.
@@ -130,6 +138,7 @@ function OrganMeshInner({
   animation,
   visible,
   opacity,
+  renderOrder,
 }: InnerProps) {
   const { scene } = useGLTF(url);
   const groupRef = useRef<Group>(null);
@@ -201,6 +210,9 @@ function OrganMeshInner({
       cloned.depthWrite = !isTransparent;
       cloned.needsUpdate = true;
       mesh.material = cloned;
+      // Transparent organların z-sort sıralaması: akciğer 0, karaciğer 1, kalp 2.
+      // Three.js renderQueue önce renderOrder, sonra mesh.position'a göre sıralar.
+      mesh.renderOrder = renderOrder;
       clonedMaterialsRef.current.push(cloned);
     });
 
@@ -209,7 +221,7 @@ function OrganMeshInner({
       for (const m of clonedMaterialsRef.current) m.dispose();
       clonedMaterialsRef.current = [];
     };
-  }, [scene, color, opacity]);
+  }, [scene, color, opacity, renderOrder]);
 
   // Breathe cache (mesh-level alt %80)
   useEffect(() => {
