@@ -7,22 +7,10 @@ import type { EquipmentState } from "@/components/patient-3d/PatientEquipment";
 import { applyHemostasis, type BleedingSite } from "@/components/patient-3d/PatientBleed";
 import { deriveAcuteRash } from "@/components/patient-3d/PatientRash";
 import { deriveProfile } from "@/clinical/patient-profile";
+import { getInitialVisualState } from "@/clinical/scenario-visual-state";
 
-// B.10 — Senaryo bazlı initial bleeding sites mapping.
-// İleride senaryo schema'sına `initial_bleeding_sites` field eklendiğinde
-// otomatik olur; şimdilik scenarioId'ye göre manuel set.
-function initialBleedingSitesFor(scenarioId: string): BleedingSite[] {
-  // TCCC patlama — masif kanama: sağ aksilla şarapnel + sol uyluk medial
-  if (scenarioId.includes("tccc-patlama")) {
-    return [
-      // Sağ aksilla şarapnel — arteriyel aksiller arter
-      { position: [0.10, 0.55, 0.07], severity: 0.85, type: "arterial", label: "Sağ aksilla şarapnel", radius: 0.030 },
-      // Sol uyluk medial — femoral arter dalı
-      { position: [-0.08, 0.18, 0.10], severity: 0.75, type: "arterial", label: "Sol uyluk medial", radius: 0.028 },
-    ];
-  }
-  return [];
-}
+// B.11 — Senaryo 3D visual başlangıç state'i src/clinical/scenario-visual-state.ts
+// dosyasında scenarioId → state map (klinik pre-commit hook'tan korumalı).
 import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
@@ -171,9 +159,10 @@ export function PatientDialog3DPage() {
     setActionLog([]);
     setDebriefOpen(false);
     setVitalsHistory([]);
-    setEquipmentState({});
     setLastMedication(null);
-    setBleedingSites(initialBleedingSitesFor(scenario.id));
+    const initialVisual = getInitialVisualState(scenario.id);
+    setBleedingSites(initialVisual.bleeding ?? []);
+    setEquipmentState(initialVisual.equipment ?? {});
   }, [scenario]);
 
   // Senaryo finished olunca otomatik finalize + debrief modal aç +
@@ -515,9 +504,10 @@ export function PatientDialog3DPage() {
     setSession(startSession(scenario, "egitim", scenario.difficulty));
     setActionLog([]);
     setDebriefOpen(false);
-    setEquipmentState({});
     setLastMedication(null);
-    setBleedingSites(initialBleedingSitesFor(scenario.id));
+    const initialVisual = getInitialVisualState(scenario.id);
+    setBleedingSites(initialVisual.bleeding ?? []);
+    setEquipmentState(initialVisual.equipment ?? {});
   }, [scenario]);
 
   return (
