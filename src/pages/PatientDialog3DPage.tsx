@@ -124,6 +124,9 @@ export function PatientDialog3DPage() {
   // Senaryo değişiminde sıfırlanır.
   const [equipmentState, setEquipmentState] = useState<EquipmentState>({});
 
+  // B.6.2 — Son ilaç verme — IV kateter pulsing animasyonu için trigger.
+  const [lastMedication, setLastMedication] = useState<{ ts: number; drugId: string } | null>(null);
+
   // Marker dev panel (URL ?dev=1 veya Alt+D ile aç) — localStorage override
   const {
     regions: effectiveRegions,
@@ -134,12 +137,13 @@ export function PatientDialog3DPage() {
   } = useMarkerOverrides(DEFAULT_REGIONS);
 
   useEffect(() => {
-    // Senaryo değişince yeni session başlat + action log + debrief + history + equipment temizle
+    // Senaryo değişince yeni session başlat + action log + debrief + history + equipment + ilaç temizle
     setSession(startSession(scenario, "egitim", scenario.difficulty));
     setActionLog([]);
     setDebriefOpen(false);
     setVitalsHistory([]);
     setEquipmentState({});
+    setLastMedication(null);
   }, [scenario]);
 
   // Senaryo finished olunca otomatik finalize + debrief modal aç +
@@ -255,6 +259,11 @@ export function PatientDialog3DPage() {
 
     // Ekipman action ise hastaya kalıcı görünür (mask, ekg patch, iv catheter, vs.)
     applyEquipmentFromAction(action);
+
+    // İlaç verildi → IV kateter konumunda 2sn pulsing bolus animasyonu
+    if (action.type === "give_medication") {
+      setLastMedication({ ts: Date.now(), drugId: action.target_id });
+    }
 
     // Mevcut adım aksiyon kabul etmiyorsa (decision/info veya null) — bilgi log'u
     if (!step || step.kind !== "action") {
@@ -450,6 +459,7 @@ export function PatientDialog3DPage() {
     setActionLog([]);
     setDebriefOpen(false);
     setEquipmentState({});
+    setLastMedication(null);
   }, [scenario]);
 
   return (
@@ -523,6 +533,8 @@ export function PatientDialog3DPage() {
             organVitals={organVitalsMemo}
             equipmentState={equipmentState}
             vitals={liveVitals}
+            lastMedicationTs={lastMedication?.ts ?? null}
+            lastMedicationDrugId={lastMedication?.drugId ?? null}
             cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />
