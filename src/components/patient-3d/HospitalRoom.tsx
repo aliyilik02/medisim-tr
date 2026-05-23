@@ -27,16 +27,16 @@ function Floor() {
       {/* MeshReflectorMaterial = yansıtan parlak yüzey (klinik vinyl).
           blur+mixBlur+mixStrength → kontrollü reflection. */}
       <MeshReflectorMaterial
-        blur={[300, 100]}
-        resolution={1024}
-        mixBlur={1}
-        mixStrength={2.5}
-        mirror={0.4}
-        depthScale={0.2}
-        minDepthThreshold={0.4}
-        color="#a8acb2"
-        metalness={0.3}
-        roughness={0.55}
+        blur={[400, 200]}
+        resolution={512}
+        mixBlur={1.5}
+        mixStrength={1.2}
+        mirror={0.2}
+        depthScale={0.15}
+        minDepthThreshold={0.5}
+        color="#9ba0a6"
+        metalness={0.05}
+        roughness={0.78}
       />
     </mesh>
   );
@@ -311,11 +311,11 @@ function VisitorChair() {
     <group position={[-1.0, -0.05, 0.75]}>
       {/* Oturak */}
       <RoundedBox args={[0.50, 0.10, 0.50]} radius={0.035} smoothness={4} position={[0, 0.22, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#4a8a98" roughness={0.85} />
+        <meshStandardMaterial color="#7a9098" roughness={0.85} />
       </RoundedBox>
       {/* Sırt yastığı — yatağa BAKAR (+X tarafı) */}
       <RoundedBox args={[0.10, 0.55, 0.46]} radius={0.035} smoothness={4} position={[-0.20, 0.48, 0]} castShadow>
-        <meshStandardMaterial color="#4a8a98" roughness={0.85} />
+        <meshStandardMaterial color="#7a9098" roughness={0.85} />
       </RoundedBox>
       {/* 4 ayak */}
       {[
@@ -331,10 +331,10 @@ function VisitorChair() {
       ))}
       {/* Kolçaklar — yuvarlatılmış */}
       <RoundedBox args={[0.42, 0.06, 0.08]} radius={0.02} smoothness={3} position={[0.05, 0.42, 0.22]} castShadow>
-        <meshStandardMaterial color="#5a8a98" roughness={0.85} />
+        <meshStandardMaterial color="#8aa0a8" roughness={0.85} />
       </RoundedBox>
       <RoundedBox args={[0.42, 0.06, 0.08]} radius={0.02} smoothness={3} position={[0.05, 0.42, -0.22]} castShadow>
-        <meshStandardMaterial color="#5a8a98" roughness={0.85} />
+        <meshStandardMaterial color="#8aa0a8" roughness={0.85} />
       </RoundedBox>
     </group>
   );
@@ -346,18 +346,18 @@ function Sofa() {
     <group position={[-1.5, -0.05, 1.45]}>
       {/* Oturma yastığı */}
       <RoundedBox args={[1.35, 0.18, 0.60]} radius={0.05} smoothness={4} position={[0, 0.22, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#4a8a98" roughness={0.85} />
+        <meshStandardMaterial color="#7a9098" roughness={0.85} />
       </RoundedBox>
       {/* Sırt — yatağa bakar */}
       <RoundedBox args={[1.35, 0.50, 0.14]} radius={0.06} smoothness={4} position={[0, 0.52, -0.23]} castShadow>
-        <meshStandardMaterial color="#4a8a98" roughness={0.85} />
+        <meshStandardMaterial color="#7a9098" roughness={0.85} />
       </RoundedBox>
       {/* Kolçaklar */}
       <RoundedBox args={[0.12, 0.34, 0.60]} radius={0.045} smoothness={4} position={[0.64, 0.36, 0]} castShadow>
-        <meshStandardMaterial color="#3a7a88" roughness={0.85} />
+        <meshStandardMaterial color="#5a7080" roughness={0.85} />
       </RoundedBox>
       <RoundedBox args={[0.12, 0.34, 0.60]} radius={0.045} smoothness={4} position={[-0.64, 0.36, 0]} castShadow>
-        <meshStandardMaterial color="#3a7a88" roughness={0.85} />
+        <meshStandardMaterial color="#5a7080" roughness={0.85} />
       </RoundedBox>
       {/* Alt baz */}
       <RoundedBox args={[1.35, 0.14, 0.60]} radius={0.04} smoothness={3} position={[0, 0.08, 0]} castShadow>
@@ -405,13 +405,13 @@ function CeilingLight() {
         <cylinderGeometry args={[0.22, 0.22, 0.05, 24]} />
         <meshStandardMaterial color="#dcdfe3" roughness={0.4} metalness={0.3} />
       </mesh>
-      {/* Difüzör — emissive sıcak beyaz */}
+      {/* Difüzör — emissive sıcak beyaz (dengeli, mesh'i yıkmaz) */}
       <mesh position={[0, -0.03, 0]}>
         <cylinderGeometry args={[0.20, 0.20, 0.02, 24]} />
-        <meshStandardMaterial color="#ffffff" emissive="#fffdf0" emissiveIntensity={1.5} roughness={0.3} />
+        <meshStandardMaterial color="#ffffff" emissive="#fffdf0" emissiveIntensity={0.9} roughness={0.4} />
       </mesh>
-      {/* Gerçek point light — yatağa ışık atar */}
-      <pointLight position={[0, -0.5, 0]} intensity={0.8} distance={6} decay={1.5} color="#fffaee" castShadow />
+      {/* Gerçek point light — yatağa yumuşak ışık */}
+      <pointLight position={[0, -0.5, 0]} intensity={0.5} distance={5} decay={1.8} color="#fff8e8" castShadow />
     </group>
   );
 }
