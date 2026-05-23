@@ -1,7 +1,15 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Html, OrbitControls } from "@react-three/drei";
-import { PerspectiveCamera, Plane, Vector3, type Group } from "three";
+import { Html, OrbitControls, Environment } from "@react-three/drei";
+import {
+  ACESFilmicToneMapping,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  Plane,
+  SRGBColorSpace,
+  Vector3,
+  type Group,
+} from "three";
 import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
 import { IndividualOrgans, type OrganOverrideMap } from "./IndividualOrgans";
 import { RegionMarker } from "./RegionMarker";
@@ -253,23 +261,31 @@ function PatientBody3DImpl({
           localClippingEnabled: true,
           antialias: true,
           powerPreference: "high-performance",
+          toneMapping: ACESFilmicToneMapping,
+          toneMappingExposure: 0.85, // patlak ışık yerine doğal
+          outputColorSpace: SRGBColorSpace,
         }}
-        shadows
+        shadows={{ type: PCFSoftShadowMap }}
       >
         <color attach="background" args={["#0a0a0c"]} />
-        {/* CameraController = preset uygulayan + OrbitControls'ı içeren tek
-            sorumluluk. Mouse drag ile orbit aktif, zoom 0.6–6 birim aralık. */}
         <CameraController view={cameraView} />
 
-        <ambientLight intensity={0.5} />
+        {/* Apartment HDR — klinik nötr (studio'dan daha az parlak, yumuşak
+            yansımalar). Cildin plastik patlamasını engeller. */}
+        <Environment preset="apartment" background={false} environmentIntensity={0.4} />
+
+        {/* Klinik aydınlatma — soft key + fill + hemi */}
+        <ambientLight intensity={0.3} />
         <directionalLight
           position={[2, 3, 4]}
-          intensity={0.85}
+          intensity={1.0}
           castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-radius={6}
+          shadow-bias={-0.0001}
         />
-        <directionalLight position={[-2, 1, 1]} intensity={0.3} color="#7cb342" />
+        <directionalLight position={[-2, 1, 1]} intensity={0.25} color="#bcd4e6" />
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={<LoadingFallback />}>
@@ -280,7 +296,12 @@ function PatientBody3DImpl({
             speaking={speaking}
             clippingPlanes={clippingPlanes}
           />
-          {showOrgans && (
+          {/* Organlar şimdilik gizli — ileri faz'da ayrı "Anatomi" sayfasına
+              taşınacak (öğretici mod). Hasta simülasyon akışında yüzey
+              gözlemine odaklanılır (Body Interact yaklaşımı). Kod, asset ve
+              skill referansları PR'da korunur, kolay reaktivasyon için aşağı
+              koşul kapalı. */}
+          {false && showOrgans && (
             <IndividualOrgans
               hr={organVitals?.hr ?? 75}
               rr={organVitals?.rr ?? 14}

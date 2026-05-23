@@ -29,9 +29,12 @@ type ShaderRef = {
 // Referans: memory/medisim_animasyon_teknikleri.md
 // ============================================================
 
-const MODEL_URL = "/3d/patient-v2.glb";
-const MODEL_SCALE = 0.107;
-const MODEL_Y_OFFSET = 0.49;
+// patient-v3 (Fab Library Realistic Man — NoEdge satıcı onayı alındı).
+// 125+ morph + full rigged. gltf-transform optimize: 126MB → 8.68MB.
+// bbox y[0, 1.84], scale 0.555 + offset -0.243 → world bbox y[-0.243, 0.777].
+const MODEL_URL = "/3d/patient-v3.glb";
+const MODEL_SCALE = 0.555;
+const MODEL_Y_OFFSET = -0.243;
 const BREATH_RATE_HZ = 0.25; // ~15/dk
 // Sakin solunum AP expansion fizyolojik olarak 4-7 mm; v1'de 1 cm gözle
 // abartılı görünüyordu. 0.006 (6mm) daha doğal — chest center'ında belli
@@ -49,6 +52,31 @@ const SKIN_TINT_PRESETS: Record<SkinTint, [number, number, number]> = {
   cyanosis:  [0.65, 0.75, 0.95],
   jaundice:  [1.15, 1.05, 0.55],
   pallor:    [0.85, 0.80, 0.78],
+};
+
+// Fab Library "Realistic Man" (Reallusion CC pipeline) — baseColorTexture
+// slot'una SSS/mask map'leri konulmuş, gerçek albedo yok. Material adına
+// göre doğru renk + normalMap/roughnessMap detay korunur.
+const MATERIAL_COLOR_MAP: Record<string, number> = {
+  // Cilt — skin tint shader bu rengin üstüne tint uygular
+  Skin_Head: 0xd4a896, Skin_Body: 0xd4a896,
+  Skin_Arm: 0xd4a896, Skin_Leg: 0xd4a896,
+  // Aksesuarlar
+  Nails: 0xe8c8b8,
+  Eyelash: 0x1a1a1a,
+  // Saç sistemi — koyu kahve
+  Scalp_Transparency: 0x3a2820,
+  Hair_Transparency: 0x3a2820,
+  Beard_Transparency: 0x4a3020,
+  // Gözler — sclera beyaz, iris kahve, cornea saydam
+  // Göz iris daha doygun kahve (sclera beyaz texture ile birlikte canlı)
+  Eye_R: 0x6b3814, Eye_L: 0x6b3814,
+  Cornea_R: 0xeeeeff, Cornea_L: 0xeeeeff,
+  // Ağız
+  Upper_Teeth: 0xfff8dc, Lower_Teeth: 0xfff8dc,
+  Tongue: 0xc94560,
+  // Giysi — bej iç çamaşırı (klinik için nötr)
+  Briefs: 0xe8e0d0,
 };
 
 interface Props {
@@ -75,19 +103,87 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
 
     useMemo(() => {
       scene.traverse((obj) => {
-        if ("isMesh" in obj && (obj as { isMesh: boolean }).isMesh) {
-          const mesh = obj as unknown as { material: MeshStandardMaterial };
+        if (!("isMesh" in obj) || !(obj as { isMesh: boolean }).isMesh) return;
+        const mesh = obj as unknown as {
+          name: string;
+          material: MeshStandardMaterial | MeshStandardMaterial[];
+        };
+
+        const mats = Array.isArray(mesh.material)
+          ? mesh.material
+          : [mesh.material];
+
+        mats.forEach((origMat, idx) => {
+          if (!origMat) return;
+          const matName = origMat.name ?? "";
+          const isSkin =
+            /^skin/i.test(matName) ||
+            // v2 (chuma6oy) fallback: tek mesh + tek mat, ad boş veya generic
+            (matName === "" || /^material_?\d*$/i.test(matName));
+
+          // Non-skin material'lar da SSS mask problem yaşar — material adına
+          // göre doğru renk ataması yap; skip yapma.
+          if (!isSkin) {
+            const colorOverride = MATERIAL_COLOR_MAP[matName];
+            if (colorOverride !== undefined) {
+              // Mesh-özel roughness:
+              // - Cornea (saydam göz mercek) düşük (parlaklık)
+              // - Diş orta (mineral parlama)
+              // - Eye iris orta (canlı)
+              // - Eyelash/saç/kıl mat
+              // - Kilot mat (pamuk)
+              const matRough = /cornea/i.test(matName)
+                ? 0.1
+                : /tooth/i.test(matName)
+                  ? 0.35
+                  : /^eye_/i.test(matName)
+                    ? 0.45
+                    : /transparency|eyelash/i.test(matName)
+                      ? 0.85
+                      : 0.7;
+              const accMat = new MeshStandardMaterial({
+                color: colorOverride,
+                normalMap: origMat.normalMap ?? null,
+                roughnessMap: /tooth|cornea|eye_/i.test(matName)
+                  ? null
+                  : origMat.roughnessMap ?? null,
+                roughness: matRough,
+                metalness: 0.0,
+                transparent: /cornea/i.test(matName),
+                opacity: /cornea/i.test(matName) ? 0.15 : 1.0,
+                alphaTest: /transparency/i.test(matName) ? 0.5 : 0,
+                depthWrite: !/cornea/i.test(matName),
+              });
+              accMat.needsUpdate = true;
+              if (Array.isArray(mesh.material)) {
+                mesh.material[idx] = accMat;
+              } else {
+                mesh.material = accMat;
+              }
+            }
+            return;
+          }
+
+          // Skin material — MAT klinik görünüm (plastic değil).
+          // Sheen/clearcoat tamamen kaldırıldı: cilt yüksek roughness ile
+          // mat görünür, normalMap mikro-pörtükler gölgeli görünür.
+          // Reallusion CC pipeline'ı Three.js'te tam SSS render edemez;
+          // klinik mat görünüm doğru estetik karar.
           const mat = new MeshStandardMaterial({
-            color: "#d4a896",
-            roughness: 0.72,
+            color: 0xd4a896,
+            normalMap: origMat.normalMap ?? null,
+            normalScale: origMat.normalScale ?? undefined,
+            roughnessMap: origMat.roughnessMap ?? null,
+            roughness: 0.85, // YÜKSEK → mat cilt, normalMap detay belirginleşir
             metalness: 0.0,
-            // Sprint B.4: clipping planes — cilt altı organlar
             clippingPlanes: clippingPlanes ?? [],
             clipShadows: true,
-            side: 2, // DoubleSide — clip iç yüzey görünmesin
-            transparent: !!clippingPlanes && clippingPlanes.length > 0,
-            opacity: !!clippingPlanes && clippingPlanes.length > 0 ? 0.92 : 1.0,
+            transparent:
+              !!clippingPlanes && clippingPlanes.length > 0 ? true : false,
+            opacity:
+              !!clippingPlanes && clippingPlanes.length > 0 ? 0.92 : 1.0,
           });
+          mat.needsUpdate = true;
           mat.onBeforeCompile = (shader) => {
             shader.uniforms.uTime = { value: 0 };
             // BUG FIX: cilt kesim slider'ı clippingPlanes değiştirir → bu
@@ -142,7 +238,7 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
                  float mMouthWeight = 1.0 - smoothstep(0.015, 0.035, mMouthDist);
                  // 4-5 Hz hızlı titreşim (konuşma syllable rate'i)
                  float mMouthPhase = sin(uTime * 28.0) * 0.5 + 0.5;
-                 float mMouthAmp = 0.012 / 0.107; // 1.2cm world, local space
+                 float mMouthAmp = ${(0.012 / MODEL_SCALE).toFixed(4)}; // 1.2cm world → local (model_scale)
                  transformed += normal * mMouthWeight * mMouthPhase * mMouthAmp * uSpeaking;`,
               );
 
@@ -161,8 +257,14 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
 
             shaderRef.current = shader as unknown as ShaderRef;
           };
-          mesh.material = mat;
-        }
+          // Multi-primitive Body: material array → idx'e yaz.
+          // Tek material → doğrudan ata.
+          if (Array.isArray(mesh.material)) {
+            mesh.material[idx] = mat;
+          } else {
+            mesh.material = mat;
+          }
+        });
       });
     }, [scene, skinTint, clippingPlanes]);
 

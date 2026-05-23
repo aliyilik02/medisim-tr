@@ -43,6 +43,8 @@ vi.mock("@react-three/drei", () => {
   return {
     useGLTF,
     Html: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    OrbitControls: () => null,
+    Environment: () => null,
   };
 });
 
