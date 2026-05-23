@@ -45,6 +45,10 @@ vi.mock("@react-three/drei", () => {
     Html: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
     OrbitControls: () => null,
     Environment: () => null,
+    ContactShadows: () => null,
+    RoundedBox: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    MeshTransmissionMaterial: () => null,
+    MeshReflectorMaterial: () => null,
   };
 });
 

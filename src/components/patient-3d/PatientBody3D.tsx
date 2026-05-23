@@ -1,6 +1,6 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Html, OrbitControls, Environment } from "@react-three/drei";
+import { Html, OrbitControls, Environment, ContactShadows } from "@react-three/drei";
 import {
   ACESFilmicToneMapping,
   Box3,
@@ -334,7 +334,9 @@ function PatientBody3DImpl({
           antialias: true,
           powerPreference: "high-performance",
           toneMapping: ACESFilmicToneMapping,
-          toneMappingExposure: 0.85, // patlak ışık yerine doğal
+          // B.9 — exposure 0.85 → 1.05: drei reflector + transmission materyaller
+          // ile daha doğal hospital lighting (önceden hafif karanlıktı)
+          toneMappingExposure: 1.05,
           outputColorSpace: SRGBColorSpace,
         }}
         shadows={{ type: PCFSoftShadowMap }}
@@ -342,20 +344,31 @@ function PatientBody3DImpl({
         <color attach="background" args={["#0a0a0c"]} />
         <CameraController view={cameraView} />
 
-        {/* Apartment HDR — klinik nötr (studio'dan daha az parlak, yumuşak
-            yansımalar). Cildin plastik patlamasını engeller. */}
-        <Environment preset="apartment" background={false} environmentIntensity={0.4} />
+        {/* B.9 — "city" HDR preset apartment'tan daha steril klinik ışık
+            (mavi-beyaz hospital lighting tonu). environmentIntensity 0.45
+            yansımalar yumuşak. */}
+        <Environment preset="city" background={false} environmentIntensity={0.45} />
 
-        {/* Klinik aydınlatma — soft key + fill + hemi */}
-        <ambientLight intensity={0.3} />
+        {/* Klinik aydınlatma — soft key + fill + hemi + rect area */}
+        <ambientLight intensity={0.25} />
         <directionalLight
           position={[2, 3, 4]}
-          intensity={1.0}
+          intensity={1.1}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-radius={6}
+          shadow-radius={8}
           shadow-bias={-0.0001}
+        />
+        {/* B.9 — Soft contact shadow yatak altında, hastayı zemine bağlar */}
+        <ContactShadows
+          position={[0, -0.34, 0]}
+          opacity={0.45}
+          scale={4}
+          blur={3.5}
+          far={1.5}
+          resolution={1024}
+          color="#1a1d22"
         />
         <directionalLight position={[-2, 1, 1]} intensity={0.25} color="#bcd4e6" />
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
