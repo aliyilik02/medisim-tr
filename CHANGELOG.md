@@ -3,6 +3,54 @@
 Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) + [SemVer](https://semver.org/lang/tr/) formatı.
 
+## [v0.3.2] — 2026-05-23 (Sprint B.6 — 3D body etkileşim)
+
+**Tema:** Hasta gövdesi üstünde 3 yeni katman — giydirilmiş ekipman + vital görsel bulgular + ilaç verme cue'su. Klinik klasifikasyon (vazopresör/opioid/antiaritmik/metabolik/antiplatelet) renk eşleştirmesi. 29 yeni unit test (613 toplam vitest).
+
+### ✨ Eklendi
+
+#### B.6 — Hastaya giydirilmiş ekipman (`PatientEquipment.tsx`)
+Prosedür/ekipman action'ı tamamlandıktan sonra hastaya **kalıcı görünür** olarak takılı kalır (ProcedureOverlay temporary animasyondan farklı):
+- **OxygenMask** — yarı saydam yüz maskesi + 2 elastik bant + non-rebreather rezervuar
+- **NasalCannula** — 2 burun prong + üst dudak gövdesi + 2 kulak tüpü
+- **EkgPatches** — 10-lead Mason-Likar (LA/RA/LL/RL + V1-V6), yapışkan disk + metal snap + renkli tel (RED/YELLOW/GREEN/BLACK klinik standart)
+- **IvCatheter** — sol önkol, kateter göbeği + IV line + Tegaderm
+- **BpCuff** — sağ kol üst, koyu mavi cuff + velkro + air tüp
+- **PulseOximeter** — sağ işaret parmağı, klips + emissive kırmızı LED
+- **Bandage** — generic lokal pansuman, position prop
+
+`EquipmentState` interface + PatientBody3D Props'a `equipmentState` eklendi. `applyEquipmentFromAction(action)` regex mapping (oxygen-mask/nasal-cannula/ekg/iv/bp-cuff/spo2 vs.).
+
+#### B.6.1 — Vital bulgular gövde üstü (`PatientVitalSigns.tsx`)
+PatientVitals'a göre lokal klinik görsel bulgular — vitals değiştikçe otomatik güncellenir:
+- **Pupil** (sol + sağ): `pupil_left_mm` / `pupil_right_mm` → scale (mioz/midriyaz görsel). `pupil_reactive` false → koyu siyah pupil
+- **Göz kapağı**: GCS'ye göre kapanır (gcs<8 tam, 8-13 yarı, 14+ açık)
+- **Terleme parlaklığı**: alın bölgesinde shiny disk — severity (SBP<90, temp>38, taşikardi+hipotansiyon) ile opacity
+- **JVD** (juguler ven dolgunluğu): boyun mavi-mor venöz tüpler — severity (CVP>12 veya sağ kalp yetm proxy)
+
+#### B.6.2 — İlaç verme görsel cue (`MedicationBolus.tsx`)
+`action.type === "give_medication"` yakalandığında IV kateter konumunda **2 saniyelik pulsing emissive halka + merkez küre animasyonu**. drugId regex'ine göre **klinik klasifikasyon renk**:
+- Vazopresör/inotrop (adrenalin/noradrenalin/dopamin) → kırmızı `#dc2626`
+- Opioid (morfin/fentanil/tramadol) → mor `#9333ea`
+- Antiaritmik (atropin/amiodaron/lidokain) → sarı `#f59e0b`
+- Metabolik (insülin/glukoz/dextroz) → mavi `#3b82f6`
+- Antiplatelet/antikoagülan (ASA/heparin) → pembe `#ec4899`
+
+### ✅ Test kapsamı
+
+- **PatientVitalSigns** 17 test: `deriveSweatSeverity` × 6, `deriveJvdSeverity` × 5, `deriveEyelidCloseness` × 11 GCS senaryo
+- **MedicationBolus** 12 test: `getDrugColor` × 12 klinik ilaç sınıfı
+- **Total: 584 → 613 vitest pass**
+
+### 🗑️ Kaldırıldı
+
+- `HospitalBed.tsx` (kullanılmıyordu — `HospitalRoom.Bed()` içeride)
+- `RoomLayoutDevPanel.tsx` (dict müdahalesi yok, no-op)
+- `useRoomLayoutOverrides.ts` (dev panel + localStorage hook)
+- PatientDialog3DPage + PatientBody3D'den `roomOverrides` prop akışı
+
+---
+
 ## [v0.3.1] — 2026-05-23 (Sprint B.5++)
 
 **Tema:** Hastane odası 3D sahne — Sketchfab CC BY "Hospital Room" GLB modeliyle "explode layout" mücadelesinden sonra pragmatik karar: R3F primitiflerle (drei advanced material) deterministic sahne. Minecraft görüntüsünden archviz seviyesine. Hyper3D Rodin / Meshy / SketchUp MCP entegrasyonları envantere alındı.
