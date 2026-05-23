@@ -12,7 +12,8 @@
 // ============================================================
 
 import { memo } from "react";
-import { RoundedBox, MeshTransmissionMaterial, MeshReflectorMaterial } from "@react-three/drei";
+import { RoundedBox, MeshTransmissionMaterial, MeshReflectorMaterial, Html } from "@react-three/drei";
+import type { PatientVitals } from "@/engine/types";
 
 interface Props {
   visible?: boolean;
@@ -25,6 +26,11 @@ interface Props {
    * korur — klinik gerçeklikte bu mobilya hasta yaşına göre değişmez.
    */
   patientScale?: number;
+  /**
+   * B.9+ — Vital monitör ekranına sayısal HR/BP/SpO2/EtCO2 render için.
+   * VitalMonitor içinde drei Html transform overlay ile gösterilir.
+   */
+  vitals?: PatientVitals;
 }
 
 // =============== ZEMİN — parlak vinyl klinik flooring =================
@@ -235,7 +241,7 @@ function IvPole() {
 }
 
 // =============== VITAL MONITOR (cam ekran) =================
-function VitalMonitor() {
+function VitalMonitor({ vitals }: { vitals?: PatientVitals }) {
   return (
     <group position={[0.85, 1.45, -0.55]}>
       {/* Duvar mount kolu */}
@@ -246,16 +252,76 @@ function VitalMonitor() {
       <RoundedBox args={[0.18, 0.32, 0.44]} radius={0.025} smoothness={4} position={[-0.02, 0, 0.10]} castShadow receiveShadow>
         <meshStandardMaterial color="#1a1d22" roughness={0.4} metalness={0.25} />
       </RoundedBox>
-      {/* Ekran — yeşil emissive EKG */}
+      {/* Ekran — koyu emissive ve drei Html transform overlay (sayısal HUD) */}
       <RoundedBox args={[0.012, 0.26, 0.38]} radius={0.008} smoothness={3} position={[-0.11, 0, 0.10]}>
-        <meshStandardMaterial color="#0c1418" emissive="#22c55e" emissiveIntensity={0.6} roughness={0.15} metalness={0.1} />
+        <meshStandardMaterial color="#0c1418" emissive="#0a2818" emissiveIntensity={0.35} roughness={0.15} metalness={0.1} />
       </RoundedBox>
-      {/* EKG dalgası — parlak yeşil çizgi (decorative) */}
-      <mesh position={[-0.115, 0.03, 0.10]}>
-        <boxGeometry args={[0.002, 0.006, 0.32]} />
-        <meshBasicMaterial color="#4ade80" />
-      </mesh>
-      {/* Yan kontroller — 3 buton (Y ekseni etrafında flat disc) */}
+      {/* B.9+ — Sayısal HUD: HR + SpO2 + BP + RR + Temp + EKG çizgisi */}
+      {vitals && (
+        <Html
+          transform
+          position={[-0.119, 0, 0.10]}
+          rotation={[0, -Math.PI / 2, 0]}
+          scale={0.05}
+          distanceFactor={undefined}
+          style={{
+            width: "240px",
+            height: "165px",
+            background: "#050a0d",
+            padding: "8px",
+            fontFamily: "Geist Mono, monospace",
+            fontSize: "10px",
+            color: "#22c55e",
+            pointerEvents: "none",
+            userSelect: "none",
+            overflow: "hidden",
+            boxSizing: "border-box",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gridTemplateRows: "auto auto auto auto",
+            gap: "4px",
+          }}
+        >
+          <div style={{ color: "#22c55e", textShadow: "0 0 4px #22c55e" }}>
+            <div style={{ fontSize: "7px", opacity: 0.7 }}>HR /dk</div>
+            <div style={{ fontSize: "24px", fontWeight: "bold", lineHeight: 1 }}>{vitals.hr}</div>
+          </div>
+          <div style={{ color: "#3b82f6", textShadow: "0 0 4px #3b82f6" }}>
+            <div style={{ fontSize: "7px", opacity: 0.7 }}>SpO₂ %</div>
+            <div style={{ fontSize: "24px", fontWeight: "bold", lineHeight: 1 }}>{vitals.spo2}</div>
+          </div>
+          <div style={{ color: "#f59e0b", textShadow: "0 0 4px #f59e0b" }}>
+            <div style={{ fontSize: "7px", opacity: 0.7 }}>NIBP mmHg</div>
+            <div style={{ fontSize: "16px", fontWeight: "bold", lineHeight: 1 }}>
+              {vitals.bp_systolic}/{vitals.bp_diastolic}
+            </div>
+          </div>
+          <div style={{ color: "#a855f7", textShadow: "0 0 4px #a855f7" }}>
+            <div style={{ fontSize: "7px", opacity: 0.7 }}>RR Temp</div>
+            <div style={{ fontSize: "11px", fontWeight: "bold", lineHeight: 1.1 }}>
+              {vitals.rr}/dk · {vitals.temp.toFixed(1)}°
+            </div>
+          </div>
+          {/* EKG çizgisi animasyonu — CSS keyframes */}
+          <div
+            style={{
+              gridColumn: "1 / span 2",
+              height: "30px",
+              background: "linear-gradient(90deg, transparent 0%, #22c55e44 50%, transparent 100%)",
+              backgroundSize: "200% 100%",
+              animation: "ekgscan 1.5s linear infinite",
+              borderTop: "1px dashed #1a3a25",
+              fontSize: "8px",
+              opacity: 0.8,
+              padding: "2px",
+            }}
+          >
+            EKG · LEAD II
+          </div>
+          <style>{`@keyframes ekgscan { 0% { background-position: 200% 50% } 100% { background-position: 0% 50% } }`}</style>
+        </Html>
+      )}
+      {/* Yan kontroller — 3 buton */}
       {[-0.10, 0, 0.10].map((z, i) => (
         <mesh key={i} position={[-0.115, -0.12, z]} rotation={[0, 0, Math.PI / 2]}>
           <cylinderGeometry args={[0.012, 0.012, 0.005, 12]} />
@@ -428,7 +494,7 @@ function CeilingLight() {
 }
 
 // =============== ANA HOSPITAL ROOM =================
-function HospitalRoomImpl({ visible = true, debug = false, patientScale = 1 }: Props) {
+function HospitalRoomImpl({ visible = true, debug = false, patientScale = 1, vitals }: Props) {
   if (!visible) return null;
   return (
     <group name="HospitalRoom">
@@ -438,7 +504,7 @@ function HospitalRoomImpl({ visible = true, debug = false, patientScale = 1 }: P
       <SideWallLeft />
       <Bed scale={patientScale} />
       <IvPole />
-      <VitalMonitor />
+      <VitalMonitor vitals={vitals} />
       <OverBedTable />
       <BedsideCabinet />
       <VisitorChair />

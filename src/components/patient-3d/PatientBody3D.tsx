@@ -382,7 +382,11 @@ function PatientBody3DImpl({
               hizalanır → yatak boyu hasta boyu aynı yönde.
               B.7: yatak hastaya orantılı küçülür (profile.scaleFactor). */}
           <group rotation={[0, Math.PI / 2, 0]}>
-            <HospitalRoom visible={true} patientScale={profile?.scaleFactor ?? 1} />
+            <HospitalRoom
+              visible={true}
+              patientScale={profile?.scaleFactor ?? 1}
+              vitals={vitals}
+            />
           </group>
 
           {/* Hasta + markerlar yatay pozisyona rotate edilir — model T-pose'da
