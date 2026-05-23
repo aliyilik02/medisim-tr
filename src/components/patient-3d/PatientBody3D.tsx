@@ -18,6 +18,7 @@ import { PatientEquipment, type EquipmentState } from "./PatientEquipment";
 import { PatientVitalSigns } from "./PatientVitalSigns";
 import { MedicationBolus } from "./MedicationBolus";
 import { PatientFaceExpression } from "./PatientFaceExpression";
+import { PatientBleed, type BleedingSite } from "./PatientBleed";
 import type { PatientVitals } from "@/engine/types";
 import type { PatientProfile } from "@/clinical/patient-profile";
 import { RegionMarker } from "./RegionMarker";
@@ -56,6 +57,8 @@ interface Props {
   lastMedicationDrugId?: string | null;
   /** B.7 — Hasta profili (yaş kategori + cinsiyet + scaleFactor). */
   profile?: PatientProfile;
+  /** B.10 — Aktif kanama bölgeleri (TCCC, travma, cerrahi senaryolar). */
+  bleedingSites?: BleedingSite[];
   /** B.5+ — Kamera açı preset (anterior/posterior/right/left/superior/inferior). */
   cameraView?: CameraView;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
@@ -251,6 +254,7 @@ function PatientBody3DImpl({
   lastMedicationTs,
   lastMedicationDrugId,
   profile,
+  bleedingSites,
   cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
@@ -413,6 +417,10 @@ function PatientBody3DImpl({
             {/* B.6.2 — İlaç verme görsel cue (IV kateter konumunda 2sn pulse).
                 drugId'ye göre renk: kırmızı vazopresör, mor opioid, mavi metabolik. */}
             <MedicationBolus triggerTs={lastMedicationTs} drugId={lastMedicationDrugId} />
+            {/* B.10 — Aktif kanama bölgeleri (TCCC, travma). Arteriyel pulsatil
+                + venöz statik + kapiller hafif. Turnike/gauze action ile severity
+                azalır (applyHemostasis helper PatientDialog3DPage'de). */}
+            {bleedingSites && <PatientBleed sites={bleedingSites} />}
           {/* Organlar şimdilik gizli — ileri faz'da ayrı "Anatomi" sayfasına
               taşınacak (öğretici mod). Hasta simülasyon akışında yüzey
               gözlemine odaklanılır (Body Interact yaklaşımı). Kod, asset ve
