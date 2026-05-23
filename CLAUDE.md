@@ -18,19 +18,40 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 4. Her iş sonunda 2-3 cümle Türkçe rapor. Teknik monolog yok.
 5. Token disiplini: küçük sprintte plan modu/agent açma. Direkt Read+Edit. **Önce skill, sonra memory** — bilgi skill'de varsa memory'yi açma (`docs/memory/README.md` "Skill mi Memory mi" karar tablosu). Memory'de `Grep` keyword + `Read offset/limit`, baştan sona okuma. Aynı dosyayı iki kez Read etme.
 
-## Mevcut Durum (23 Mayıs 2026 — gece seansı)
+## Mevcut Durum (23 Mayıs 2026 — gece sonu seansı)
 
-**Test:** 584 vitest pass. e2e dialog-3d-vision testIgnore (sahne refactor flaky), kalan 36 e2e pending. Build temiz. **42 commit** `claude/vibrant-newton-e326e8` branch'inde, GitHub'a push edildi.
+**Test:** 648 vitest pass. e2e dialog-3d-vision + patient-profile-badge testIgnore (sahne refactor flaky), kalan ~32 e2e pending. Build temiz. **53 commit** `claude/vibrant-newton-e326e8` branch'inde, GitHub PR #1'de.
 
-**Bu seansın özeti (23 May, 7 commit):**
-- `be53168` hospital-room mesh-by-mesh layout sistemi + Alt+R dev paneli (Sketchfab CC BY GLB)
+**23 May seansları toplam özeti:**
+
+### Gündüz (7 commit) — hospital room sahnesi
+- `be53168` hospital-room mesh-by-mesh layout sistemi (Sketchfab CC BY GLB)
 - `9d3609c` dev paneline rotation X/Y/Z slider
-- `da1a17a` hasta modeli Rocketbox Male_Adult_01'e geçti (MIT, 8.68 → 2.86 MB)
-- `2a016b6` HospitalRoom primitif drei upgrade — RoundedBox + MeshTransmission + Reflector (Minecraft → archviz)
-- `38c2616` hasta+oda eksen hizalama (HospitalRoom Y rotation +π/2 wrapper) + Bed Y -0.146 (hasta sırtı şilte üstü)
-- `7eaa07c` e2e dialog-3d-vision geçici skip
-- `036103a` playwright.config testIgnore (test.describe.skip etkili değildi)
-- (+ son commit kalan: renk/ışık dengeleme + CHANGELOG + bu CLAUDE.md güncelleme)
+- `da1a17a` hasta modeli Rocketbox Male_Adult_01 (MIT, 8.68 → 2.86 MB)
+- `2a016b6` HospitalRoom primitif drei upgrade (RoundedBox + MeshTransmission + Reflector — Minecraft → archviz)
+- `38c2616` hasta+oda eksen hizalama (HospitalRoom Y rotation +π/2 wrapper)
+- `7eaa07c` + `036103a` e2e dialog-3d-vision testIgnore (sahne flaky)
+- `22a60c1` renk/ışık dengeleme + CHANGELOG v0.3.1
+- `8541c57` dead code temizliği (HospitalBed + RoomLayoutDevPanel + useRoomLayoutOverrides)
+
+### Gece sonu (11 commit) — 3D body etkileşim sprint'leri (kullanıcı listesinin tamamı)
+- `6c77096` **B.6 PatientEquipment** — 7 ekipman R3F primitive (O2 mask, nasal, EKG×10 Mason-Likar, IV kateter, BP cuff, SpO2, bandage)
+- `9f0288f` **B.6.1 PatientVitalSigns** — pupil çapı + GCS göz kapağı + terleme + JVD (computed severity)
+- `7752c71` **B.6.2 MedicationBolus** — IV kateter konumunda 2sn pulse, klinik renk klasifikasyonu (vazopresör kırmızı, opioid mor, antiaritmik sarı, metabolik mavi, antiplatelet pembe)
+- `8f011d0` 29 unit test (PatientVitalSigns 17 + MedicationBolus 12)
+- `c030fcd` CHANGELOG v0.3.2 Sprint B.6
+- `1924cf4` **B.7 PatientProfile** — PALS yaş kategori + scaleFactor + label + 34 unit test
+- `115e818` Bed parametric scale + CHANGELOG v0.3.3
+- `c080fa2` **B.7+ 6 yeni periferik nabız marker** (radial ×2 + dorsalis pedis ×2 + posterior tibial ×2) — total 26 marker
+- `4e8ac00` patient-profile-badge e2e spec (testIgnore — flaky refactor TODO)
+
+### Kullanıcı liste durumu (tamam)
+- ✅ Marker'lar: 20 → 26 (B.7+ periferik nabız)
+- ✅ Vital bulgular: pupil + GCS + terleme + JVD (B.6.1)
+- ✅ Diğer karakter: PatientProfile scale parametric (infant 0.28, pediatric 0.75, adult 1.0, elderly 0.97); 14 senaryo otomatik
+- ✅ Ekipman ekleme: 7 component conditional render (B.6)
+- ✅ İlaç ekleme: MedicationBolus pulse + drug color (B.6.2)
+- ✅ Senaryolara entegre: tüm 14 senaryoda profil otomatik derive
 
 **Bir günlük öğrenim (Sketchfab CC BY hospital-room.glb):**
 Sketchfab Auto-Converted glTF export'unda mesh'ler "explode layout"ta — 2.4m hat boyunca dizili, gerçek oda değil. Mesh-by-mesh layout dict + override + transform_apply pattern denemeleri kaliteyi sağlayamadı (parent matrix + pivot karmaşası). **Pragmatik karar: GLB'yi bırak, drei primitif sahne.** Tam kontrol bizde + Minecraft görüntüsünden archviz seviyesine. GLB inflated versiyon `public/3d/` arşivde referans olarak duruyor.
