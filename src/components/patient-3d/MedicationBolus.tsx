@@ -22,7 +22,8 @@ interface Props {
   drugId?: string | null;
 }
 
-function getDrugColor(drugId?: string | null): string {
+// Export'lu — unit test için.
+export function getDrugColor(drugId?: string | null): string {
   if (!drugId) return "#22c55e";
   const id = drugId.toLowerCase();
   if (/adrenalin|epinefrin|noradrenalin|norepinefrin|dopamin/.test(id)) {

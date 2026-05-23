@@ -115,7 +115,8 @@ function JVD({ severity }: { severity: number }) {
 }
 
 // Vitals'tan terleme + JVD severity türetme (computed visual cues).
-function deriveSweatSeverity(v: PatientVitals): number {
+// Export'lu — unit test için.
+export function deriveSweatSeverity(v: PatientVitals): number {
   let s = 0;
   // Hipotansiyon → sempatik aktivasyon → terleme
   if (v.bp_systolic < 90) s += 0.5;
@@ -128,7 +129,7 @@ function deriveSweatSeverity(v: PatientVitals): number {
   return Math.min(1, s);
 }
 
-function deriveJvdSeverity(v: PatientVitals): number {
+export function deriveJvdSeverity(v: PatientVitals): number {
   let s = 0;
   // CVP açık ölçü
   if (typeof v.cvp === "number" && v.cvp > 12) s += 0.5;
@@ -139,7 +140,7 @@ function deriveJvdSeverity(v: PatientVitals): number {
 }
 
 // GCS → göz kapağı kapalılık oranı
-function deriveEyelidCloseness(gcs?: number): number {
+export function deriveEyelidCloseness(gcs?: number): number {
   if (typeof gcs !== "number") return 0;
   if (gcs >= 14) return 0; // tam açık
   if (gcs >= 11) return 0.2;
