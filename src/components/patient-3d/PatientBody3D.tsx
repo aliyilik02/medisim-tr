@@ -399,6 +399,7 @@ function PatientBody3DImpl({
               speaking={speaking}
               clippingPlanes={clippingPlanes}
               scaleFactor={profile?.scaleFactor ?? 1}
+              skinBaseRgb={profile?.skinHintRgb}
             />
             {/* B.6 — Hastaya giydirilmiş klinik ekipman (O2 mask, EKG patches,
                 IV kateter, BP cuff, pulse oximeter, bandage). */}

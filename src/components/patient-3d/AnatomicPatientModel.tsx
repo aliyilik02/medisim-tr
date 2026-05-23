@@ -81,10 +81,24 @@ interface Props {
    * göre korunur).
    */
   scaleFactor?: number;
+  /**
+   * Sprint B.9+ — Profile-bazlı temel ten tonu TINT multiplier.
+   * SKIN_TINT_PRESETS.normal [1,1,1] üstüne çarpılır. Sadece `skinTint=="normal"`
+   * durumunda override eder (cyanosis/jaundice/pallor klinik patolojik tint'ler
+   * kendi sabit değerlerini korur). undefined → erkek erişkin default.
+   */
+  skinBaseRgb?: [number, number, number];
 }
 
 export const AnatomicPatientModel = forwardRef<Group, Props>(
-  ({ breathing = true, skinTint = "normal", speaking = false, clippingPlanes, scaleFactor = 1 }, ref) => {
+  ({ breathing = true, skinTint = "normal", speaking = false, clippingPlanes, scaleFactor = 1, skinBaseRgb }, ref) => {
+    // B.9+ — Profile-bazlı normal ten tonu override. `normal` SkinTint için
+    // skinBaseRgb varsa onu kullan, pathological (cyanosis/jaundice/pallor)
+    // tint'ler için SKIN_TINT_PRESETS sabit kalır.
+    const getEffectiveTint = (tint: SkinTint): [number, number, number] => {
+      if (tint === "normal" && skinBaseRgb) return skinBaseRgb;
+      return SKIN_TINT_PRESETS[tint];
+    };
     const { scene } = useGLTF(MODEL_URL);
     const shaderRef = useRef<ShaderRef | null>(null);
 
@@ -137,7 +151,7 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
             shader.uniforms.uBreathAmplitude = {
               value: breathing ? BREATH_AMPLITUDE_LOCAL : 0,
             };
-            shader.uniforms.uSkinTint = { value: SKIN_TINT_PRESETS[skinTint] };
+            shader.uniforms.uSkinTint = { value: getEffectiveTint(skinTint) };
             shader.uniforms.uSpeaking = { value: speaking ? 1.0 : 0.0 };
 
             // Vertex shader: çift-center breathing displacement
@@ -223,11 +237,13 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
     // Cilt tonu yumuşak geçiş — current → target lerp (~1.5sn)
     // useEffect target güncelliyor; useFrame her frame current'i lerp ediyor.
     const currentTintRef = useRef<[number, number, number]>([1, 1, 1]);
-    const targetTintRef = useRef<[number, number, number]>(SKIN_TINT_PRESETS[skinTint]);
+    const targetTintRef = useRef<[number, number, number]>(getEffectiveTint(skinTint));
 
     useEffect(() => {
-      targetTintRef.current = SKIN_TINT_PRESETS[skinTint];
-    }, [skinTint]);
+      targetTintRef.current = getEffectiveTint(skinTint);
+      // skinBaseRgb değişimi de yeni target tetiklemeli (profile değiştiğinde)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [skinTint, skinBaseRgb?.[0], skinBaseRgb?.[1], skinBaseRgb?.[2]]);
 
     // Speaking flag — hasta konuşurken ağız oscillation aktif
     useEffect(() => {

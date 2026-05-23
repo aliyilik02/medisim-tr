@@ -142,16 +142,18 @@ function formatDisplayLabel(age: number, sex: PatientSex, category: PatientCateg
 }
 
 /**
- * Cinsiyete + kategoriye göre varsayılan cilt tonu ipucu.
- * Erkek: hafif esmer, kadın: daha açık pembemsi, bebek: pembemsi-kırmızı,
- * yaşlı: soluk-fildişi.
+ * Cinsiyete + kategoriye göre varsayılan cilt tonu TINT multiplier'ı.
+ * AnatomicPatientModel SKIN_TINT_PRESETS.normal [1,1,1] üstüne çarpılır:
+ * - 1.0 = no change (default erkek erişkin)
+ * - >1 R: pembe/kızıl yanak (infant, female)
+ * - <1 R+G+B: soluk (elderly)
  */
 function defaultSkinRgb(category: PatientCategory, sex: PatientSex): [number, number, number] {
-  if (category === "infant") return [0.92, 0.78, 0.72]; // pembemsi
-  if (category === "toddler" || category === "pediatric") return [0.92, 0.80, 0.74];
-  if (category === "elderly") return [0.85, 0.78, 0.72]; // fildişi-soluk
-  if (sex === "F") return [0.92, 0.82, 0.76]; // kadın açık pembemsi
-  return [0.83, 0.71, 0.62]; // erişkin erkek (Rocketbox default)
+  if (category === "infant") return [1.04, 0.96, 0.92]; // pembemsi-kızıl bebek cildi
+  if (category === "toddler" || category === "pediatric") return [1.03, 0.97, 0.94];
+  if (category === "elderly") return [0.93, 0.92, 0.90]; // soluk-fildişi yaşlı
+  if (sex === "F") return [1.03, 0.99, 0.97]; // kadın hafif pembe-açık
+  return [1.00, 1.00, 1.00]; // erişkin erkek default (Rocketbox base)
 }
 
 /**
