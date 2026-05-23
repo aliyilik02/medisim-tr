@@ -1,9 +1,13 @@
 // ============================================================
-// AboutPage — Sprint B.5+ proje bilgisi + lisans atıfları
+// AboutPage — proje bilgisi + lisans atıfları
 // ============================================================
 // /hakkinda route. CC BY / CC BY-SA görünür atıf gereksinimi
-// burada karşılanır (MediaAttributions UI'dan kaldırıldıktan sonra
-// kalıcı sığınak). Disclaimer + stack + klinik standart referansları.
+// burada karşılanır. Disclaimer + stack + klinik standart referansları.
+//
+// 24 May 2026: R3F + Three.js 3D katmanı kaldırıldı (Unity geçişi —
+// docs/UNITY-MIGRATION.md). 3D model atıfları (patient-v1/v2,
+// Splanchnology) Unity tarafında yeni asset'ler eklendiğinde tekrar
+// listelenecek. Mevcut R3F atıfları archive/r3f-state-2026-05-24 tag'inde.
 // ============================================================
 
 import { Link } from "react-router-dom";
@@ -15,11 +19,10 @@ import {
   BookOpen,
   Code2,
   Music,
-  Box,
 } from "lucide-react";
 
 interface AttributionItem {
-  kind: "3D" | "Ses" | "Yazılım" | "Font";
+  kind: "Ses" | "Yazılım" | "Font";
   title: string;
   author: string;
   authorUrl?: string;
@@ -29,38 +32,6 @@ interface AttributionItem {
 }
 
 const ATTRIBUTIONS: AttributionItem[] = [
-  // ─── 3D Modeller ─────────────────────────────────────────
-  {
-    kind: "3D",
-    title: "Male full body anatomy (patient-v2.glb)",
-    author: "chuma6oy",
-    authorUrl: "https://sketchfab.com/chuma6oy",
-    source:
-      "https://sketchfab.com/3d-models/male-full-body-anatomy-1688cedcfb3b4f3ea7a03e3a3e34bdd8",
-    license: "CC BY 4.0",
-    licenseUrl: "http://creativecommons.org/licenses/by/4.0/",
-  },
-  {
-    kind: "3D",
-    title: "Male Torso (patient-v1.glb)",
-    author: "MaceLogice",
-    authorUrl: "https://sketchfab.com/MaceLogice",
-    source:
-      "https://sketchfab.com/3d-models/male-torso-985d5535b408409f987841da4eba32ad",
-    license: "CC BY 4.0",
-    licenseUrl: "http://creativecommons.org/licenses/by/4.0/",
-  },
-  {
-    kind: "3D",
-    title: "Splanchnology (anatomy-internal.glb)",
-    author: "Z-Anatomy",
-    authorUrl: "https://sketchfab.com/Z-Anatomy",
-    source:
-      "https://sketchfab.com/3d-models/splanchnology-5cfafb312f504815aa3fec55735607a6",
-    license: "CC BY-SA 4.0",
-    licenseUrl: "http://creativecommons.org/licenses/by-sa/4.0/",
-  },
-
   // ─── Oskültasyon Sesleri ─────────────────────────────────
   {
     kind: "Ses",
@@ -142,14 +113,12 @@ const ATTRIBUTIONS: AttributionItem[] = [
 ];
 
 const KIND_ICON: Record<AttributionItem["kind"], React.ReactNode> = {
-  "3D": <Box className="w-3 h-3" />,
   Ses: <Music className="w-3 h-3" />,
   Yazılım: <Code2 className="w-3 h-3" />,
   Font: <BookOpen className="w-3 h-3" />,
 };
 
 const KIND_LABEL: Record<AttributionItem["kind"], string> = {
-  "3D": "3D Model",
   Ses: "Oskültasyon Sesi",
   Yazılım: "Yazılım Kütüphanesi",
   Font: "Font",
@@ -201,8 +170,9 @@ export function AboutPage() {
             MediSim TR; tıp ve hemşirelik öğrencileri ile sağlık profesyonellerine
             yönelik, Türk klinik kılavuzlarına (TKD, TÜRKMSD, TEPDAD) ve
             uluslararası standartlara (PALS, TCCC, Calgary-Cambridge) uygun
-            klinik senaryoları 3D anatomik manken üzerinde sunan, açık kaynak
-            ve eğitim amaçlı bir platformdur.
+            klinik senaryoları sunan, açık kaynak ve eğitim amaçlı bir
+            platformdur. 3D sanal hasta katmanı Unity 6 LTS üzerinde ayrı bir
+            client olarak geliştirilmektedir (Mac/Windows/Android/iOS standalone).
           </p>
         </section>
 
@@ -260,12 +230,8 @@ export function AboutPage() {
           <p className="font-mono text-[11px] text-ink-400 leading-relaxed mb-4 max-w-3xl">
             Aşağıdaki içerikler Creative Commons veya açık kaynak yazılım
             lisansları altında kullanılmıştır. Görünür atıf,
-            CC BY / CC BY-SA gereği bu sayfada yer alır. Detaylı lisans
-            metinleri proje deposunda{" "}
-            <code className="text-ink-300 bg-ink-900 px-1 rounded">
-              src/components/patient-3d/LICENSE-3D.md
-            </code>{" "}
-            ve{" "}
+            CC BY / CC BY-SA gereği bu sayfada yer alır. Detaylı ses
+            lisansları{" "}
             <code className="text-ink-300 bg-ink-900 px-1 rounded">
               public/sounds/auscultation/SOUNDS-LICENSE.md
             </code>{" "}
@@ -333,12 +299,12 @@ export function AboutPage() {
           </h2>
           <div className="grid sm:grid-cols-3 gap-3 font-mono text-[11px]">
             <div className="bg-ink-900/60 border border-ink-700/50 rounded p-3">
-              <div className="text-brand-light mb-1">Frontend</div>
+              <div className="text-brand-light mb-1">Web Frontend (test UI)</div>
               <ul className="text-ink-300 leading-relaxed">
                 <li>React 18 + Vite</li>
-                <li>R3F + Three.js r170</li>
                 <li>Tailwind v3 + Lucide</li>
                 <li>TypeScript 5</li>
+                <li>Senaryo + AI dialogue test arayüzü</li>
               </ul>
             </div>
             <div className="bg-ink-900/60 border border-ink-700/50 rounded p-3">

@@ -6,16 +6,18 @@
 
 Son güncelleme: 24 Mayıs 2026
 
-> ⚠️ **24 May 2026 — UNITY GEÇİŞİ KARARI**
+> ⚠️ **24 May 2026 — UNITY GEÇİŞİ + R3F TEMİZLİK**
 >
-> R3F + Three.js çalışması **donduruldu**. Yeni geliştirme **Unity 6 LTS**
-> üzerinde, ayrı repo'da (`Desktop\medisim-tr-unity\`).
+> R3F + Three.js katmanı **silindi** (kullanıcı kararı: "Unity'ye temiz başlangıç").
+> Yeni 3D geliştirme **Unity 6 LTS** üzerinde, ayrı repo'da (`Desktop\medisim-tr-unity\`).
 >
-> - Detay + frozen snapshot: [`docs/UNITY-MIGRATION.md`](docs/UNITY-MIGRATION.md)
-> - Bu repo (medisim-tr) **backend olarak yaşar:** TS senaryolar +
->   `/api/chat` Gemini SSE + Cloudflare Worker. Unity bunlara HTTP/SSE ile bağlanır.
-> - R3F kod + asset'ler **silinmedi**, gelecekte resume için aynen duruyor.
-> - PR #1 frozen, yeni R3F işi yapılmıyor.
+> - Detay + plan: [`docs/UNITY-MIGRATION.md`](docs/UNITY-MIGRATION.md)
+> - Bu repo (medisim-tr) **backend olarak yaşar:** TS engine + senaryolar +
+>   `/api/chat` Gemini SSE + Cloudflare Worker. Unity HTTP/SSE ile bağlanır.
+> - R3F kodu **archive/r3f-state-2026-05-24** tag'ine taşındı (commit `646ddc6`).
+>   Resume: `git checkout archive/r3f-state-2026-05-24 && npm install`
+> - Ana branch artık temiz: 512 vitest pass, build temiz, e2e flaky-3D testleri yok.
+> - PR #1 frozen draft (R3F snapshot artifact'i).
 
 ## Ajanın görevi
 

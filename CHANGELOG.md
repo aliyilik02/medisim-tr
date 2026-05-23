@@ -3,6 +3,57 @@
 Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) + [SemVer](https://semver.org/lang/tr/) formatı.
 
+## [v0.4.0] — 2026-05-24 (R3F kaldırıldı, Unity geçişi prep)
+
+**Tema:** 3D katmanı (React Three Fiber + Three.js + drei + Rocketbox modeli + Hospital Room sahnesi + 32 anatomik marker + tüm ekipman/vital/face/bleed/rash component'leri) tamamen kaldırıldı. Web app artık backend test arayüzü olarak yaşar: senaryolar, AI dialogue, scoring, debrief, session history. Yeni 3D katmanı Unity 6 LTS ile ayrı repo'da (`Desktop\medisim-tr-unity\`) baştan yapılacak.
+
+### 🗑️ Kaldırıldı
+
+- `src/components/patient-3d/` — tüm klasör (30+ dosya: AnatomicPatientModel, PatientBody3D, PatientEquipment, PatientVitalSigns, PatientFaceExpression, PatientBleed, PatientRash, MedicationBolus, HospitalRoom, InternalOrgans, IndividualOrgans, OrganModel, OrganDevPanel, MarkerDevPanel, RegionMarker, MediaAttributions, InspectionPanel, CompactVitalsHUD, VitalSparkline, LICENSE-3D.md, hospital-room-layout, regions, auscultationAudio, procedures/*)
+- `public/3d/` — tüm asset klasörü (~28 MB: patient-rocketbox/v1/v2/v3, hospital-room, anatomy-internal, organs/)
+- `src/pages/PatientBody3DDemoPage.tsx` + `PatientDialog3DPage.tsx`
+- `src/clinical/scenario-visual-state.ts` + `patient-profile.ts` + `visual-mapping.ts`
+- `src/hooks/useOrganOverrides.ts` + `useMarkerOverrides.ts`
+- `package.json`: `three`, `@react-three/fiber`, `@react-three/drei`, `@types/three` deps + `test:visual` script
+- e2e: `patient-3d-demo.spec.ts`, `engine-flow.spec.ts`, `dialog-3d-vision.spec.ts`, `patient-profile-badge.spec.ts`
+- Unit tests: `patient-3d-procedures`, `VitalSparkline`, `MarkerDevPanel`, `CompactVitalsHUD`, `PatientVitalSigns`, `MedicationBolus`, `PatientFaceExpression`, `PatientBleed`, `PatientRash`, `patient-3d`, `patient-profile`, `visual-mapping`, `useMarkerOverrides`
+- `.claude/skills/`: `r3f-medical`, `r3f-best-practices`, `three-best-practices`, `z-anatomy-binding`, `rpm-avatar`, `medisim-3d-scene-layout`, `vital-signs-hud`
+- `.claude/agents/3d-vision-tester.md`
+- Routes: `/3d-demo`, `/dialog-3d-demo` (HomePage'deki 3 link section dahil)
+
+### 🔄 Değişti
+
+- `src/App.tsx` — sadece backend test route'ları (`/`, `/senaryolar`, `/oyna/:id`, `/senaryo-editor`, `/gecmis`, `/hakkinda`, `/dialog-demo`). 3D demo route'ları gitti.
+- `src/pages/HomePage.tsx` — "3D Klinik Simülasyon · Beta" section'ı kaldırıldı, ikon importları (Sparkles, MessageSquare, Box) temizlendi
+- `src/pages/AboutPage.tsx` — 3D model atıfları (patient-v1/v2, Splanchnology) ve `KIND: "3D"` tip ünyonu kaldırıldı, Stack > Frontend label "Web Frontend (test UI)" olarak güncellendi, misyon paragrafına Unity geçiş notu eklendi
+- `tests/components/AboutPage.test.tsx` — 3D atıf testleri (chuma6oy/MaceLogice/Z-Anatomy/Three.js) kaldırıldı, attribution-item count 12 → 8, CC BY 4.0 link testi generic CC BY'ye genişletildi, Stack > Frontend test regex'i güncellendi
+
+### ✅ Korundu
+
+- `src/engine/` — saf TS senaryo motoru, Unity C# port hedefi
+- `src/data/scenarios/*` — 14 klinik senaryo (Unity build-time JSON serializer ile aynı kaynaktan)
+- `src/clinical/medications.ts` + `medications-extended.ts` — ilaç kataloğu
+- `src/components/dialog/` — ChatPanel, Toaster, AI dialogue UI (backend test için)
+- `src/pages/DialogDemoPage.tsx` — /api/chat Gemini SSE backend test arayüzü
+- `src/hooks/useVitalsTick.ts` — engine'in pharmacology tick'i (3D'ye bağlı değil)
+- `tests/engine/`, `tests/scenarios/`, `tests/clinical-codes/`, `tests/clinical-rules/`, `tests/regression/`, `tests/api/`, `tests/storage/`
+
+### 📦 Arşiv
+
+- **Tag:** `archive/r3f-state-2026-05-24` (commit `646ddc6`) — R3F+Three.js çalışmasının frozen snapshot'ı (53 commit, 681 vitest pass)
+- **Resume:** `git checkout archive/r3f-state-2026-05-24 && npm install` — tüm R3F sahnesi aynen çalışır
+- **Migration plan:** [`docs/UNITY-MIGRATION.md`](docs/UNITY-MIGRATION.md) — 6 fazlı yol haritası
+
+### 📊 Metrikler
+
+- Test: 681 → **512 pass** (32 dosya, 100% green)
+- Build: temiz (10.46s)
+- Asset boyut: -28 MB (`public/3d/` silindi)
+- Dependency: -4 paket (`three`, `@react-three/fiber`, `@react-three/drei`, `@types/three`)
+- Source: -30 dosya `src/components/patient-3d/` + 5 page/clinical/hook + 7 skill + 1 agent
+
+---
+
 ## [v0.3.4] — 2026-05-23 (Sprint B.8 — karakter tepkileri + ek ekipman)
 
 **Tema:** Karakter yüz mimikleri (ağız lipsync + kaş çatma + yanak kızarması) + 4 yeni klinik ekipman (defib pad'leri + endotrakeal tüp + nazogastrik sonda + Foley kateter). 9 yeni unit test (657 toplam).

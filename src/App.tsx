@@ -9,24 +9,12 @@ import { AboutPage } from "@/pages/AboutPage";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Sprint A — 3D demo route lazy yüklenir. three/R3F bundle main'i şişirmesin.
-const PatientBody3DDemoPage = lazy(() =>
-  import("@/pages/PatientBody3DDemoPage").then((m) => ({
-    default: m.PatientBody3DDemoPage,
-  }))
-);
-
-// Sprint B.2 — AI hasta diyaloğu demo (mock backend).
+// AI hasta diyaloğu demo (mock + Gemini backend test arayüzü).
+// 24 May 2026: R3F 3D sahne kaldırıldı → Unity geçişi (docs/UNITY-MIGRATION.md).
+// Bu sayfa backend /api/chat SSE endpoint'ini tarayıcıdan test etmek için kalır.
 const DialogDemoPage = lazy(() =>
   import("@/pages/DialogDemoPage").then((m) => ({
     default: m.DialogDemoPage,
-  }))
-);
-
-// Sprint B.2 entegrasyon — 3D model + AI diyalog yan yana, mock lipsync.
-const PatientDialog3DPage = lazy(() =>
-  import("@/pages/PatientDialog3DPage").then((m) => ({
-    default: m.PatientDialog3DPage,
   }))
 );
 
@@ -34,13 +22,11 @@ export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
-  const is3dDemo = location.pathname.startsWith("/3d-demo");
   const isDialogDemo = location.pathname.startsWith("/dialog-demo");
-  const isDialog3d = location.pathname.startsWith("/dialog-3d-demo");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && <Header />}
+      {!isPlayPage && !isEditorPage && !isDialogDemo && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -50,20 +36,6 @@ export function App() {
           <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
           <Route path="/gecmis" element={<SessionHistoryPage />} />
           <Route path="/hakkinda" element={<AboutPage />} />
-          <Route
-            path="/3d-demo"
-            element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    3D yükleniyor…
-                  </div>
-                }
-              >
-                <PatientBody3DDemoPage />
-              </Suspense>
-            }
-          />
           <Route
             path="/dialog-demo"
             element={
@@ -78,23 +50,9 @@ export function App() {
               </Suspense>
             }
           />
-          <Route
-            path="/dialog-3d-demo"
-            element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    3D + Diyalog yükleniyor…
-                  </div>
-                }
-              >
-                <PatientDialog3DPage />
-              </Suspense>
-            }
-          />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && <Footer />}
+      {!isPlayPage && !isEditorPage && !isDialogDemo && <Footer />}
     </div>
   );
 }

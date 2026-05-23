@@ -80,55 +80,39 @@ Toplam 2-3 hafta polish iş — sonunda hâlâ React + WebGL kompromisi. **Unity
 URL 1) — fix denmedi, frozen
 **Build:** ✅ temiz
 
-### Korunan asset'ler (silinmedi, gelecekte referans için)
+### Asset'ler & R3F kodu silindi (24 May 2026)
 
-```
-public/3d/
-├── patient-rocketbox.glb (2.86 MB) — Rocketbox Male_Adult_01, MIT
-├── patient-v1.glb (1.07 MB) — Sketchfab Male Torso, CC BY
-├── patient-v2.glb (1.33 MB) — Sketchfab Male anatomy, CC BY
-├── patient-v3.glb (15.1 MB) — ?? Belirsiz (RPM avatar olabilir)
-├── hospital-room.glb (3.83 MB) — Sketchfab Hospital Room, CC BY (kullanılmıyor)
-├── anatomy-internal.glb (3.55 MB) — Z-Anatomy Splanchnology, CC BY-SA
-└── organs/
-    ├── heart.glb (144 KB)
-    ├── lungs.glb (371 KB)
-    └── liver.glb (365 KB)
+İlk plan "frozen, silinmedi" idi ama aynı gün kullanıcı **temiz başlangıç** istedi.
+Tüm 3D asset/component/test/skill ana branch'tan kaldırıldı. Geriye dönüş için
+**git tag `archive/r3f-state-2026-05-24`** ve `archive/r3f-state-2026-05-24`
+commit'i (`646ddc6`) referansı:
+
+```bash
+git checkout archive/r3f-state-2026-05-24
+npm install
+npm run dev  # tüm R3F sahnesi aynen çalışır
 ```
 
-**Unity'ye taşınacak asset'ler (Faz 3 öncesi):**
-- `patient-rocketbox.glb` → Unity'de Rocketbox FBX olarak yeniden import (Microsoft
-  Rocketbox repo'sundan direkt FBX) — daha temiz animator pipeline
-- `organs/*.glb` → URP shader ile yeniden material
-- `anatomy-internal.glb` Splanchnology → Z-Anatomy CC BY-SA viral, alternatif
-  BodyParts3D CC BY 4.0 mesh'leri tercih edilmeli
+**Silinenler özet:**
+- `public/3d/*` — 28 MB asset (patient-rocketbox + v1/v2/v3 + hospital-room + anatomy-internal + organs)
+- `src/components/patient-3d/*` — 30+ component (Body3D, Equipment, VitalSigns, FaceExpression, Bleed, Rash, MedicationBolus, HospitalRoom, InternalOrgans, OrganModel, MarkerDevPanel, OrganDevPanel, RegionMarker, CompactVitalsHUD, VitalSparkline, InspectionPanel, MediaAttributions, regions.ts, hospital-room-layout.ts, auscultationAudio.ts, procedures/*, LICENSE-3D.md)
+- `src/clinical/`: `scenario-visual-state.ts` + `patient-profile.ts` + `visual-mapping.ts`
+- `src/hooks/`: `useOrganOverrides.ts` + `useMarkerOverrides.ts`
+- `src/pages/`: `PatientBody3DDemoPage.tsx` + `PatientDialog3DPage.tsx`
+- e2e: `patient-3d-demo`, `engine-flow`, `dialog-3d-vision`, `patient-profile-badge`
+- Unit tests: 13 dosya (3D component + clinical/hooks 3D testleri)
+- `.claude/skills/`: 7 skill (r3f-medical, r3f-best-practices, three-best-practices, z-anatomy-binding, rpm-avatar, medisim-3d-scene-layout, vital-signs-hud)
+- `.claude/agents/3d-vision-tester.md`
+- Routes: `/3d-demo`, `/dialog-3d-demo` (HomePage'deki 3 link section dahil)
+- npm deps: `three`, `@react-three/fiber`, `@react-three/drei`, `@types/three`
 
-### Korunan R3F kod katmanları (silinmedi)
-
-```
-src/
-├── components/patient-3d/
-│   ├── AnatomicPatientModel.tsx (Rocketbox + breathing + skin tint shader)
-│   ├── PatientBody3D.tsx (komposit)
-│   ├── PatientEquipment.tsx (11 ekipman)
-│   ├── PatientVitalSigns.tsx (pupil + JVD + sweat)
-│   ├── PatientFaceExpression.tsx (cheek + eyebrow + mouth)
-│   ├── PatientBleed.tsx (arterial/venous/capillary)
-│   ├── PatientRash.tsx (6 rash tipi)
-│   ├── PatientProfile (yaş kategori scale)
-│   ├── MedicationBolus.tsx (IV pulse)
-│   ├── HospitalRoom.tsx (primitif sahne)
-│   ├── regions.ts (32 anatomik marker)
-│   └── LICENSE-3D.md (atıf belgesi)
-├── clinical/
-│   ├── patient-profile.ts (PALS yaş kategori)
-│   └── scenario-visual-state.ts (13 senaryo → initial equipment + bleed)
-├── pages/
-│   ├── Patient3DDemoPage.tsx
-│   ├── DialogDemoPage.tsx
-│   └── PatientDialog3DPage.tsx (743 satır, full senaryo + 3D + dialogue)
-└── engine/ (saf TS — Unity C# port hedefi)
-```
+**Korunan backend (Unity'den çağrılacak):**
+- `src/engine/*` — saf TS senaryo motoru → Unity C# port hedefi
+- `src/data/scenarios/*` — 14 klinik senaryo (Unity build-time JSON)
+- `src/clinical/medications.ts` + `medications-extended.ts` — ilaç kataloğu
+- `src/components/dialog/*` + `src/pages/DialogDemoPage.tsx` — `/api/chat` Gemini SSE backend test arayüzü
+- `src/hooks/useVitalsTick.ts` — engine pharmacology tick (3D'ye bağlı değil)
+- Tüm engine/scenario/clinical-rule/regression/api/storage testleri (512 pass)
 
 **Unity'ye port etmeyecek (yalnızca arşiv):**
 - React component'leri (Unity karşılığı GameObject + MonoBehaviour)

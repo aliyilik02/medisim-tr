@@ -38,17 +38,14 @@ describe("AboutPage — temel render", () => {
 });
 
 describe("AboutPage — atıflar (CC BY/BY-SA)", () => {
-  test("12+ attribution-item render edilir", () => {
+  // 24 May 2026: R3F + Three.js katmanı kaldırıldı (Unity geçişi).
+  // 3D model atıfları (chuma6oy, MaceLogice, Z-Anatomy) ve Three.js
+  // yazılım atıfı listeden çıkarıldı; Unity tarafında yeni asset'ler
+  // eklendiğinde tekrar test edilecek.
+  test("8+ attribution-item render edilir (ses + font + yazılım)", () => {
     renderAbout();
     const items = screen.getAllByTestId("attribution-item");
-    expect(items.length).toBeGreaterThanOrEqual(12);
-  });
-
-  test("3D model atıfları (chuma6oy + MaceLogice + Z-Anatomy)", () => {
-    renderAbout();
-    expect(screen.getByText(/chuma6oy/i)).toBeInTheDocument();
-    expect(screen.getByText(/MaceLogice/i)).toBeInTheDocument();
-    expect(screen.getByText(/Z-Anatomy/i)).toBeInTheDocument();
+    expect(items.length).toBeGreaterThanOrEqual(8);
   });
 
   test("Wikimedia ses atıfları (Wheeze2O + Crackles + Heartbeat)", () => {
@@ -64,9 +61,8 @@ describe("AboutPage — atıflar (CC BY/BY-SA)", () => {
     expect(screen.getByText(/Geist/i)).toBeInTheDocument();
   });
 
-  test("Yazılım atıfları (React + Three.js + Tailwind + Lucide)", () => {
+  test("Yazılım atıfları (Tailwind + Lucide)", () => {
     renderAbout();
-    expect(screen.getAllByText(/Three\.js/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Tailwind/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Lucide/i).length).toBeGreaterThan(0);
   });
@@ -100,9 +96,11 @@ describe("AboutPage — link davranışları", () => {
     });
   });
 
-  test("CC BY 4.0 lisans linkleri target=_blank", () => {
+  test("CC lisans linkleri target=_blank", () => {
     renderAbout();
-    const ccLinks = screen.getAllByRole("link", { name: /CC BY 4\.0/i });
+    // 24 May 2026: 3D atıflarındaki CC BY 4.0 linkleri kaldırıldı; ses
+    // atıflarındaki CC BY-SA 3.0 / CC BY 3.0 üzerinden generic kontrol.
+    const ccLinks = screen.getAllByRole("link", { name: /CC BY/i });
     expect(ccLinks.length).toBeGreaterThan(0);
     ccLinks.forEach((link) => {
       expect(link).toHaveAttribute("target", "_blank");
@@ -121,7 +119,9 @@ describe("AboutPage — link davranışları", () => {
 describe("AboutPage — Stack bilgisi", () => {
   test("Frontend / Backend & AI / Test & Build kategorileri", () => {
     renderAbout();
-    expect(screen.getByText(/^Frontend$/)).toBeInTheDocument();
+    // 24 May 2026: "Frontend" → "Web Frontend (test UI)" olarak güncellendi
+    // (R3F kaldırıldı, Unity tarafı standalone 3D client).
+    expect(screen.getByText(/Web Frontend/i)).toBeInTheDocument();
     expect(screen.getByText(/Backend & AI/i)).toBeInTheDocument();
     expect(screen.getByText(/Test & Build/i)).toBeInTheDocument();
   });
