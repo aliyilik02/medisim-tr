@@ -33,28 +33,18 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
   const theme = getSpecialtyTheme(scenario.specialty);
 
   return (
-    <Link
-      to={`/oyna/${scenario.id}`}
+    <div
       className={cn(
         "group relative flex flex-col",
         "bg-ink-900 border border-ink-700 rounded-lg overflow-hidden",
         "hover:-translate-y-0.5 hover:border-opacity-80",
         "transition-all duration-200 ease-out",
-        "focus:outline-none",
-        "animate-slide-up"
+        "animate-slide-up",
       )}
       style={{
         animationDelay: `${delay}ms`,
         borderLeftColor: theme.accent,
         borderLeftWidth: "2px",
-        // Focus ring — specialty rengiyle
-        "--tw-ring-color": theme.accentGlow,
-      } as React.CSSProperties}
-      onFocus={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 2px ${theme.accentGlow}`;
-      }}
-      onBlur={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = "";
       }}
     >
       {/* Hover glow overlay */}
@@ -63,16 +53,20 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
         style={{ background: `radial-gradient(ellipse at 0% 50%, ${theme.accentBg}, transparent 70%)` }}
       />
 
-      {/* İçerik */}
-      <div className="relative flex flex-col h-full p-5 gap-4">
+      {/* Ana tıklanabilir alan — /oyna/:id (klasik 2D) */}
+      <Link
+        to={`/oyna/${scenario.id}`}
+        className="relative flex flex-col flex-1 p-5 gap-4 focus:outline-none focus:ring-2 focus:ring-inset"
+        style={{
+          ["--tw-ring-color" as string]: theme.accentGlow,
+        } as React.CSSProperties}
+        aria-label={`${scenario.title} senaryosunu klasik modda aç`}
+      >
         {/* Üst satır — ikon + ID */}
         <div className="flex items-start justify-between gap-3">
           <div
             className="w-12 h-12 rounded-md flex items-center justify-center shrink-0"
-            style={{
-              background: theme.accentBg,
-              color: theme.accent,
-            }}
+            style={{ background: theme.accentBg, color: theme.accent }}
           >
             <SpecialtyIcon specialty={scenario.specialty} className="w-7 h-7" />
           </div>
@@ -83,10 +77,7 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
 
         {/* Başlık */}
         <div className="flex-1 min-h-0">
-          <h3
-            className="font-display text-lg leading-snug text-ink-50 line-clamp-2 group-hover:text-ink-50 transition-colors mb-1"
-            style={{ color: undefined }}
-          >
+          <h3 className="font-display text-lg leading-snug text-ink-50 line-clamp-2 group-hover:text-ink-50 transition-colors mb-1">
             {scenario.title}
           </h3>
           {scenario.description && (
@@ -101,12 +92,9 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
           className="flex items-center justify-between pt-3 mt-auto"
           style={{ borderTopColor: `${theme.accent}22`, borderTopWidth: 1, borderTopStyle: "solid" }}
         >
-          {/* Zorluk */}
           <div style={{ color: theme.accent }}>
             <DifficultyPips level={scenario.difficulty} />
           </div>
-
-          {/* Süre + adım + puan */}
           <div className="flex items-center gap-3 font-mono text-[10px] text-ink-500 tabular-nums">
             <span>~{scenario.estimated_minutes}dk</span>
             <span className="text-ink-700">·</span>
@@ -115,7 +103,7 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
             <span>{scenario.scoring.max_points}p</span>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

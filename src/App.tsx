@@ -5,13 +5,16 @@ import { ScenarioListPage } from "@/pages/ScenarioListPage";
 import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
 import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
 import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
+import { AboutPage } from "@/pages/AboutPage";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Sprint A — 3D demo route lazy yüklenir. three/R3F bundle main'i şişirmesin.
-const PatientBody3DDemoPage = lazy(() =>
-  import("@/pages/PatientBody3DDemoPage").then((m) => ({
-    default: m.PatientBody3DDemoPage,
+// AI hasta diyaloğu demo (mock + Gemini backend test arayüzü).
+// 24 May 2026: R3F 3D sahne kaldırıldı → Unity geçişi (docs/UNITY-MIGRATION.md).
+// Bu sayfa backend /api/chat SSE endpoint'ini tarayıcıdan test etmek için kalır.
+const DialogDemoPage = lazy(() =>
+  import("@/pages/DialogDemoPage").then((m) => ({
+    default: m.DialogDemoPage,
   }))
 );
 
@@ -19,11 +22,11 @@ export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
-  const is3dDemo = location.pathname.startsWith("/3d-demo");
+  const isDialogDemo = location.pathname.startsWith("/dialog-demo");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && <Header />}
+      {!isPlayPage && !isEditorPage && !isDialogDemo && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -32,23 +35,24 @@ export function App() {
           <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
           <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
           <Route path="/gecmis" element={<SessionHistoryPage />} />
+          <Route path="/hakkinda" element={<AboutPage />} />
           <Route
-            path="/3d-demo"
+            path="/dialog-demo"
             element={
               <Suspense
                 fallback={
                   <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    3D yükleniyor…
+                    Diyalog yükleniyor…
                   </div>
                 }
               >
-                <PatientBody3DDemoPage />
+                <DialogDemoPage />
               </Suspense>
             }
           />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && <Footer />}
+      {!isPlayPage && !isEditorPage && !isDialogDemo && <Footer />}
     </div>
   );
 }
@@ -63,8 +67,14 @@ function Header() {
             <div className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-clinical-stable rounded-full animate-heartbeat" />
           </div>
           <div>
-            <div className="font-display text-lg leading-none">
+            <div className="font-display text-lg leading-none flex items-center gap-2">
               MediSim <span className="text-brand">TR</span>
+              <span
+                className="font-mono text-[8px] uppercase tracking-[0.18em] bg-brand/15 text-brand-light border border-brand/30 px-1.5 py-0.5 rounded"
+                title="Sprint B.5+ — 3D klinik simülasyon beta"
+              >
+                v0.3 · beta
+              </span>
             </div>
             <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-500 mt-0.5 hidden sm:block">
               Sanal Hasta Platformu
@@ -77,6 +87,7 @@ function Header() {
             { to: "/", label: "Ana Sayfa", exact: true },
             { to: "/senaryolar", label: "Senaryolar" },
             { to: "/gecmis", label: "Geçmiş" },
+            { to: "/hakkinda", label: "Hakkında" },
           ].map(({ to, label, exact }) => (
             <NavLink
               key={to}
@@ -120,9 +131,17 @@ function Footer() {
         <div className="font-mono text-xs uppercase tracking-wider">
           MediSim TR · Eğitim amaçlıdır · Klinik karar yerine geçmez
         </div>
-        <div className="flex items-center gap-2">
-          <span className="pulse-dot" />
-          <span className="font-mono text-xs">sistem aktif</span>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/hakkinda"
+            className="font-mono text-xs uppercase tracking-wider text-ink-400 hover:text-brand-light transition"
+          >
+            Hakkında & Lisanslar
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="pulse-dot" />
+            <span className="font-mono text-xs">sistem aktif</span>
+          </div>
         </div>
       </div>
     </footer>

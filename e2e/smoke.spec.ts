@@ -34,6 +34,15 @@ test.describe("Ana akış", () => {
     // Hasta paneli render olmuş olmalı
     await expect(page.getByText(/yaş/i).first()).toBeVisible({ timeout: 10_000 });
   });
+
+  test("Footer 'Hakkında & Lisanslar' linki çalışır", async ({ page }) => {
+    await page.goto("/");
+    const link = page.getByRole("link", { name: /Hakkında & Lisanslar/i });
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page).toHaveURL(/\/hakkinda/);
+  });
+
 });
 
 test.describe("Geçmiş ve editör sayfaları smoke", () => {

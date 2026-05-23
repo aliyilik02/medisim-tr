@@ -442,6 +442,11 @@ export interface Scenario {
 
   // 3D (opsiyonel)
   scene?: SceneConfig;
+
+  // Not: B.11 — Senaryo 3D visual başlangıç state'i `src/clinical/
+  // scenario-visual-state.ts` dosyasında scenarioId → InitialVisualState map'i
+  // olarak tutulur. Senaryo dosyalarına dokunmamak için ayrı (klinik
+  // pre-commit hook bu dosyaları korur).
 }
 
 // ------------------------------------------------------------

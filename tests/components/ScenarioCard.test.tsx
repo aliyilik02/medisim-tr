@@ -23,8 +23,11 @@ describe("ScenarioCard", () => {
 
   test("doğru oyna URL'i içerir", () => {
     renderInRouter(<ScenarioCard scenario={stemi} />);
-    const link = screen.getByRole("link");
-    expect(link.getAttribute("href")).toBe("/oyna/kardiyoloji-stemi-001");
+    // 24 May 2026: 3D Hasta linki kaldırıldı (Unity geçişi). Kart sadece ana /oyna linki içerir.
+    const oynaLink = screen.getByRole("link", {
+      name: /klasik modda aç/i,
+    });
+    expect(oynaLink.getAttribute("href")).toBe("/oyna/kardiyoloji-stemi-001");
   });
 
   test("zorluk seviyesi aria-label'da", () => {
@@ -58,7 +61,7 @@ describe("ScenarioCard — pediatri farklı specialty", () => {
 
   test("href pediatri senaryosunu hedefler", () => {
     renderInRouter(<ScenarioCard scenario={bron} />);
-    const link = screen.getByRole("link");
-    expect(link.getAttribute("href")).toBe("/oyna/pedi-bronsiyolit-001");
+    const oynaLink = screen.getByRole("link", { name: /klasik modda aç/i });
+    expect(oynaLink.getAttribute("href")).toBe("/oyna/pedi-bronsiyolit-001");
   });
 });
