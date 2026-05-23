@@ -4,7 +4,18 @@
 > **Memory vault:** [`docs/memory/README.md`](docs/memory/README.md) (Obsidian-uyumlu, görev tipine göre lazy read).
 > Detaylı içerik orada — bu dosya 70 satır, sadece kritik kurallar.
 
-Son güncelleme: 21 Mayıs 2026
+Son güncelleme: 24 Mayıs 2026
+
+> ⚠️ **24 May 2026 — UNITY GEÇİŞİ KARARI**
+>
+> R3F + Three.js çalışması **donduruldu**. Yeni geliştirme **Unity 6 LTS**
+> üzerinde, ayrı repo'da (`Desktop\medisim-tr-unity\`).
+>
+> - Detay + frozen snapshot: [`docs/UNITY-MIGRATION.md`](docs/UNITY-MIGRATION.md)
+> - Bu repo (medisim-tr) **backend olarak yaşar:** TS senaryolar +
+>   `/api/chat` Gemini SSE + Cloudflare Worker. Unity bunlara HTTP/SSE ile bağlanır.
+> - R3F kod + asset'ler **silinmedi**, gelecekte resume için aynen duruyor.
+> - PR #1 frozen, yeni R3F işi yapılmıyor.
 
 ## Ajanın görevi
 
