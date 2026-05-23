@@ -114,9 +114,9 @@ describe("getStudentPrompts — stage'e göre öneri", () => {
     expect(prompts.join(" ")).toMatch(/ilaç|alerji|geçmiş|hastalık/i);
   });
 
-  test("physical_exam → 3D modele yönlendirme", () => {
+  test("physical_exam → muayene paneline yönlendirme", () => {
     const prompts = getStudentPrompts("physical_exam", 0);
-    expect(prompts.join(" ")).toMatch(/3d|muayene/i);
+    expect(prompts.join(" ")).toMatch(/muayene/i);
   });
 
   test("explanation + closing → boş prompt listesi", () => {

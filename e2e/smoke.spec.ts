@@ -35,18 +35,6 @@ test.describe("Ana akış", () => {
     await expect(page.getByText(/yaş/i).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test("HomePage 3D Demo Beta bölümü — 3 demo kartı görünür + Tam Paket linki çalışır", async ({ page }) => {
-    await page.goto("/");
-    // Yeni demo bölümü başlığı
-    await expect(page.getByText(/3D Klinik Simülasyon · Beta/i)).toBeVisible();
-    // "Tam Paket" rozetli kart
-    await expect(page.getByText(/Tam Paket/i)).toBeVisible();
-    // 3 demo link'i — dialog-3d-demo (vurgulu), 3d-demo, dialog-demo
-    const dialogDemo3D = page.getByRole("link", { name: /3D Hasta \+ AI Diyalog/i });
-    await expect(dialogDemo3D).toBeVisible();
-    await expect(dialogDemo3D).toHaveAttribute("href", "/dialog-3d-demo");
-  });
-
   test("Footer 'Hakkında & Lisanslar' linki çalışır", async ({ page }) => {
     await page.goto("/");
     const link = page.getByRole("link", { name: /Hakkında & Lisanslar/i });
@@ -55,50 +43,6 @@ test.describe("Ana akış", () => {
     await expect(page).toHaveURL(/\/hakkinda/);
   });
 
-  test("/senaryolar — kart hover '3D Hasta' linki + doğru href", async ({ page }) => {
-    await page.goto("/senaryolar");
-    await page.waitForLoadState("load");
-
-    // İlk senaryo kartını bul
-    const firstCard = page
-      .locator('a[href^="/oyna/"]')
-      .first();
-    await expect(firstCard).toBeVisible();
-
-    // Aynı kart içinde '3D hasta modu' aria-label'lı badge link olmalı
-    const allCards = page.locator('div.group:has(a[href^="/oyna/"])');
-    const firstCardContainer = allCards.first();
-    const dev3dLink = firstCardContainer.getByRole("link", {
-      name: /3D hasta modu/i,
-    });
-
-    // Hover ile görünür yap
-    await firstCardContainer.hover();
-    await expect(dev3dLink).toHaveAttribute(
-      "href",
-      /\/dialog-3d-demo\?scenario=/,
-    );
-  });
-
-  test("/oyna/:id sayfasında '3D Hasta' butonu görünür", async ({ page }) => {
-    // STEMI senaryosunu başlat
-    await page.goto("/oyna/kardiyoloji-stemi-001");
-    await page.waitForLoadState("load");
-
-    // Mod seçim ekranında 'Eğitim' butonuna tıkla
-    const egitimBtn = page.getByRole("button", { name: /Eğitim/i }).first();
-    await expect(egitimBtn).toBeVisible({ timeout: 10_000 });
-    await egitimBtn.click();
-    await page.waitForTimeout(1500);
-
-    // Üst barda '3D Hasta' linki olmalı
-    const link3d = page.getByRole("link", { name: /3D Hasta/i });
-    await expect(link3d).toBeVisible();
-    await expect(link3d).toHaveAttribute(
-      "href",
-      "/dialog-3d-demo?scenario=kardiyoloji-stemi-001",
-    );
-  });
 });
 
 test.describe("Geçmiş ve editör sayfaları smoke", () => {

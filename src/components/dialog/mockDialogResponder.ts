@@ -237,7 +237,7 @@ export function getStudentPrompts(stage: CalgaryStage, turnCount: number): strin
     ];
   }
   if (stage === "physical_exam") {
-    return ["3D modelden muayene noktalarına tıklayın."];
+    return ["Muayene seçeneklerini senaryo akışı panelinden tetikleyin."];
   }
   return [];
 }

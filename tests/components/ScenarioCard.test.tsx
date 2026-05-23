@@ -23,19 +23,11 @@ describe("ScenarioCard", () => {
 
   test("doğru oyna URL'i içerir", () => {
     renderInRouter(<ScenarioCard scenario={stemi} />);
-    // Kart 2 link içerir: ana /oyna ve sağ üst /dialog-3d-demo
+    // 24 May 2026: 3D Hasta linki kaldırıldı (Unity geçişi). Kart sadece ana /oyna linki içerir.
     const oynaLink = screen.getByRole("link", {
       name: /klasik modda aç/i,
     });
     expect(oynaLink.getAttribute("href")).toBe("/oyna/kardiyoloji-stemi-001");
-  });
-
-  test("3D Hasta linki /dialog-3d-demo?scenario=... olarak görünür", () => {
-    renderInRouter(<ScenarioCard scenario={stemi} />);
-    const link3d = screen.getByRole("link", { name: /3D hasta modu/i });
-    expect(link3d.getAttribute("href")).toBe(
-      "/dialog-3d-demo?scenario=kardiyoloji-stemi-001",
-    );
   });
 
   test("zorluk seviyesi aria-label'da", () => {

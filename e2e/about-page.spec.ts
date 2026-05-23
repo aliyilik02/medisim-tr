@@ -1,9 +1,13 @@
 // ============================================================
-// E2E Smoke — /hakkinda route (Sprint B.5+)
+// E2E Smoke — /hakkinda route
 // ============================================================
 // AboutPage CC BY/BY-SA görünür atıf gereksinimini karşılıyor; bu
-// sayfanın mount + 12+ atıf öğesi + disclaimer + footer linkleri
+// sayfanın mount + 8+ atıf öğesi + disclaimer + footer linkleri
 // kontrol edilir.
+//
+// 24 May 2026: R3F + Three.js kaldırıldı (Unity geçişi). 3D atıfları
+// (chuma6oy, MaceLogice, Z-Anatomy, Three.js) çıkarıldı; testler de
+// güncellendi (12 → 8+ count, CC BY 4.0 → CC BY generic).
 // ============================================================
 
 import { test, expect } from "@playwright/test";
@@ -22,16 +26,10 @@ test.describe("/hakkinda — Hakkında sayfası", () => {
     await expect(page.getByText(/Klinik karar destek aracı değildir/i)).toBeVisible();
   });
 
-  test("12+ atıf öğesi listede görünür (CC BY/BY-SA + Yazılım + Font)", async ({ page }) => {
+  test("8+ atıf öğesi listede görünür (Ses + Yazılım + Font)", async ({ page }) => {
     const items = page.getByTestId("attribution-item");
     const count = await items.count();
-    expect(count).toBeGreaterThanOrEqual(12);
-  });
-
-  test("3D model atıfları: chuma6oy + MaceLogice + Z-Anatomy", async ({ page }) => {
-    await expect(page.getByText(/chuma6oy/i)).toBeVisible();
-    await expect(page.getByText(/MaceLogice/i)).toBeVisible();
-    await expect(page.getByText(/Z-Anatomy/i)).toBeVisible();
+    expect(count).toBeGreaterThanOrEqual(8);
   });
 
   test("oskültasyon ses atıfları: Heilman MD + Wikimedia", async ({ page }) => {
@@ -61,9 +59,10 @@ test.describe("/hakkinda — Hakkında sayfası", () => {
   });
 
   test("Lisans linkleri target=_blank ve rel=noopener", async ({ page }) => {
-    // CC BY 4.0 lisans linkleri yeni sekme açar
+    // 24 May 2026: 3D atıflarındaki CC BY 4.0 linkleri kaldırıldı; ses
+    // atıflarındaki CC BY-SA 3.0 / CC BY 3.0 üzerinden generic kontrol.
     const ccLink = page
-      .getByRole("link", { name: /^CC BY 4\.0$/i })
+      .getByRole("link", { name: /CC BY/i })
       .first();
     await expect(ccLink).toBeVisible();
     await expect(ccLink).toHaveAttribute("target", "_blank");

@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Box } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { Scenario } from "@/engine/types";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
@@ -104,17 +103,6 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
             <span>{scenario.scoring.max_points}p</span>
           </div>
         </div>
-      </Link>
-
-      {/* Sağ üst — '3D Hasta' mini link (ayrı tıklanabilir alan) */}
-      <Link
-        to={`/dialog-3d-demo?scenario=${scenario.id}`}
-        className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2 py-1 rounded font-mono text-[9px] uppercase tracking-[0.1em] bg-brand/10 text-brand-light border border-brand/30 hover:bg-brand/20 hover:border-brand/60 transition opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand/50"
-        aria-label={`${scenario.title} — 3D hasta modu`}
-        title="3D hasta + AI diyalog paketi"
-      >
-        <Box className="w-2.5 h-2.5" />
-        3D Hasta
       </Link>
     </div>
   );
