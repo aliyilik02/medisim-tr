@@ -105,8 +105,12 @@ function SideWallLeft() {
 function Bed() {
   const LEN = 1.9;
   const WID = 0.85;
+  // Hasta wrapper Y=0.05, T-pose Z bbox [-0.222, 0.096] → -90°X rotation
+  // sonra hasta arka (sırt) world Y ≈ 0.05 - 0.096 = -0.046.
+  // Şilte üst yüzeyi (Y=0.10 internal) world Y'sinin -0.046 olması için
+  // Bed group position Y = -0.146.
   return (
-    <group position={[0, -0.27, 0]}>
+    <group position={[0, -0.146, 0]}>
       {/* Yatak çerçevesi — yuvarlatılmış metal */}
       <RoundedBox args={[LEN, 0.08, WID]} radius={0.02} smoothness={4} position={[0, -0.04, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#1f2125" roughness={0.5} metalness={0.7} />

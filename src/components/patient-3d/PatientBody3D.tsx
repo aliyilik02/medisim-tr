@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, Environment } from "@react-three/drei";
 import {
   ACESFilmicToneMapping,
+  Box3,
   PCFSoftShadowMap,
   PerspectiveCamera,
   Plane,
@@ -171,6 +172,55 @@ function LoadingFallback() {
   );
 }
 
+// Sahne dump için window'a scene + objeleri yansıtır (browser eval ile bbox/pos
+// inspect için). useThree Canvas çocuk component'inde kullanılmalı.
+function DebugExposer() {
+  const { scene } = useThree();
+  useEffect(() => {
+    const w = window as unknown as {
+      __r3fScene: typeof scene;
+      __r3fDump: () => Record<string, unknown>;
+    };
+    w.__r3fScene = scene;
+    w.__r3fDump = () => {
+      const result: Record<string, unknown> = {};
+      const named = ["HospitalRoom"];
+      for (const name of named) {
+        let found: import("three").Object3D | null = null;
+        scene.traverse((o) => {
+          if (o.name === name) found = o;
+        });
+        if (found) {
+          const obj = found as import("three").Object3D;
+          const bbox = new Box3().setFromObject(obj);
+          result[name] = {
+            pos: [obj.position.x.toFixed(2), obj.position.y.toFixed(2), obj.position.z.toFixed(2)],
+            min: [bbox.min.x.toFixed(2), bbox.min.y.toFixed(2), bbox.min.z.toFixed(2)],
+            max: [bbox.max.x.toFixed(2), bbox.max.y.toFixed(2), bbox.max.z.toFixed(2)],
+          };
+        }
+      }
+      // Tüm root child'lar
+      const roots: Array<Record<string, unknown>> = [];
+      for (const child of scene.children) {
+        try {
+          const bbox = new Box3().setFromObject(child);
+          if (bbox.isEmpty()) continue;
+          roots.push({
+            type: child.type,
+            name: child.name || "(unnamed)",
+            min: [bbox.min.x.toFixed(2), bbox.min.y.toFixed(2), bbox.min.z.toFixed(2)],
+            max: [bbox.max.x.toFixed(2), bbox.max.y.toFixed(2), bbox.max.z.toFixed(2)],
+          });
+        } catch {/* skip */}
+      }
+      result.roots = roots;
+      return result;
+    };
+  }, [scene]);
+  return null;
+}
+
 // Prosedür tamamlandıktan sonra overlay sahnede kaç ms daha kalsın
 // (kullanıcı sonucu görsün, ses cue çalsın). Sonra unmount.
 const PROCEDURE_REST_MS = 800;
@@ -295,12 +345,16 @@ function PatientBody3DImpl({
         <directionalLight position={[-2, 1, 1]} intensity={0.25} color="#bcd4e6" />
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
+        <DebugExposer />
         <Suspense fallback={<LoadingFallback />}>
-          {/* Hastane odası — R3F primitif (box/silindir/plane) deterministic
-              klinik oda. 4m × 4m × 2.7m, yatak ortada hasta üstünde supine.
-              Klinik standart: headwall, IV pole, vital monitör, over-bed table,
-              bedside cabinet, visitor chair, sofa, storage cabinet, tavan ışığı. */}
-          <HospitalRoom visible={true} />
+          {/* Hastane odası — R3F primitif deterministic klinik oda.
+              Y rotation +90°: hasta wrapper rotation [-π/2, 0, 0] T-pose boy
+              ekseni Y'yi world -Z'ye taşır (kafa -Z, ayak +Z). Oda mesh
+              eksenleri (yatak LEN=X ekseni) +90° Y rotation ile -Z eksenine
+              hizalanır → yatak boyu hasta boyu aynı yönde. */}
+          <group rotation={[0, Math.PI / 2, 0]}>
+            <HospitalRoom visible={true} />
+          </group>
 
           {/* Hasta + markerlar yatay pozisyona rotate edilir — model T-pose'da
               ayakta üretildi, supine için -90° X (kafa +X yönüne yatar). */}
