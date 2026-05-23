@@ -19,6 +19,7 @@ import { PatientVitalSigns } from "./PatientVitalSigns";
 import { MedicationBolus } from "./MedicationBolus";
 import { PatientFaceExpression } from "./PatientFaceExpression";
 import { PatientBleed, type BleedingSite } from "./PatientBleed";
+import { PatientRash, type RashSite } from "./PatientRash";
 import type { PatientVitals } from "@/engine/types";
 import type { PatientProfile } from "@/clinical/patient-profile";
 import { RegionMarker } from "./RegionMarker";
@@ -59,6 +60,8 @@ interface Props {
   profile?: PatientProfile;
   /** B.10 — Aktif kanama bölgeleri (TCCC, travma, cerrahi senaryolar). */
   bleedingSites?: BleedingSite[];
+  /** B.10++ — Deri lezyonu / döküntü (sepsis peteşi, anaflaksi ürtiker, vs.) */
+  rashSites?: RashSite[];
   /** B.5+ — Kamera açı preset (anterior/posterior/right/left/superior/inferior). */
   cameraView?: CameraView;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
@@ -255,6 +258,7 @@ function PatientBody3DImpl({
   lastMedicationDrugId,
   profile,
   bleedingSites,
+  rashSites,
   cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
@@ -421,6 +425,9 @@ function PatientBody3DImpl({
                 + venöz statik + kapiller hafif. Turnike/gauze action ile severity
                 azalır (applyHemostasis helper PatientDialog3DPage'de). */}
             {bleedingSites && <PatientBleed sites={bleedingSites} />}
+            {/* B.10++ — Deri lezyonu/döküntü (sepsis peteşi, anaflaksi ürtiker,
+                viral ekzantem, vaskülit purpura, varicella vezikül, travma morarma). */}
+            {rashSites && <PatientRash sites={rashSites} />}
           {/* Organlar şimdilik gizli — ileri faz'da ayrı "Anatomi" sayfasına
               taşınacak (öğretici mod). Hasta simülasyon akışında yüzey
               gözlemine odaklanılır (Body Interact yaklaşımı). Kod, asset ve

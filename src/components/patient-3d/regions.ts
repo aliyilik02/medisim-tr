@@ -297,4 +297,58 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
       "Sol a. tibialis posterior nabzı. Periferik nabızlar (radial+pedis+tibial) hep beraber kontrol edilir — şok evrelemesi.",
     side: "lateral",
   },
+
+  // ─── DTR Refleks Noktaları (Sprint B.10+) ──────────────────────
+  // Derin tendon refleksleri — santral/periferik sinir sistemi
+  // değerlendirmesi. NIH Stroke Scale, motor muayene, nörolojik
+  // konsültasyon. Skorlama: 0 (yok) → 1+ (azalmış) → 2+ (normal) → 3+
+  // (hiperaktif) → 4+ (klonus).
+  {
+    id: "reflex-biceps-right",
+    label: "Sağ Biceps Refleksi (C5-C6)",
+    position: [0.220, 0.480, 0.080],
+    placeholderNote:
+      "Sağ m. biceps brachii tendon refleksi (C5-C6 myotom). Refleks çekici ile dirsek fleksiyon yanıtı. Servikal radikülopati, periferik sinir hasarı.",
+    side: "anterior",
+  },
+  {
+    id: "reflex-biceps-left",
+    label: "Sol Biceps Refleksi (C5-C6)",
+    position: [-0.220, 0.480, 0.080],
+    placeholderNote:
+      "Sol m. biceps brachii tendon refleksi. Sağ-sol simetri değerlendirmesi — asimetri lokalize lezyon işareti.",
+    side: "anterior",
+  },
+  {
+    id: "reflex-patellar-right",
+    label: "Sağ Patellar Refleks (L3-L4)",
+    position: [0.060, 0.150, 0.100],
+    placeholderNote:
+      "Sağ patellar tendon refleksi (L3-L4 myotom). Diz altı, patella tendonu üstünde. Femoral sinir bütünlüğü, L3-L4 radikülopati.",
+    side: "anterior",
+  },
+  {
+    id: "reflex-patellar-left",
+    label: "Sol Patellar Refleks (L3-L4)",
+    position: [-0.060, 0.150, 0.100],
+    placeholderNote:
+      "Sol patellar tendon refleksi. Çift taraflı hiperrefleksi → üst motor nöron lezyonu, hiporefleksi → alt motor nöron / periferik nöropati.",
+    side: "anterior",
+  },
+  {
+    id: "reflex-achilles-right",
+    label: "Sağ Aşil Refleksi (S1-S2)",
+    position: [0.050, -0.205, -0.060],
+    placeholderNote:
+      "Sağ aşil tendon refleksi (S1-S2 myotom). Calcaneal tendon, topuk arkası. Lumbosakral radikülopati, alkolik nöropati değerlendirmesi.",
+    side: "posterior",
+  },
+  {
+    id: "reflex-achilles-left",
+    label: "Sol Aşil Refleksi (S1-S2)",
+    position: [-0.050, -0.205, -0.060],
+    placeholderNote:
+      "Sol aşil refleksi. Yaşlılarda yokluk normal; çift taraflı yokluk + ataksi → vitamin B12 eksikliği veya tabes dorsalis düşünülmeli.",
+    side: "posterior",
+  },
 ];

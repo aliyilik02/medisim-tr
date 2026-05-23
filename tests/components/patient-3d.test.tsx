@@ -98,12 +98,13 @@ describe("InspectionPanel — bilgi kartı", () => {
 });
 
 describe("regions data integrity", () => {
-  test("26 anatomik bölge tanımlı, id'ler unique", () => {
+  test("32 anatomik bölge tanımlı, id'ler unique", () => {
     // 20 baz marker (B.5) + 6 periferik nabız (B.7+): radial ×2,
-    // dorsalis pedis ×2, posterior tibial ×2
-    expect(DEFAULT_REGIONS).toHaveLength(26);
+    // dorsalis pedis ×2, posterior tibial ×2 + 6 DTR refleks (B.10+):
+    // biceps ×2, patellar ×2, achilles ×2
+    expect(DEFAULT_REGIONS).toHaveLength(32);
     const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
-    expect(ids.size).toBe(26);
+    expect(ids.size).toBe(32);
   });
 
   test("yeni periferik nabız marker'ları (B.7+) tanımlı", () => {
@@ -114,6 +115,16 @@ describe("regions data integrity", () => {
     expect(ids.has("dorsalis-pedis-left")).toBe(true);
     expect(ids.has("posterior-tibial-right")).toBe(true);
     expect(ids.has("posterior-tibial-left")).toBe(true);
+  });
+
+  test("DTR refleks marker'ları (B.10+) tanımlı", () => {
+    const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
+    expect(ids.has("reflex-biceps-right")).toBe(true);
+    expect(ids.has("reflex-biceps-left")).toBe(true);
+    expect(ids.has("reflex-patellar-right")).toBe(true);
+    expect(ids.has("reflex-patellar-left")).toBe(true);
+    expect(ids.has("reflex-achilles-right")).toBe(true);
+    expect(ids.has("reflex-achilles-left")).toBe(true);
   });
 
   test("her bölgenin label, position, placeholderNote, side alanları var", () => {

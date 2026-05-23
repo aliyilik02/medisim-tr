@@ -5,6 +5,7 @@ import { PatientBody3D, type CameraView } from "@/components/patient-3d/PatientB
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import type { EquipmentState } from "@/components/patient-3d/PatientEquipment";
 import { applyHemostasis, type BleedingSite } from "@/components/patient-3d/PatientBleed";
+import { deriveAcuteRash } from "@/components/patient-3d/PatientRash";
 import { deriveProfile } from "@/clinical/patient-profile";
 
 // B.10 — Senaryo bazlı initial bleeding sites mapping.
@@ -205,6 +206,17 @@ export function PatientDialog3DPage() {
   const organVitalsMemo = useMemo(
     () => ({ hr: liveVitals.hr, rr: liveVitals.rr }),
     [liveVitals.hr, liveVitals.rr],
+  );
+
+  // B.10++ — Senaryo + vital'a göre döküntü (anaflaksi ürtiker, sepsis peteşi)
+  const rashSites = useMemo(
+    () => deriveAcuteRash(scenario.id, {
+      hr: liveVitals.hr,
+      bp_systolic: liveVitals.bp_systolic,
+      spo2: liveVitals.spo2,
+      temp: liveVitals.temp,
+    }),
+    [scenario.id, liveVitals.hr, liveVitals.bp_systolic, liveVitals.spo2, liveVitals.temp],
   );
 
   // Vital history — session.vitals değiştikçe sparkline için append (max 60 entry)
@@ -591,6 +603,7 @@ export function PatientDialog3DPage() {
             lastMedicationDrugId={lastMedication?.drugId ?? null}
             profile={patientProfile}
             bleedingSites={bleedingSites}
+            rashSites={rashSites}
             cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />
