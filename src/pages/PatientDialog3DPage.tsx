@@ -256,6 +256,19 @@ export function PatientDialog3DPage() {
       if (/spo2|oksimet|pulse[_-]?ox/.test(id)) {
         return { ...prev, pulseOximeter: true };
       }
+      // B.8+ ek ekipmanlar:
+      if (/defib|aed|kardiyoversiyon|\bşok\b|elektroşok|paddle|pad/.test(id)) {
+        return { ...prev, defibPads: true };
+      }
+      if (/end[_-]?(o)?trakeal|ett|entüb|entubasy|airway/.test(id)) {
+        return { ...prev, endotrachealTube: true };
+      }
+      if (/nazogast|ng[_-]?(tube|sond)/.test(id)) {
+        return { ...prev, nasogastricTube: true };
+      }
+      if (/foley|üriner[_-]?kateter|urinary[_-]?cath|idrar[_-]?sond/.test(id)) {
+        return { ...prev, urinaryCatheter: true };
+      }
       return prev;
     });
   }, []);

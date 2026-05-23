@@ -36,6 +36,14 @@ export interface EquipmentState {
   pulseOximeter?: boolean;
   /** Sargı/pansuman — generic, lokal pozisyon */
   bandage?: { position: [number, number, number]; radius?: number };
+  /** Defibrilatör pad'leri — RUL anterior + LLL apex (paddle-free standart). */
+  defibPads?: boolean;
+  /** Endotrakeal tüp — entübasyon sonrası ağızdan çıkan tüp. */
+  endotrachealTube?: boolean;
+  /** Nazogastrik sonda — burundan mideye, gastrik dekompresyon. */
+  nasogastricTube?: boolean;
+  /** Üriner kateter (Foley) — saatlik idrar takibi için. */
+  urinaryCatheter?: boolean;
 }
 
 // =============== O2 Maskesi (yüz) =================
@@ -244,6 +252,129 @@ function Bandage({ position, radius = 0.04 }: { position: [number, number, numbe
   );
 }
 
+// =============== Defibrilatör Pad'leri (göğüs) =================
+// AHA standart: RUL (sağ üst sternal kenar) + LLL (sol mid-axiller apex).
+// Hands-free monitör-defibrilatör pad'leri (TZP/Zoll patch).
+function DefibPads() {
+  return (
+    <group>
+      {/* RUL pad — sağ üst, 2. interkostal sternum sağ kenar */}
+      <group position={[0.075, 0.605, 0.108]}>
+        {/* Yapışkan pad */}
+        <mesh>
+          <boxGeometry args={[0.07, 0.07, 0.003]} />
+          <meshStandardMaterial color="#f8e8d8" roughness={0.65} />
+        </mesh>
+        {/* Snap konnektör + kablo */}
+        <mesh position={[0, 0, 0.005]}>
+          <cylinderGeometry args={[0.008, 0.008, 0.005, 12]} />
+          <meshStandardMaterial color="#dadce0" roughness={0.3} metalness={0.5} />
+        </mesh>
+        {/* Beyaz tel — defib monitöre */}
+        <mesh position={[0.04, 0.02, 0.01]} rotation={[Math.PI / 4, 0, Math.PI / 3]}>
+          <cylinderGeometry args={[0.0015, 0.0015, 0.10, 6]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.5} />
+        </mesh>
+      </group>
+      {/* LLL pad — sol mid-axiller, 5. interkostal apex */}
+      <group position={[-0.110, 0.495, 0.085]}>
+        <mesh>
+          <boxGeometry args={[0.07, 0.07, 0.003]} />
+          <meshStandardMaterial color="#f8e8d8" roughness={0.65} />
+        </mesh>
+        <mesh position={[0, 0, 0.005]}>
+          <cylinderGeometry args={[0.008, 0.008, 0.005, 12]} />
+          <meshStandardMaterial color="#dadce0" roughness={0.3} metalness={0.5} />
+        </mesh>
+        {/* Kırmızı tel */}
+        <mesh position={[-0.04, 0.02, 0.01]} rotation={[Math.PI / 4, 0, -Math.PI / 3]}>
+          <cylinderGeometry args={[0.0015, 0.0015, 0.10, 6]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.5} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+// =============== Endotrakeal Tüp (entübasyon) =================
+// Ağızdan trakeaya. Görsel: ağızdan dışarı taşan tüp + ETT tutucu plaster +
+// balon (cuff). Klinik: 7.5mm ID erişkin kadın, 8.0mm ID erkek.
+function EndotrachealTube() {
+  return (
+    <group position={[0, 0.658, 0.110]}>
+      {/* Ağızdan çıkan ana tüp */}
+      <mesh position={[0, -0.008, 0.012]} rotation={[Math.PI / 6, 0, 0]}>
+        <cylinderGeometry args={[0.005, 0.005, 0.06, 12]} />
+        <meshStandardMaterial color="#e0e0e0" transparent opacity={0.7} roughness={0.3} />
+      </mesh>
+      {/* Tutucu plaster — ağzın üst+alt dudağına yapışkan */}
+      <mesh position={[0, 0, 0.001]}>
+        <boxGeometry args={[0.05, 0.025, 0.001]} />
+        <meshStandardMaterial color="#f0e8d0" roughness={0.8} />
+      </mesh>
+      {/* Pilot balon (cuff göstergesi) — küçük top */}
+      <mesh position={[0.015, -0.030, 0.020]}>
+        <sphereGeometry args={[0.005, 10, 10]} />
+        <meshStandardMaterial color="#d8e8f0" roughness={0.4} />
+      </mesh>
+      {/* Ventilator konnektörü (ETT'nin dış ucu) */}
+      <mesh position={[0, -0.038, 0.038]} rotation={[Math.PI / 6, 0, 0]}>
+        <cylinderGeometry args={[0.008, 0.008, 0.015, 10]} />
+        <meshStandardMaterial color="#3a5460" roughness={0.4} metalness={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
+// =============== Nazogastrik Sonda (burundan mideye) =================
+// Beslenme + gastrik dekompresyon. Görsel: burundan dışarı 5cm sarı tüp.
+function NasogastricTube() {
+  return (
+    <group position={[0.010, 0.672, 0.105]}>
+      {/* Burundan dışarı çıkan kısım — sağ nostril */}
+      <mesh position={[0, -0.005, 0.020]} rotation={[Math.PI / 3, 0, 0]}>
+        <cylinderGeometry args={[0.0025, 0.0025, 0.05, 8]} />
+        <meshStandardMaterial color="#e8c878" transparent opacity={0.6} roughness={0.4} />
+      </mesh>
+      {/* Yapışkan plaster — buruna yapışık */}
+      <mesh position={[0, 0, 0.003]}>
+        <boxGeometry args={[0.012, 0.012, 0.001]} />
+        <meshStandardMaterial color="#f0e8d0" roughness={0.8} />
+      </mesh>
+      {/* Drenaj torbası konnektörü */}
+      <mesh position={[0.005, -0.025, 0.038]} rotation={[Math.PI / 3, 0, 0]}>
+        <cylinderGeometry args={[0.005, 0.005, 0.012, 10]} />
+        <meshStandardMaterial color="#9aa0a6" roughness={0.4} />
+      </mesh>
+    </group>
+  );
+}
+
+// =============== Üriner Kateter (Foley) =================
+// Pelvis/perineden çıkan tüp + drenaj torbası proxy. T-pose pelvis
+// alt bölgesi (Y ≈ 0.18-0.22). Görsel: alt karın altından sarı tüp.
+function UrinaryCatheter() {
+  return (
+    <group position={[0, 0.180, 0.075]}>
+      {/* Tüp — pelvisten dışarı, hafif aşağı sarkma */}
+      <mesh position={[0.02, -0.020, 0.025]} rotation={[Math.PI / 2.5, 0, 0]}>
+        <cylinderGeometry args={[0.003, 0.003, 0.12, 8]} />
+        <meshStandardMaterial color="#e8c878" transparent opacity={0.6} roughness={0.4} />
+      </mesh>
+      {/* Drenaj torbası proxy — sarı opaque küçük kese */}
+      <mesh position={[0.06, -0.090, 0.060]}>
+        <boxGeometry args={[0.05, 0.07, 0.025]} />
+        <meshStandardMaterial color="#d8b850" transparent opacity={0.55} roughness={0.5} />
+      </mesh>
+      {/* Konnektör */}
+      <mesh position={[0.03, -0.050, 0.045]} rotation={[Math.PI / 2.5, 0, 0]}>
+        <cylinderGeometry args={[0.004, 0.004, 0.015, 8]} />
+        <meshStandardMaterial color="#9aa0a6" roughness={0.4} />
+      </mesh>
+    </group>
+  );
+}
+
 interface Props {
   state: EquipmentState;
 }
@@ -258,6 +389,10 @@ function PatientEquipmentImpl({ state }: Props) {
       {state.bpCuff && <BpCuff />}
       {state.pulseOximeter && <PulseOximeter />}
       {state.bandage && <Bandage position={state.bandage.position} radius={state.bandage.radius} />}
+      {state.defibPads && <DefibPads />}
+      {state.endotrachealTube && <EndotrachealTube />}
+      {state.nasogastricTube && <NasogastricTube />}
+      {state.urinaryCatheter && <UrinaryCatheter />}
     </group>
   );
 }
