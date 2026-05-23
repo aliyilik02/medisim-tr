@@ -17,6 +17,7 @@ import { IndividualOrgans, type OrganOverrideMap } from "./IndividualOrgans";
 import { PatientEquipment, type EquipmentState } from "./PatientEquipment";
 import { PatientVitalSigns } from "./PatientVitalSigns";
 import { MedicationBolus } from "./MedicationBolus";
+import { PatientFaceExpression } from "./PatientFaceExpression";
 import type { PatientVitals } from "@/engine/types";
 import type { PatientProfile } from "@/clinical/patient-profile";
 import { RegionMarker } from "./RegionMarker";
@@ -388,6 +389,9 @@ function PatientBody3DImpl({
             {/* B.6.1 — Vital bulgular (pupilla, göz kapağı, terleme, JVD).
                 vitals değişiminde otomatik güncellenir. */}
             {vitals && <PatientVitalSigns vitals={vitals} />}
+            {/* B.8 — Yüz mimikleri (ağız lipsync + kaş çatma + yanak kızarma).
+                speaking + vitals.pain + vitals.gcs + vitals.temp'e göre dinamik. */}
+            <PatientFaceExpression vitals={vitals} speaking={speaking} />
             {/* B.6.2 — İlaç verme görsel cue (IV kateter konumunda 2sn pulse).
                 drugId'ye göre renk: kırmızı vazopresör, mor opioid, mavi metabolik. */}
             <MedicationBolus triggerTs={lastMedicationTs} drugId={lastMedicationDrugId} />
