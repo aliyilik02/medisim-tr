@@ -80,7 +80,9 @@ jobs:
         run: npm run test:e2e
         env:
           CI: 'true'
-        timeout-minutes: 10
+        # 36 test, 1 worker, retries=1 → 8-12 dk. 20 dk timeout buffer
+        # + 3D sahne mount süresi (drei post-FX init) için yeterli.
+        timeout-minutes: 20
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

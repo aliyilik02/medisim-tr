@@ -28,7 +28,9 @@ export default defineConfig({
   ],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // CI retries=1: flaky test'lerin 2x denenmesi 30sn timeout × 3 = 90sn ek
+  // süre demek. 1 retry yeterli + total suite ~6-8dk'ya iner.
+  retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : "list",
   // Sprint B.4 vision-test — toHaveScreenshot global ayarlar
