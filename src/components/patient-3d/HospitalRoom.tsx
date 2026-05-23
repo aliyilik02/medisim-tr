@@ -77,16 +77,24 @@ function HospitalRoomImpl({
 
       // Position: override > base.position > origin
       const position = ov.position ?? base?.position;
+      const rotation = ov.rotation ?? base?.rotation;
       const scale = ov.scale ?? base?.scale ?? 1;
 
       if (position) {
-        // Re-parent to scene root + reset rotation to bypass parent transform
+        // Re-parent to scene root + reset transform to bypass parent matrix
         if (obj.parent && obj.parent !== scene) {
           scene.attach(obj);
         }
-        obj.rotation.set(0, 0, 0);
+        // Rotation ÖNCE — bbox setFromObject world matrix'i çevirilmiş geometri
+        // üzerinden hesaplar, böylece döndürülmüş mesh'in gerçek bbox center'ı
+        // hedef pozisyona oturur.
+        obj.rotation.set(
+          rotation?.[0] ?? 0,
+          rotation?.[1] ?? 0,
+          rotation?.[2] ?? 0,
+        );
         obj.scale.setScalar(scale);
-        // Bbox center → origin, sonra hedef position'a ekle
+        obj.updateMatrixWorld(true);
         const bbox = new Box3().setFromObject(obj);
         const center = new Vector3();
         bbox.getCenter(center);

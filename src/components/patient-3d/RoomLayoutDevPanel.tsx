@@ -25,6 +25,11 @@ const POS_RANGE: [number, number] = [-3.5, 3.5];
 const POS_STEP = 0.05;
 const SCALE_RANGE: [number, number] = [0.05, 3.0];
 const SCALE_STEP = 0.05;
+// Rotation slider: derece UI (-180..180), radyan store
+const ROT_DEG_RANGE: [number, number] = [-180, 180];
+const ROT_DEG_STEP = 1;
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
 
 // Tüm mesh isimleri: layout dict + hidden set
 const ALL_MESH_NAMES = [
@@ -38,6 +43,7 @@ function effective(name: string, overrides: RoomLayoutOverrideMap) {
   const isHidden = HIDDEN_MESH.has(name);
   return {
     position: ov.position ?? base?.position ?? [0, 0, 0],
+    rotation: ov.rotation ?? base?.rotation ?? [0, 0, 0],
     scale: ov.scale ?? base?.scale ?? 1,
     visible: ov.visible ?? !isHidden,
   };
@@ -77,12 +83,18 @@ export function RoomLayoutDevPanel({
   );
 
   const [x, y, z] = current.position;
+  const [rx, ry, rz] = current.rotation;
   const isOverridden = selectedName in overrides;
 
   const updatePos = (axis: 0 | 1 | 2, val: number) => {
     const next: [number, number, number] = [...current.position];
     next[axis] = val;
     onUpdate(selectedName, { position: next });
+  };
+  const updateRotDeg = (axis: 0 | 1 | 2, deg: number) => {
+    const next: [number, number, number] = [...current.rotation];
+    next[axis] = deg * DEG2RAD;
+    onUpdate(selectedName, { rotation: next });
   };
   const updateScale = (val: number) => onUpdate(selectedName, { scale: val });
   const toggleVisible = () => onUpdate(selectedName, { visible: !current.visible });
@@ -212,6 +224,42 @@ export function RoomLayoutDevPanel({
         })}
       </div>
 
+      {/* Rotation X / Y / Z — derece UI, radyan store */}
+      <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-500 mb-1">
+        Rotation (°)
+      </div>
+      <div className="flex flex-col gap-2 mb-3">
+        {(["X", "Y", "Z"] as const).map((axis, idx) => {
+          const rad = [rx, ry, rz][idx];
+          const deg = rad * RAD2DEG;
+          return (
+            <div key={`rot-${axis}`}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-ink-400">{axis}</span>
+                <input
+                  type="number"
+                  value={Number(deg.toFixed(0))}
+                  min={ROT_DEG_RANGE[0]}
+                  max={ROT_DEG_RANGE[1]}
+                  step={ROT_DEG_STEP}
+                  onChange={(e) => updateRotDeg(idx as 0 | 1 | 2, parseFloat(e.target.value) || 0)}
+                  className="w-20 bg-ink-800 border border-ink-700 rounded px-1 py-0.5 font-mono text-[10px] tabular-nums text-ink-100 text-right focus:border-clinical-info/50 focus:outline-none"
+                />
+              </div>
+              <input
+                type="range"
+                min={ROT_DEG_RANGE[0]}
+                max={ROT_DEG_RANGE[1]}
+                step={ROT_DEG_STEP}
+                value={deg}
+                onChange={(e) => updateRotDeg(idx as 0 | 1 | 2, parseFloat(e.target.value))}
+                className="w-full accent-clinical-info cursor-pointer"
+              />
+            </div>
+          );
+        })}
+      </div>
+
       <div className="flex items-center gap-2 mb-2">
         <button
           type="button"
@@ -236,7 +284,7 @@ export function RoomLayoutDevPanel({
         Alt+R aç/kapat · değişiklikler localStorage'a anında kaydedilir
       </div>
       <div className="font-mono text-[8px] text-ink-600 mt-1">
-        Pozisyon: {fmt(x)}, {fmt(y)}, {fmt(z)} · Scale: {fmt(current.scale)}
+        Pos: {fmt(x)}, {fmt(y)}, {fmt(z)} · Rot°: {fmt(rx * RAD2DEG, 0)}, {fmt(ry * RAD2DEG, 0)}, {fmt(rz * RAD2DEG, 0)} · Scale: {fmt(current.scale)}
       </div>
     </div>
   );

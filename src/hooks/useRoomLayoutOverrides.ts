@@ -12,6 +12,8 @@ const STORAGE_KEY = "medisim.room_layout_overrides_v1";
 
 export interface RoomMeshOverride {
   position?: [number, number, number];
+  /** Euler XYZ radyan. Dev panelde derece olarak gösterilir, radyan saklanır. */
+  rotation?: [number, number, number];
   scale?: number;
   visible?: boolean;
 }
