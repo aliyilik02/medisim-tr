@@ -18,9 +18,12 @@ export default defineConfig({
   // çıkar + spec selector'larını yeni UI'a güncelle.
   testIgnore: [
     "**/dialog-3d-vision.spec.ts",
-    // patient-profile-badge: ilk test (initial badge) lokal pass, diğer 3
-    // (Bronşiyolit/Preeklampsi/İnme dropdown geçişi) dropdown query
-    // timing flaky. Kullanıcı eve geçip görsel doğruladıktan sonra refactor.
+    // patient-profile-badge: initial badge testi lokal pass, 3 dropdown
+    // geçişi testi `selectOption {label: regex}` ile bile flaky. Playwright
+    // CDP locator headless'ta combobox seçimi tutarsız. Refactor TODO:
+    // (1) doğrudan keyboard click + arrow keys, veya (2) data-testid'li
+    // option-button'lar (DOM rerouting), veya (3) page.evaluate ile
+    // setScenarioId(id) doğrudan çağrı.
     "**/patient-profile-badge.spec.ts",
   ],
   fullyParallel: true,

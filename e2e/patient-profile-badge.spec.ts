@@ -32,48 +32,34 @@ test.describe("patient profile badge — header chip", () => {
     const badge = page.getByTestId("patient-profile-badge");
     const initialText = await badge.textContent();
 
-    // Senaryo dropdown'dan Bronşiyolit seç (id: pediatri-bronsiyolit-001)
-    const bronsiyolitValue = await page
-      .locator("select option")
-      .filter({ hasText: /bronşiyolit/i })
-      .first()
-      .getAttribute("value");
-    if (bronsiyolitValue) {
-      await page.selectOption("select", bronsiyolitValue);
-      await page.waitForTimeout(500);
+    // selectOption {label} regex eşleştirme — value attribute query'sinden
+    // daha stabil (race condition'dan etkilenmez)
+    const dropdown = page.locator("header select").first();
+    // Bronşiyolit senaryo title: "8 Aylık Erkek Bebek — Hışıltı ve Solunum Sıkıntısı"
+    await dropdown.selectOption({ label: /Aylık.*Bebek/i });
+    await page.waitForTimeout(800);
 
-      const newText = await badge.textContent();
-      expect(newText).not.toBe(initialText);
-      await expect(badge).toContainText(/Bebek/i);
-    }
+    const newText = await badge.textContent();
+    expect(newText).not.toBe(initialText);
+    await expect(badge).toContainText(/Bebek/i);
   });
 
   test("Preeklampsi (32y gebe) senaryosu 'Gebe' etiketi ekler", async ({ page }) => {
     const badge = page.getByTestId("patient-profile-badge");
-    const preeklampsiValue = await page
-      .locator("select option")
-      .filter({ hasText: /preeklampsi/i })
-      .first()
-      .getAttribute("value");
-    if (preeklampsiValue) {
-      await page.selectOption("select", preeklampsiValue);
-      await page.waitForTimeout(500);
-      await expect(badge).toContainText(/Gebe/i);
-      await expect(badge).toContainText(/Kadın/i);
-    }
+    const dropdown = page.locator("header select").first();
+    // Preeklampsi senaryo title: "32 Yaş Kadın — 36 Haftalık Gebe, Baş Ağrısı ve Hipertansiyon"
+    await dropdown.selectOption({ label: /Gebe.*Hipertansiyon|Hipertansiyon.*Gebe/i });
+    await page.waitForTimeout(800);
+    await expect(badge).toContainText(/Gebe/i);
+    await expect(badge).toContainText(/Kadın/i);
   });
 
   test("Yaşlı hasta (iskemik inme 72y) → 'Yaşlı' etiketi", async ({ page }) => {
     const badge = page.getByTestId("patient-profile-badge");
-    const inmeValue = await page
-      .locator("select option")
-      .filter({ hasText: /inme/i })
-      .first()
-      .getAttribute("value");
-    if (inmeValue) {
-      await page.selectOption("select", inmeValue);
-      await page.waitForTimeout(500);
-      await expect(badge).toContainText(/Yaşlı/i);
-    }
+    const dropdown = page.locator("header select").first();
+    // İskemik inme title: "72 Yaş Kadın — Ani Gelişen Sağ Hemipleji"
+    await dropdown.selectOption({ label: /Hemipleji/i });
+    await page.waitForTimeout(800);
+    await expect(badge).toContainText(/Yaşlı/i);
   });
 });
