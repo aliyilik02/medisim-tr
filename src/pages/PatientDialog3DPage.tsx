@@ -6,9 +6,7 @@ import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
-import { RoomLayoutDevPanel } from "@/components/patient-3d/RoomLayoutDevPanel";
 import { useMarkerOverrides } from "@/hooks/useMarkerOverrides";
-import { useRoomLayoutOverrides } from "@/hooks/useRoomLayoutOverrides";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
@@ -129,14 +127,6 @@ export function PatientDialog3DPage() {
     resetMarker,
     resetAll: resetAllMarkers,
   } = useMarkerOverrides(DEFAULT_REGIONS);
-
-  // Hastane odası mesh layout dev panel (Alt+R ile aç) — runtime localStorage
-  const {
-    overrides: roomOverrides,
-    updateMesh: updateRoomMesh,
-    resetMesh: resetRoomMesh,
-    resetAll: resetAllRoom,
-  } = useRoomLayoutOverrides();
 
   useEffect(() => {
     // Senaryo değişince yeni session başlat + action log + debrief + history temizle
@@ -492,7 +482,6 @@ export function PatientDialog3DPage() {
             speaking={speaking}
             skinClipLevel={1.0}
             organVitals={organVitalsMemo}
-            roomOverrides={roomOverrides}
             cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />
@@ -636,16 +625,6 @@ export function PatientDialog3DPage() {
         onUpdate={updateMarker}
         onResetMarker={resetMarker}
         onResetAll={resetAllMarkers}
-      />
-
-      {/* Hastane odası mesh layout — runtime manual yerleştirme.
-          Alt+R veya ?dev=1 ile açılır. Slider hareketleri localStorage'a
-          ANINDA kaydedilir; sayfa yenilense bile pozisyonlar korunur. */}
-      <RoomLayoutDevPanel
-        overrides={roomOverrides}
-        onUpdate={updateRoomMesh}
-        onReset={resetRoomMesh}
-        onResetAll={resetAllRoom}
       />
     </div>
   );

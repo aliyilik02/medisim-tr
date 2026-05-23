@@ -21,7 +21,6 @@ import type { ProcedureContext, ProcedureKind } from "./procedures/types";
 import type { PatientRegion } from "./regions";
 import type { ActionRef } from "@/engine/types";
 import { playAuscultation, stopAuscultation } from "./auscultationAudio";
-import type { RoomLayoutOverrideMap } from "@/hooks/useRoomLayoutOverrides";
 
 interface Props {
   regions: PatientRegion[];
@@ -41,8 +40,6 @@ interface Props {
   organVitals?: { hr: number; rr: number };
   /** B.5+ — IndividualOrgans runtime scale/pozisyon override (OrganDevPanel). */
   organOverrides?: OrganOverrideMap;
-  /** B.5+ — HospitalRoom mesh runtime layout override (RoomLayoutDevPanel). */
-  roomOverrides?: RoomLayoutOverrideMap;
   /** B.5+ — Kamera açı preset (anterior/posterior/right/left/superior/inferior). */
   cameraView?: CameraView;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
@@ -233,9 +230,6 @@ function PatientBody3DImpl({
   skinClipLevel = 1.0,
   organVitals,
   organOverrides,
-  // roomOverrides — primitif sahne kullanılıyor, dict override akışı tutuldu
-  //   ama prop şu an no-op. RoomLayoutDevPanel mesh-by-mesh ayar pattern'i
-  //   ileride parametric primitive sahne için yeniden kullanılabilir.
   cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
