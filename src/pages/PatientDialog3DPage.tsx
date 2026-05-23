@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Waves, Droplet, Wand2 } from "lucide-react";
 import { PatientBody3D, type CameraView } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
+import type { EquipmentState } from "@/components/patient-3d/PatientEquipment";
 import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
@@ -119,6 +120,10 @@ export function PatientDialog3DPage() {
   const [debriefOpen, setDebriefOpen] = useState(false);
   const [vitalsHistory, setVitalsHistory] = useState<VitalHistoryEntry[]>([]);
 
+  // B.6 — Ekipman giydirme durumu (prosedür tamamlandıkça kalıcı görünür).
+  // Senaryo değişiminde sıfırlanır.
+  const [equipmentState, setEquipmentState] = useState<EquipmentState>({});
+
   // Marker dev panel (URL ?dev=1 veya Alt+D ile aç) — localStorage override
   const {
     regions: effectiveRegions,
@@ -129,11 +134,12 @@ export function PatientDialog3DPage() {
   } = useMarkerOverrides(DEFAULT_REGIONS);
 
   useEffect(() => {
-    // Senaryo değişince yeni session başlat + action log + debrief + history temizle
+    // Senaryo değişince yeni session başlat + action log + debrief + history + equipment temizle
     setSession(startSession(scenario, "egitim", scenario.difficulty));
     setActionLog([]);
     setDebriefOpen(false);
     setVitalsHistory([]);
+    setEquipmentState({});
   }, [scenario]);
 
   // Senaryo finished olunca otomatik finalize + debrief modal aç +
@@ -213,10 +219,42 @@ export function PatientDialog3DPage() {
     setAutoTint(true);
   }, [scenarioId]);
 
+  // Prosedür / ilaç action target_id → ekipman state mapping (B.6).
+  // Action tamamlandıktan sonra equipment kalıcı görünür kalır (stetoskop
+  // gibi temporary değil; mask/ekg/iv/cuff/oximetre takılı kalır).
+  const applyEquipmentFromAction = useCallback((action: ActionRef) => {
+    const id = action.target_id?.toLowerCase() ?? "";
+    setEquipmentState((prev) => {
+      // oxygen_mask, oxygen-mask, "Oksijen Maskesi" vs.
+      if (/oxygen[_-]?mask|non[_-]?rebreather|nrb|maske/.test(id)) {
+        return { ...prev, oxygenMask: true };
+      }
+      if (/nasal[_-]?cannula|nazal[_-]?kan|kanül/.test(id)) {
+        return { ...prev, nasalCannula: true };
+      }
+      if (/ekg|ecg|monitor|elektrod|patch/.test(id)) {
+        return { ...prev, ekgPatches: true };
+      }
+      if (/iv[_-]?(line|catheter|access)|damar[_-]?yolu/.test(id)) {
+        return { ...prev, ivCatheter: true };
+      }
+      if (/bp[_-]?cuff|sphygmomanometer|tans|kan[_-]?bas/.test(id)) {
+        return { ...prev, bpCuff: true };
+      }
+      if (/spo2|oksimet|pulse[_-]?ox/.test(id)) {
+        return { ...prev, pulseOximeter: true };
+      }
+      return prev;
+    });
+  }, []);
+
   const handleProcedureComplete = useCallback((action: ActionRef) => {
     if (!session) return;
     const step = getCurrentStep(scenario, session);
     const ts = Date.now();
+
+    // Ekipman action ise hastaya kalıcı görünür (mask, ekg patch, iv catheter, vs.)
+    applyEquipmentFromAction(action);
 
     // Mevcut adım aksiyon kabul etmiyorsa (decision/info veya null) — bilgi log'u
     if (!step || step.kind !== "action") {
@@ -411,6 +449,7 @@ export function PatientDialog3DPage() {
     setSession(startSession(scenario, "egitim", scenario.difficulty));
     setActionLog([]);
     setDebriefOpen(false);
+    setEquipmentState({});
   }, [scenario]);
 
   return (
@@ -482,6 +521,7 @@ export function PatientDialog3DPage() {
             speaking={speaking}
             skinClipLevel={1.0}
             organVitals={organVitalsMemo}
+            equipmentState={equipmentState}
             cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />
