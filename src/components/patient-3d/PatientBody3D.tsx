@@ -11,6 +11,7 @@ import {
   type Group,
 } from "three";
 import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
+import { HospitalRoom } from "./HospitalRoom";
 import { IndividualOrgans, type OrganOverrideMap } from "./IndividualOrgans";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
@@ -19,6 +20,7 @@ import type { ProcedureContext, ProcedureKind } from "./procedures/types";
 import type { PatientRegion } from "./regions";
 import type { ActionRef } from "@/engine/types";
 import { playAuscultation, stopAuscultation } from "./auscultationAudio";
+import type { RoomLayoutOverrideMap } from "@/hooks/useRoomLayoutOverrides";
 
 interface Props {
   regions: PatientRegion[];
@@ -38,6 +40,8 @@ interface Props {
   organVitals?: { hr: number; rr: number };
   /** B.5+ — IndividualOrgans runtime scale/pozisyon override (OrganDevPanel). */
   organOverrides?: OrganOverrideMap;
+  /** B.5+ — HospitalRoom mesh runtime layout override (RoomLayoutDevPanel). */
+  roomOverrides?: RoomLayoutOverrideMap;
   /** B.5+ — Kamera açı preset (anterior/posterior/right/left/superior/inferior). */
   cameraView?: CameraView;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
@@ -179,6 +183,7 @@ function PatientBody3DImpl({
   skinClipLevel = 1.0,
   organVitals,
   organOverrides,
+  roomOverrides,
   cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
@@ -289,13 +294,22 @@ function PatientBody3DImpl({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={<LoadingFallback />}>
-          <AnatomicPatientModel
-            ref={bodyRef}
-            breathing={breathing}
-            skinTint={skinTint}
-            speaking={speaking}
-            clippingPlanes={clippingPlanes}
-          />
+          {/* Hastane odası — Sketchfab CC BY 4.0 (Uğur Yakışık). Yatak +
+              dolaplar + duvarlar + ekipman tek modelde. Hasta gövdesi
+              odanın yatak konumuna göre supine pose'da yerleştirilir.
+              Atıf: LICENSE-3D.md hospital-room.glb bölümü. */}
+          <HospitalRoom visible={true} overrides={roomOverrides} />
+
+          {/* Hasta + markerlar yatay pozisyona rotate edilir — model T-pose'da
+              ayakta üretildi, supine için -90° X (kafa +X yönüne yatar). */}
+          <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+            <AnatomicPatientModel
+              ref={bodyRef}
+              breathing={breathing}
+              skinTint={skinTint}
+              speaking={speaking}
+              clippingPlanes={clippingPlanes}
+            />
           {/* Organlar şimdilik gizli — ileri faz'da ayrı "Anatomi" sayfasına
               taşınacak (öğretici mod). Hasta simülasyon akışında yüzey
               gözlemine odaklanılır (Body Interact yaklaşımı). Kod, asset ve
@@ -310,15 +324,16 @@ function PatientBody3DImpl({
               skinClipLevel={skinClipLevel}
             />
           )}
-          {regions.map((region) => (
-            <RegionMarker
-              key={region.id}
-              region={region}
-              selected={selected?.id === region.id}
-              onSelect={handleSelect}
-            />
-          ))}
-          <ProcedureOverlay active={activeProcedure} onComplete={handleProcedureComplete} />
+            {regions.map((region) => (
+              <RegionMarker
+                key={region.id}
+                region={region}
+                selected={selected?.id === region.id}
+                onSelect={handleSelect}
+              />
+            ))}
+            <ProcedureOverlay active={activeProcedure} onComplete={handleProcedureComplete} />
+          </group>
         </Suspense>
       </Canvas>
 

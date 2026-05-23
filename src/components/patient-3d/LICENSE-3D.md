@@ -5,6 +5,37 @@ Yeni model eklerken bu dosyaya da bir bölüm ekleyin.
 
 ---
 
+## hospital-room.glb (Sprint B.5+ — klinik sahne)
+
+**Eser:** "Hospital Room"
+**Kaynak:** https://sketchfab.com/3d-models/hospital-room-39d5f1555a26402ab1a54ffbaa8afec1
+**Yazar:** Uğur Yakışık — https://sketchfab.com/UgurYksk
+**Lisans:** [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+**Atıf gereksinimi:** Yazar kredilendirilmeli. Ticari kullanım izinlidir.
+**Eklenme tarihi:** 2026-05-23 (Sprint B.5+)
+
+### Atıf metni (uygulamada görünür yere ekle)
+
+> This work is based on "Hospital Room" (https://sketchfab.com/3d-models/hospital-room-39d5f1555a26402ab1a54ffbaa8afec1) by Uğur Yakışık (https://sketchfab.com/UgurYksk) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+### Teknik bilgi
+
+- Format: glTF 2.0 binary (.glb)
+- Boyut: **3.59 MB** (optimize sonrası, ham 66.26 MB)
+- Optimize: `@gltf-transform/cli optimize --compress meshopt --texture-compress webp`
+- ~25K poly, 32+ material (Bed-material, Cabinet1, Cabinet2, Chair, Commode,
+  Curtain, DoorWall, ElectricSystm, FoodTable, Heater, ...)
+- İçindeki yatak mesh adı: `Bed-material` (~5K vertex)
+- **Layout pipeline:** Sketchfab "explode layout" sorununu çözmek için
+  `HospitalRoom.tsx` her mesh'i `hospital-room-layout.ts` dict'ten ada göre
+  konumlandırır. Bütüncül rotate/scale YOK; mesh-by-mesh `Box3.setFromObject`
+  + `position.sub(center).add(target)`. Detay skill: `.claude/skills/medisim-3d-scene-layout/SKILL.md`.
+- **Runtime override:** `RoomLayoutDevPanel` (Alt+R) + `useRoomLayoutOverrides`
+  hook → localStorage anahtarı `medisim.room_layout_overrides_v1`. Dev panelden
+  yapılan slider hareketleri sayfa yenilense bile korunur.
+
+---
+
 ## organs/heart.glb · organs/lungs.glb · organs/liver.glb  (Sprint B.5+)
 
 **Durum:** İndirildi (2026-05-21), `IndividualOrgans.tsx` ile sahneye bağlandı. Splanchnology mesh yerine bu 3 dosya `PatientBody3D` içinde varsayılan iç organ kümesini oluşturur.

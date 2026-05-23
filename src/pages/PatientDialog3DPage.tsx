@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Waves, Droplet, Scissors, Wand2 } from "lucide-react";
+import { ChevronLeft, Waves, Droplet, Wand2 } from "lucide-react";
 import { PatientBody3D, type CameraView } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
-import { OrganDevPanel } from "@/components/patient-3d/OrganDevPanel";
+import { RoomLayoutDevPanel } from "@/components/patient-3d/RoomLayoutDevPanel";
 import { useMarkerOverrides } from "@/hooks/useMarkerOverrides";
-import { useOrganOverrides } from "@/hooks/useOrganOverrides";
+import { useRoomLayoutOverrides } from "@/hooks/useRoomLayoutOverrides";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
@@ -109,7 +109,6 @@ export function PatientDialog3DPage() {
   const [breathing, setBreathing] = useState(true);
   const [manualSkinTint, setManualSkinTint] = useState<SkinTint | null>(null);
   const [speaking, setSpeaking] = useState(false);
-  const [skinClipLevel, setSkinClipLevel] = useState(1.0);
   const [autoTint, setAutoTint] = useState(true);
   const [cameraView, setCameraView] = useState<CameraView>("anterior");
 
@@ -131,13 +130,13 @@ export function PatientDialog3DPage() {
     resetAll: resetAllMarkers,
   } = useMarkerOverrides(DEFAULT_REGIONS);
 
-  // Organ dev panel (Alt+O ile aç) — IndividualOrgans scale/pozisyon override
+  // Hastane odası mesh layout dev panel (Alt+R ile aç) — runtime localStorage
   const {
-    overrides: organOverrides,
-    updateOrgan,
-    resetOrgan,
-    resetAll: resetAllOrgans,
-  } = useOrganOverrides();
+    overrides: roomOverrides,
+    updateMesh: updateRoomMesh,
+    resetMesh: resetRoomMesh,
+    resetAll: resetAllRoom,
+  } = useRoomLayoutOverrides();
 
   useEffect(() => {
     // Senaryo değişince yeni session başlat + action log + debrief + history temizle
@@ -491,9 +490,9 @@ export function PatientDialog3DPage() {
             breathing={breathing}
             skinTint={skinTint}
             speaking={speaking}
-            skinClipLevel={skinClipLevel}
+            skinClipLevel={1.0}
             organVitals={organVitalsMemo}
-            organOverrides={organOverrides}
+            roomOverrides={roomOverrides}
             cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />
@@ -600,35 +599,8 @@ export function PatientDialog3DPage() {
             className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[360px] max-w-[calc(100%-2rem)]"
           />
 
-          {/* SOL ALT: Cilt Kesim slider */}
-          <div
-            className="absolute bottom-4 left-4 bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-lg p-3 w-[240px] shadow-xl"
-            data-testid="skin-clip-control"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Scissors className="w-3.5 h-3.5 text-brand" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-brand">
-                Cilt Kesim
-              </span>
-              <span className="ml-auto font-mono text-[10px] text-ink-400 tabular-nums">
-                {Math.round((1 - skinClipLevel) * 100)}% açık
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.005"
-              value={skinClipLevel}
-              onChange={(e) => setSkinClipLevel(parseFloat(e.target.value))}
-              className="w-full accent-brand cursor-pointer transition-all duration-150"
-              aria-label="Cilt kesim seviyesi"
-            />
-            <div className="flex justify-between font-mono text-[8px] text-ink-500 mt-1">
-              <span>← Anatomik kesit</span>
-              <span>Cilt kapalı →</span>
-            </div>
-          </div>
+          {/* Cilt kesim ve organ paneli kaldırıldı — anatomi ileri faz'da
+              ayrı sayfaya taşınacak. Sahnede sadece hastane odası + hasta. */}
 
         </div>
 
@@ -666,13 +638,14 @@ export function PatientDialog3DPage() {
         onResetAll={resetAllMarkers}
       />
 
-      {/* Organ dev panel — IndividualOrgans scale/pozisyon ayar.
-          URL ?dev=1 veya Alt+O ile açılır. JSON Export → IndividualOrgans.tsx. */}
-      <OrganDevPanel
-        overrides={organOverrides}
-        onUpdate={updateOrgan}
-        onReset={resetOrgan}
-        onResetAll={resetAllOrgans}
+      {/* Hastane odası mesh layout — runtime manual yerleştirme.
+          Alt+R veya ?dev=1 ile açılır. Slider hareketleri localStorage'a
+          ANINDA kaydedilir; sayfa yenilense bile pozisyonlar korunur. */}
+      <RoomLayoutDevPanel
+        overrides={roomOverrides}
+        onUpdate={updateRoomMesh}
+        onReset={resetRoomMesh}
+        onResetAll={resetAllRoom}
       />
     </div>
   );
