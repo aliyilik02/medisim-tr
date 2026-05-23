@@ -522,6 +522,7 @@ export function PatientDialog3DPage() {
             skinClipLevel={1.0}
             organVitals={organVitalsMemo}
             equipmentState={equipmentState}
+            vitals={liveVitals}
             cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />

@@ -15,6 +15,8 @@ import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
 import { HospitalRoom } from "./HospitalRoom";
 import { IndividualOrgans, type OrganOverrideMap } from "./IndividualOrgans";
 import { PatientEquipment, type EquipmentState } from "./PatientEquipment";
+import { PatientVitalSigns } from "./PatientVitalSigns";
+import type { PatientVitals } from "@/engine/types";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
 import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
@@ -43,6 +45,8 @@ interface Props {
   organOverrides?: OrganOverrideMap;
   /** B.6 — Hastaya giydirilmiş klinik ekipman (O2 mask, IV, EKG patches, BP cuff, vs.) */
   equipmentState?: EquipmentState;
+  /** B.6.1 — Vital'lere göre gövde üstü görsel bulgular (pupilla, terleme, JVD, göz kapağı). */
+  vitals?: PatientVitals;
   /** B.5+ — Kamera açı preset (anterior/posterior/right/left/superior/inferior). */
   cameraView?: CameraView;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
@@ -234,6 +238,7 @@ function PatientBody3DImpl({
   organVitals,
   organOverrides,
   equipmentState,
+  vitals,
   cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
@@ -365,9 +370,11 @@ function PatientBody3DImpl({
               clippingPlanes={clippingPlanes}
             />
             {/* B.6 — Hastaya giydirilmiş klinik ekipman (O2 mask, EKG patches,
-                IV kateter, BP cuff, pulse oximeter, bandage). Prosedür
-                tamamlandığında handleProcedureComplete equipmentState'i günceller. */}
+                IV kateter, BP cuff, pulse oximeter, bandage). */}
             {equipmentState && <PatientEquipment state={equipmentState} />}
+            {/* B.6.1 — Vital bulgular (pupilla, göz kapağı, terleme, JVD).
+                vitals değişiminde otomatik güncellenir. */}
+            {vitals && <PatientVitalSigns vitals={vitals} />}
           {/* Organlar şimdilik gizli — ileri faz'da ayrı "Anatomi" sayfasına
               taşınacak (öğretici mod). Hasta simülasyon akışında yüzey
               gözlemine odaklanılır (Body Interact yaklaşımı). Kod, asset ve
