@@ -94,10 +94,22 @@ describe("InspectionPanel — bilgi kartı", () => {
 });
 
 describe("regions data integrity", () => {
-  test("20 anatomik bölge tanımlı, id'ler unique", () => {
-    expect(DEFAULT_REGIONS).toHaveLength(20);
+  test("26 anatomik bölge tanımlı, id'ler unique", () => {
+    // 20 baz marker (B.5) + 6 periferik nabız (B.7+): radial ×2,
+    // dorsalis pedis ×2, posterior tibial ×2
+    expect(DEFAULT_REGIONS).toHaveLength(26);
     const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
-    expect(ids.size).toBe(20);
+    expect(ids.size).toBe(26);
+  });
+
+  test("yeni periferik nabız marker'ları (B.7+) tanımlı", () => {
+    const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
+    expect(ids.has("radial-right")).toBe(true);
+    expect(ids.has("radial-left")).toBe(true);
+    expect(ids.has("dorsalis-pedis-right")).toBe(true);
+    expect(ids.has("dorsalis-pedis-left")).toBe(true);
+    expect(ids.has("posterior-tibial-right")).toBe(true);
+    expect(ids.has("posterior-tibial-left")).toBe(true);
   });
 
   test("her bölgenin label, position, placeholderNote, side alanları var", () => {
@@ -111,13 +123,14 @@ describe("regions data integrity", () => {
   });
 
   test("region pozisyonları model bbox sınırları içinde", () => {
-    // v2 model bbox (wrapper-transformed): y[-0.243, 0.778], x[-0.20, 0.20].
-    // Marker'lar bbox dışına kaymasın (sanity check).
+    // v2 model bbox: y[-0.243, 0.778], x[-0.20, 0.20].
+    // B.7+ radial/pedis/tibial alt ekstremitede — x[-0.32, 0.32] genişledi (bilek)
+    // ve y[-0.25, 0.78] (ayak ucu).
     for (const region of DEFAULT_REGIONS) {
       const [x, y] = region.position;
       expect(y).toBeGreaterThanOrEqual(-0.25);
       expect(y).toBeLessThanOrEqual(0.78);
-      expect(Math.abs(x)).toBeLessThanOrEqual(0.21);
+      expect(Math.abs(x)).toBeLessThanOrEqual(0.35); // bilek için genişledi
     }
   });
 });

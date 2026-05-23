@@ -237,4 +237,64 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
       "Sol a. femoralis nabzı. Karotis ile beraber santral nabızdır — kardiyak arrest tanısında kullanılır.",
     side: "anterior",
   },
+
+  // ─── Periferik nabız: radial (bilek) ──────────────────────────
+  // Önkol distal palmar yüz, radius lateral kenarı. Sprint B.7+ — sirkülasyon
+  // değerlendirmesi, şok evrelemesi (radial nabız kayboluyorsa SBP < 80mmHg).
+  {
+    id: "radial-right",
+    label: "Sağ Radial Nabız",
+    position: [0.320, 0.420, 0.040],
+    placeholderNote:
+      "Sağ a. radialis nabzı (bilek). SBP > ~80 mmHg ile palpe edilir; periferik perfüzyon ve şok evrelemesi.",
+    side: "anterior",
+  },
+  {
+    id: "radial-left",
+    label: "Sol Radial Nabız",
+    position: [-0.320, 0.420, 0.040],
+    placeholderNote:
+      "Sol a. radialis nabzı. Çift taraflı eşitlik kontrolü — aort diseksiyonunda diferansiyel nabız değerlendirmesi.",
+    side: "anterior",
+  },
+
+  // ─── Periferik nabız: dorsalis pedis (ayak sırtı) ──────────────
+  // Ayak dorsal yüz, 1. ve 2. metatarsal arası. Periferal arter hastalığı,
+  // diyabet vasküler değerlendirmesi, kompartman sendromu kontrolü.
+  {
+    id: "dorsalis-pedis-right",
+    label: "Sağ Dorsalis Pedis",
+    position: [0.050, -0.220, 0.090],
+    placeholderNote:
+      "Sağ a. dorsalis pedis nabzı (ayak sırtı). Periferik vasküler hastalık, alt ekstremite iskemisi.",
+    side: "anterior",
+  },
+  {
+    id: "dorsalis-pedis-left",
+    label: "Sol Dorsalis Pedis",
+    position: [-0.050, -0.220, 0.090],
+    placeholderNote:
+      "Sol a. dorsalis pedis nabzı. Çift taraflı eşitsizlik akut/kronik vasküler obstrüksiyon işareti.",
+    side: "anterior",
+  },
+
+  // ─── Periferik nabız: posterior tibial (iç ayak bileği) ────────
+  // Medial malleol arka tarafı, calcaneal tendon önü. Diyabet ayağı,
+  // alt ekstremite vasküler skoru (ABI hesaplama yerleri).
+  {
+    id: "posterior-tibial-right",
+    label: "Sağ Posterior Tibial",
+    position: [0.040, -0.190, 0.030],
+    placeholderNote:
+      "Sağ a. tibialis posterior nabzı (iç ayak bileği). Diyabetik ayak ve ABI değerlendirmesi.",
+    side: "lateral",
+  },
+  {
+    id: "posterior-tibial-left",
+    label: "Sol Posterior Tibial",
+    position: [-0.040, -0.190, 0.030],
+    placeholderNote:
+      "Sol a. tibialis posterior nabzı. Periferik nabızlar (radial+pedis+tibial) hep beraber kontrol edilir — şok evrelemesi.",
+    side: "lateral",
+  },
 ];
