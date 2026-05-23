@@ -18,6 +18,7 @@ import { PatientEquipment, type EquipmentState } from "./PatientEquipment";
 import { PatientVitalSigns } from "./PatientVitalSigns";
 import { MedicationBolus } from "./MedicationBolus";
 import type { PatientVitals } from "@/engine/types";
+import type { PatientProfile } from "@/clinical/patient-profile";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
 import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
@@ -52,6 +53,8 @@ interface Props {
   lastMedicationTs?: number | null;
   /** B.6.2 — Son ilaç id (renk seçimi: kırmızı vazopresör, mor opioid, vs.) */
   lastMedicationDrugId?: string | null;
+  /** B.7 — Hasta profili (yaş kategori + cinsiyet + scaleFactor). */
+  profile?: PatientProfile;
   /** B.5+ — Kamera açı preset (anterior/posterior/right/left/superior/inferior). */
   cameraView?: CameraView;
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
@@ -246,6 +249,7 @@ function PatientBody3DImpl({
   vitals,
   lastMedicationTs,
   lastMedicationDrugId,
+  profile,
   cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
@@ -375,6 +379,7 @@ function PatientBody3DImpl({
               skinTint={skinTint}
               speaking={speaking}
               clippingPlanes={clippingPlanes}
+              scaleFactor={profile?.scaleFactor ?? 1}
             />
             {/* B.6 — Hastaya giydirilmiş klinik ekipman (O2 mask, EKG patches,
                 IV kateter, BP cuff, pulse oximeter, bandage). */}

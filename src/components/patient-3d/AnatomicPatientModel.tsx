@@ -74,10 +74,17 @@ interface Props {
    * Boş array → clipping yok (default).
    */
   clippingPlanes?: Plane[];
+  /**
+   * Sprint B.7 — Hasta profil scale çarpanı (infant 0.28, pediatric 0.75,
+   * adult 1.0, vs.). MODEL_SCALE × scaleFactor → effektif model boyu.
+   * MODEL_Y_OFFSET de aynı oranda çarpılır (model bbox merkezi yatağa
+   * göre korunur).
+   */
+  scaleFactor?: number;
 }
 
 export const AnatomicPatientModel = forwardRef<Group, Props>(
-  ({ breathing = true, skinTint = "normal", speaking = false, clippingPlanes }, ref) => {
+  ({ breathing = true, skinTint = "normal", speaking = false, clippingPlanes, scaleFactor = 1 }, ref) => {
     const { scene } = useGLTF(MODEL_URL);
     const shaderRef = useRef<ShaderRef | null>(null);
 
@@ -244,7 +251,7 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
     });
 
     return (
-      <group ref={ref} scale={MODEL_SCALE} position={[0, MODEL_Y_OFFSET, 0]}>
+      <group ref={ref} scale={MODEL_SCALE * scaleFactor} position={[0, MODEL_Y_OFFSET * scaleFactor, 0]}>
         <primitive object={scene} />
       </group>
     );

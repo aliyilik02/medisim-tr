@@ -4,6 +4,7 @@ import { ChevronLeft, Waves, Droplet, Wand2 } from "lucide-react";
 import { PatientBody3D, type CameraView } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import type { EquipmentState } from "@/components/patient-3d/PatientEquipment";
+import { deriveProfile } from "@/clinical/patient-profile";
 import { CompactVitalsHUD, type VitalHistoryEntry } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { MarkerDevPanel } from "@/components/patient-3d/MarkerDevPanel";
@@ -112,6 +113,13 @@ export function PatientDialog3DPage() {
   const [cameraView, setCameraView] = useState<CameraView>("anterior");
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
+  // B.7 — Hasta profili: senaryo.patient.age + sex + modifiers.gebelik → category
+  // + scaleFactor + label. AnatomicPatientModel scale ile uygulanır.
+  const patientProfile = useMemo(() => deriveProfile({
+    age: scenario.patient.age,
+    sex: scenario.patient.sex,
+    medical_history: { gebelik: scenario.patient.modifiers?.gebelik },
+  }), [scenario.patient.age, scenario.patient.sex, scenario.patient.modifiers?.gebelik]);
 
   // Sprint senaryo motor TAM entegrasyon — startSession + useVitalsTick
   // + evaluateAction (action submit) → vital değişimi canlı, step ilerler.
@@ -474,8 +482,16 @@ export function PatientDialog3DPage() {
           Çıkış
         </Link>
         <div className="flex-1 min-w-0">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">
-            MediSim TR · 3D Klinik Simülasyon
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand flex items-center gap-2">
+            <span>MediSim TR · 3D Klinik Simülasyon</span>
+            {/* B.7 — Hasta profil rozeti: yaş kategori + cinsiyet + gebelik */}
+            <span
+              className="px-1.5 py-0.5 rounded bg-ink-800 border border-ink-700 text-ink-200 normal-case tracking-normal font-sans text-[10px]"
+              title={`Yaş kategorisi: ${patientProfile.category} · scale ×${patientProfile.scaleFactor.toFixed(2)}`}
+              data-testid="patient-profile-badge"
+            >
+              {patientProfile.displayLabel}
+            </span>
           </div>
           <h1 className="font-display text-base leading-tight truncate text-ink-50">
             {scenario.title}
@@ -535,6 +551,7 @@ export function PatientDialog3DPage() {
             vitals={liveVitals}
             lastMedicationTs={lastMedication?.ts ?? null}
             lastMedicationDrugId={lastMedication?.drugId ?? null}
+            profile={patientProfile}
             cameraView={cameraView}
             onProcedureComplete={handleProcedureComplete}
           />
