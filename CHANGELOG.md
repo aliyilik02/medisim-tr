@@ -3,6 +3,63 @@
 Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) + [SemVer](https://semver.org/lang/tr/) formatı.
 
+## [v0.3.4] — 2026-05-23 (Sprint B.8 — karakter tepkileri + ek ekipman)
+
+**Tema:** Karakter yüz mimikleri (ağız lipsync + kaş çatma + yanak kızarması) + 4 yeni klinik ekipman (defib pad'leri + endotrakeal tüp + nazogastrik sonda + Foley kateter). 9 yeni unit test (657 toplam).
+
+### ✨ Eklendi
+
+#### B.8 — Yüz mimikleri (`PatientFaceExpression.tsx`)
+- **Mouth** (ağız hareketi):
+  - `speaking=true` (AI diyalog konuşma) → 3Hz oscillation lipsync (scale.y 0.10-0.50)
+  - `vitals.pain > 6` → açık ağız grimace (0.6 sabit)
+  - `gcs < 8` (eyelid > 0.8) → koma açık ağız (0.3)
+  - default: kapalı (0.05)
+  - `pain > 4` → dudak rengi koyu (#a8463a frown)
+- **EyebrowFurrow** (kaş çatma):
+  - `pain ≥ 3` tetiklenir, intensity = (pain-3)/7
+  - İç köşeler medial-aşağı tilt + Y offset 0-5mm
+- **CheekFlush** (yanak kızarması):
+  - Ateş 38/39/40°C+ aşamalı emissive #e84a4a
+  - Anaflaksi (SBP<90 + HR>110 + SpO2≥90) → kızarma
+  - Siyanoz durumunda flush yok (renk farklı)
+- **deriveCheekFlushSeverity** export — 9 unit test
+
+#### B.8+ — 4 yeni klinik ekipman (`PatientEquipment.tsx`)
+- **defibPads** — AHA hands-free standart:
+  - RUL (sağ üst sternal, 2. ICS) + beyaz monitor teli
+  - LLL (sol mid-axiller apex, 5. ICS) + kırmızı şok teli
+- **endotrachealTube** — ağızdan trakea:
+  - Yarı saydam tüp (ID 7.5-8mm proxy) + tutucu plaster + pilot balon + 15mm ISO konnektör
+- **nasogastricTube** — burundan mideye:
+  - Sarı semi-opak tüp + burun plaster + drenaj konnektörü
+- **urinaryCatheter** (Foley) — pelvis altı:
+  - Sarı tüp + drenaj torbası proxy + konnektör
+
+PatientDialog3DPage `applyEquipmentFromAction` regex map'i genişletildi:
+- defib/aed/kardiyoversiyon/şok/paddle/pad → defibPads
+- endotrakeal/ett/entüb/airway → endotrachealTube
+- nazogast/ng-tube/ng-sond → nasogastricTube
+- foley/üriner-kateter/idrar-sond → urinaryCatheter
+
+### 🤝 Senaryo otomatik etkileri (mevcut 14 senaryoda)
+- TCCC patlama → defib + ETT + Foley (CABCDE flow)
+- RSI entübasyon → ETT (zorunlu protokol)
+- DKA/Sepsis → Foley (saatlik idrar takibi standart)
+- Kardiyojenik şok → defib + ETT
+- Pediatrik sepsis → NGT (gastrik dekompresyon)
+- Apandisit (pain=8) → ağrı grimace + kaş çatma
+- DKA/Sepsis (ateş + SpO2 düşmemiş) → yanak kızarma
+- Anaflaksi → yanak kızarma (alerjik flush)
+- İskemik inme (GCS<14) → ağız hafif açık
+- Tüm senaryolar AI diyalog speaking → ağız lipsync
+
+### ✅ Test
+- PatientFaceExpression.test.ts 9 test (deriveCheekFlushSeverity normal/ateş/anaflaksi/clamp/hipotermi/kombine)
+- Total: 648 → 657 vitest pass
+
+---
+
 ## [v0.3.3] — 2026-05-23 (Sprint B.7 — hasta çeşitliliği)
 
 **Tema:** Senaryo `patient.age` + `sex` + `gebelik` → PatientProfile türetimi. AnatomicPatientModel scale parametrik (Rocketbox erişkin baz × scaleFactor). HospitalRoom Bed boyu hastaya orantılı küçülür (infant beşiği / pediatric küçük yatak / adult standart). 14 senaryo otomatik entegre, 34 yeni unit test (647 toplam).
