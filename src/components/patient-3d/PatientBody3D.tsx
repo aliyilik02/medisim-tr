@@ -365,9 +365,10 @@ function PatientBody3DImpl({
               Y rotation +90°: hasta wrapper rotation [-π/2, 0, 0] T-pose boy
               ekseni Y'yi world -Z'ye taşır (kafa -Z, ayak +Z). Oda mesh
               eksenleri (yatak LEN=X ekseni) +90° Y rotation ile -Z eksenine
-              hizalanır → yatak boyu hasta boyu aynı yönde. */}
+              hizalanır → yatak boyu hasta boyu aynı yönde.
+              B.7: yatak hastaya orantılı küçülür (profile.scaleFactor). */}
           <group rotation={[0, Math.PI / 2, 0]}>
-            <HospitalRoom visible={true} />
+            <HospitalRoom visible={true} patientScale={profile?.scaleFactor ?? 1} />
           </group>
 
           {/* Hasta + markerlar yatay pozisyona rotate edilir — model T-pose'da

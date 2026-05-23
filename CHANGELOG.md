@@ -3,6 +3,52 @@
 Bu dosya MediSim TR projesindeki anlamlı değişiklikleri belgeler.
 [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) + [SemVer](https://semver.org/lang/tr/) formatı.
 
+## [v0.3.3] — 2026-05-23 (Sprint B.7 — hasta çeşitliliği)
+
+**Tema:** Senaryo `patient.age` + `sex` + `gebelik` → PatientProfile türetimi. AnatomicPatientModel scale parametrik (Rocketbox erişkin baz × scaleFactor). HospitalRoom Bed boyu hastaya orantılı küçülür (infant beşiği / pediatric küçük yatak / adult standart). 14 senaryo otomatik entegre, 34 yeni unit test (647 toplam).
+
+### ✨ Eklendi
+
+#### B.7 — Hasta profili çeşitliliği (`src/clinical/patient-profile.ts`)
+- **PatientCategory** PALS uyumlu: `infant` (<1y) / `toddler` (1-2) / `pediatric` (3-11) / `adolescent` (12-17) / `adult` (18-64) / `elderly` (65+)
+- **categorizeByAge(age)** yaş → kategori
+- **categoryToScale(cat)** Rocketbox baz çarpanı:
+  - infant 0.28 (50cm boy proxy)
+  - toddler 0.47 (85cm)
+  - pediatric 0.75 (135cm)
+  - adolescent 0.92 (165cm)
+  - adult 1.00 (180cm baz)
+  - elderly 0.97 (kifoz proxy)
+- **deriveProfile(patient)** — ana fonksiyon, `displayLabel` (TR "8 aylık Erkek Bebek" / "32 yaş Kadın · Gebe") + `skinHintRgb` + `pregnant` flag
+
+#### AnatomicPatientModel parametric scale
+- Yeni `scaleFactor` prop (varsayılan 1.0)
+- `MODEL_SCALE × scaleFactor` + `MODEL_Y_OFFSET × scaleFactor` — model bbox merkezi yatağa göre korunur
+
+#### HospitalRoom Bed orantılı küçülme
+- `Bed` component `scale` prop alır (varsayılan 1.0)
+- `LEN`/`WID` × patientScale — infant için 0.53m × 0.24m beşik, pediatric 1.4m × 0.64m, adult 1.9m × 0.85m
+- Diğer ekipman (IV pole, monitor, dolap) hasta yaşıyla değişmez (klinik gerçeklik)
+
+#### PatientDialog3DPage header profil rozeti
+- `data-testid="patient-profile-badge"` — yaş+cinsiyet+gebelik chip
+- title attribute: kategori + scaleFactor
+
+### 🤝 Senaryo otomatik entegrasyonu (14 senaryo)
+- Bronşiyolit (8 ay, M) / pediatrik-sepsis (0y) → **infant scale 0.28**
+- DKA (24y, F), Anaflaksi (35y, F), Apandisit (28y, M) → adult scale 1.0
+- STEMI (62y, M), Pulmoner Emboli (54y, F) → adult
+- İskemik İnme (72y, F), Hipoglisemi (68y, M), Kardiyojenik Şok (65y) → **elderly scale 0.97**
+- Preeklampsi (32y, F, gebelik) → adult F + **"Gebe" rozet**
+- TCCC Patlama (24y asker, M) → adult
+- RSI Entübasyon (35y travma, M), Sepsis hemşirelik (70y, F) → adult/elderly
+
+### ✅ Test kapsamı
+- patient-profile.test.ts 34 test (categorizeByAge × 12, categoryToScale × 6, categoryLabel × 6, sexLabel × 2, deriveProfile × 8)
+- **Total: 613 → 647 vitest pass**
+
+---
+
 ## [v0.3.2] — 2026-05-23 (Sprint B.6 — 3D body etkileşim)
 
 **Tema:** Hasta gövdesi üstünde 3 yeni katman — giydirilmiş ekipman + vital görsel bulgular + ilaç verme cue'su. Klinik klasifikasyon (vazopresör/opioid/antiaritmik/metabolik/antiplatelet) renk eşleştirmesi. 29 yeni unit test (613 toplam vitest).

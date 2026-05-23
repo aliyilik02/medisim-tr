@@ -17,6 +17,14 @@ import { RoundedBox, MeshTransmissionMaterial, MeshReflectorMaterial } from "@re
 interface Props {
   visible?: boolean;
   debug?: boolean;
+  /**
+   * B.7 — Hasta scale çarpanı (PatientProfile.scaleFactor). Yatak boyu
+   * hastaya orantılı küçülür: infant 0.28 → bebek arabası benzeri küçük
+   * yatak, pediatric 0.75 → küçük yatak, adult 1.0 → standart hastane yatağı.
+   * Yatak haricindeki ekipman (IV pole, monitor, dolap) standart boyutunu
+   * korur — klinik gerçeklikte bu mobilya hasta yaşına göre değişmez.
+   */
+  patientScale?: number;
 }
 
 // =============== ZEMİN — parlak vinyl klinik flooring =================
@@ -102,9 +110,12 @@ function SideWallLeft() {
 }
 
 // =============== YATAK =================
-function Bed() {
-  const LEN = 1.9;
-  const WID = 0.85;
+function Bed({ scale = 1 }: { scale?: number }) {
+  // B.7 — Hasta scale çarpanı: yatak boyu/eni hastaya orantılı.
+  // Infant (0.28) için yatak 0.53m × 0.24m bebek beşiği. Adult (1.0) için
+  // 1.9m × 0.85m standart hastane yatağı.
+  const LEN = 1.9 * scale;
+  const WID = 0.85 * scale;
   // Hasta wrapper Y=0.05, T-pose Z bbox [-0.222, 0.096] → -90°X rotation
   // sonra hasta arka (sırt) world Y ≈ 0.05 - 0.096 = -0.046.
   // Şilte üst yüzeyi (Y=0.10 internal) world Y'sinin -0.046 olması için
@@ -417,7 +428,7 @@ function CeilingLight() {
 }
 
 // =============== ANA HOSPITAL ROOM =================
-function HospitalRoomImpl({ visible = true, debug = false }: Props) {
+function HospitalRoomImpl({ visible = true, debug = false, patientScale = 1 }: Props) {
   if (!visible) return null;
   return (
     <group name="HospitalRoom">
@@ -425,7 +436,7 @@ function HospitalRoomImpl({ visible = true, debug = false }: Props) {
       <HeadWall />
       <FootWall />
       <SideWallLeft />
-      <Bed />
+      <Bed scale={patientScale} />
       <IvPole />
       <VitalMonitor />
       <OverBedTable />
