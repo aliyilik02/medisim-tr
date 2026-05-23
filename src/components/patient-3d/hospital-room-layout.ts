@@ -35,38 +35,53 @@ export interface HospitalAssetSpec {
  * Her mesh'i ad bazlı eşleştir + position ata. Eşleşmeyenler `HIDDEN_MESH`
  * setinde ise gizle, yoksa orijinal Sketchfab pozisyonunda kalır.
  */
-export const HOSPITAL_ROOM_LAYOUT: Record<string, HospitalAssetSpec> = {
-  // Yatak — sahne merkezi (hasta üstte)
-  "Bed-material": { position: [0, -0.05, 0] },
+// Sketchfab modeli mesh'leri "explode layout"ta geliyor (Y ekseninde 2.4m
+// uzun bir hat). Klinik bir oda görüntüsü için her mesh ad-bazlı ad-merkezli
+// olarak yeniden konumlandırılır. Pozisyonlar 3.5m × 3.5m × 2.8m oda
+// içinde, hasta yatakta supine pose, kafa +X yönünde — Northwell/HFG
+// klinik standardına göre.
+//
+// Scale 2.3: Sketchfab yatak bbox 44cm, hasta R3F 1m boy → yatağı hasta
+// boyuna oranlamak için. Diğer mesh'ler aynı oranda büyür.
+//
+// Pozisyon konvansiyonu (R3F, hasta-merkezli):
+//   +X: hasta kafa yönü      -X: hasta ayak yönü
+//   +Y: yukarı (Sketchfab Y-up)  -Y: aşağı
+//   +Z: hasta sağ (gözlemci sol görür)  -Z: hasta sol
+const S = 2.3;
 
-  // Klinik ekipman — yatak başucu (+X = kafa yönü)
-  "IvPole-material":     { position: [0.55, 0.35, 0.40] },   // sağ üst köşe
-  "Serum-material":      { position: [0.55, 0.85, 0.40] },   // IV pole tepesi
-  "Machine-material":    { position: [0.55, 0.55, -0.40] },  // sol üst monitör
-  "Machine_O-material":  { position: [0.55, 0.85, -0.40] },  // monitör ekran
-  "OxygenTube-material": { position: [0.65, 0.40, -0.40] },  // duvar konsolu
-  "ElectricSystm-material": { position: [0.70, 1.20, -0.30] }, // duvar panel
-  "Sign-material":       { position: [0.70, 1.20, 0.30] },    // hasta info tabelası
+export const HOSPITAL_ROOM_LAYOUT: Record<string, HospitalAssetSpec> = {
+  // Yatak — sahne merkezi
+  "Bed-material": { position: [0, -0.10, 0], scale: S },
+
+  // Klinik ekipman — yatak başucu (+X kafa yönü)
+  "IvPole-material":     { position: [1.2, 0.4, 0.9],  scale: S }, // başucu sağ
+  "Serum-material":      { position: [1.2, 1.4, 0.9],  scale: S }, // IV pole tepe
+  "Machine-material":    { position: [1.2, 1.0, -0.9], scale: S }, // başucu sol monitör
+  "Machine_O-material":  { position: [1.2, 1.4, -0.9], scale: S }, // monitör ekran
+  "OxygenTube-material": { position: [1.5, 0.9, -0.7], scale: S }, // wall console O2
+  "ElectricSystm-material": { position: [1.5, 1.6, -0.5], scale: S }, // duvar panel
+  "Sign-material":       { position: [1.5, 1.8, 0.5],  scale: S }, // bilgi tabelası
 
   // Mobilya — yatak çevresinde
-  "Commode-material":     { position: [0.10, 0.30, 0.55] },  // sağ komodin
-  "FoodTable-material":   { position: [0.00, 0.45, 0.55] },  // over-bed table
-  "Chair-material":       { position: [-0.40, 0.25, 0.55] }, // yatak ayak ucu sandalye
-  "Table-material":       { position: [-0.60, 0.40, -0.60] }, // bilgisayar masası
-  "Tv-material":          { position: [-0.50, 1.70, -0.85] }, // duvar TV
-  "TvSystm-material":     { position: [-0.50, 1.50, -0.85] }, // TV mount
+  "Commode-material":     { position: [0.2, 0.5, 1.0],  scale: S }, // sağ komodin
+  "FoodTable-material":   { position: [0.0, 0.7, 1.0],  scale: S }, // over-bed table
+  "Chair-material":       { position: [-1.0, 0.5, 1.0], scale: S }, // sandalye ayak ucu yan
+  "Table-material":       { position: [-1.4, 0.7, -1.0], scale: S }, // bilgisayar masası
+  "Tv-material":          { position: [-1.3, 1.8, -1.5], scale: S }, // duvar TV
+  "TvSystm-material":     { position: [-1.3, 1.5, -1.5], scale: S }, // TV mount
 
-  // Köşe mobilya — uzak köşe
-  "Sofa-material":        { position: [-1.10, 0.35, 0.75] }, // ziyaretçi kanepesi
-  "Cabinet1-material":     { position: [-1.20, 0.40, -0.75] }, // ilaç dolabı
-  "Cabinet1Door-material": { position: [-1.20, 0.40, -0.75] },
-  "Cabinet1DoorGlass-material": { position: [-1.20, 0.40, -0.75] },
-  "Cabinet2-material":     { position: [-1.10, 0.50, -0.70] }, // yan dolap
-  "Curtain-material":      { position: [1.00, 1.40, 0.90] },  // pencere perdesi
+  // Köşe mobilya
+  "Sofa-material":        { position: [-1.6, 0.5, 1.5],  scale: S }, // ziyaretçi kanepe
+  "Cabinet1-material":     { position: [-1.6, 0.6, -1.4], scale: S }, // ilaç dolabı
+  "Cabinet1Door-material": { position: [-1.6, 0.6, -1.4], scale: S },
+  "Cabinet1DoorGlass-material": { position: [-1.6, 0.6, -1.4], scale: S },
+  "Cabinet2-material":     { position: [-1.4, 0.7, -1.2], scale: S }, // yan dolap
+  "Curtain-material":      { position: [1.6, 1.8, 1.5],   scale: S }, // pencere perdesi
 
   // Aydınlatma — tavan
-  "Light1-material":       { position: [0.30, 2.40, 0] },
-  "Light2-material":       { position: [-0.40, 2.40, 0] },
+  "Light1-material":       { position: [0.5, 2.5, 0], scale: S },
+  "Light2-material":       { position: [-0.5, 2.5, 0], scale: S },
 };
 
 /**

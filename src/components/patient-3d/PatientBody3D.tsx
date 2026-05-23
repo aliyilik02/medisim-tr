@@ -183,7 +183,9 @@ function PatientBody3DImpl({
   skinClipLevel = 1.0,
   organVitals,
   organOverrides,
-  roomOverrides,
+  // roomOverrides — primitif sahne kullanılıyor, dict override akışı tutuldu
+  //   ama prop şu an no-op. RoomLayoutDevPanel mesh-by-mesh ayar pattern'i
+  //   ileride parametric primitive sahne için yeniden kullanılabilir.
   cameraView = "anterior",
   onRegionSelect,
   onProcedureComplete,
@@ -294,11 +296,11 @@ function PatientBody3DImpl({
         <hemisphereLight args={["#ffffff", "#1a1a1f", 0.35]} />
 
         <Suspense fallback={<LoadingFallback />}>
-          {/* Hastane odası — Sketchfab CC BY 4.0 (Uğur Yakışık). Yatak +
-              dolaplar + duvarlar + ekipman tek modelde. Hasta gövdesi
-              odanın yatak konumuna göre supine pose'da yerleştirilir.
-              Atıf: LICENSE-3D.md hospital-room.glb bölümü. */}
-          <HospitalRoom visible={true} overrides={roomOverrides} />
+          {/* Hastane odası — R3F primitif (box/silindir/plane) deterministic
+              klinik oda. 4m × 4m × 2.7m, yatak ortada hasta üstünde supine.
+              Klinik standart: headwall, IV pole, vital monitör, over-bed table,
+              bedside cabinet, visitor chair, sofa, storage cabinet, tavan ışığı. */}
+          <HospitalRoom visible={true} />
 
           {/* Hasta + markerlar yatay pozisyona rotate edilir — model T-pose'da
               ayakta üretildi, supine için -90° X (kafa +X yönüne yatar). */}
