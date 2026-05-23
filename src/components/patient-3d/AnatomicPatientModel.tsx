@@ -29,11 +29,12 @@ type ShaderRef = {
 // Referans: memory/medisim_animasyon_teknikleri.md
 // ============================================================
 
-// patient-v3 (Fab Library Realistic Man — NoEdge satıcı onayı alındı).
-// 125+ morph + full rigged. gltf-transform optimize: 126MB → 8.68MB.
-// bbox y[0, 1.84], scale 0.555 + offset -0.243 → world bbox y[-0.243, 0.777].
-const MODEL_URL = "/3d/patient-v3.glb";
-const MODEL_SCALE = 0.555;
+// Microsoft Rocketbox Male_Adult_01 (MIT lisans, klinik sağlık simülasyonu
+// için tasarlanmış). Standart PBR: m002_body + m002_head + m002_opacity
+// material'ları. 2.86 MB optimize edilmiş (Fab'tan 5x küçük). Reallusion CC
+// karmaşıklığı YOK — texture'lar normal baseColor/normal/specular slot'larında.
+const MODEL_URL = "/3d/patient-rocketbox.glb";
+const MODEL_SCALE = 0.567; // 1.021m world / 1.80m model height
 const MODEL_Y_OFFSET = -0.243;
 const BREATH_RATE_HZ = 0.25; // ~15/dk
 // Sakin solunum AP expansion fizyolojik olarak 4-7 mm; v1'de 1 cm gözle
@@ -54,30 +55,9 @@ const SKIN_TINT_PRESETS: Record<SkinTint, [number, number, number]> = {
   pallor:    [0.85, 0.80, 0.78],
 };
 
-// Fab Library "Realistic Man" (Reallusion CC pipeline) — baseColorTexture
-// slot'una SSS/mask map'leri konulmuş, gerçek albedo yok. Material adına
-// göre doğru renk + normalMap/roughnessMap detay korunur.
-const MATERIAL_COLOR_MAP: Record<string, number> = {
-  // Cilt — skin tint shader bu rengin üstüne tint uygular
-  Skin_Head: 0xd4a896, Skin_Body: 0xd4a896,
-  Skin_Arm: 0xd4a896, Skin_Leg: 0xd4a896,
-  // Aksesuarlar
-  Nails: 0xe8c8b8,
-  Eyelash: 0x1a1a1a,
-  // Saç sistemi — koyu kahve
-  Scalp_Transparency: 0x3a2820,
-  Hair_Transparency: 0x3a2820,
-  Beard_Transparency: 0x4a3020,
-  // Gözler — sclera beyaz, iris kahve, cornea saydam
-  // Göz iris daha doygun kahve (sclera beyaz texture ile birlikte canlı)
-  Eye_R: 0x6b3814, Eye_L: 0x6b3814,
-  Cornea_R: 0xeeeeff, Cornea_L: 0xeeeeff,
-  // Ağız
-  Upper_Teeth: 0xfff8dc, Lower_Teeth: 0xfff8dc,
-  Tongue: 0xc94560,
-  // Giysi — bej iç çamaşırı (klinik için nötr)
-  Briefs: 0xe8e0d0,
-};
+// Rocketbox modeli standart PBR — tüm material'larda gerçek baseColor +
+// normalMap + specular texture'ları. Override gerekmez, sadece breathing/
+// clipping/tint shader skin material'a inject edilir.
 
 interface Props {
   breathing?: boolean;
@@ -116,73 +96,29 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
         mats.forEach((origMat, idx) => {
           if (!origMat) return;
           const matName = origMat.name ?? "";
+          // Rocketbox: m002_body + m002_head skin material'ları;
+          // m002_opacity = saç/transparent. Fallback v2 chuma6oy uyumluluğu
+          // için boş ad da skin sayılır.
           const isSkin =
+            /m002_(body|head)/i.test(matName) ||
             /^skin/i.test(matName) ||
-            // v2 (chuma6oy) fallback: tek mesh + tek mat, ad boş veya generic
-            (matName === "" || /^material_?\d*$/i.test(matName));
+            matName === "" ||
+            /^material_?\d*$/i.test(matName);
 
-          // Non-skin material'lar da SSS mask problem yaşar — material adına
-          // göre doğru renk ataması yap; skip yapma.
-          if (!isSkin) {
-            const colorOverride = MATERIAL_COLOR_MAP[matName];
-            if (colorOverride !== undefined) {
-              // Mesh-özel roughness:
-              // - Cornea (saydam göz mercek) düşük (parlaklık)
-              // - Diş orta (mineral parlama)
-              // - Eye iris orta (canlı)
-              // - Eyelash/saç/kıl mat
-              // - Kilot mat (pamuk)
-              const matRough = /cornea/i.test(matName)
-                ? 0.1
-                : /tooth/i.test(matName)
-                  ? 0.35
-                  : /^eye_/i.test(matName)
-                    ? 0.45
-                    : /transparency|eyelash/i.test(matName)
-                      ? 0.85
-                      : 0.7;
-              const accMat = new MeshStandardMaterial({
-                color: colorOverride,
-                normalMap: origMat.normalMap ?? null,
-                roughnessMap: /tooth|cornea|eye_/i.test(matName)
-                  ? null
-                  : origMat.roughnessMap ?? null,
-                roughness: matRough,
-                metalness: 0.0,
-                transparent: /cornea/i.test(matName),
-                opacity: /cornea/i.test(matName) ? 0.15 : 1.0,
-                alphaTest: /transparency/i.test(matName) ? 0.5 : 0,
-                depthWrite: !/cornea/i.test(matName),
-              });
-              accMat.needsUpdate = true;
-              if (Array.isArray(mesh.material)) {
-                mesh.material[idx] = accMat;
-              } else {
-                mesh.material = accMat;
-              }
-            }
-            return;
-          }
+          // Non-skin material'lar (m002_opacity = saç): orijinal material
+          // AYNEN korunur — alpha blend + baseColor texture Rocketbox'ta zaten
+          // doğru ayarlanmış (BLEND alphaMode).
+          if (!isSkin) return;
 
-          // Skin material — MAT klinik görünüm (plastic değil).
-          // Sheen/clearcoat tamamen kaldırıldı: cilt yüksek roughness ile
-          // mat görünür, normalMap mikro-pörtükler gölgeli görünür.
-          // Reallusion CC pipeline'ı Three.js'te tam SSS render edemez;
-          // klinik mat görünüm doğru estetik karar.
-          const mat = new MeshStandardMaterial({
-            color: 0xd4a896,
-            normalMap: origMat.normalMap ?? null,
-            normalScale: origMat.normalScale ?? undefined,
-            roughnessMap: origMat.roughnessMap ?? null,
-            roughness: 0.85, // YÜKSEK → mat cilt, normalMap detay belirginleşir
-            metalness: 0.0,
-            clippingPlanes: clippingPlanes ?? [],
-            clipShadows: true,
-            transparent:
-              !!clippingPlanes && clippingPlanes.length > 0 ? true : false,
-            opacity:
-              !!clippingPlanes && clippingPlanes.length > 0 ? 0.92 : 1.0,
-          });
+          // Skin material — orijinali CLONE et, Rocketbox'ın gerçek
+          // baseColor + normalMap + specularMap texture'ları KORUNUR.
+          // Sadece clipping + breathing/tint shader üstüne inject edilir.
+          const mat = (origMat as MeshStandardMaterial).clone() as MeshStandardMaterial;
+          mat.clippingPlanes = clippingPlanes ?? [];
+          mat.clipShadows = true;
+          const hasClip = !!clippingPlanes && clippingPlanes.length > 0;
+          mat.transparent = hasClip || (origMat.transparent ?? false);
+          mat.opacity = hasClip ? 0.92 : (origMat.opacity ?? 1.0);
           mat.needsUpdate = true;
           mat.onBeforeCompile = (shader) => {
             shader.uniforms.uTime = { value: 0 };
