@@ -287,6 +287,69 @@ export const scenario_anaflaksi: Scenario = {
     },
   ],
 
+  // ============================================================
+  // ⚠️ DRAFT — Faz 1 oynanabilir döngü alanları (12 Haziran 2026)
+  // ============================================================
+  // Kötüleşme eğrileri ve oskültasyon eşlemesi KLİNİK İÇERİKTİR.
+  // Klinik review (Ali Bey) + ACTIVE onayı BEKLİYOR.
+  //
+  // Eğri gerekçesi (WAO 2020): tedavisiz anaflaktik şokta dakikalar
+  // içinde progresif hipotansiyon + hipoksemi + refleks taşikardi.
+  //   SBP  −2 mmHg/30sn (≈ −4/dk)  → 78'den 7 dk'da taban 50'ye
+  //   SpO2 −1/20sn (≈ −3/dk)       → 88'den ~5 dk'da taban 72'ye
+  //   HR   +1/20sn refleks         → tavan 152
+  // Adrenalin (IM veya IV — her site) fazı durdurur; iyileşme trendi
+  // WAO'da tarif edilen dakikalar içindeki klinik yanıtı taklit eder.
+  // Eğitim modunda 8× hız: kötüleşme ~50 sn gerçek zamanda hissedilir.
+  deterioration: [
+    {
+      id: "untreated-anaphylaxis",
+      label: "Tedavisiz anaflaktik şok",
+      trends: [
+        { vital: "bp_systolic",  delta_per_sec: -0.067, floor: 50 },
+        { vital: "bp_diastolic", delta_per_sec: -0.033, floor: 30 },
+        { vital: "spo2",         delta_per_sec: -0.05,  floor: 72 },
+        { vital: "hr",           delta_per_sec: 0.05,   ceiling: 152 },
+        { vital: "rr",           delta_per_sec: 0.017,  ceiling: 40 },
+      ],
+      halted_by: [
+        // site verilmedi — IM uyluk da, genel adrenalin de durdurur
+        { type: "give_medication", target_id: "adrenalin" },
+      ],
+      recovery_trends: [
+        { vital: "bp_systolic",  delta_per_sec: 0.1,   ceiling: 112 },
+        { vital: "bp_diastolic", delta_per_sec: 0.05,  ceiling: 70 },
+        { vital: "spo2",         delta_per_sec: 0.08,  ceiling: 97 },
+        { vital: "hr",           delta_per_sec: -0.07, floor: 96 },
+        { vital: "rr",           delta_per_sec: -0.03, floor: 16 },
+      ],
+    },
+  ],
+
+  // Oskültasyon (DRAFT): bronkospazm → tüm ön göğüs odaklarında yaygın
+  // wheezing; adrenalin sonrası (faz durunca) normal kalp sesine döner.
+  // Ses dosyaları: public/sounds/auscultation/ (atıf: SOUNDS-LICENSE.md)
+  auscultation: {
+    "chest-front": {
+      sound_id: "lung_wheeze",
+      resolved_sound_id: "heart_normal",
+      phase_id: "untreated-anaphylaxis",
+      note: "Yaygın ekspiratuvar wheezing — histamin aracılı bronkospazm. Erb noktası.",
+    },
+    "chest-left": {
+      sound_id: "lung_wheeze",
+      resolved_sound_id: "heart_normal",
+      phase_id: "untreated-anaphylaxis",
+      note: "Wheezing + taşikardik kalp sesleri — mitral odak (5. İKA midklavikular).",
+    },
+    "chest-right": {
+      sound_id: "lung_wheeze",
+      resolved_sound_id: "heart_normal",
+      phase_id: "untreated-anaphylaxis",
+      note: "Wheezing — aortik odak (2. İKA sağ sternal kenar).",
+    },
+  },
+
   start_step_id: "s1_tani",
 
   steps: [
