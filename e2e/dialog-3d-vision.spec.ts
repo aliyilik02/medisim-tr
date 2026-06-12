@@ -29,10 +29,13 @@ test.describe("dialog-3d-demo layout + smoke", () => {
   test("layout — monitor sol üst, slider sol alt, chat sağ panel", async ({ page }) => {
     const monitor = page.getByTestId("compact-vitals-hud");
     const slider = page.getByTestId("skin-clip-control");
-    const chatInput = page.getByTestId("dialog-input");
 
     await expect(monitor).toBeVisible();
     await expect(slider).toBeVisible();
+
+    // Faz 1: sağ panel sekmeli — diyalog "Hasta ile Konuş" sekmesinde
+    await page.getByTestId("tab-diyalog").click();
+    const chatInput = page.getByTestId("dialog-input");
     await expect(chatInput).toBeVisible();
 
     const monitorBox = await monitor.boundingBox();
@@ -106,6 +109,8 @@ test.describe("dialog-3d-demo layout + smoke", () => {
   });
 
   test("dialog chat input + Calgary-Cambridge stepper görünür", async ({ page }) => {
+    // Faz 1: diyalog ayrı sekmede
+    await page.getByTestId("tab-diyalog").click();
     const input = page.getByTestId("dialog-input");
     await expect(input).toBeVisible();
     await expect(input).toBeEnabled();

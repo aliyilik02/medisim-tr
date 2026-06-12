@@ -317,6 +317,80 @@ export interface ImagingResult {
 }
 
 // ------------------------------------------------------------
+// Gerçek Zamanlı Kötüleşme — Faz 1 (Sanal Hasta Planı v1, Bölüm 4.2)
+// ------------------------------------------------------------
+// Senaryo yazarı tedavisiz kalan hastanın vital trendini tanımlar.
+// SimplePhysiologyProvider (physiology.ts) bu fazları uygular;
+// Faz 3'te Pulse Engine aynı PhysiologyProvider arayüzünün arkasına girer.
+//
+// ⚠️ KLİNİK İÇERİK: trend değerleri (delta_per_sec, floor/ceiling)
+// klinik içerik sayılır — DRAFT bayrağıyla girer, ACTIVE'e geçişi
+// sadece klinik review yapar.
+
+// Trend uygulanabilir sayısal vital alanları (boolean pupil_reactive hariç)
+export type TrendableVital =
+  | "hr"
+  | "bp_systolic"
+  | "bp_diastolic"
+  | "spo2"
+  | "temp"
+  | "rr"
+  | "pain"
+  | "glucose"
+  | "gcs"
+  | "etco2";
+
+export interface VitalTrend {
+  vital: TrendableVital;
+  /** Simüle edilen saniye başına değişim. Negatif = düşüş. Örn. SBP −2/30sn → -0.067 */
+  delta_per_sec: number;
+  /** Alt sınır — vital bunun altına inmez (kötüleşme tabanı / iyileşme hedefi) */
+  floor?: number;
+  /** Üst sınır — vital bunun üstüne çıkmaz */
+  ceiling?: number;
+}
+
+/** Bir aksiyonun deterioration fazını durdurup durdurmadığını tarif eder.
+    site verilmezse her site eşleşir (örn. adrenalin IM veya IV — ikisi de durdurur). */
+export interface ActionMatcher {
+  type: ActionType;
+  target_id: string;
+  site?: string;
+}
+
+export interface DeteriorationPhase {
+  id: string;
+  label?: string;
+  /** Bu adım current olduğunda faz aktifleşir ve adım geçilse bile sürer.
+      Verilmezse senaryo başından itibaren aktif. */
+  active_from_step_id?: string;
+  /** Tedavisiz seyir — faz aktif ve durdurulmamışken her tick uygulanır */
+  trends: VitalTrend[];
+  /** Bu aksiyonlardan biri yapılınca faz durur (halt) */
+  halted_by: ActionMatcher[];
+  /** Halt sonrası iyileşme trendi — floor/ceiling iyileşme hedefi olarak kullanılır */
+  recovery_trends?: VitalTrend[];
+}
+
+// ------------------------------------------------------------
+// Oskültasyon Eşlemesi — Faz 1 (Sanal Hasta Planı v1, Bölüm 4.4)
+// ------------------------------------------------------------
+// Senaryo, 3D bölge id'sine (regions.ts) patolojiye uygun ses atar.
+// resolved_sound_id: ilişkili deterioration fazı durdurulduktan sonra
+// çalınacak ses (örn. adrenalin sonrası wheeze → normal kalp sesi).
+
+export interface AuscultationOverride {
+  /** public/sounds/auscultation/{sound_id}.ogg */
+  sound_id: string;
+  /** phase_id durdurulduktan sonra çalınacak ses */
+  resolved_sound_id?: string;
+  /** Hangi deterioration fazına bağlı (resolved geçişi için) */
+  phase_id?: string;
+  /** Muayene panelinde gösterilecek bulgu metni */
+  note?: string;
+}
+
+// ------------------------------------------------------------
 // 3D Sahne Tanımı (ileride dolacak)
 // ------------------------------------------------------------
 
@@ -442,6 +516,13 @@ export interface Scenario {
 
   // 3D (opsiyonel)
   scene?: SceneConfig;
+
+  // Faz 1 — Gerçek zamanlı kötüleşme (opsiyonel; eski senaryolar etkilenmez)
+  // ⚠️ Klinik içerik: DRAFT bayrağı + klinik review zorunlu (PLAN-SANAL-HASTA-V1 §4.2)
+  deterioration?: DeteriorationPhase[];
+
+  // Faz 1 — Oskültasyon bölge→ses eşlemesi. Key = PatientRegion id (regions.ts)
+  auscultation?: Record<string, AuscultationOverride>;
 }
 
 // ------------------------------------------------------------

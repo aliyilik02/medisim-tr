@@ -19,7 +19,7 @@
 // akciğer 0.4+ olabildiği için organlar kayboldu. Kaldırıldı.
 // ============================================================
 
-import { useEffect, useMemo, useRef } from "react";
+import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { Vector3 } from "three";
@@ -51,7 +51,40 @@ interface Props {
   debugShowAll?: boolean;
 }
 
-export function InternalOrgans({
+// Organ GLB eksikse (asset migrasyonu sürerken) tüm 3D sahneyi
+// düşürme — organ katmanı sessizce devre dışı kalsın.
+class OrganLoadBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[InternalOrgans] ${MODEL_URL} yüklenemedi — organ katmanı kapatıldı.`,
+      error,
+    );
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+export function InternalOrgans(props: Props) {
+  return (
+    <OrganLoadBoundary>
+      <InternalOrgansInner {...props} />
+    </OrganLoadBoundary>
+  );
+}
+
+function InternalOrgansInner({
   hr = 75,
   rr = 14,
   visible = true,

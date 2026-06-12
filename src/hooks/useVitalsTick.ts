@@ -17,7 +17,7 @@
 // ============================================================
 
 import { useEffect } from "react";
-import type { SessionState, Scenario } from "@/engine";
+import type { SessionState, Scenario, PhysiologyProvider } from "@/engine";
 import {
   tick,
   computeLiveVitals,
@@ -33,6 +33,9 @@ interface UseVitalsTickParams {
   setSession: React.Dispatch<React.SetStateAction<SessionState | null>>;
   // Paused: true ise tick durur (örn. kritik modal açıkken, debrief'te)
   paused?: boolean;
+  // Faz 1 — deterioration trendlerini baseline'a uygulayan sağlayıcı.
+  // Verilmezse eski davranış (sadece farmakoloji tick) korunur.
+  provider?: PhysiologyProvider | null;
 }
 
 export function useVitalsTick({
@@ -40,6 +43,7 @@ export function useVitalsTick({
   session,
   setSession,
   paused = false,
+  provider = null,
 }: UseVitalsTickParams) {
   useEffect(() => {
     if (!scenario || paused) return;
@@ -61,10 +65,17 @@ export function useVitalsTick({
           ? actives.filter((m) => !result.expired_instance_ids.includes(m.instance_id))
           : actives;
 
-        const liveVitals = computeLiveVitals(s.baseline_vitals, result.vitals_delta);
+        // Faz 1 — deterioration: her tick 1 simüle saniyedir (interval mode
+        // hızına göre kısalır, böylece eğitim modunda 8× hızlı kötüleşir).
+        const newBaseline = provider
+          ? provider.tick(s.baseline_vitals, BASE_TICK_MS / 1000)
+          : s.baseline_vitals;
+
+        const liveVitals = computeLiveVitals(newBaseline, result.vitals_delta);
 
         return {
           ...s,
+          baseline_vitals: newBaseline,
           vitals: liveVitals,
           active_medications: stillActive,
           current_ecg_params: Object.keys(result.ecg_delta).length > 0
@@ -77,5 +88,5 @@ export function useVitalsTick({
     }, intervalMs);
 
     return () => clearInterval(intervalId);
-  }, [scenario, session?.mode, session?.finished, paused, setSession]);
+  }, [scenario, session?.mode, session?.finished, paused, setSession, provider]);
 }

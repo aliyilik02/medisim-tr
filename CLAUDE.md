@@ -20,7 +20,10 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 
 ## Mevcut Durum (12 Haziran 2026)
 
-**YENİ — Sanal Hasta Planı:** `docs/PLAN-SANAL-HASTA-V1.md` (DRAFT, Ali Bey sözlü onayladı, 3 faz). **Sıradaki iş: Faz 1 — oynanabilir döngü** (action UI + gerçek zamanlı kötüleşme + tetkik + oskültasyon bağlama + debrief). Pilot senaryo önerisi: `anaflaksi`. Motor tarafı hazır (`ActionStep`/`evaluateAction`/`lab-resolver` mevcut), iş ağırlıklı UI kablolama. `PhysiologyProvider` arayüzü şart (Faz 3 Pulse swap'i için).
+**Sanal Hasta Planı:** `docs/PLAN-SANAL-HASTA-V1.md` (DRAFT, Ali Bey sözlü onayladı, 3 faz).
+**✅ Faz 1 — oynanabilir döngü TAMAMLANDI (13 Haz gece):** `/dialog-3d-demo` uçtan uca oynanıyor — action UI (sağ panel "Vaka Akışı" sekmesi: StepDisplay+InventoryPanel), gerçek zamanlı kötüleşme (`src/engine/physiology.ts` — `PhysiologyProvider` arayüzü + `SimplePhysiologyProvider`, Faz 3 Pulse swap'ine hazır), tetkik (lab countdown+sonuç modalları), oskültasyon senaryo override (`scenarioRegions.ts`, wheeze→adrenalin sonrası normal), debrief (DebriefScreen). Orkestrasyon `src/hooks/useScenarioRunner.ts` (ScenarioPlayPage'e bilinçli DOKUNULMADI — sonraki sprintte o da bu hook'a geçebilir).
+**⚠️ Klinik review bekliyor:** anaflaksi `deterioration`+`auscultation` alanları DRAFT (commit mesajında gerekçe + WAO 2020). Ali Bey onayı olmadan ACTIVE sayılmaz.
+**⚠️ Yarım model migrasyonu (Ali Bey'in işi, dokunulmadı):** worktree'de `patient-mimikli.glb` (161MB!) + shader refactor uncommitted. `InternalOrgans` silinen `anatomy-internal.glb`'ye bakıyordu → graceful error boundary eklendi (organ katmanı sessiz kapanır). `e2e/patient-3d-demo.spec.ts` 2 testi bu migrasyon yüzünden lokal kırık (patient-v1.glb silinmiş + 161MB yavaş yük). 161MB GLB GitHub 100MB limitini aşar — push öncesi draco/gltf-transform şart.
 **Araç kararları:** Blender MCP çekirdek (sahne üretimi Faz 2), Higgsfield yan rol (intro videoları), Unity park.
 **Yeni kurulumlar (12 Haz):** caveman plugin (restart sonrası aktif), graphify (`/graphify .`), `defaultMode: bypassPermissions` + CLAUDE.md kural 2 gevşetildi (soru sormadan devam). Ultracode: Ali Bey `/effort ultracode` veya `ultracode:` prefix ile açar.
 
