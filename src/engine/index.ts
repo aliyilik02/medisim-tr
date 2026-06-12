@@ -11,6 +11,15 @@ export {
   type PhysiologyProviderState,
 } from "./physiology";
 export {
+  createPulsePhysiologyProvider,
+  mapPulseStateToVitals,
+  mapActionToPulse,
+  closePulseProvider,
+  type PulsePatientState,
+  type PulseActionMessage,
+  type PulseProviderOptions,
+} from "./pulse-physiology";
+export {
   deriveGradeBands,
   getEffectiveGradeBands,
   getEffectivePassingScore,

@@ -68,6 +68,10 @@ export function useScenarioRunner({
 }: UseScenarioRunnerParams) {
   const [session, setSession] = useState<SessionState | null>(null);
   const [actionsThisStep, setActionsThisStep] = useState<ActionRef[]>([]);
+  // min_actions sayacı: serbest muayene (eşleşmeyen examine/procedure)
+  // SAYILMAZ — 3 stetoskop ile adım atlanamasın. Tam liste (actionsThisStep)
+  // debrief zaman çizelgesi için korunur.
+  const [scoredActionsThisStep, setScoredActionsThisStep] = useState(0);
   const [pointsThisStep, setPointsThisStep] = useState(0);
   const [criticalErrorsThisStep, setCriticalErrorsThisStep] = useState(0);
   const [decisionAnswered, setDecisionAnswered] = useState<{
@@ -146,6 +150,7 @@ export function useScenarioRunner({
     if (!scenario || !autoStartMode) return;
     setSession(startSession(scenario, autoStartMode, scenario.difficulty));
     setActionsThisStep([]);
+    setScoredActionsThisStep(0);
     setPointsThisStep(0);
     setCriticalErrorsThisStep(0);
     setDecisionAnswered(null);
@@ -189,6 +194,7 @@ export function useScenarioRunner({
       });
 
       setActionsThisStep([]);
+      setScoredActionsThisStep(0);
       setPointsThisStep(0);
       setCriticalErrorsThisStep(0);
       setDecisionAnswered(null);
@@ -322,6 +328,7 @@ export function useScenarioRunner({
       });
 
       setActionsThisStep((prev) => [...prev, action]);
+      if (!freeExam) setScoredActionsThisStep((n) => n + 1);
       setPointsThisStep((p) => p + totalPoints);
       if (isCritical) setCriticalErrorsThisStep((c) => c + 1);
 
@@ -480,6 +487,7 @@ export function useScenarioRunner({
     }
     setSession(startSession(scenario, autoStartMode, scenario.difficulty));
     setActionsThisStep([]);
+    setScoredActionsThisStep(0);
     setPointsThisStep(0);
     setCriticalErrorsThisStep(0);
     setDecisionAnswered(null);
@@ -494,7 +502,7 @@ export function useScenarioRunner({
   const canContinue =
     currentStep?.kind === "action" &&
     (!currentStep.min_actions ||
-      actionsThisStep.length >= currentStep.min_actions);
+      scoredActionsThisStep >= currentStep.min_actions);
 
   return {
     // State
@@ -503,6 +511,7 @@ export function useScenarioRunner({
     resolvedScenario: rs,
     currentStep,
     actionsThisStep,
+    scoredActionsThisStep,
     canContinue,
     decisionAnswered,
     decisionMultiAnswered,

@@ -368,7 +368,7 @@ export function PatientDialog3DPage() {
                 <StepDisplay
                   step={currentStep}
                   mode={session?.mode ?? "egitim"}
-                  actionsThisStep={runner.actionsThisStep.length}
+                  actionsThisStep={runner.scoredActionsThisStep}
                   onDecisionSelect={runner.handleDecision}
                   onDecisionMultiConfirm={runner.handleDecisionMulti}
                   onInfoContinue={runner.handleInfoContinue}
