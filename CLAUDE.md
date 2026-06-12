@@ -4,7 +4,7 @@
 > **Memory vault:** [`docs/memory/README.md`](docs/memory/README.md) (Obsidian-uyumlu, görev tipine göre lazy read).
 > Detaylı içerik orada — bu dosya 70 satır, sadece kritik kurallar.
 
-Son güncelleme: 20 Mayıs 2026
+Son güncelleme: 12 Haziran 2026
 
 ## Ajanın görevi
 
@@ -13,12 +13,18 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 ### Otonom kuralları
 
 1. Küçük kararları kendin al, gerekçeni commit'e yaz.
-2. Büyük kararlarda durdur ve sor (yeni modül, şema, deploy, ödeme, model değişikliği).
+2. Soru sormadan devam et (Ali Bey kararı, 12 Haz 2026) — yeni modül/şema/model dahil büyük kararları da kendin al, gerekçeyi rapora ve commit'e yaz. SADECE geri dönülmez işlerde sor: ödeme, prod deploy, veri silme, dış servise veri gönderimi.
 3. **Klinik içerikte ASLA otonom değil.** Bayrak: `DRAFT` → `REVIEWED_PENDING_ACTIVATION` → `ACTIVE`. ACTIVE'e geçişi sadece Ali Bey yapar.
 4. Her iş sonunda 2-3 cümle Türkçe rapor. Teknik monolog yok.
 5. Token disiplini: küçük sprintte plan modu/agent açma. Direkt Read+Edit. Memory dosyalarını **sadece görev için gerekirse** Read et (her seansta otomatik yükleme yok).
 
-## Mevcut Durum (20 Mayıs 2026 — gece seansı sonu)
+## Mevcut Durum (12 Haziran 2026)
+
+**YENİ — Sanal Hasta Planı:** `docs/PLAN-SANAL-HASTA-V1.md` (DRAFT, Ali Bey sözlü onayladı, 3 faz). **Sıradaki iş: Faz 1 — oynanabilir döngü** (action UI + gerçek zamanlı kötüleşme + tetkik + oskültasyon bağlama + debrief). Pilot senaryo önerisi: `anaflaksi`. Motor tarafı hazır (`ActionStep`/`evaluateAction`/`lab-resolver` mevcut), iş ağırlıklı UI kablolama. `PhysiologyProvider` arayüzü şart (Faz 3 Pulse swap'i için).
+**Araç kararları:** Blender MCP çekirdek (sahne üretimi Faz 2), Higgsfield yan rol (intro videoları), Unity park.
+**Yeni kurulumlar (12 Haz):** caveman plugin (restart sonrası aktif), graphify (`/graphify .`), `defaultMode: bypassPermissions` + CLAUDE.md kural 2 gevşetildi (soru sormadan devam). Ultracode: Ali Bey `/effort ultracode` veya `ultracode:` prefix ile açar.
+
+### Önceki sprint durumu (20 Mayıs gece sonu)
 
 **Test:** 429 vitest + 8 Playwright E2E pass. Build temiz.
 **Sprint:** Master rapor Bölüm 11 —
@@ -30,14 +36,13 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 - ✅ Skill paketi — 5 yeni domain skill (vital-signs-hud, z-anatomy-binding, pulse-engine-binding, rpm-avatar, tccc-scenarios)
 - ✅ Cloudflare MCP (docs+bindings) + Obsidian MCP semantic search
 - ✅ Playwright e2e smoke + `.claude/agents/3d-vision-tester.md` custom agent + `test:visual` script
-- 🔄 B.5 — oskültasyon ses **dosyaları manuel indirme bekliyor** (4 Wikimedia URL `public/sounds/auscultation/SOUNDS-LICENSE.md`'de)
+- 🔄 B.5 — oskültasyon ses dosyaları **indi** (4 ogg `public/sounds/auscultation/`) — UI bağlama Faz 1.4'te
 - 🔄 D.2 RPM avatar — kullanıcı GLB indirmeye başlamıştı, devamı bekliyor (göz/ağız blendshape)
 - ⏸ Senaryo motor TAM entegrasyon — action UI (`/dialog-3d-demo` step engine + action submit) bekliyor
 
 **Demo route'lar:** `/3d-demo`, `/dialog-demo`, `/dialog-3d-demo` (tam paket).
 
-**Yarın sırada:** (1) ses dosyaları indir → B.5 kapat, (2) RPM avatar entegrasyon → D.2 göz/ağız, (3) Splanchnology yerine Sketchfab tek tek organ modelleri (kalp+akciğer+karaciğer ayrı CC BY).
-**Demo route'lar:** `/3d-demo`, `/dialog-demo`, `/dialog-3d-demo`.
+**Sıradaki seans:** Faz 1 — oynanabilir döngü (plan: `docs/PLAN-SANAL-HASTA-V1.md` Bölüm 4). RPM avatar (D.2) ve Sketchfab organ modelleri Faz 2-3'e kaydı.
 
 ## Stack (Master Rapor onaylı)
 
