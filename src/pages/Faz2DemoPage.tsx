@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Play, Pause, RotateCcw } from "lucide-react";
-import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
+import {
+  PatientRoomScene,
+  CAMERA_PRESET_LABELS,
+  type CameraPreset,
+} from "@/components/patient-3d/PatientRoomScene";
 import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import {
   ANIMATED_MODELS,
@@ -50,6 +54,7 @@ export function Faz2DemoPage() {
   const [skinTint, setSkinTint] = useState<SkinTint>("normal");
   const [presetLabel, setPresetLabel] = useState<string | null>(null);
   const [equipment, setEquipment] = useState<EquipmentKind[]>([]);
+  const [camera, setCamera] = useState<CameraPreset>("genel");
   const toggleEquip = (k: EquipmentKind) =>
     setEquipment((e) => (e.includes(k) ? e.filter((x) => x !== k) : [...e, k]));
 
@@ -57,7 +62,8 @@ export function Faz2DemoPage() {
   const [scenarioId, setScenarioId] = useState(DETERIORATION_SCENARIOS[0]?.id ?? "");
   const [running, setRunning] = useState(false);
   const scenario = mode === "scenario" ? SCENARIOS.find((s) => s.id === scenarioId) ?? null : null;
-  const { vitals, reset, intervene, given } = useScenarioVitals(scenario, running);
+  const oxygenSupport = equipment.includes("oxygen_mask") || equipment.includes("nasal_cannula");
+  const { vitals, reset, intervene, given } = useScenarioVitals(scenario, running, { oxygenSupport });
 
   // ── Efektif (gösterilecek) varyant/klip/tint — moda göre türetilir ──
   const scenarioVariant = useMemo(
@@ -74,6 +80,11 @@ export function Faz2DemoPage() {
   const effTint: SkinTint =
     mode === "scenario" && vitals ? vitalsToVisual(vitals).skinTint : skinTint;
   const effSkinTone = scenario ? patientToSkinTone(scenario.patient) : DEFAULT_SKIN_TONE;
+
+  // Stabilizasyon: vital normal bandında (müdahale sonrası iyileşme).
+  const isStable =
+    mode === "scenario" && !!vitals &&
+    vitals.spo2 >= 94 && vitals.bp_systolic >= 100 && vitals.rr <= 22 && vitals.hr <= 110;
 
   // Manuel mod yardımcıları
   const onVariant = (v: PatientVariant) => {
@@ -130,7 +141,23 @@ export function Faz2DemoPage() {
           skinTint={effTint}
           skinTone={effSkinTone}
           equipment={equipment}
+          cameraPreset={camera}
         />
+
+        {/* Kamera presetleri (sağ alt) */}
+        <div className="absolute bottom-3 right-3 flex gap-1 px-1.5 py-1 rounded-lg bg-ink-900/85 border border-ink-700/60 backdrop-blur-md">
+          {(Object.keys(CAMERA_PRESET_LABELS) as CameraPreset[]).map((c) => (
+            <button
+              key={c}
+              onClick={() => setCamera(c)}
+              className={`px-2 py-1 rounded font-mono text-[9px] uppercase tracking-[0.08em] transition ${
+                camera === c ? "bg-brand/20 text-brand-light" : "text-ink-500 hover:text-ink-200 hover:bg-ink-800"
+              }`}
+            >
+              {CAMERA_PRESET_LABELS[c]}
+            </button>
+          ))}
+        </div>
 
         {/* Senaryo modu: canlı vital HUD + müdahale paneli (sağ) */}
         {mode === "scenario" && scenario && vitals && (
@@ -249,9 +276,16 @@ export function Faz2DemoPage() {
         {mode === "scenario" && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
             {scenario && vitals && (
-              <div className="font-mono text-[10px] text-ink-300 px-3 py-1 rounded bg-ink-900/85 border border-ink-700/60">
-                {scenario.title} · canlı: {CLIP_LABELS[effClip]}
-                {effTint !== "normal" ? ` · ${effTint}` : ""}
+              <div className="flex items-center gap-2">
+                <div className="font-mono text-[10px] text-ink-300 px-3 py-1 rounded bg-ink-900/85 border border-ink-700/60">
+                  {scenario.title} · canlı: {CLIP_LABELS[effClip]}
+                  {effTint !== "normal" ? ` · ${effTint}` : ""}
+                </div>
+                {isStable && (
+                  <span className="font-mono text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded bg-clinical-stable/20 text-clinical-stable border border-clinical-stable/50">
+                    ● Stabil
+                  </span>
+                )}
               </div>
             )}
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-ink-900/85 border border-ink-700/60 backdrop-blur-md">

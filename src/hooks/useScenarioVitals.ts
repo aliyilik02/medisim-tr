@@ -15,10 +15,30 @@ import { createSimplePhysiologyProvider } from "@/engine/physiology";
 
 const STEP_MS = 250;
 
-export function useScenarioVitals(scenario: Scenario | null, running: boolean, speed = 6) {
+// O₂ desteği (maske/nazal) — PRESENTATION: takılıyken SpO2'yi ceiling'e doğru
+// iter (deterioration'ı kısmen dengeler, tam iyileştirmez — altta yatan sorun
+// için müdahale gerekir). Tunable, klinik karar değil.
+const O2_CEILING = 94;
+const O2_RATE = 1.4; // %/sn (simüle)
+
+interface ScenarioVitalsOpts {
+  speed?: number;
+  /** O₂ ekipmanı takılı mı (SpO2 desteği). */
+  oxygenSupport?: boolean;
+}
+
+export function useScenarioVitals(
+  scenario: Scenario | null,
+  running: boolean,
+  opts: ScenarioVitalsOpts = {},
+) {
+  const { speed = 6, oxygenSupport = false } = opts;
   const [vitals, setVitals] = useState<PatientVitals | null>(scenario?.initial_vitals ?? null);
   const [given, setGiven] = useState<string[]>([]); // uygulanan müdahale id'leri
   const providerRef = useRef<PhysiologyProvider | null>(null);
+  // Interval kapanışında stale olmasın diye ref
+  const o2Ref = useRef(oxygenSupport);
+  o2Ref.current = oxygenSupport;
 
   // Senaryo değişince provider + vitals sıfırla
   useEffect(() => {
@@ -37,9 +57,16 @@ export function useScenarioVitals(scenario: Scenario | null, running: boolean, s
   useEffect(() => {
     if (!running || !scenario) return;
     const id = setInterval(() => {
-      setVitals((v) =>
-        v && providerRef.current ? providerRef.current.tick(v, (STEP_MS / 1000) * speed) : v,
-      );
+      setVitals((v) => {
+        if (!v || !providerRef.current) return v;
+        const dt = (STEP_MS / 1000) * speed;
+        let next = providerRef.current.tick(v, dt);
+        // O₂ desteği: SpO2'yi ceiling'e doğru iter (deterioration üstüne biner)
+        if (o2Ref.current && next.spo2 < O2_CEILING) {
+          next = { ...next, spo2: Math.min(O2_CEILING, next.spo2 + O2_RATE * dt) };
+        }
+        return next;
+      });
     }, STEP_MS);
     return () => clearInterval(id);
   }, [running, scenario, speed]);
