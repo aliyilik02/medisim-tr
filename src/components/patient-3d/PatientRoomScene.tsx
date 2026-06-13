@@ -11,7 +11,7 @@
 import { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF } from "@react-three/drei";
-import { AnimatedPatientModel, type PatientClip } from "./AnimatedPatientModel";
+import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip } from "./AnimatedPatientModel";
 import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
 
@@ -20,11 +20,13 @@ const ROOM_URL = "/3d/er-room.glb";
 const ROOM_SCALE = 0.64;
 const ROOM_FLOOR_Y = -0.27; // oda zeminini sahne tabanına indir
 // Animasyonlu hasta supine (laying_idle klibi ZATEN yatay → -90° döndürme YOK).
-// Three.js'de gövde Z ekseni boyunca yatıyor (baş -z, ayak +z), y'de yüzüyor.
-// Mattress üstüne indirmek + yatağa ortalamak için aşağıdaki sabitler kalibre edildi.
-const PATIENT_SCALE = 0.62; // canonical eşitleme (animasyonlu model standing ~1.6u)
-const PATIENT_POS: [number, number, number] = [0, -0.35, 0.1]; // mattress + yatak ortası (kalibre)
-const PATIENT_ROT: [number, number, number] = [0, Math.PI, 0]; // baş başlık ucuna (180° flip)
+// Three.js'de gövde Z ekseni boyunca yatıyor (baş -z), y'de yüzüyor. Her varyant
+// ve klip farklı gövde-sırt yüksekliğine (clipMinZ) sahip → tek sabit pozisyon
+// bazılarını yatağa gömüyordu. Çözüm: posY = BED_TOP − clipMinZ × bedScale
+// (her klibin sırtı mattress'a oturur). BED_TOP kadın laying_idle'dan kalibre.
+const BED_TOP = 0.179; // mattress üst yüzey (world Y) — hasta sırtı buraya oturur
+const BED_Z = 0.1; // yatak uzun ekseninde konum
+const BED_ROT: [number, number, number] = [0, Math.PI, 0]; // baş başlık ucuna
 
 useGLTF.preload(ROOM_URL);
 
@@ -83,22 +85,41 @@ export function PatientRoomScene({
 
         <Suspense fallback={<LoadingFallback />}>
           <ErRoom />
-          {/* Supine hasta — animasyonlu (laying_idle klibi yatay yatırıyor) */}
-          <group position={PATIENT_POS} rotation={PATIENT_ROT} scale={PATIENT_SCALE}>
-            <AnimatedPatientModel
-              variant={variant}
-              clip={clip}
-              skinTone={skinTone}
-              skinTint={skinTint}
-              speaking={speaking}
-              scale={1}
-              position={[0, 0, 0]}
-            />
-          </group>
+          {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
+          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} speaking={speaking} />
         </Suspense>
 
         <OrbitControls target={[0, 0.2, 0]} minDistance={0.6} maxDistance={4} enablePan />
       </Canvas>
     </div>
+  );
+}
+
+interface BedPatientProps {
+  variant: PatientVariant;
+  clip: PatientClip;
+  skinTone: SkinTone;
+  skinTint: SkinTint;
+  speaking: boolean;
+}
+
+// Varyant + klip metadata'sından yatak yerleşimini hesaplar (her klip sırtı mattress'a).
+function BedPatient({ variant, clip, skinTone, skinTint, speaking }: BedPatientProps) {
+  const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
+  const s = meta.bedScale;
+  const minZ = meta.clipMinZ[clip] ?? meta.clipMinZ.laying_idle ?? 0.85;
+  const posY = BED_TOP - minZ * s + (meta.bedYAdjust ?? 0);
+  return (
+    <group position={[0, posY, BED_Z]} rotation={BED_ROT} scale={s}>
+      <AnimatedPatientModel
+        variant={variant}
+        clip={clip}
+        skinTone={skinTone}
+        skinTint={skinTint}
+        speaking={speaking}
+        scale={1}
+        position={[0, 0, 0]}
+      />
+    </group>
   );
 }

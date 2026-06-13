@@ -6,12 +6,10 @@ import {
   ANIMATED_MODELS,
   ANIMATED_VARIANTS,
   CLIP_LABELS,
+  NON_SUPINE_CLIPS,
   type PatientClip,
 } from "@/components/patient-3d/AnimatedPatientModel";
 import type { PatientVariant } from "@/components/patient-3d/patientModels";
-
-// Yatak senaryolarında ayakta "idle" klibini gizle (supine sahne).
-const HIDDEN_BED_CLIPS: PatientClip[] = ["idle"];
 
 // Faz 2 — Klinik Sahne demo: supine animasyonlu hasta + acil servis odası.
 export function Faz2DemoPage() {
@@ -20,12 +18,12 @@ export function Faz2DemoPage() {
   const [speaking, setSpeaking] = useState(false);
 
   const clips = (ANIMATED_MODELS[variant]?.clips ?? []).filter(
-    (c) => !HIDDEN_BED_CLIPS.includes(c),
+    (c) => !NON_SUPINE_CLIPS.includes(c),
   );
 
   const onVariant = (v: PatientVariant) => {
     setVariant(v);
-    const vc = (ANIMATED_MODELS[v]?.clips ?? []).filter((c) => !HIDDEN_BED_CLIPS.includes(c));
+    const vc = (ANIMATED_MODELS[v]?.clips ?? []).filter((c) => !NON_SUPINE_CLIPS.includes(c));
     if (!vc.includes(clip)) setClip(vc[0] ?? "laying_idle");
   };
 
