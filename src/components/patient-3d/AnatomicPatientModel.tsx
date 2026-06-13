@@ -157,19 +157,29 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
       });
     }, [speaking]);
 
-    // Blendshape yardımcı fonksiyonu
-    const setMorphInfluence = (name: string, value: number) => {
+    // Morph-capable mesh'leri clone değişince BİR KEZ topla (perf: her frame
+    // ~8× clone.traverse() yerine küçük memo listesi üzerinde dön).
+    const morphMeshes = useMemo(() => {
+      const meshes: SkinnedMesh[] = [];
       clone.traverse((obj) => {
         if ("isMesh" in obj && (obj as any).isMesh) {
           const mesh = obj as SkinnedMesh;
           if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
-            const index = mesh.morphTargetDictionary[name];
-            if (index !== undefined) {
-              mesh.morphTargetInfluences[index] = value;
-            }
+            meshes.push(mesh);
           }
         }
       });
+      return meshes;
+    }, [clone]);
+
+    // Blendshape yardımcı fonksiyonu — memo listesi üzerinde (traverse yok)
+    const setMorphInfluence = (name: string, value: number) => {
+      for (const mesh of morphMeshes) {
+        const index = mesh.morphTargetDictionary![name];
+        if (index !== undefined) {
+          mesh.morphTargetInfluences![index] = value;
+        }
+      }
     };
 
     // Yumuşak mimik animasyonları için ref'ler
