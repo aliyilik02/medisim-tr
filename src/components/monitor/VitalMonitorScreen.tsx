@@ -135,6 +135,7 @@ function VitalBox({
   trend = [],
   icon,
   big = false,
+  k = 1,
 }: {
   label: string;
   unit: string;
@@ -147,13 +148,16 @@ function VitalBox({
   trend?: number[];
   icon: React.ReactNode;
   big?: boolean;
+  /** numerik ölçek faktörü (dense=0.62, normal=1) */
+  k?: number;
 }) {
   const crit = level === "crit";
   const numColor = crit ? "#ff6b6b" : color;
   return (
     <div
       className={
-        "group relative h-full rounded-md border bg-[#06180f]/80 px-3 py-2 flex flex-col justify-between overflow-hidden " +
+        "group relative h-full rounded-md border bg-[#06180f]/80 px-3 flex flex-col justify-between overflow-hidden " +
+        (k < 1 ? "py-1 " : "py-2 ") +
         alarmBox(level)
       }
       role={crit ? "alert" : undefined}
@@ -180,14 +184,14 @@ function VitalBox({
       <div className="flex items-end gap-2">
         <span
           className="font-bold leading-none tracking-tight tabular-nums"
-          style={{ color: numColor, fontSize: big ? "4.6rem" : "3.4rem", fontFamily: MONO }}
+          style={{ color: numColor, fontSize: `${(big ? 4.6 : 3.4) * k}rem`, fontFamily: MONO }}
         >
           {value}
         </span>
         {sub && (
           <span
             className="text-white/55 mb-1.5 tabular-nums"
-            style={{ fontSize: big ? "1.5rem" : "1.1rem", fontFamily: MONO }}
+            style={{ fontSize: `${(big ? 1.5 : 1.1) * k}rem`, fontFamily: MONO }}
           >
             {sub}
           </span>
@@ -200,7 +204,7 @@ function VitalBox({
           color={color}
           critical={crit}
           width={big ? 170 : 134}
-          height={big ? 30 : 24}
+          height={(big ? 30 : 24) * k}
         />
       </div>
     </div>
@@ -214,12 +218,14 @@ function NibpBox({
   level,
   trend,
   accent,
+  k = 1,
 }: {
   sbp: number;
   dbp: number;
   level: AlarmLevel;
   trend: number[];
   accent: string;
+  k?: number;
 }) {
   const [intervalMin, setIntervalMin] = useState(15);
   const [secondsLeft, setSecondsLeft] = useState(15 * 60);
@@ -263,25 +269,25 @@ function NibpBox({
       <div className="flex items-end gap-1">
         <span
           className="font-bold leading-none tracking-tight tabular-nums"
-          style={{ color: crit ? "#ff6b6b" : "#f4f7f5", fontSize: "3.0rem", fontFamily: MONO }}
+          style={{ color: crit ? "#ff6b6b" : "#f4f7f5", fontSize: `${3.0 * k}rem`, fontFamily: MONO }}
         >
           {sbp > 0 ? sbp : "--"}
         </span>
         <span
           className="font-bold leading-none text-white/45"
-          style={{ fontSize: "2.0rem", fontFamily: MONO }}
+          style={{ fontSize: `${2.0 * k}rem`, fontFamily: MONO }}
         >
           /
         </span>
         <span
           className="font-bold leading-none tracking-tight tabular-nums"
-          style={{ color: crit ? "#ff6b6b" : "#f4f7f5", fontSize: "3.0rem", fontFamily: MONO }}
+          style={{ color: crit ? "#ff6b6b" : "#f4f7f5", fontSize: `${3.0 * k}rem`, fontFamily: MONO }}
         >
           {dbp > 0 ? dbp : "--"}
         </span>
         <span
           className="text-white/45 mb-1 ml-1 tabular-nums"
-          style={{ fontSize: "1.1rem", fontFamily: MONO }}
+          style={{ fontSize: `${1.1 * k}rem`, fontFamily: MONO }}
         >
           ({mean || "--"})
         </span>
@@ -400,14 +406,16 @@ function TopBar({
   bedLabel,
   severity,
   clock,
+  dense = false,
 }: {
   patientName: string;
   bedLabel: string;
   severity: AlarmLevel;
   clock: { time: string; date: string };
+  dense?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 h-14 border-b border-white/10 bg-[#03100a]">
+    <div className={"flex items-center justify-between px-4 border-b border-white/10 bg-[#03100a] " + (dense ? "h-9" : "h-14")}>
       <div className="flex items-center gap-4 min-w-0">
         <div className="flex items-center gap-2">
           <div
@@ -481,6 +489,8 @@ export interface VitalMonitorScreenProps {
   accent?: string;
   /** ABP (arteriyel) lane + kutusu gösterilsin mi (varsayılan true) */
   showArt?: boolean;
+  /** Gömülü/dar slot için yoğun yerleşim — numerik fontlar küçülür, üst bar incelir */
+  dense?: boolean;
 }
 
 export function VitalMonitorScreen({
@@ -489,7 +499,10 @@ export function VitalMonitorScreen({
   bedLabel = "Yatak 1 · Yoğun Bakım",
   accent = "#06b6d4",
   showArt = true,
+  dense = false,
 }: VitalMonitorScreenProps) {
+  // dense: gömülü başucu slotunda büyük fontlar taşmasın diye numerik ölçek
+  const k = dense ? 0.6 : 1;
   // getVitals: WaveLane'ler güncel vitalleri ref üzerinden okur (re-render yok)
   const vitalsRef = useRef<VitalState>(vitals);
   vitalsRef.current = vitals;
@@ -613,12 +626,13 @@ export function VitalMonitorScreen({
         bedLabel={bedLabel}
         severity={alarms.severity}
         clock={clockObj}
+        dense={dense}
       />
 
       <WarningBand text={alarms.bandText} />
 
       {/* ana alan */}
-      <div className="flex-1 min-h-0 flex gap-2 p-2">
+      <div className={"flex-1 min-h-0 flex " + (dense ? "gap-1.5 p-1.5" : "gap-2 p-2")}>
         {/* SOL — dalga formları */}
         <div className="flex flex-col gap-2" style={{ flexBasis: "64%", flexGrow: 1, minWidth: 0 }}>
           {lanes.map((ln) => (
@@ -665,6 +679,7 @@ export function VitalMonitorScreen({
               trend={trendArr("hr")}
               icon={<Heart size={15} color={PARAM.hr.color} />}
               big
+              k={k}
             />
           </div>
           <div className="flex-1 min-h-0">
@@ -678,6 +693,7 @@ export function VitalMonitorScreen({
               high={LIMITS.spo2.critHi}
               trend={trendArr("spo2")}
               icon={<Droplet size={15} color={PARAM.spo2.color} />}
+              k={k}
             />
           </div>
           <div className="flex gap-2" style={{ flexBasis: "0", flexGrow: 1.1, minHeight: 0 }}>
@@ -688,6 +704,7 @@ export function VitalMonitorScreen({
                 level={lv.sbp}
                 trend={trendArr("sbp")}
                 accent={accent}
+                k={k}
               />
             </div>
             {showArt && (
@@ -708,6 +725,7 @@ export function VitalMonitorScreen({
                 high={LIMITS.rr.critHi}
                 trend={trendArr("rr")}
                 icon={<Wind size={15} color={PARAM.rr.color} />}
+                k={k}
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -721,6 +739,7 @@ export function VitalMonitorScreen({
                 high={LIMITS.etco2.critHi}
                 trend={trendArr("etco2")}
                 icon={<Activity size={15} color={PARAM.etco2.color} />}
+                k={k}
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -734,6 +753,7 @@ export function VitalMonitorScreen({
                 high={LIMITS.temp.critHi}
                 trend={[]}
                 icon={<Thermometer size={15} color={PARAM.temp.color} />}
+                k={k}
               />
             </div>
           </div>

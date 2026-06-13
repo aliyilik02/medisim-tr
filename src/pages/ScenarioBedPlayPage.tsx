@@ -8,7 +8,6 @@ import {
   type PatientClip,
 } from "@/components/patient-3d/AnimatedPatientModel";
 import type { EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
-import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
 import { patientVitalsToMonitor } from "@/components/monitor/adapter";
 import { DialogChat } from "@/components/dialog/DialogChat";
@@ -66,7 +65,6 @@ export function ScenarioBedPlayPage() {
   const [scenarioId, setScenarioId] = useState<string>(SCENARIOS[0].id);
   const [rightTab, setRightTab] = useState<RightTab>("vaka");
   const [speaking, setSpeaking] = useState(false);
-  const [leftView, setLeftView] = useState<"patient" | "monitor">("patient");
   // Hastaya takılı ekipman — verilen ekipman aksiyonlarından lokal izlenir
   const [equipment, setEquipment] = useState<EquipmentKind[]>([]);
 
@@ -168,57 +166,36 @@ export function ScenarioBedPlayPage() {
 
       {/* Ana içerik */}
       <div className="flex-1 flex min-h-0">
-        {/* Sol: 3D yatak sahnesi VEYA tam monitör (toggle) */}
-        <div className="flex-1 relative min-w-0 border-r border-ink-700/50">
-          {/* Görünüm toggle (sağ üst) */}
-          <div className="absolute top-3 right-3 z-20 flex gap-0.5 rounded bg-ink-900/90 border border-ink-700/60 p-0.5 backdrop-blur-md">
-            {(["patient", "monitor"] as const).map((vw) => (
-              <button
-                key={vw}
-                onClick={() => setLeftView(vw)}
-                className={`px-2.5 py-1 rounded font-mono text-[9px] uppercase tracking-[0.1em] transition ${
-                  leftView === vw ? "bg-brand/20 text-brand-light" : "text-ink-500 hover:text-ink-200"
-                }`}
-              >
-                {vw === "patient" ? "3D Hasta" : "Monitör"}
-              </button>
-            ))}
+        {/* Sol: üstte 3D yatak sahnesi, altta hasta başı monitör (kullanıcı tasarımı) */}
+        <div className="flex-1 flex flex-col min-w-0 border-r border-ink-700/50">
+          {/* Üst — 3D hasta */}
+          <div className="relative flex-[5] min-h-0">
+            <PatientRoomScene
+              variant={variant}
+              clip={clip}
+              skinTint={skinTint}
+              skinTone={skinTone}
+              speaking={speaking}
+              equipment={equipment}
+              cameraPreset="genel"
+            />
+            {speaking && (
+              <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-brand-light shadow-lg">
+                <span className="w-2 h-2 bg-brand rounded-full animate-pulse" />
+                Hasta konuşuyor
+              </div>
+            )}
           </div>
-
-          {leftView === "monitor" ? (
+          {/* Alt — hasta başı monitör (eski CompactVitalsHUD yerine kullanıcı tasarımı) */}
+          <div className="flex-[6] min-h-0 border-t border-ink-700/50">
             <VitalMonitorScreen
               vitals={patientVitalsToMonitor(liveVitals, scenario.ekg_pattern)}
               patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
               bedLabel="Yatak 1 · Acil Servis"
               showArt={false}
+              dense
             />
-          ) : (
-            <>
-              <PatientRoomScene
-                variant={variant}
-                clip={clip}
-                skinTint={skinTint}
-                skinTone={skinTone}
-                speaking={speaking}
-                equipment={equipment}
-                cameraPreset="genel"
-              />
-              {/* Kompakt vital (3D görünümde köşede) */}
-              <div className="absolute top-4 left-4">
-                <CompactVitalsHUD
-                  vitals={liveVitals}
-                  patientAge={scenario.patient.age}
-                  ecgPattern={scenario.ekg_pattern}
-                />
-              </div>
-              {speaking && (
-                <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-brand-light shadow-lg">
-                  <span className="w-2 h-2 bg-brand rounded-full animate-pulse" />
-                  Hasta konuşuyor
-                </div>
-              )}
-            </>
-          )}
+          </div>
         </div>
 
         {/* Sağ panel: Vaka Akışı | Diyalog */}
