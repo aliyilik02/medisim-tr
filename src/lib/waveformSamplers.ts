@@ -60,6 +60,30 @@ export const sampleArt: WaveSampler = (phase) => {
   return 0.60;
 };
 
+// Kapnografi (EtCO₂) — kare-omuz dalga: hızlı ekspiratuvar yükseliş,
+// hafif yukarı eğimli alveoler plato (tepe = EtCO₂), inspirasyonda hızlı düşüş.
+// Faz I baseline ≈ 0 CO₂ (sampler dönüşünde alt = 1.0).
+export const sampleCapno: WaveSampler = (phase) => {
+  const p = phase % 1;
+  const top = 0.10;     // plato tepesi (EtCO₂ — ekranda üst)
+  const base = 0.92;    // inspiratuvar baseline (CO₂ ≈ 0 — ekranda alt)
+  // Faz I — soluk alma/baseline (düz, sıfıra yakın CO₂)
+  if (p < 0.30) return base;
+  // Faz II — ekspiratuvar hızlı yükseliş (dik omuz)
+  if (p < 0.42) {
+    const t = (p - 0.30) / 0.12;
+    return base - (base - top - 0.04) * t;
+  }
+  // Faz III — alveoler plato (hafif yukarı eğimli, tepe = EtCO₂)
+  if (p < 0.85) {
+    const t = (p - 0.42) / 0.43;
+    return (top + 0.04) - 0.04 * t; // plato sonunda en yüksek (EtCO₂ tepesi)
+  }
+  // İnspirasyon başı — hızlı düşüş (dik iniş omzu) baseline'a
+  const t = (p - 0.85) / 0.15;
+  return top + (base - top) * t;
+};
+
 // Solunum — yavaş asimetrik sinüs
 export const sampleResp: WaveSampler = (phase) => {
   const p = phase % 1;

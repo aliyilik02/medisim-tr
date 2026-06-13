@@ -5,7 +5,7 @@ import { ArrowUp, ArrowDown } from "lucide-react";
 import { MonitorClock } from "./MonitorClock";
 import { EcgStrip } from "./EcgStrip";
 import { WaveStrip } from "./WaveStrip";
-import { samplePleth, sampleArt, sampleResp } from "@/lib/waveformSamplers";
+import { samplePleth, sampleArt, sampleResp, sampleCapno } from "@/lib/waveformSamplers";
 
 function hrStatus(hr: number): "stable" | "warning" | "critical" {
   if (hr < 50 || hr > 140) return "critical";
@@ -125,6 +125,18 @@ export function VitalsMonitor({
           ctx={sampleCtx}
           height={36}
         />
+        {/* Kapnografi (EtCO₂) — yalnız vitals.etco2 tanımlıysa göster (opsiyonel) */}
+        {vitals.etco2 !== undefined && (
+          <WaveStrip
+            rate={vitals.rr}
+            sampler={sampleCapno}
+            color="#FFFFFF"
+            label="EtCO₂"
+            valueLabel={`${Math.round(vitals.etco2)} mmHg`}
+            ctx={sampleCtx}
+            height={36}
+          />
+        )}
       </div>
 
       {/* Sayısal değerler — 2 sütun compact grid */}
