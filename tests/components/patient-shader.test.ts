@@ -17,8 +17,9 @@ describe("Patient 3D Shaders — Modüler Yapı Testi", () => {
   test("vertex shader parçaları gerekli uniform tanımlamalarını içermeli", () => {
     expect(patientVertexCommon).toContain("uniform float uTime;");
     expect(patientVertexCommon).toContain("uniform float uBreathAmplitude;");
-    expect(patientVertexCommon).toContain("uniform float uSpeaking;");
     expect(patientVertexCommon).toContain("uniform float uBreathSpeed;");
+    // uSpeaking kaldırıldı — lipsync morph-target ile (shader uniform kullanılmıyordu)
+    expect(patientVertexCommon).not.toContain("uSpeaking");
   });
 
   test("vertex shader displacement formülü uBreathSpeed'i kullanmalı", () => {

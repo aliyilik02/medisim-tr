@@ -104,7 +104,6 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
             shader.uniforms.uTime = { value: 0 };
             shader.uniforms.uBreathAmplitude = { value: breathAmplitudeLocal };
             shader.uniforms.uSkinTint = { value: SKIN_TINT_PRESETS[skinTint] };
-            shader.uniforms.uSpeaking = { value: speaking ? 1.0 : 0.0 };
             shader.uniforms.uBreathSpeed = { value: (rr / 60) * 2 * Math.PI };
 
             // Vertex shader modifikasyonları (solunum için)
@@ -148,14 +147,8 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
       targetTintRef.current = SKIN_TINT_PRESETS[skinTint];
     }, [skinTint]);
 
-    // Konuşma durumu (shader oscillation yerine blendshape kullandığımız için uSpeaking opsiyonel kalır)
-    useEffect(() => {
-      shaderRefs.current.forEach((shader) => {
-        if (shader.uniforms.uSpeaking) {
-          shader.uniforms.uSpeaking.value = speaking ? 1.0 : 0.0;
-        }
-      });
-    }, [speaking]);
+    // Konuşma → ağız lipsync artık morph-target ile (useFrame). Eski uSpeaking
+    // shader uniform'u kaldırıldı (vertex displacement'ta kullanılmıyordu).
 
     // Morph-capable mesh'leri clone değişince BİR KEZ topla (perf: her frame
     // ~8× clone.traverse() yerine küçük memo listesi üzerinde dön).

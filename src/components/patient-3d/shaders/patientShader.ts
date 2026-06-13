@@ -10,7 +10,6 @@ export const patientVertexCommon = `
 #include <common>
 uniform float uTime;
 uniform float uBreathAmplitude;
-uniform float uSpeaking;
 uniform float uBreathSpeed; // Vital RR değerine bağlı dinamik nefes alma hızı
 `;
 
