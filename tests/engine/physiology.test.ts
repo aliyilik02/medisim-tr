@@ -105,6 +105,25 @@ describe("applyTrends — saf trend uygulama", () => {
     expect(next.hr).toBe(152);
   });
 
+  test("sınırın ÖTESİNDE başlayan değer sınıra zıplatılmaz — mevcut değerde durur", () => {
+    // vitals_change mutlak yazınca vital sınır dışına düşebilir (review bulgusu).
+    // Kötüleşme (delta<0, floor 72): SpO2 70'ten 72'ye YÜKSELMEMELİ.
+    const det = applyTrends(
+      { ...BASE_VITALS, spo2: 70 },
+      [{ vital: "spo2", delta_per_sec: -1, floor: 72 }],
+      5
+    );
+    expect(det.spo2).toBe(70);
+
+    // İyileşme (delta>0, ceiling 112): SBP 120'den 112'ye DÜŞMEMELİ.
+    const rec = applyTrends(
+      { ...BASE_VITALS, bp_systolic: 120 },
+      [{ vital: "bp_systolic", delta_per_sec: 4, ceiling: 112 }],
+      5
+    );
+    expect(rec.bp_systolic).toBe(120);
+  });
+
   test("tanımsız opsiyonel vital atlanır", () => {
     const next = applyTrends(
       BASE_VITALS, // etco2 yok

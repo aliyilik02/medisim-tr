@@ -557,6 +557,12 @@ export interface SessionState {
   // useVitalsTick hook her tick'te bunu günceller.
   vitals: PatientVitals;
 
+  // Faz 1 — simüle saat (ms, started_at tabanlı). PhysiologyProvider'lı
+  // oturumlarda farmakoloji + deterioration AYNI eksende akar: mod hızı
+  // (eğitim 8×) ikisine eşit uygulanır, tarayıcı tab throttling ikisini
+  // birlikte yavaşlatır. Provider'sız (quiz) oturumda kullanılmaz.
+  sim_time_ms?: number;
+
   // Farmakoloji motoru — şu an hastanın sisteminde olan ilaçlar.
   // Tick fonksiyonu bu tam objeler üzerinde çalışır (instance_id, administered_at,
   // effective_vitals, timing, expires_at). Tipe Pharmacology namespace'inden erişilir:

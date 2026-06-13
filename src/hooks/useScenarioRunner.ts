@@ -176,7 +176,9 @@ export function useScenarioRunner({
       const stepId = currentStep.id;
 
       setSession((s) => {
-        if (!s) return s;
+        // finished guard: "Bitir" sonrası bekleyen karar/unlock timer'ı
+        // (setTimeout(finishStep)) ateşlenirse oturuma tekrar yazmasın.
+        if (!s || s.finished) return s;
         const nextStepId =
           unlockId ?? pickNextStep(rs, stepId, [], s.selected_difficulty);
 
@@ -247,6 +249,9 @@ export function useScenarioRunner({
             vitals: session.vitals,
             activeMedicationIds: session.active_medication_ids ?? [],
             sourceStepId: currentStep.id,
+            // TEK SAAT: administered_at/expires_at simüle eksende yazılır —
+            // useVitalsTick pharma tick'i de aynı eksenle okur.
+            now: session.sim_time_ms ?? session.started_at,
             timingOverride: rs.medication_timing_overrides?.[extended.id],
           });
 

@@ -9,8 +9,9 @@
 //   3. SessionState'teki `vitals` alanı güncellenir
 //   4. Süresi dolan ilaçlar `active_medications` listesinden düşer
 //
-// Tick aralığı mod'a göre:
-//   - Eğitim: baseMs / 3  (3x hızlı — yaklaşık her 333ms)
+// Tick aralığı mod'a göre (getTickIntervalMs varsayılanları):
+//   - Eğitim: baseMs / 8  (8x hızlı — her 125ms)
+//   - Klinik: baseMs / 3  (3x — her ~333ms)
 //   - Sınav:  baseMs / 1  (gerçek zaman — her 1000ms)
 //
 // Senaryo `time_scale_override` veriyorsa motor onu uygular.
@@ -58,7 +59,14 @@ export function useVitalsTick({
       setSession((s) => {
         if (!s || s.finished) return s;
         const actives = s.active_medications ?? [];
-        const now = Date.now();
+        // Faz 1 — TEK SAAT kuralı: provider'lı oturumda farmakoloji de
+        // simüle eksende akar (her tick = 1 simüle sn). Böylece ilaç
+        // onset/duration ile deterioration aynı hızda ölçeklenir ve tab
+        // throttling ikisini birlikte yavaşlatır. Provider'sız (quiz)
+        // oturumda eski wall-clock davranışı korunur.
+        const now = provider
+          ? (s.sim_time_ms ?? s.started_at) + BASE_TICK_MS
+          : Date.now();
         const result = tick({ activeMedications: actives, now });
 
         const stillActive = result.expired_instance_ids.length > 0
@@ -77,6 +85,7 @@ export function useVitalsTick({
           ...s,
           baseline_vitals: newBaseline,
           vitals: liveVitals,
+          sim_time_ms: provider ? now : s.sim_time_ms,
           active_medications: stillActive,
           current_ecg_params: Object.keys(result.ecg_delta).length > 0
             ? result.ecg_delta

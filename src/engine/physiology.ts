@@ -71,8 +71,15 @@ export function applyTrends(
     if (typeof current !== "number") continue; // opsiyonel vital tanımsızsa atla
 
     let value = current + t.delta_per_sec * dtSec;
-    if (t.floor !== undefined && value < t.floor) value = t.floor;
-    if (t.ceiling !== undefined && value > t.ceiling) value = t.ceiling;
+    // Yönlü clamp: sınır yalnız o yöndeki HAREKETİ durdurur. Vital zaten
+    // sınırın ötesindeyse (örn. vitals_change mutlak yazdı) sınıra
+    // zıplatılmaz — mevcut değerde kalır (trend o yönde ilerleyemez).
+    if (t.floor !== undefined && value < t.floor) {
+      value = current < t.floor ? current : t.floor;
+    }
+    if (t.ceiling !== undefined && value > t.ceiling) {
+      value = current > t.ceiling ? current : t.ceiling;
+    }
     // Bilinçli: ara değerler kesirli tutulur (0.067/sn birikimi kaybolmasın).
     // Gösterim yuvarlaması computeLiveVitals'ta yapılır.
     next[t.vital] = value;

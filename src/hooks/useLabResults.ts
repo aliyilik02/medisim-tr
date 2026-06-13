@@ -80,6 +80,15 @@ export function useLabResults({
     };
   }, []);
 
+  // Oturum değişti (restart / yeni senaryo) — eski sipariş ve sonuç
+  // state'i yeni oturuma sızmasın: timer'ları durdur, listeleri boşalt.
+  useEffect(() => {
+    for (const id of timersRef.current.values()) clearTimeout(id);
+    timersRef.current.clear();
+    setPendingIds([]);
+    setReadyPanels([]);
+  }, [sessionStartedAt]);
+
   const getLabStatus = useCallback(
     (panelId: string): LabStatus => {
       if (readyPanels.some((r) => r.panelId === panelId)) return "ready";
