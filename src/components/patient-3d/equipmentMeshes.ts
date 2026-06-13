@@ -37,17 +37,33 @@ export const EQUIPMENT_LABELS: Record<EquipmentKind, string> = {
   ekg_electrodes: "EKG",
 };
 
-/** kind → hangi kemiğe + bone-local offset/rotation/scale (screenshot kalibre). */
+/**
+ * kind → hangi kemiğe + bone-local offset/rotation/scale.
+ * Supine `laying_idle` pozunda /faz2-demo'da Playwright screenshot iterasyonu ile
+ * kalibre (kollar göğüste katlı). Bone-local eksen yönleri (matrixWorld basis,
+ * worldScale ~0.0062) ölçülerek anatomik olarak yerleştirildi:
+ *  - Head:    local +Y → kraniyal (baş tepesi), local +Z → anterior (yüz/tavan, world +Y).
+ *  - Spine2:  local +Y → kraniyal (göğüs üst), local +Z → anterior (göğüs yüzeyi).
+ *  - ForeArm: local +Y → dorsal yüzey (world +Y, kolun üstü); +Z gömer (terk).
+ *  - LeftArm: local +Y → omuzdan dirseğe (pazıyı aşağı tarar) → cuff'ı bicep'e oturtur.
+ * Bone-local birim; wrapper bedScale ile ölçeklenir → çocukta orantılı küçülür.
+ */
 export const EQUIPMENT_BONE: Record<
   EquipmentKind,
   { bone: string; offset: [number, number, number]; rotation?: [number, number, number]; scale?: number }
 > = {
-  oxygen_mask: { bone: "mixamorigHead", offset: [0, 3.5, 10], rotation: [0.55, 0, 0], scale: 1.05 },
-  nasal_cannula: { bone: "mixamorigHead", offset: [0, 2, 11], scale: 1 },
+  // Yüze otur (burun+ağız üzeri), tüp aşağı; +Z float azaltıldı (10→9).
+  oxygen_mask: { bone: "mixamorigHead", offset: [0, 3, 9], rotation: [0.55, 0, 0], scale: 1.0 },
+  // Burun altı; eski ring havada uçuyordu → +Z 11→9.7 indirildi, scale 0.85 küçültüldü.
+  nasal_cannula: { bone: "mixamorigHead", offset: [0, 1.2, 9.7], scale: 0.85 },
+  // Göğüste duran elin parmak ucuna klips (LED parmağa bakar).
   pulse_ox: { bone: "mixamorigLeftHand", offset: [0, 9, 0], scale: 1 },
-  iv_cannula: { bone: "mixamorigRightForeArm", offset: [0, 12, 2.5], scale: 1 },
-  nibp_cuff: { bone: "mixamorigLeftArm", offset: [0, 12, 0], scale: 1 },
-  ekg_electrodes: { bone: "mixamorigSpine2", offset: [0, 6, 8], scale: 1 },
+  // Ön kolun dorsal (üst) yüzeyine; eski +Z 2.5 kolun altına gömüyordu → -0.5'e çekildi.
+  iv_cannula: { bone: "mixamorigRightForeArm", offset: [-1.5, 11, -0.5], scale: 0.85 },
+  // Sol üst kola (pazı) sarılı; eski Y=12 dirseği aşıp gövdeye düşüyordu → Y=10 (bicep).
+  nibp_cuff: { bone: "mixamorigLeftArm", offset: [0, 10, 0], scale: 0.95 },
+  // Sternum/üst göğüs (subklaviküler triad); eski Y=6,+Z=8 boyna fırlayıp uçuyordu.
+  ekg_electrodes: { bone: "mixamorigSpine2", offset: [0, 3.5, 7.6], scale: 0.78 },
 };
 
 const mat = (color: number, opts: MeshStandardMaterialParameters = {}) =>
