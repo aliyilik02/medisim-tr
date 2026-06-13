@@ -11,18 +11,20 @@
 import { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF } from "@react-three/drei";
-import { AnatomicPatientModel } from "./AnatomicPatientModel";
-import { DEFAULT_PATIENT_VARIANT, type PatientVariant, type SkinTone, DEFAULT_SKIN_TONE } from "./patientModels";
+import { AnimatedPatientModel, type PatientClip } from "./AnimatedPatientModel";
+import { type SkinTone, DEFAULT_SKIN_TONE } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
 
 const ROOM_URL = "/3d/er-room.glb";
 // metre → hasta world birimi (hasta ~1.6m ≈ 1.02 birim → 1 birim ≈ 1.57m)
 const ROOM_SCALE = 0.64;
 const ROOM_FLOOR_Y = -0.27; // oda zeminini sahne tabanına indir
-// supine hasta yerleşimi (yatak mattress üstü world ≈ ROOM_FLOOR_Y + 0.77*ROOM_SCALE)
-const SUPINE_ROT_X = -Math.PI / 2; // anterior yukarı (sırtüstü)
-const PATIENT_BED_Y = 0.27; // mattress üstüne kaldır
-const PATIENT_BED_Z = 0.27; // yatak uzun ekseninde ortala
+// Animasyonlu hasta supine (laying_idle klibi ZATEN yatay → -90° döndürme YOK).
+// Three.js'de gövde Z ekseni boyunca yatıyor (baş -z, ayak +z), y'de yüzüyor.
+// Mattress üstüne indirmek + yatağa ortalamak için aşağıdaki sabitler kalibre edildi.
+const PATIENT_SCALE = 0.62; // canonical eşitleme (animasyonlu model standing ~1.6u)
+const PATIENT_POS: [number, number, number] = [0, -0.35, 0.1]; // mattress + yatak ortası (kalibre)
+const PATIENT_ROT: [number, number, number] = [0, Math.PI, 0]; // baş başlık ucuna (180° flip)
 
 useGLTF.preload(ROOM_URL);
 
@@ -44,27 +46,27 @@ function LoadingFallback() {
 }
 
 interface Props {
-  variant?: PatientVariant;
   skinTone?: SkinTone;
   skinTint?: SkinTint;
-  breathing?: boolean;
-  rr?: number;
+  /** Oynatılacak klip (senaryo durumundan: laying_idle, talk, cough, pain). */
+  clip?: PatientClip;
+  /** Hasta konuşuyor mu (lipsync jawOpen). */
+  speaking?: boolean;
   className?: string;
 }
 
 export function PatientRoomScene({
-  variant = DEFAULT_PATIENT_VARIANT,
   skinTone = DEFAULT_SKIN_TONE,
   skinTint = "normal",
-  breathing = true,
-  rr = 14,
+  clip = "laying_idle",
+  speaking = false,
   className,
 }: Props) {
   return (
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-room-canvas"
-        frameloop={breathing ? "always" : "demand"}
+        frameloop="always"
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         camera={{ position: [2.0, 1.4, -1.1], fov: 38 }}
@@ -78,14 +80,15 @@ export function PatientRoomScene({
 
         <Suspense fallback={<LoadingFallback />}>
           <ErRoom />
-          {/* Supine hasta — yatağa yatırılmış */}
-          <group rotation={[SUPINE_ROT_X, 0, 0]} position={[0, PATIENT_BED_Y, PATIENT_BED_Z]}>
-            <AnatomicPatientModel
-              variant={variant}
+          {/* Supine hasta — animasyonlu (laying_idle klibi yatay yatırıyor) */}
+          <group position={PATIENT_POS} rotation={PATIENT_ROT} scale={PATIENT_SCALE}>
+            <AnimatedPatientModel
+              clip={clip}
               skinTone={skinTone}
               skinTint={skinTint}
-              breathing={breathing}
-              rr={rr}
+              speaking={speaking}
+              scale={1}
+              position={[0, 0, 0]}
             />
           </group>
         </Suspense>
