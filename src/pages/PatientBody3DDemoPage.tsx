@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, Waves, Droplet } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
-import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
+import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
+import { patientVitalsToMonitor } from "@/components/monitor/adapter";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { SCENARIOS } from "@/data/scenarios";
 import type { ActionRef } from "@/engine/types";
@@ -100,13 +101,17 @@ export function PatientBody3DDemoPage() {
           onProcedureComplete={handleProcedureComplete}
         />
 
-        {/* Sprint B.3 — Vital HUD sağ üst overlay */}
-        <div className="absolute top-4 right-4">
-          <CompactVitalsHUD
-            vitals={DEMO_SCENARIO.initial_vitals}
-            patientAge={DEMO_SCENARIO.patient.age}
-            ecgPattern={DEMO_SCENARIO.ekg_pattern}
-          />
+        {/* Sprint B.3 — Başucu monitörü sağ üst overlay.
+            Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
+        <div className="absolute top-3 right-3 origin-top-right" style={{ transform: "scale(0.6)" }}>
+          <div className="w-[560px] h-[430px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+            <VitalMonitorScreen
+              vitals={patientVitalsToMonitor(DEMO_SCENARIO.initial_vitals, DEMO_SCENARIO.ekg_pattern)}
+              patientName={`${DEMO_SCENARIO.patient.age} yaş ${DEMO_SCENARIO.patient.sex === "M" ? "Erkek" : "Kadın"}`}
+              bedLabel="Demo · Standalone"
+              showArt={false}
+            />
+          </div>
         </div>
 
         {log.length > 0 && (

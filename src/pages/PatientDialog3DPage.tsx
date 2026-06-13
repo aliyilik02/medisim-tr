@@ -12,7 +12,8 @@ import {
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
-import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
+import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
+import { patientVitalsToMonitor } from "@/components/monitor/adapter";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { buildScenarioRegions } from "@/components/patient-3d/scenarioRegions";
 import { DialogChat } from "@/components/dialog/DialogChat";
@@ -202,13 +203,17 @@ export function PatientDialog3DPage() {
             onProcedureComplete={handleProcedureComplete}
           />
 
-          {/* SOL ÜST: Vital Monitor — canlı session vital'leri */}
-          <div className="absolute top-4 left-4">
-            <CompactVitalsHUD
-              vitals={liveVitals}
-              patientAge={scenario.patient.age}
-              ecgPattern={scenario.ekg_pattern}
-            />
+          {/* SOL ÜST: Başucu monitörü — canlı session vital'leri.
+              Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
+          <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.45)" }}>
+            <div className="w-[560px] h-[430px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+              <VitalMonitorScreen
+                vitals={patientVitalsToMonitor(liveVitals, scenario.ekg_pattern)}
+                patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
+                bedLabel="Yatak 1 · Acil Servis"
+                showArt={false}
+              />
+            </div>
           </div>
 
           {/* SAĞ ÜST: Kontrol kümesi (cilt tonu + solunum + speaking) */}

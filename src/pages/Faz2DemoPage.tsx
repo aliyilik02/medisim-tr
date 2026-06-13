@@ -6,7 +6,8 @@ import {
   CAMERA_PRESET_LABELS,
   type CameraPreset,
 } from "@/components/patient-3d/PatientRoomScene";
-import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
+import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
+import { patientVitalsToMonitor } from "@/components/monitor/adapter";
 import {
   ANIMATED_MODELS,
   ANIMATED_VARIANTS,
@@ -175,7 +176,17 @@ export function Faz2DemoPage() {
         {/* Senaryo modu: canlı vital HUD + müdahale paneli (sağ) */}
         {mode === "scenario" && scenario && vitals && (
           <div className="absolute top-3 right-3 w-64 flex flex-col gap-2">
-            <CompactVitalsHUD vitals={vitals} patientAge={scenario.patient.age} />
+            {/* Başucu monitörü — tam tasarım, w-64 kolona sığacak şekilde CSS scale ile küçültülür. */}
+            <div className="origin-top-right self-end" style={{ transform: "scale(0.45)", marginBottom: "-236px" }}>
+              <div className="w-[560px] h-[430px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+                <VitalMonitorScreen
+                  vitals={patientVitalsToMonitor(vitals, scenario.ekg_pattern)}
+                  patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
+                  bedLabel="Yatak 1 · Acil Servis"
+                  showArt={false}
+                />
+              </div>
+            </div>
             <div className="rounded-lg bg-ink-900/85 border border-ink-700/60 backdrop-blur-md p-2">
               <div className="font-mono text-[8px] text-ink-500 uppercase tracking-[0.15em] mb-1.5 px-0.5">Müdahale (İlaç ver)</div>
               <div className="flex flex-wrap gap-1">
