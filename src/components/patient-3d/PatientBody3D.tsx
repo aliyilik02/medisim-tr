@@ -73,16 +73,22 @@ function LoadingFallback() {
 // (kullanıcı sonucu görsün, ses cue çalsın). Sonra unmount.
 const PROCEDURE_REST_MS = 800;
 
-// P0 ekipman: takıldıktan sonra hastanın üzerinde KALAN (persistent)
-// prosedürler. Takma animasyonu bitince AttachedEquipmentLayer'a taşınır;
-// böylece maske + IV + pulse-ox + kaf + EKG aynı anda durabilir.
-// stethoscope / defibrillator anlık eylem → persistent değil.
+// Takıldıktan sonra hastanın üzerinde KALAN (persistent) prosedürler.
+// Takma animasyonu bitince AttachedEquipmentLayer'a taşınır; böylece
+// maske + IV + pulse-ox + kaf + EKG + turnike + göğüs mührü + nazal
+// kanül aynı anda durabilir.
+// Anlık eylem (persistent DEĞİL): stethoscope, defibrillator, bvm
+// (elle ventilasyon), intubation (yerleştirme manevrası), glucometer
+// (ölç-kaldır).
 const PERSISTENT_KINDS: ReadonlySet<ProcedureKind> = new Set<ProcedureKind>([
   "oxygen_mask",
   "iv_line",
   "pulse_ox",
   "bp_cuff",
   "ekg_electrodes",
+  "tourniquet",
+  "chest_seal",
+  "nasal_cannula",
 ]);
 
 export function PatientBody3D({

@@ -35,9 +35,12 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     label: "Yüz / Ağız",
     position: [0, 0.666, 0.090],
     placeholderNote:
-      "Hava yolu değerlendirmesi ve maske takma noktası. Klinik review sonrası genişletilecek.",
+      "Hava yolu değerlendirmesi ve havayolu girişimleri. Maske / balon-valf-maske / nazal kanül / entübasyon noktası.",
     side: "anterior",
-    availableProcedures: ["oxygen_mask"],
+    // Havayolu girişimleri ağız/burun bölgesinden: maske, Ambu, nazal
+    // kanül (manifold burun altına denk gelir — bkz. NasalCannulaProcedure
+    // NOSE_OFFSET_Y), entübasyon (laringoskop + ETT).
+    availableProcedures: ["oxygen_mask", "bvm", "nasal_cannula", "intubation"],
   },
   {
     // Sternum orta — Erb's point yakını, genel auskültasyon "merkez" noktası
@@ -131,9 +134,10 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     label: "Sol Parmak Ucu",
     position: [-0.19, 0.22, 0.07],
     placeholderNote:
-      "Parmak ucu — pulse oksimetre klipsi (SpO2 + nabız). Tırnak yatağı perfüzyon ölçümü.",
+      "Parmak ucu — pulse oksimetre klipsi (SpO2 + nabız) ve kapiller kan şekeri (glukometre).",
     side: "anterior",
-    availableProcedures: ["pulse_ox"],
+    // Parmak ucu: pulse-ox klipsi + kapiller kan şekeri ölçümü (lanset).
+    availableProcedures: ["pulse_ox", "glucometer"],
   },
   {
     // Üst kol brakiyal SAĞ — NIBP manşonu. Doc periferik nabız tablosu:
@@ -147,5 +151,39 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
       "Üst kol brakiyal arter hizası — NIBP (tansiyon) manşonu. IV'den karşıt kol (akış girişimi olmasın).",
     side: "anterior",
     availableProcedures: ["bp_cuff"],
+  },
+
+  // ============================================================
+  // P1 EKİPMAN — acil hava yolu/kanama landmark'ları
+  // ============================================================
+  {
+    // İğne torakostomi / göğüs mührü — 2. interkostal aralık (ICS)
+    // midklaviküler hat (tansiyon pnömotoraks dekompresyonu klasik yer).
+    // 8-head canon: 2. ICS / manubrium ratio 0.80 → y = 0.574.
+    // Midclavicular line ≈ x = ±0.085 (auskültasyon tablosu apex MCL).
+    // SOL hemitoraks seçildi (örnek dekompresyon tarafı). z: göğüs
+    // anterior duvarı (chest-front 0.115 ile aynı hizada) → 0.115.
+    id: "chest-2ics-mcl-left",
+    label: "Sol 2. ICS Midklaviküler",
+    position: [-0.085, 0.574, 0.115],
+    placeholderNote:
+      "2. interkostal aralık, sol midklavikular hat — tansiyon pnömotoraks iğne dekompresyonu / göğüs mührü.",
+    side: "anterior",
+    availableProcedures: ["chest_seal"],
+  },
+  {
+    // Sol uyluk proksimal — CAT turnike "high and tight" yerleşimi.
+    // 8-head canon: femoral (inguinal çukur) y=0.20, mid-thigh ratio
+    // 0.375 → y=0.140. Proksimal uyluk bu ikisinin arası, inguinal
+    // çukurun hemen distali → ratio ≈ 0.43 → y = -0.243 + 0.43×1.021
+    // = 0.196 ≈ 0.19. x: üst uyluk landmark doc femoral x=±0.06 (bacaklar
+    // üstte birbirine yakın) → SOL -0.06. z: uyluk anterior yüzey ~0.07.
+    id: "thigh-left-proximal",
+    label: "Sol Uyluk (Proksimal)",
+    position: [-0.06, 0.19, 0.07],
+    placeholderNote:
+      "Uyluk proksimal — femoral çukurun distali. Ekstremite kanamasında CAT turnike 'high and tight' uygulama hattı.",
+    side: "anterior",
+    availableProcedures: ["tourniquet"],
   },
 ];

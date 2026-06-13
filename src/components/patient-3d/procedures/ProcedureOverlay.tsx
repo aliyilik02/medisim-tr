@@ -5,6 +5,12 @@ import { IVCannulaProcedure } from "./IVCannulaProcedure";
 import { PulseOxProcedure } from "./PulseOxProcedure";
 import { BpCuffProcedure } from "./BpCuffProcedure";
 import { EkgElectrodesProcedure } from "./EkgElectrodesProcedure";
+import { BVMProcedure } from "./BVMProcedure";
+import { IntubationProcedure } from "./IntubationProcedure";
+import { TourniquetProcedure } from "./TourniquetProcedure";
+import { ChestSealProcedure } from "./ChestSealProcedure";
+import { NasalCannulaProcedure } from "./NasalCannulaProcedure";
+import { GlucometerProcedure } from "./GlucometerProcedure";
 
 // ============================================================
 // ProcedureOverlay — generic prosedür dispatcher (Sprint B.2.1)
@@ -66,6 +72,45 @@ export function ProcedureOverlay({ active, onComplete }: Props) {
     case "ekg_electrodes":
       return (
         <EkgElectrodesProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "bvm":
+      return (
+        <BVMProcedure targetPosition={active.targetPosition} onComplete={handleComplete} />
+      );
+    case "intubation":
+      return (
+        <IntubationProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "tourniquet":
+      return (
+        <TourniquetProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "chest_seal":
+      return (
+        <ChestSealProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "nasal_cannula":
+      return (
+        <NasalCannulaProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "glucometer":
+      return (
+        <GlucometerProcedure
           targetPosition={active.targetPosition}
           onComplete={handleComplete}
         />

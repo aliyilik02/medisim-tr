@@ -12,6 +12,14 @@
 //   - ekg_electrodes  — göğüs EKG elektrotları + kablolar
 // Bunlar persistent: takıldıktan sonra sahnede kalır (maske + IV +
 // EKG aynı anda durabilsin). Bkz. ProcedureContext.persistent.
+//
+// P1/P2 ekipman seti (acil hava yolu + kanama + ölçüm):
+//   - bvm            — Ambu balon-valf-maske (anlık ventilasyon)
+//   - intubation     — laringoskop + ETT yerleştirme (anlık)
+//   - tourniquet     — CAT turnike (persistent, ekstremite proksimal)
+//   - chest_seal     — iğne torakostomi / göğüs mührü (persistent)
+//   - nasal_cannula  — nazal kanül düşük akış O2 (persistent)
+//   - glucometer     — parmak ucu kan şekeri ölçümü (anlık)
 // ============================================================
 
 export type ProcedureKind =
@@ -22,7 +30,15 @@ export type ProcedureKind =
   | "iv_line"
   | "pulse_ox"
   | "bp_cuff"
-  | "ekg_electrodes";
+  | "ekg_electrodes"
+  // P1 ekipman — acil hava yolu + kanama kontrolü
+  | "bvm"
+  | "intubation"
+  | "tourniquet"
+  | "chest_seal"
+  // P2 ekipman — basit O2 + ölçüm
+  | "nasal_cannula"
+  | "glucometer";
 
 /**
  * Aktif prosedür context'i. PatientBody3D state'inde tutulur,

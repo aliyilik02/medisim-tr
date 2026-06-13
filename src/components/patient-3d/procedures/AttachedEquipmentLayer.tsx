@@ -4,6 +4,9 @@ import { IVCannulaProcedure } from "./IVCannulaProcedure";
 import { PulseOxProcedure } from "./PulseOxProcedure";
 import { BpCuffProcedure } from "./BpCuffProcedure";
 import { EkgElectrodesProcedure } from "./EkgElectrodesProcedure";
+import { TourniquetProcedure } from "./TourniquetProcedure";
+import { ChestSealProcedure } from "./ChestSealProcedure";
+import { NasalCannulaProcedure } from "./NasalCannulaProcedure";
 
 // ============================================================
 // AttachedEquipmentLayer — kalıcı (persistent) ekipman katmanı (P0)
@@ -50,7 +53,20 @@ function renderEquipment(ctx: ProcedureContext) {
       return (
         <EkgElectrodesProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
       );
-    // stethoscope / defibrillator persistent değil — bu katmanda yer almaz.
+    case "tourniquet":
+      return (
+        <TourniquetProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
+      );
+    case "chest_seal":
+      return (
+        <ChestSealProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
+      );
+    case "nasal_cannula":
+      return (
+        <NasalCannulaProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
+      );
+    // stethoscope / defibrillator / bvm / intubation / glucometer persistent
+    // değil (anlık eylem) — bu katmanda yer almaz.
     default:
       return null;
   }

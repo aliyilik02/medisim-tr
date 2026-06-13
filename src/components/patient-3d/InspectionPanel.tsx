@@ -12,6 +12,14 @@ const PROCEDURE_LABELS: Record<ProcedureKind, string> = {
   pulse_ox: "Pulse oksimetre tak",
   bp_cuff: "Tansiyon manşonu tak",
   ekg_electrodes: "EKG elektrotları tak",
+  // P1 ekipman — acil hava yolu + kanama kontrolü
+  bvm: "Balon-valf-maske (Ambu) ventile et",
+  intubation: "Entübe et (laringoskop + ETT)",
+  tourniquet: "Turnike uygula (CAT)",
+  chest_seal: "İğne torakostomi / göğüs mührü",
+  // P2 ekipman — basit O2 + ölçüm
+  nasal_cannula: "Nazal kanül tak",
+  glucometer: "Kan şekeri ölç (glukometre)",
 };
 
 interface Props {
