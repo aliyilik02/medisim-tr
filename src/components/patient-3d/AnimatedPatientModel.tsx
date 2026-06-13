@@ -92,28 +92,28 @@ export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>>
     label: "Kadın",
     clips: ["laying_idle", "idle", "talk_gesture", "talk_shrug", "pain", "cough_mild", "cough_severe"],
     bedScale: 0.62,
-    bedPosY: -0.35,
+    bedPosY: -0.352, // objektif ölçüm kalibre (scripts/measure-bed-place.mjs)
   },
   "male-adult": {
     url: "/3d/patient-animated-male.glb",
     label: "Erkek",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
     bedScale: 0.62,
-    bedPosY: -0.36,
+    bedPosY: -0.52, // objektif ölçüm kalibre
   },
   child: {
     url: "/3d/patient-animated-child.glb",
     label: "Çocuk",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "take_pill", "use_inhaler"],
     bedScale: 0.5, // çocuk küçük (kullanıcı: fazla uzundu)
-    bedPosY: -0.146,
+    bedPosY: -0.148, // objektif ölçüm kalibre
   },
   elderly: {
     url: "/3d/patient-animated-elderly.glb",
     label: "Yaşlı",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
     bedScale: 0.62,
-    bedPosY: -0.318,
+    bedPosY: -0.461, // objektif ölçüm kalibre
   },
 };
 export const ANIMATED_VARIANTS = Object.keys(ANIMATED_MODELS) as PatientVariant[];

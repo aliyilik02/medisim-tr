@@ -69,7 +69,8 @@ export function AnimasyonDemoPage() {
           <hemisphereLight args={["#ffffff", "#1a1a1f", 0.4]} />
 
           <Suspense fallback={<Loading />}>
-            <AnimatedPatientModel variant={variant} clip={clip} speaking={speaking} />
+            {/* key={variant}: varyant değişince temiz remount (mixer state sızıntısı fix) */}
+            <AnimatedPatientModel key={variant} variant={variant} clip={clip} speaking={speaking} />
             {/* zemin */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.243, 0]} receiveShadow>
               <planeGeometry args={[6, 6]} />

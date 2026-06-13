@@ -8,12 +8,62 @@
 // Konum sabitleri screenshot ile kalibre edildi.
 // ============================================================
 
-import { Suspense, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Suspense, useMemo, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF } from "@react-three/drei";
+import { Box3, Vector3, type Group, type Object3D, type SkinnedMesh, type Mesh } from "three";
 import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip } from "./AnimatedPatientModel";
 import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
+
+// ── Yatak yerleşim ölçüm probu (dev-only, GÖZ yerine SAYI) ──────────────
+// window.__measureBed=true iken hastanın POZLANMIŞ (skinned) dünya bbox'unu
+// her frame hesaplar → window.__bedMetrics. Playwright harness bunu okuyup
+// mattress düzlemiyle karşılaştırır (scripts/measure-bed-place.mjs).
+const _v = new Vector3();
+function computePosedWorldBox(root: Object3D, box: Box3): Box3 {
+  box.makeEmpty();
+  root.traverse((obj) => {
+    const sm = obj as SkinnedMesh;
+    if ((sm as unknown as { isSkinnedMesh?: boolean }).isSkinnedMesh && sm.geometry?.attributes?.position) {
+      const pos = sm.geometry.attributes.position;
+      const stride = Math.max(1, Math.floor(pos.count / 1500));
+      for (let i = 0; i < pos.count; i += stride) {
+        _v.fromBufferAttribute(pos, i);
+        sm.applyBoneTransform(i, _v); // skinned (pozlanmış) yerel konum
+        _v.applyMatrix4(sm.matrixWorld); // dünya
+        box.expandByPoint(_v);
+      }
+    } else if ((obj as unknown as { isMesh?: boolean }).isMesh && (obj as Mesh).geometry?.attributes?.position) {
+      const mm = obj as Mesh;
+      const pos = mm.geometry.attributes.position;
+      const stride = Math.max(1, Math.floor(pos.count / 400));
+      for (let i = 0; i < pos.count; i += stride) {
+        _v.fromBufferAttribute(pos, i);
+        _v.applyMatrix4(mm.matrixWorld);
+        box.expandByPoint(_v);
+      }
+    }
+  });
+  return box;
+}
+
+function BedMetricsProbe({ targetRef }: { targetRef: React.RefObject<Group | null> }) {
+  const box = useMemo(() => new Box3(), []);
+  useFrame(() => {
+    const w = window as unknown as { __measureBed?: boolean; __bedMetrics?: object };
+    if (typeof window === "undefined" || !w.__measureBed) return;
+    const g = targetRef.current;
+    if (!g) return;
+    computePosedWorldBox(g, box);
+    w.__bedMetrics = {
+      minY: box.min.y, maxY: box.max.y,
+      minX: box.min.x, maxX: box.max.x,
+      minZ: box.min.z, maxZ: box.max.z,
+    };
+  });
+  return null;
+}
 
 const ROOM_URL = "/3d/er-room.glb";
 // metre → hasta world birimi (hasta ~1.6m ≈ 1.02 birim → 1 birim ≈ 1.57m)
@@ -101,13 +151,17 @@ interface BedPatientProps {
   speaking: boolean;
 }
 
-// Varyant + klip metadata'sından yatak yerleşimini hesaplar (her klip sırtı mattress'a).
+// Varyant + klip metadata'sından yatak yerleşimini hesaplar.
 function BedPatient({ variant, clip, skinTone, skinTint, speaking }: BedPatientProps) {
   const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
   const s = meta.bedScale;
+  const groupRef = useRef<Group>(null);
   return (
-    <group position={[0, meta.bedPosY, BED_Z]} rotation={BED_ROT} scale={s}>
+    <group ref={groupRef} position={[0, meta.bedPosY, BED_Z]} rotation={BED_ROT} scale={s}>
+      {/* key={variant}: varyant değişince temiz remount — eski clone/mixer sızıntısı
+          (yerleşim kayması) engellenir. Klip değişimi aynı mixer'da crossfade kalır. */}
       <AnimatedPatientModel
+        key={variant}
         variant={variant}
         clip={clip}
         skinTone={skinTone}
@@ -116,6 +170,7 @@ function BedPatient({ variant, clip, skinTone, skinTint, speaking }: BedPatientP
         scale={1}
         position={[0, 0, 0]}
       />
+      <BedMetricsProbe targetRef={groupRef} />
     </group>
   );
 }
