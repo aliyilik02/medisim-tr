@@ -20,6 +20,13 @@
 //   - chest_seal     — iğne torakostomi / göğüs mührü (persistent)
 //   - nasal_cannula  — nazal kanül düşük akış O2 (persistent)
 //   - glucometer     — parmak ucu kan şekeri ölçümü (anlık)
+//
+// P2/P3 ekipman seti (TCCC/pediatri/travma — hava yolu + immobilizasyon):
+//   - ng_tube         — nazogastrik sonda (persistent, burun→mide)
+//   - nebulizer_mask  — nebülizatör maske + buhar (persistent)
+//   - cervical_collar — servikal yaka / C-collar (persistent, boyun)
+//   - suction         — aspiratör / Yankauer (anlık)
+//   - chest_tube      — göğüs tüpü / toraks dreni (persistent, lateral göğüs)
 // ============================================================
 
 export type ProcedureKind =
@@ -38,7 +45,13 @@ export type ProcedureKind =
   | "chest_seal"
   // P2 ekipman — basit O2 + ölçüm
   | "nasal_cannula"
-  | "glucometer";
+  | "glucometer"
+  // P2/P3 ekipman — hava yolu yönetimi + immobilizasyon + drenaj
+  | "ng_tube"
+  | "nebulizer_mask"
+  | "cervical_collar"
+  | "suction"
+  | "chest_tube";
 
 /**
  * Aktif prosedür context'i. PatientBody3D state'inde tutulur,

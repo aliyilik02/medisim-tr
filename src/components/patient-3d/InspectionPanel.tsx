@@ -20,6 +20,12 @@ const PROCEDURE_LABELS: Record<ProcedureKind, string> = {
   // P2 ekipman — basit O2 + ölçüm
   nasal_cannula: "Nazal kanül tak",
   glucometer: "Kan şekeri ölç (glukometre)",
+  // P2/P3 ekipman — hava yolu yönetimi + immobilizasyon + drenaj
+  ng_tube: "Nazogastrik sonda tak",
+  nebulizer_mask: "Nebülizatör maske tak",
+  cervical_collar: "Servikal yaka tak (C-collar)",
+  suction: "Aspire et (Yankauer)",
+  chest_tube: "Göğüs tüpü tak (toraks dreni)",
 };
 
 interface Props {

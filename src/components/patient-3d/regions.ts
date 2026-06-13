@@ -39,8 +39,32 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     side: "anterior",
     // Havayolu girişimleri ağız/burun bölgesinden: maske, Ambu, nazal
     // kanül (manifold burun altına denk gelir — bkz. NasalCannulaProcedure
-    // NOSE_OFFSET_Y), entübasyon (laringoskop + ETT).
-    availableProcedures: ["oxygen_mask", "bvm", "nasal_cannula", "intubation"],
+    // NOSE_OFFSET_Y), entübasyon (laringoskop + ETT), nazogastrik sonda
+    // (burun→mide, NOSE_OFFSET_Y), nebülizatör maske, aspirasyon (Yankauer).
+    availableProcedures: [
+      "oxygen_mask",
+      "bvm",
+      "nasal_cannula",
+      "intubation",
+      "ng_tube",
+      "nebulizer_mask",
+      "suction",
+    ],
+  },
+  {
+    // Boyun ön-orta — servikal yaka (C-collar) yerleşim hattı.
+    // 8-head canon: çene (chin) ratio 0.875 → y=0.650; suprasternal notch
+    // (boyun çukuru) ratio 0.85 → y=0.625. Servikal yaka bu ikisi arasını
+    // (orta-boyun) sarar → midpoint ratio (0.875+0.85)/2 = 0.8625 →
+    // y = -0.243 + 0.8625×1.021 = 0.638 ≈ 0.64. x=0 (midline). z: boyun
+    // anterior yüzeyi göğüs ön duvarından (0.115) geride/içeride → ~0.07.
+    id: "neck-anterior",
+    label: "Boyun (Ön Orta)",
+    position: [0, 0.64, 0.07],
+    placeholderNote:
+      "Servikal omurga ön-orta hattı (çene altı ile boyun çukuru arası). Travmada servikal immobilizasyon: sert boyunluk (C-collar) yerleşim noktası.",
+    side: "anterior",
+    availableProcedures: ["cervical_collar"],
   },
   {
     // Sternum orta — Erb's point yakını, genel auskültasyon "merkez" noktası
@@ -170,6 +194,23 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
       "2. interkostal aralık, sol midklavikular hat — tansiyon pnömotoraks iğne dekompresyonu / göğüs mührü.",
     side: "anterior",
     availableProcedures: ["chest_seal"],
+  },
+  {
+    // Göğüs tüpü (toraks dreni) — 5. ICS midaksiller hat (güvenli üçgen,
+    // tüp torakostomi klasik insersiyon yeri). 8-head canon: nipple/4. ICS
+    // ratio 0.75 → y=0.523; 5. ICS bunun bir aralık altı (apex 5. ICS
+    // y=0.495) → ratio ~0.723 → y = -0.243 + 0.723×1.021 = 0.495 ≈ 0.50.
+    // Midaksiller hat = gövdenin LATERAL kenarı → x bbox kenarı (±0.20),
+    // kenardan hafif içeride -0.18 (SOL hemitoraks, chest_seal ile aynı
+    // taraf). z: yan yüzey, AP merkeze yakın (göğüs ön duvarı 0.115 değil,
+    // lateralde z≈0) → 0.0.
+    id: "chest-5ics-midaxillary-left",
+    label: "Sol 5. ICS Midaksiller",
+    position: [-0.18, 0.50, 0.0],
+    placeholderNote:
+      "5. interkostal aralık, sol midaksiller hat (güvenli üçgen) — tüp torakostomi (göğüs tüpü / toraks dreni) insersiyon noktası.",
+    side: "lateral",
+    availableProcedures: ["chest_tube"],
   },
   {
     // Sol uyluk proksimal — CAT turnike "high and tight" yerleşimi.

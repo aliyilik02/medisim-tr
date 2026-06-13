@@ -11,6 +11,11 @@ import { TourniquetProcedure } from "./TourniquetProcedure";
 import { ChestSealProcedure } from "./ChestSealProcedure";
 import { NasalCannulaProcedure } from "./NasalCannulaProcedure";
 import { GlucometerProcedure } from "./GlucometerProcedure";
+import { NGTubeProcedure } from "./NGTubeProcedure";
+import { NebulizerMaskProcedure } from "./NebulizerMaskProcedure";
+import { CervicalCollarProcedure } from "./CervicalCollarProcedure";
+import { SuctionProcedure } from "./SuctionProcedure";
+import { ChestTubeProcedure } from "./ChestTubeProcedure";
 
 // ============================================================
 // ProcedureOverlay — generic prosedür dispatcher (Sprint B.2.1)
@@ -111,6 +116,41 @@ export function ProcedureOverlay({ active, onComplete }: Props) {
     case "glucometer":
       return (
         <GlucometerProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "ng_tube":
+      return (
+        <NGTubeProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "nebulizer_mask":
+      return (
+        <NebulizerMaskProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "cervical_collar":
+      return (
+        <CervicalCollarProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "suction":
+      return (
+        <SuctionProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "chest_tube":
+      return (
+        <ChestTubeProcedure
           targetPosition={active.targetPosition}
           onComplete={handleComplete}
         />

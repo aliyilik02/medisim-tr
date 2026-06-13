@@ -7,6 +7,10 @@ import { EkgElectrodesProcedure } from "./EkgElectrodesProcedure";
 import { TourniquetProcedure } from "./TourniquetProcedure";
 import { ChestSealProcedure } from "./ChestSealProcedure";
 import { NasalCannulaProcedure } from "./NasalCannulaProcedure";
+import { NGTubeProcedure } from "./NGTubeProcedure";
+import { NebulizerMaskProcedure } from "./NebulizerMaskProcedure";
+import { CervicalCollarProcedure } from "./CervicalCollarProcedure";
+import { ChestTubeProcedure } from "./ChestTubeProcedure";
 
 // ============================================================
 // AttachedEquipmentLayer — kalıcı (persistent) ekipman katmanı (P0)
@@ -65,8 +69,24 @@ function renderEquipment(ctx: ProcedureContext) {
       return (
         <NasalCannulaProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
       );
-    // stethoscope / defibrillator / bvm / intubation / glucometer persistent
-    // değil (anlık eylem) — bu katmanda yer almaz.
+    case "ng_tube":
+      return (
+        <NGTubeProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
+      );
+    case "nebulizer_mask":
+      return (
+        <NebulizerMaskProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
+      );
+    case "cervical_collar":
+      return (
+        <CervicalCollarProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
+      );
+    case "chest_tube":
+      return (
+        <ChestTubeProcedure key={key} targetPosition={ctx.targetPosition} onComplete={NOOP} />
+      );
+    // stethoscope / defibrillator / bvm / intubation / glucometer / suction
+    // persistent değil (anlık eylem) — bu katmanda yer almaz.
     default:
       return null;
   }

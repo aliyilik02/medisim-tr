@@ -89,6 +89,12 @@ const PERSISTENT_KINDS: ReadonlySet<ProcedureKind> = new Set<ProcedureKind>([
   "tourniquet",
   "chest_seal",
   "nasal_cannula",
+  // P2/P3: NG sonda, nebülizatör maske, servikal yaka, göğüs tüpü kalıcı.
+  // suction (aspiratör) anlık — listede yok.
+  "ng_tube",
+  "nebulizer_mask",
+  "cervical_collar",
+  "chest_tube",
 ]);
 
 export function PatientBody3D({

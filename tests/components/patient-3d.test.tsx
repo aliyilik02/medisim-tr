@@ -92,13 +92,15 @@ describe("InspectionPanel — bilgi kartı", () => {
 });
 
 describe("regions data integrity", () => {
-  test("11 bölge tanımlı (6 gövde + 3 P0 ekstremite + 2 P1 landmark'ı), id'ler unique", () => {
-    // 6 gövde bölgesi (yüz+göğüs+karın) + 3 P0 ekipman ekstremite landmark'ı
-    // (sol antekübital, sol parmak ucu, sağ üst kol brakiyal) + 2 P1 landmark
-    // (sol 2. ICS midklaviküler göğüs mührü, sol uyluk proksimal turnike).
-    expect(DEFAULT_REGIONS).toHaveLength(11);
+  test("13 bölge tanımlı (6 gövde + 1 boyun + 3 P0 ekstremite + 3 travma landmark'ı), id'ler unique", () => {
+    // 6 gövde bölgesi (yüz+göğüs+karın) + 1 boyun ön-orta (servikal yaka) +
+    // 3 P0 ekipman ekstremite landmark'ı (sol antekübital, sol parmak ucu,
+    // sağ üst kol brakiyal) + 3 travma landmark (sol 2. ICS midklaviküler
+    // göğüs mührü, sol uyluk proksimal turnike, sol 5. ICS midaksiller
+    // göğüs tüpü).
+    expect(DEFAULT_REGIONS).toHaveLength(13);
     const ids = new Set(DEFAULT_REGIONS.map((r) => r.id));
-    expect(ids.size).toBe(11);
+    expect(ids.size).toBe(13);
   });
 
   test("her bölgenin label, position, placeholderNote, side alanları var", () => {
