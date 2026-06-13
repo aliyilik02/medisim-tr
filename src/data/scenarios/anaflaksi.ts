@@ -330,23 +330,28 @@ export const scenario_anaflaksi: Scenario = {
   // wheezing; adrenalin sonrası (faz durunca) normal kalp sesine döner.
   // Ses dosyaları: public/sounds/auscultation/ (atıf: SOUNDS-LICENSE.md)
   auscultation: {
+    // Not metinleri pulmoner alan terminolojisiyle (klinik ön-denetim
+    // rötuşu): wheeze pulmoner bulgu — kardiyak odak adlarıyla etiketleme.
+    // resolved_sound_id heart_normal: asset kütüphanesinde temiz vezikiler
+    // ses yok (yalnız wheeze/crackles) — pragmatik geçici çözüm, Faz 2'de
+    // normal akciğer sesi eklenince değişir.
     "chest-front": {
       sound_id: "lung_wheeze",
       resolved_sound_id: "heart_normal",
       phase_id: "untreated-anaphylaxis",
-      note: "Yaygın ekspiratuvar wheezing — histamin aracılı bronkospazm. Erb noktası.",
+      note: "Yaygın ekspiratuvar wheezing — histamin aracılı bronkospazm. Santral ön göğüs alanı.",
     },
     "chest-left": {
       sound_id: "lung_wheeze",
       resolved_sound_id: "heart_normal",
       phase_id: "untreated-anaphylaxis",
-      note: "Wheezing + taşikardik kalp sesleri — mitral odak (5. İKA midklavikular).",
+      note: "Yaygın wheezing — sol ön akciğer alanı; eşlik eden taşikardik kalp sesleri.",
     },
     "chest-right": {
       sound_id: "lung_wheeze",
       resolved_sound_id: "heart_normal",
       phase_id: "untreated-anaphylaxis",
-      note: "Wheezing — aortik odak (2. İKA sağ sternal kenar).",
+      note: "Yaygın wheezing — sağ ön-üst akciğer alanı.",
     },
   },
 
@@ -563,13 +568,16 @@ export const scenario_anaflaksi: Scenario = {
           points: 20,
           feedback:
             "✓ 20 mL/kg hızlı bolus (~1000-1500 mL). Distribütif şokta kapiller kaçak var — sıvı zorunlu.",
-          vitals_change: { bp_systolic: 108 },
+          // 112: recovery_trends tavanı ve s4_izlem metni (TA 112/70) ile
+          // uyumlu — önceki 108, recovery 112'ye ulaştıktan sonra doğru
+          // sıvı aksiyonunun TA'yı DÜŞÜRMESİNE yol açıyordu (review bulgusu).
+          vitals_change: { bp_systolic: 112 },
         },
         {
           action: { type: "give_medication", target_id: "ringer_laktat" },
           points: 20,
           feedback: "✓ İzotonik sıvı resüsitasyonu. Salin_09 ile eşdeğer.",
-          vitals_change: { bp_systolic: 108 },
+          vitals_change: { bp_systolic: 112 },
         },
         {
           action: { type: "give_medication", target_id: "feniramin" },
