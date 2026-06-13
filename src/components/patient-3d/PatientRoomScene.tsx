@@ -12,7 +12,7 @@ import { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF } from "@react-three/drei";
 import { AnimatedPatientModel, type PatientClip } from "./AnimatedPatientModel";
-import { type SkinTone, DEFAULT_SKIN_TONE } from "./patientModels";
+import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
 
 const ROOM_URL = "/3d/er-room.glb";
@@ -46,6 +46,8 @@ function LoadingFallback() {
 }
 
 interface Props {
+  /** Hasta varyantı (female-adult, child …). */
+  variant?: PatientVariant;
   skinTone?: SkinTone;
   skinTint?: SkinTint;
   /** Oynatılacak klip (senaryo durumundan: laying_idle, talk, cough, pain). */
@@ -56,6 +58,7 @@ interface Props {
 }
 
 export function PatientRoomScene({
+  variant = "female-adult",
   skinTone = DEFAULT_SKIN_TONE,
   skinTint = "normal",
   clip = "laying_idle",
@@ -83,6 +86,7 @@ export function PatientRoomScene({
           {/* Supine hasta — animasyonlu (laying_idle klibi yatay yatırıyor) */}
           <group position={PATIENT_POS} rotation={PATIENT_ROT} scale={PATIENT_SCALE}>
             <AnimatedPatientModel
+              variant={variant}
               clip={clip}
               skinTone={skinTone}
               skinTint={skinTint}

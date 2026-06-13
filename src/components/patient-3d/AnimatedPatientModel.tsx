@@ -7,25 +7,26 @@ import {
   SKIN_TONE_PRESETS,
   DEFAULT_SKIN_TONE,
   type SkinTone,
+  type PatientVariant,
 } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
 
 // ============================================================
-// Animasyonlu hasta modeli — Faz 2/3 (iskelet animasyon)
+// Animasyonlu hasta modeli — Faz 2/3 (iskelet animasyon + mimik)
 // ============================================================
-// Asset: public/3d/patient-animated.glb (Mixamo auto-rig, 65 kemik, meshopt).
-// MPFB rig'i bu mesh'te patolojik ters deformasyon veriyordu (Blender 5.1.1) →
-// Mixamo auto-rigger ile çözüldü (kollar doğal yanda, temiz deformasyon).
-// 4 klip: idle (3.3s, ayakta), pain (5.7s, ağrıyla kıvranma), cough_mild/severe
-// (yatarak öksürme — supine senaryolar için). Mimik (52 ARKit blendshape) Mixamo
-// soydu → proximity (KDTree en-yakın-vertex) transfer ile MPFB master'dan geri
-// aktarıldı (bbox birebir örtüşüyor, aynı MakeHuman base). İskelet animasyon
-// (gövde) + morph (yüz mimik: göz kırpma + lipsync) AYNI modelde birlikte.
+// Asset: public/3d/patient-animated{,-child}.glb (Mixamo auto-rig, 65 kemik, meshopt).
+// MPFB rig'i bu mesh'lerde patolojik ters deformasyon veriyordu (Blender 5.1.1) →
+// Mixamo auto-rigger ile çözüldü. Klipler Mixamo "Laying *" FBX'lerinden tek rig'e
+// (NLA) birleştirildi; konuşma kliplerinde kafa düz (Head+Neck rotasyon silindi).
+// Mimik (52 ARKit blendshape) Mixamo soydu → proximity (KDTree en-yakın-vertex)
+// transfer ile MPFB master'dan geri aktarıldı (bbox birebir, aynı MakeHuman base).
+// İskelet animasyon (gövde) + morph (göz kırpma + lipsync) AYNI modelde.
+// Varyant boyu: çocuk mesh Mixamo'da kadından KISA üretildi (Blender rest ölçümü
+// 1.211 vs 1.594 = %76 ≈ 7-8 yaş antropometrisi) → AYNI MODEL_SCALE ile çocuk
+// doğal olarak küçük görünür, ekstra ölçek gerekmez.
 // ============================================================
 
-const ANIMATED_URL = "/3d/patient-animated.glb";
-// Mixamo standing yüksekliği ~1.59 birim → app canonical (~1.02, ayak -0.243, baş 0.778)
-const STANDING_SCALE = 0.642;
+const MODEL_SCALE = 0.642; // tüm varyantlar aynı faktör → mesh'in gerçek boy oranı korunur
 const SKIN_MATERIAL_NAMES = ["Skin_Head", "Skin_Body", "Skin_Arm", "Skin_Leg"];
 
 const SKIN_TINT_PRESETS: Record<SkinTint, [number, number, number]> = {
@@ -35,29 +36,66 @@ const SKIN_TINT_PRESETS: Record<SkinTint, [number, number, number]> = {
   pallor: [0.85, 0.8, 0.78],
 };
 
-useGLTF.preload(ANIMATED_URL);
-
 /** Oynatılabilir animasyon klipleri (GLB içindeki NLA track adları). */
 export type PatientClip =
   | "laying_idle"
+  | "laying_breathless"
   | "idle"
   | "talk_gesture"
   | "talk_shrug"
   | "pain"
   | "cough_mild"
-  | "cough_severe";
-export const PATIENT_CLIPS: PatientClip[] = [
-  "laying_idle",
-  "idle",
-  "talk_gesture",
-  "talk_shrug",
-  "pain",
-  "cough_mild",
-  "cough_severe",
-];
+  | "cough_severe"
+  | "take_pill"
+  | "use_inhaler";
+
+/** Klip → Türkçe etiket (demo + senaryo UI). */
+export const CLIP_LABELS: Record<PatientClip, string> = {
+  laying_idle: "Sakin yatıyor",
+  laying_breathless: "Nefes darlığı",
+  idle: "Ayakta sakin",
+  talk_gesture: "Konuşuyor (el)",
+  talk_shrug: "Konuşuyor (omuz)",
+  pain: "Ağrı",
+  cough_mild: "Hafif öksürük",
+  cough_severe: "Şiddetli öksürük",
+  take_pill: "İlaç alıyor",
+  use_inhaler: "İnhaler",
+};
+
+/** Animasyonlu modeli olan varyantlar — url + içerdiği klipler. */
+export interface AnimatedModelMeta {
+  url: string;
+  label: string;
+  clips: PatientClip[];
+}
+
+export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>> = {
+  "female-adult": {
+    url: "/3d/patient-animated.glb",
+    label: "Kadın",
+    clips: ["laying_idle", "idle", "talk_gesture", "talk_shrug", "pain", "cough_mild", "cough_severe"],
+  },
+  child: {
+    url: "/3d/patient-animated-child.glb",
+    label: "Çocuk",
+    clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "take_pill", "use_inhaler"],
+  },
+};
+export const ANIMATED_VARIANTS = Object.keys(ANIMATED_MODELS) as PatientVariant[];
+const DEFAULT_ANIMATED_VARIANT: PatientVariant = "female-adult";
+
+function resolveModel(variant: PatientVariant) {
+  return ANIMATED_MODELS[variant] ?? ANIMATED_MODELS[DEFAULT_ANIMATED_VARIANT]!;
+}
+
+// Tüm animasyonlu varyantları preload et — varyant değişiminde anlık geçiş.
+ANIMATED_VARIANTS.forEach((v) => useGLTF.preload(ANIMATED_MODELS[v]!.url));
 
 interface Props {
-  /** Oynatılacak animasyon klibi. Değişince crossfade ile geçer. */
+  /** Hasta varyantı (animasyonlu model olan: female-adult, child). */
+  variant?: PatientVariant;
+  /** Oynatılacak animasyon klibi. Değişince crossfade ile geçer. Varyantta yoksa no-op. */
   clip?: PatientClip;
   /** Etnik ten tonu (Skin_Body baseColor). */
   skinTone?: SkinTone;
@@ -74,16 +112,18 @@ interface Props {
 export const AnimatedPatientModel = forwardRef<Group, Props>(
   (
     {
-      clip = "idle",
+      variant = DEFAULT_ANIMATED_VARIANT,
+      clip = "laying_idle",
       skinTone = DEFAULT_SKIN_TONE,
       skinTint = "normal",
       speaking = false,
-      scale = STANDING_SCALE,
+      scale = MODEL_SCALE,
       position = [0, -0.243, 0],
     },
     ref,
   ) => {
-    const { scene, animations } = useGLTF(ANIMATED_URL) as unknown as {
+    const model = resolveModel(variant);
+    const { scene, animations } = useGLTF(model.url) as unknown as {
       scene: Group;
       animations: AnimationClip[];
     };
