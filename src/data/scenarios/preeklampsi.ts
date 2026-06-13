@@ -80,8 +80,8 @@ export const scenario_preeklampsi: Scenario = {
     "tansiyon_aleti",
     "pulse_oksimetre",
     "iv_kateter_18g",
-    "kateter_foley",
-    "ultrasonografi",
+    "foley_sonda",
+    "ultrason",
     "fetal_kalp_monitoru",
     "reflex_çekici",
     "oksijen_maske",
@@ -136,7 +136,7 @@ export const scenario_preeklampsi: Scenario = {
             "Doğru — NST (non-stress test) veya kardiyotokografi zorunlu. Fetal iyilik durumu değerlendir.",
         },
         {
-          action: { type: "use_equipment", target_id: "kateter_foley" },
+          action: { type: "use_equipment", target_id: "foley_sonda" },
           points: 10,
           feedback:
             "Doğru — Saatlik idrar çıkışı takibi: oligüri <0.5 mL/kg/saat ağır özellik.",
@@ -196,7 +196,7 @@ export const scenario_preeklampsi: Scenario = {
             "✓ Koagülasyon: HELLP + DIC riski. Fibrinojen <300 DIC başlangıcı; D-dimer fibrin yıkım markeri.",
         },
         {
-          action: { type: "use_equipment", target_id: "ultrasonografi" },
+          action: { type: "use_equipment", target_id: "ultrason" },
           points: 12,
           feedback:
             "✓ Obstetrik USG: AFI (oligohidramnios?), umbilikal arter Doppler (uteroplatental yetmezlik?), fetal biyometri (IUGR?).",

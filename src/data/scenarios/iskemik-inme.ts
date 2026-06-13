@@ -79,11 +79,11 @@ export const scenario_iskemik_inme: Scenario = {
     "monitor",
     "pulse_oksimetre",
     "tansiyon_aleti",
-    "iv_kateter",
+    "iv_kateter_18g",
     "glukometre",
     "oksijen_maske",
-    "ekg_cihazi",
-    "bt_tarayici",
+    "ekg_12",
+    "bt_kraniyal",
     "bt_anjiyografi",
     "bt_perfuzyon",
     "nihss_formu",
@@ -352,7 +352,7 @@ export const scenario_iskemik_inme: Scenario = {
             "Hipoglisemi inmeyi taklit eder — KŞ <60 ise tedavi ilk öncelik. Rehber: inme değerlendirmesinde glukoz zorunlu.",
         },
         {
-          action: { type: "use_equipment", target_id: "iv_kateter" },
+          action: { type: "use_equipment", target_id: "iv_kateter_18g" },
           points: 10,
           feedback: "İki geniş lümenli IV yol (tPA + sıvı + acil ilaç).",
         },
@@ -415,7 +415,7 @@ export const scenario_iskemik_inme: Scenario = {
           min_difficulty: 2,
         },
         {
-          action: { type: "use_equipment", target_id: "ekg_cihazi" },
+          action: { type: "use_equipment", target_id: "ekg_12" },
           points: 15,
           feedback:
             "✓ EKG: AF ritmini belgele, kardiyak emboli kaynağını dokümante et. Kan alımıyla paralel yapılabilir.",

@@ -87,9 +87,9 @@ export const scenario_pulmoner_emboli: Scenario = {
     "iv_kateter_18g",
     "iv_kateter_20g",
     "oksijen_maske",
-    "yuksek_akimli_oksijen",
+    "hfnc",
     "stetoskop",
-    "eko",
+    "ekokardiyografi",
     "foley_sonda",
   ],
 
@@ -267,7 +267,7 @@ export const scenario_pulmoner_emboli: Scenario = {
           feedback: "Doğru — sınırda hemodinami, geniş damar yolu şart.",
         },
         {
-          action: { type: "use_equipment", target_id: "yuksek_akimli_oksijen" },
+          action: { type: "use_equipment", target_id: "hfnc" },
           points: 20,
           feedback:
             "Doğru — SpO₂ 91%, hipoksi. Yüksek akımlı oksijen (rezervuarlı maske, 10-15 L/dk) hedef SpO₂ >94%.",
@@ -351,7 +351,7 @@ export const scenario_pulmoner_emboli: Scenario = {
             "Doğru — bazal koagülasyon profili heparin başlamadan önce zorunlu referans. INR ve aPTT tromboliz tartışılacaksa belgelenmeli.",
         },
         {
-          action: { type: "use_equipment", target_id: "eko" },
+          action: { type: "use_equipment", target_id: "ekokardiyografi" },
           points: 20,
           feedback:
             "Doğru — TTE yatak başı RV fonksiyon değerlendirmesi. McConnell işareti, TAPSE ve RV/LV oranı submasif PE tanısını destekler.",
@@ -732,7 +732,7 @@ export const scenario_pulmoner_emboli: Scenario = {
             "Doğru — SpO₂ >94% hedefi. Gereksiz O₂ hiperoksiye yol açabilir; SpO₂ stabil olunca titrasyona geç.",
         },
         {
-          action: { type: "use_equipment", target_id: "eko" },
+          action: { type: "use_equipment", target_id: "ekokardiyografi" },
           points: 15,
           feedback:
             "Doğru — TTE ile RV iyileşmesini değerlendir. TAPSE artışı ve RV dilatasyonunun gerilemesi iyi prognoz işareti.",

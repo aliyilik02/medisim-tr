@@ -83,8 +83,8 @@ export const scenario_rsi_entübasyon: Scenario = {
     "pulse_oksimetre",
     "tansiyon_aleti",
     "oksijen_maske",
-    "bvm_maskesi",
-    "larengoskop",
+    "ambu",
+    "laringoskop",
     "videolaringoskop",
     "endotrakeal_tup",
     "bougie",
@@ -762,7 +762,7 @@ export const scenario_rsi_entübasyon: Scenario = {
             "✓ Videolaringoskopi ile laringoskopi. MILS altında optimal görüş. Cormack-Lehane Grad I: vokal kordlar tam görünüyor.",
         },
         {
-          action: { type: "use_equipment", target_id: "larengoskop" },
+          action: { type: "use_equipment", target_id: "laringoskop" },
           points: 12,
           feedback:
             "Kabul — Direkt laringoskopi. MILS altında daha zor ama deneyimli ellerde uygulanabilir. Video laringoskopi tercih edilmeliydi.",

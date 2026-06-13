@@ -90,9 +90,9 @@ export const scenario_pediatrik_sepsis: Scenario = {
     "pediatrik_io_seti",
     "nazal_kanul",
     "hfnc",
-    "oksijen_maskesi",
+    "pediatrik_oksijen_maske",
     "stetoskop",
-    "ates_olcer",
+    "beden_sicakligi_probu",
   ],
 
   start_step_id: "s1_triaj",
@@ -153,7 +153,7 @@ export const scenario_pediatrik_sepsis: Scenario = {
           vitals_change: { spo2: 94 },
         },
         {
-          action: { type: "use_equipment", target_id: "oksijen_maskesi" },
+          action: { type: "use_equipment", target_id: "pediatrik_oksijen_maske" },
           points: 5,
           feedback:
             "Kabul — rezervuarlı maske de çalışır ama HFNC daha konforlu (bebek ajite olmaz).",

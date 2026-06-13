@@ -83,11 +83,11 @@ export const scenario_kardiyojenik_sok: Scenario = {
   available_equipment: [
     "monitor",
     "pulse_oksimetre",
-    "arter_kanul",
+    "arter_kateteri",
     "santral_kateter",
-    "foley",
-    "ekg_cihazi",
-    "eko",
+    "foley_sonda",
+    "ekg_12",
+    "ekokardiyografi",
     "hemodinamik_monitor",
     "iabp", // Intra-aortik balon pompası
     "impella",
@@ -112,7 +112,7 @@ export const scenario_kardiyojenik_sok: Scenario = {
       default_wrong_penalty: -3,
       expected_outcomes: [
         {
-          action: { type: "use_equipment", target_id: "arter_kanul" },
+          action: { type: "use_equipment", target_id: "arter_kateteri" },
           points: 20,
           feedback:
             "✓ Arter kanülü gerçek zamanlı TA izlemi için zorunlu. Şokta NIBP yanıltıcıdır.",
@@ -124,13 +124,13 @@ export const scenario_kardiyojenik_sok: Scenario = {
             "✓ Santral yol: vazopressor ve CVP takibi için.",
         },
         {
-          action: { type: "use_equipment", target_id: "foley" },
+          action: { type: "use_equipment", target_id: "foley_sonda" },
           points: 15,
           feedback:
             "✓ Saatlik idrar çıkışı şok izleminin temelidir. <0.5 mL/kg/saat → persisting hipoperfüzyon.",
         },
         {
-          action: { type: "use_equipment", target_id: "eko" },
+          action: { type: "use_equipment", target_id: "ekokardiyografi" },
           points: 20,
           feedback:
             "✓ Acil EKO: LV fonksiyonu, mekanik komplikasyon (VSR, papiller kas rüptürü, perikardiyal efüzyon) ayırıcı için.",

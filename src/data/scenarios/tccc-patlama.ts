@@ -102,7 +102,7 @@ export const scenario_tccc_patlama: Scenario = {
     "gog_tüpü",
     "nasopharengeal_airway",
     "nazofaringeal",
-    "bvm_maskesi",
+    "ambu",
     "oksijen_maske",
     "iv_kateter_18g",
     "io_ig",

@@ -86,7 +86,7 @@ export const scenario_sepsis_hemsirelik: Scenario = {
     "pulse_oksimetre",
     "tansiyon_aleti",
     "iv_kateter_18g",
-    "kateter_foley",
+    "foley_sonda",
     "oksijen_maske",
     "kan_kültürü_kiti",
     "glukometre",
@@ -478,7 +478,7 @@ export const scenario_sepsis_hemsirelik: Scenario = {
           vitals_change: { bp_systolic: 95, bp_diastolic: 62 },
         },
         {
-          action: { type: "use_equipment", target_id: "kateter_foley" },
+          action: { type: "use_equipment", target_id: "foley_sonda" },
           points: 10,
           feedback:
             "✓ Saatlik idrar çıkışı takibi: oligüri <0.5 mL/kg/saat (bu hastada <31 mL/saat) → renal hipoperfüzyon. KBY zemininde AKI izlemi için kritik.",

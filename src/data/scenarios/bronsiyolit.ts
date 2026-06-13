@@ -80,7 +80,7 @@ export const scenario_bronsiyolit: Scenario = {
     "oksijen_maske",
     "hfnc", // Yüksek akımlı nazal kanül
     "nebulizator",
-    "iv_kateter",
+    "iv_kateter_24g",
     "infant_tartisi",
     "ambu",
   ],

@@ -76,7 +76,7 @@ export const scenario_apandisit: Scenario = {
     "pulse_oksimetre",
     "tansiyon_aleti",
     "stetoskop",
-    "ultrasonografi",
+    "ultrason",
     "bilgisayarli_tomografi",
   ],
 
@@ -187,7 +187,7 @@ export const scenario_apandisit: Scenario = {
             "✓ İdrar tahlili: Hafif lökositüri komşuluk irritasyonu ile açıklanır — UTI değil. βhCG erkek hastada N/A (kadın hastada ektopik gebelik zorunlu dışlama).",
         },
         {
-          action: { type: "use_equipment", target_id: "ultrasonografi" },
+          action: { type: "use_equipment", target_id: "ultrason" },
           points: 13,
           feedback:
             "✓ Abdominal USG: İlk görüntüleme seçeneği (radyasyon yok, hızlı). Apendiks 8mm, peri-apendiküler sıvı +/- — tanısal değer sınırda.",

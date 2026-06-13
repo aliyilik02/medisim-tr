@@ -89,7 +89,7 @@ export const scenario_hipoglisemi: Scenario = {
     "monitor",
     "pulse_oksimetre",
     "ekg_12",
-    "beyin_bt",
+    "bt_kraniyal",
   ],
 
   ekg_pattern: "normal",
@@ -269,7 +269,7 @@ export const scenario_hipoglisemi: Scenario = {
             "Gereksiz — hipoglisemide rutin EKG endikasyonu yok. Semptomları hipoglisemi açıklıyor. Gereksiz tetkik tedavi gecikmesi ve kaynak israfına yol açar.",
         },
         {
-          action: { type: "use_equipment", target_id: "beyin_bt" },
+          action: { type: "use_equipment", target_id: "bt_kraniyal" },
           points: -15,
           feedback:
             "Gereksiz — fokal nörolojik defisit yok, hipoglisemi semptomları açıklıyor. Beyin BT hipoglisemide rutin değil; gereksiz radyasyon + tedavi gecikmesi. Fokal defisit kalmadıkça görüntüleme önerilmez.",
