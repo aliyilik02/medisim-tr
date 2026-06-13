@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, GraduationCap, Stethoscope, Timer } from "lucide-react";
+import { ArrowRight, GraduationCap, Stethoscope, Timer, Bed, MessageSquare, Film, Sparkles } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
 import { getStats, listSessions } from "@/storage/sessionHistory";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
@@ -12,6 +12,32 @@ import type { Specialty } from "@/engine/types";
 const GRADE_HEX: Record<string, string> = {
   A: "#22c55e", B: "#0d9488", C: "#eab308", D: "#f97316", F: "#ef4444",
 };
+
+// 3D Sanal Hasta demo route'ları (tam ekran R3F sahneleri).
+const PATIENT_DEMOS = [
+  {
+    to: "/faz2-demo",
+    Icon: Bed,
+    title: "Klinik Sahne",
+    body: "Acil servis odası, yatakta sanal hasta. Sakin/öksürük/ağrı/konuşma animasyonları + canlı mimik.",
+    tag: "YENİ",
+    color: "#0d9488",
+  },
+  {
+    to: "/dialog-3d-demo",
+    Icon: MessageSquare,
+    title: "3D + AI Diyalog",
+    body: "Hastayla konuş — yapay zekâ yanıtlar, 3D model dudak senkronu ve mimikle eşlik eder.",
+    color: "#3b82f6",
+  },
+  {
+    to: "/animasyon-demo",
+    Icon: Film,
+    title: "Animasyon Stüdyo",
+    body: "İskelet hareket + 52 ARKit yüz mimiği. Klipleri ve lipsync'i tek tek dene.",
+    color: "#a855f7",
+  },
+];
 
 const MODE_CARDS = [
   {
@@ -85,6 +111,10 @@ export function HomePage() {
               Senaryolara Git
               <ArrowRight className="w-4 h-4" />
             </Link>
+            <Link to="/faz2-demo" className="btn-ghost">
+              <Sparkles className="w-4 h-4" />
+              3D Sanal Hasta
+            </Link>
             <Link to="/gecmis" className="btn-ghost">
               Oturum Geçmişi
             </Link>
@@ -99,6 +129,55 @@ export function HomePage() {
               <StatPill value={stats.total_sessions.toString()} label="Toplam Oturum" />
             )}
           </div>
+        </div>
+      </section>
+
+      {/* ── Sanal Hasta (3D) ─────────────────────────────────────── */}
+      <section className="mb-16">
+        <div className="flex items-baseline justify-between mb-6">
+          <h2 className="t-title text-ink-50">Sanal Hasta — 3D</h2>
+          <div className="font-mono text-[10px] text-ink-600 uppercase tracking-[0.15em]">/ Etkileşimli Model</div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          {PATIENT_DEMOS.map(({ to, Icon, title, body, tag, color }, i) => (
+            <Link
+              key={to}
+              to={to}
+              className="group relative flex flex-col bg-ink-900 border border-ink-700 rounded-lg p-6 hover:border-ink-600 transition-all duration-200 animate-slide-up"
+              style={{
+                animationDelay: `${i * 80}ms`,
+                borderLeftColor: color,
+                borderLeftWidth: 2,
+              }}
+            >
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded-lg"
+                style={{ background: `radial-gradient(ellipse at 0% 50%, ${color}10, transparent 70%)` }}
+              />
+              {tag && (
+                <span
+                  className="absolute top-4 right-4 font-mono text-[8px] uppercase tracking-[0.15em] px-1.5 py-0.5 rounded border"
+                  style={{ color, borderColor: `${color}55`, background: `${color}15` }}
+                >
+                  {tag}
+                </span>
+              )}
+              <div
+                className="relative w-10 h-10 rounded-md flex items-center justify-center mb-4 shrink-0"
+                style={{ background: `${color}15`, color }}
+              >
+                <Icon className="w-5 h-5" />
+              </div>
+              <h3 className="relative font-display text-lg text-ink-50 mb-2">{title}</h3>
+              <p className="relative t-caption text-ink-400 leading-relaxed flex-1">{body}</p>
+              <div
+                className="relative mt-4 flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] group-hover:gap-2 transition-all"
+                style={{ color }}
+              >
+                Aç <ArrowRight className="w-3 h-3" />
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
