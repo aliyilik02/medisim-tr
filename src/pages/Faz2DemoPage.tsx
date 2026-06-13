@@ -20,6 +20,7 @@ import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
 import { EQUIPMENT_LABELS, type EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
 import type { PatientVitals } from "@/engine";
 import { SCENARIOS } from "@/data/scenarios";
+import { getMedication } from "@/data/medications";
 import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { useScenarioVitals } from "@/hooks/useScenarioVitals";
@@ -56,7 +57,7 @@ export function Faz2DemoPage() {
   const [scenarioId, setScenarioId] = useState(DETERIORATION_SCENARIOS[0]?.id ?? "");
   const [running, setRunning] = useState(false);
   const scenario = mode === "scenario" ? SCENARIOS.find((s) => s.id === scenarioId) ?? null : null;
-  const { vitals, reset } = useScenarioVitals(scenario, running);
+  const { vitals, reset, intervene, given } = useScenarioVitals(scenario, running);
 
   // ── Efektif (gösterilecek) varyant/klip/tint — moda göre türetilir ──
   const scenarioVariant = useMemo(
@@ -131,10 +132,32 @@ export function Faz2DemoPage() {
           equipment={equipment}
         />
 
-        {/* Senaryo modu: canlı vital HUD (sağ üst) */}
+        {/* Senaryo modu: canlı vital HUD + müdahale paneli (sağ) */}
         {mode === "scenario" && scenario && vitals && (
-          <div className="absolute top-3 right-3 w-64">
+          <div className="absolute top-3 right-3 w-64 flex flex-col gap-2">
             <CompactVitalsHUD vitals={vitals} patientAge={scenario.patient.age} />
+            <div className="rounded-lg bg-ink-900/85 border border-ink-700/60 backdrop-blur-md p-2">
+              <div className="font-mono text-[8px] text-ink-500 uppercase tracking-[0.15em] mb-1.5 px-0.5">Müdahale (İlaç ver)</div>
+              <div className="flex flex-wrap gap-1">
+                {scenario.available_medications.slice(0, 8).map((id) => {
+                  const isGiven = given.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => intervene({ type: "give_medication", target_id: id })}
+                      className={`px-2 py-1 rounded font-mono text-[9px] tracking-[0.03em] transition ${
+                        isGiven
+                          ? "bg-clinical-stable/20 text-clinical-stable border border-clinical-stable/40"
+                          : "text-ink-300 hover:text-ink-100 hover:bg-ink-800 border border-ink-700/60"
+                      }`}
+                    >
+                      {isGiven ? "✓ " : ""}
+                      {getMedication(id)?.name_tr ?? id}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
