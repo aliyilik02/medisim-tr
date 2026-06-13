@@ -36,6 +36,13 @@ const Faz2DemoPage = lazy(() =>
   }))
 );
 
+// Faz 2/3 — İskelet animasyon demosu (Mixamo: idle/pain/cough).
+const AnimasyonDemoPage = lazy(() =>
+  import("@/pages/AnimasyonDemoPage").then((m) => ({
+    default: m.AnimasyonDemoPage,
+  }))
+);
+
 export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
@@ -44,10 +51,11 @@ export function App() {
   const isDialogDemo = location.pathname.startsWith("/dialog-demo");
   const isDialog3d = location.pathname.startsWith("/dialog-3d-demo");
   const isFaz2 = location.pathname.startsWith("/faz2-demo");
+  const isAnim = location.pathname.startsWith("/animasyon-demo");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && <Header />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -112,9 +120,23 @@ export function App() {
               </Suspense>
             }
           />
+          <Route
+            path="/animasyon-demo"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                    Animasyon yükleniyor…
+                  </div>
+                }
+              >
+                <AnimasyonDemoPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && <Footer />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && <Footer />}
     </div>
   );
 }
