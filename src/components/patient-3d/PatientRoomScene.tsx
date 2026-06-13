@@ -89,8 +89,9 @@ export const CAMERA_PRESET_LABELS: Record<CameraPreset, string> = {
 // Varsayılan açılış görünümü (Body Interact tarzı karşıdan/anterior).
 export const DEFAULT_CAMERA_PRESET: CameraPreset = "onden";
 const CAMERA_PRESETS: Record<CameraPreset, { pos: [number, number, number]; target: [number, number, number] }> = {
-  // Karşıdan/anterior — baş tarafından (-Z), alçak-frontal, ortalanmış (Body Interact)
-  onden: { pos: [0, 0.78, -1.3], target: [0, 0.28, -0.05] },
+  // Karşıdan/anterior — baş tarafından (-Z), frontal portre, ortalanmış (Body Interact).
+  // Objektif probe-ölçümlü kalibrasyon (agent/onden-camera-cal).
+  onden: { pos: [0, 1.1, -1.18], target: [0, 0.25, 0.0] },
   // 3/4 genel görünüm (tüm yatak + hasta)
   genel: { pos: [2.0, 1.4, -1.1], target: [0, 0.25, 0] },
   // Baş bölgesi yakın 3/4 (genel tarzı, baş-odaklı; güvenilir)

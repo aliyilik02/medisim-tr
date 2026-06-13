@@ -43,6 +43,13 @@ const AnimasyonDemoPage = lazy(() =>
   }))
 );
 
+// Tam senaryo motoru + supine yatak hastası (PatientDialog3D'nin yatak versiyonu).
+const ScenarioBedPlayPage = lazy(() =>
+  import("@/pages/ScenarioBedPlayPage").then((m) => ({
+    default: m.ScenarioBedPlayPage,
+  }))
+);
+
 export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
@@ -52,10 +59,11 @@ export function App() {
   const isDialog3d = location.pathname.startsWith("/dialog-3d-demo");
   const isFaz2 = location.pathname.startsWith("/faz2-demo");
   const isAnim = location.pathname.startsWith("/animasyon-demo");
+  const isBedPlay = location.pathname.startsWith("/senaryo-yatak");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && <Header />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -134,9 +142,23 @@ export function App() {
               </Suspense>
             }
           />
+          <Route
+            path="/senaryo-yatak"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                    Yatak senaryosu yükleniyor…
+                  </div>
+                }
+              >
+                <ScenarioBedPlayPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && <Footer />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && <Footer />}
     </div>
   );
 }
