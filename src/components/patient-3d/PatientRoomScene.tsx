@@ -8,7 +8,7 @@
 // Konum sabitleri screenshot ile kalibre edildi.
 // ============================================================
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF } from "@react-three/drei";
 import { Box3, Vector3, type Group, type Object3D, type SkinnedMesh, type Mesh } from "three";
@@ -126,6 +126,32 @@ function CameraRig({
   return null;
 }
 
+// Canlı kamera okuyucu — orbit ederken pos+target'ı throttle'lı bildirir
+// (kullanıcı istediği açıyı bulup değerleri okusun/kopyalasın).
+const r2 = (n: number) => Math.round(n * 100) / 100;
+function CameraReadout({
+  controlsRef,
+  onUpdate,
+}: {
+  controlsRef: React.MutableRefObject<{ target: Vector3 } | null>;
+  onUpdate: (v: { pos: [number, number, number]; target: [number, number, number] }) => void;
+}) {
+  const { camera } = useThree();
+  const last = useRef(0);
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    if (t - last.current < 0.2) return;
+    last.current = t;
+    const p = camera.position;
+    const tg = controlsRef.current?.target;
+    onUpdate({
+      pos: [r2(p.x), r2(p.y), r2(p.z)],
+      target: tg ? [r2(tg.x), r2(tg.y), r2(tg.z)] : [0, 0, 0],
+    });
+  });
+  return null;
+}
+
 function ErRoom() {
   const { scene } = useGLTF(ROOM_URL);
   const clone = useMemo(() => scene.clone(true), [scene]);
@@ -156,6 +182,8 @@ interface Props {
   equipment?: EquipmentKind[];
   /** Kamera preset (genel/baş-ucu/monitör). */
   cameraPreset?: CameraPreset;
+  /** Canlı kamera okuyucu — orbit ederken pos+target göster (kalibrasyon). */
+  cameraDebug?: boolean;
   className?: string;
 }
 
@@ -167,9 +195,11 @@ export function PatientRoomScene({
   speaking = false,
   equipment,
   cameraPreset = DEFAULT_CAMERA_PRESET,
+  cameraDebug = false,
   className,
 }: Props) {
   const controlsRef = useRef<{ target: Vector3; update: () => void } | null>(null);
+  const [camLive, setCamLive] = useState<{ pos: [number, number, number]; target: [number, number, number] } | null>(null);
   return (
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
@@ -194,7 +224,28 @@ export function PatientRoomScene({
 
         <OrbitControls ref={controlsRef as never} target={[0, 0.2, 0]} minDistance={0.6} maxDistance={4} enablePan />
         <CameraRig preset={cameraPreset} controlsRef={controlsRef} />
+        {cameraDebug && <CameraReadout controlsRef={controlsRef} onUpdate={setCamLive} />}
       </Canvas>
+
+      {/* Canlı kamera değerleri (kalibrasyon) — orbit et, oku, kopyala */}
+      {cameraDebug && camLive && (
+        <div className="absolute bottom-3 left-3 font-mono text-[10px] bg-ink-900/90 border border-brand/40 rounded-lg px-3 py-2 text-ink-100 backdrop-blur-md">
+          <div className="text-brand-light uppercase tracking-[0.15em] text-[8px] mb-1">Kamera (orbit et + kopyala)</div>
+          <div>pos: [{camLive.pos.join(", ")}]</div>
+          <div>target: [{camLive.target.join(", ")}]</div>
+          <button
+            type="button"
+            onClick={() =>
+              navigator.clipboard?.writeText(
+                `pos: [${camLive.pos.join(", ")}], target: [${camLive.target.join(", ")}]`,
+              )
+            }
+            className="mt-1.5 px-2 py-0.5 rounded bg-brand/20 text-brand-light border border-brand/40 hover:bg-brand/30 transition text-[9px] uppercase tracking-[0.08em]"
+          >
+            Kopyala
+          </button>
+        </div>
+      )}
     </div>
   );
 }

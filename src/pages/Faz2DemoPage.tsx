@@ -55,6 +55,7 @@ export function Faz2DemoPage() {
   const [presetLabel, setPresetLabel] = useState<string | null>(null);
   const [equipment, setEquipment] = useState<EquipmentKind[]>([]);
   const [camera, setCamera] = useState<CameraPreset>("onden");
+  const [camDebug, setCamDebug] = useState(false);
   const toggleEquip = (k: EquipmentKind) =>
     setEquipment((e) => (e.includes(k) ? e.filter((x) => x !== k) : [...e, k]));
 
@@ -143,6 +144,7 @@ export function Faz2DemoPage() {
           skinTone={effSkinTone}
           equipment={equipment}
           cameraPreset={camera}
+          cameraDebug={camDebug}
         />
 
         {/* Kamera presetleri (sağ alt) */}
@@ -158,6 +160,16 @@ export function Faz2DemoPage() {
               {CAMERA_PRESET_LABELS[c]}
             </button>
           ))}
+          <span className="w-px h-4 bg-ink-700/60 mx-0.5 self-center" />
+          <button
+            onClick={() => setCamDebug((d) => !d)}
+            title="Orbit et, pos/target oku, bana ver"
+            className={`px-2 py-1 rounded font-mono text-[9px] uppercase tracking-[0.08em] transition ${
+              camDebug ? "bg-clinical-warning/20 text-clinical-warning" : "text-ink-500 hover:text-ink-200 hover:bg-ink-800"
+            }`}
+          >
+            ⓘ Bilgi
+          </button>
         </div>
 
         {/* Senaryo modu: canlı vital HUD + müdahale paneli (sağ) */}

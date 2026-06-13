@@ -16,12 +16,19 @@ const GRADE_HEX: Record<string, string> = {
 // 3D Sanal Hasta demo route'ları (tam ekran R3F sahneleri).
 const PATIENT_DEMOS = [
   {
+    to: "/senaryo-yatak",
+    Icon: Stethoscope,
+    title: "Yatak Başı Senaryo",
+    body: "Gerçek klinik vakayı yataktaki hastayla uçtan uca oyna: adım, aksiyon, ilaç, kötüleşme, debrief.",
+    tag: "YENİ",
+    color: "#0d9488",
+  },
+  {
     to: "/faz2-demo",
     Icon: Bed,
     title: "Klinik Sahne",
     body: "Acil servis odası, yatakta sanal hasta. Sakin/öksürük/ağrı/konuşma animasyonları + canlı mimik.",
-    tag: "YENİ",
-    color: "#0d9488",
+    color: "#14b8a6",
   },
   {
     to: "/dialog-3d-demo",
