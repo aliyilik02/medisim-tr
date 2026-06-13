@@ -1,6 +1,11 @@
 export { ProcedureOverlay } from "./ProcedureOverlay";
+export { AttachedEquipmentLayer } from "./AttachedEquipmentLayer";
 export { StethoscopeProcedure } from "./StethoscopeProcedure";
 export { OxygenMaskProcedure } from "./OxygenMaskProcedure";
+export { IVCannulaProcedure } from "./IVCannulaProcedure";
+export { PulseOxProcedure } from "./PulseOxProcedure";
+export { BpCuffProcedure } from "./BpCuffProcedure";
+export { EkgElectrodesProcedure } from "./EkgElectrodesProcedure";
 export { useProcedureAnimation } from "./useProcedureAnimation";
 export type { ProcedureKind, ProcedureContext } from "./types";
 export type { ProcedureAnimationState } from "./useProcedureAnimation";

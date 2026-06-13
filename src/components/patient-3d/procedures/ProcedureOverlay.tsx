@@ -1,6 +1,10 @@
 import type { ProcedureContext } from "./types";
 import { StethoscopeProcedure } from "./StethoscopeProcedure";
 import { OxygenMaskProcedure } from "./OxygenMaskProcedure";
+import { IVCannulaProcedure } from "./IVCannulaProcedure";
+import { PulseOxProcedure } from "./PulseOxProcedure";
+import { BpCuffProcedure } from "./BpCuffProcedure";
+import { EkgElectrodesProcedure } from "./EkgElectrodesProcedure";
 
 // ============================================================
 // ProcedureOverlay — generic prosedür dispatcher (Sprint B.2.1)
@@ -34,6 +38,34 @@ export function ProcedureOverlay({ active, onComplete }: Props) {
     case "oxygen_mask":
       return (
         <OxygenMaskProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "iv_line":
+      return (
+        <IVCannulaProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "pulse_ox":
+      return (
+        <PulseOxProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "bp_cuff":
+      return (
+        <BpCuffProcedure
+          targetPosition={active.targetPosition}
+          onComplete={handleComplete}
+        />
+      );
+    case "ekg_electrodes":
+      return (
+        <EkgElectrodesProcedure
           targetPosition={active.targetPosition}
           onComplete={handleComplete}
         />

@@ -7,6 +7,11 @@ const PROCEDURE_LABELS: Record<ProcedureKind, string> = {
   stethoscope: "Stetoskop ile dinle",
   oxygen_mask: "Oksijen maskesi tak",
   defibrillator: "Defibrilatör uygula",
+  // P0 ekipman — hasta üzerinde kalıcı duran monitörizasyon/damar yolu
+  iv_line: "IV kanül tak",
+  pulse_ox: "Pulse oksimetre tak",
+  bp_cuff: "Tansiyon manşonu tak",
+  ekg_electrodes: "EKG elektrotları tak",
 };
 
 interface Props {

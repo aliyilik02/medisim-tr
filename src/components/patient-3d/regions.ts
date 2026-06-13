@@ -48,7 +48,9 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     placeholderNote:
       "Sternum orta hat; Erb noktası (3. ICS sol sternal kenar) S1+S2 dinleme.",
     side: "anterior",
-    availableProcedures: ["stethoscope"],
+    // EKG elektrotları göğüs merkezine yapışır (AHA torso yerleşimi bu
+    // noktadan offset'lenir — bkz. EkgElectrodesProcedure).
+    availableProcedures: ["stethoscope", "ekg_electrodes"],
     auscultationSoundId: "heart_normal",
   },
   {
@@ -92,5 +94,58 @@ export const DEFAULT_REGIONS: PatientRegion[] = [
     placeholderNote:
       "Suprapubik palpasyon (mesane / pelvik organlar). Pubic symphysis y=0.268 hizasının ~6 cm üstü.",
     side: "anterior",
+  },
+
+  // ============================================================
+  // P0 EKİPMAN — ekstremite landmark'ları (IV / NIBP / pulse-ox)
+  // ============================================================
+  // Koordinatlar 8-head canon + landmark doc'un IV/vasküler/periferik
+  // nabız tablolarından TÜRETİLDİ (gözle tahmin YOK). Model bbox x_range
+  // [-0.20, +0.20] olduğu için (kollar vücudun yanında) doc'taki ±0.21/
+  // ±0.24 değerleri bbox içine clamp edildi — formula world_y = -0.243 +
+  // ratio × 1.021 sabit kalır, sadece kol-yanda x daraltıldı.
+  //
+  // Klinik mantık: IV ve NIBP kafı AYNI kola takılırsa kaf şişerken IV
+  // akışını keser → standart pratik KARŞIT kollar. Bu yüzden:
+  //   - SOL kol  (x<0): IV kanül (antekübital) + pulse-ox (parmak ucu)
+  //   - SAĞ kol  (x>0): NIBP manşonu (üst kol brakiyal)
+  {
+    // Antekübital fossa SOL — median kubital ven (1. tercih IV erişim).
+    // Doc IV tablosu: (-0.21, 0.45). Kol-yanda x bbox'a clamp → -0.18.
+    // ratio = (0.45+0.243)/1.021 = 0.679. z: ön kol anterolateral yüzey
+    // (~0.06) + marker → 0.10.
+    id: "arm-left-antecubital",
+    label: "Sol Ön Kol (Antekübital)",
+    position: [-0.18, 0.45, 0.10],
+    placeholderNote:
+      "Antekübital fossa — median kubital ven. Periferik IV kanül 1. tercih erişim noktası.",
+    side: "anterior",
+    availableProcedures: ["iv_line"],
+  },
+  {
+    // Parmak ucu SOL — pulse oksimetre. Doc periferik: radial bilek
+    // (-0.22, 0.32), el üstü (-0.24, 0.30). Parmak ucu bilekten distal →
+    // daha aşağı y, x bbox'a clamp. ratio(0.22) = 0.453. z: el ~0.05 +
+    // klips → 0.07.
+    id: "finger-left-tip",
+    label: "Sol Parmak Ucu",
+    position: [-0.19, 0.22, 0.07],
+    placeholderNote:
+      "Parmak ucu — pulse oksimetre klipsi (SpO2 + nabız). Tırnak yatağı perfüzyon ölçümü.",
+    side: "anterior",
+    availableProcedures: ["pulse_ox"],
+  },
+  {
+    // Üst kol brakiyal SAĞ — NIBP manşonu. Doc periferik nabız tablosu:
+    // brakiyal (±0.16, 0.48). Antekübitalin üstü (üst kol). x bbox içinde
+    // → +0.17. ratio = (0.48+0.243)/1.021 = 0.708. z: üst kol ~0.07 +
+    // kaf → 0.09. KARŞIT kol (IV solda) → kaf şişerken IV akışını kesmez.
+    id: "arm-right-brachial",
+    label: "Sağ Üst Kol (Brakiyal)",
+    position: [0.17, 0.48, 0.09],
+    placeholderNote:
+      "Üst kol brakiyal arter hizası — NIBP (tansiyon) manşonu. IV'den karşıt kol (akış girişimi olmasın).",
+    side: "anterior",
+    availableProcedures: ["bp_cuff"],
   },
 ];

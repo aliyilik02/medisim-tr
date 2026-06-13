@@ -12,6 +12,7 @@ import {
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
 import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
+import { AttachedEquipmentLayer } from "./procedures/AttachedEquipmentLayer";
 import type { ProcedureContext, ProcedureKind } from "./procedures/types";
 import type { PatientRegion } from "./regions";
 import type { ActionRef } from "@/engine/types";
@@ -72,6 +73,18 @@ function LoadingFallback() {
 // (kullanıcı sonucu görsün, ses cue çalsın). Sonra unmount.
 const PROCEDURE_REST_MS = 800;
 
+// P0 ekipman: takıldıktan sonra hastanın üzerinde KALAN (persistent)
+// prosedürler. Takma animasyonu bitince AttachedEquipmentLayer'a taşınır;
+// böylece maske + IV + pulse-ox + kaf + EKG aynı anda durabilir.
+// stethoscope / defibrillator anlık eylem → persistent değil.
+const PERSISTENT_KINDS: ReadonlySet<ProcedureKind> = new Set<ProcedureKind>([
+  "oxygen_mask",
+  "iv_line",
+  "pulse_ox",
+  "bp_cuff",
+  "ekg_electrodes",
+]);
+
 export function PatientBody3D({
   regions,
   breathing = true,
@@ -86,6 +99,9 @@ export function PatientBody3D({
 }: Props) {
   const [selected, setSelected] = useState<PatientRegion | null>(null);
   const [activeProcedure, setActiveProcedure] = useState<ProcedureContext | null>(null);
+  // P0 ekipman: takma animasyonu biten persistent ekipman burada birikir,
+  // AttachedEquipmentLayer ile sahnede kalır.
+  const [attachedEquipment, setAttachedEquipment] = useState<ProcedureContext[]>([]);
   const bodyRef = useRef<Group>(null);
 
   const handleSelect = (region: PatientRegion) => {
@@ -95,10 +111,12 @@ export function PatientBody3D({
 
   const handleStartProcedure = (kind: ProcedureKind, region: PatientRegion) => {
     setSelected(null);
+    // Aktif TAKMA anında yine tek prosedür (tek el = tek hareket).
     setActiveProcedure({
       kind,
       regionId: region.id,
       targetPosition: region.position,
+      persistent: PERSISTENT_KINDS.has(kind),
     });
   };
 
@@ -118,6 +136,20 @@ export function PatientBody3D({
       }
     }
 
+    // P0 ekipman: persistent ise kalıcı katmana taşı (idempotent:
+    // aynı bölgeye aynı ekipman bir kez). Aktif overlay'i kapat —
+    // kalıcı render AttachedEquipmentLayer'a devredilir.
+    if (context.persistent) {
+      setAttachedEquipment((prev) => {
+        const exists = prev.some(
+          (e) => e.kind === context.kind && e.regionId === context.regionId,
+        );
+        return exists ? prev : [...prev, context];
+      });
+      setActiveProcedure(null);
+      return;
+    }
+
     window.setTimeout(() => setActiveProcedure(null), PROCEDURE_REST_MS);
   };
 
@@ -130,7 +162,11 @@ export function PatientBody3D({
     <div className={`relative w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-3d-canvas"
-        frameloop={breathing || activeProcedure || speaking ? "always" : "demand"}
+        frameloop={
+          breathing || activeProcedure || speaking || attachedEquipment.length > 0
+            ? "always"
+            : "demand"
+        }
         dpr={[1, 2]}
         gl={{
           antialias: true,
@@ -172,6 +208,8 @@ export function PatientBody3D({
             />
           ))}
           <ProcedureOverlay active={activeProcedure} onComplete={handleProcedureComplete} />
+          {/* P0 — kalıcı ekipman katmanı (maske + IV + pulse-ox + kaf + EKG aynı anda) */}
+          <AttachedEquipmentLayer attached={attachedEquipment} />
         </Suspense>
       </Canvas>
 
