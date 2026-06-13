@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, GraduationCap, Stethoscope, Timer, Bed, MessageSquare, Film, Sparkles } from "lucide-react";
+import { ArrowRight, GraduationCap, Stethoscope, Timer, Bed, MessageSquare, Film, Sparkles, Wind } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
 import { getStats, listSessions } from "@/storage/sessionHistory";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
@@ -43,6 +43,14 @@ const PATIENT_DEMOS = [
     title: "Animasyon Stüdyo",
     body: "İskelet hareket + 52 ARKit yüz mimiği. Klipleri ve lipsync'i tek tek dene.",
     color: "#a855f7",
+  },
+  {
+    to: "/ventilator-demo",
+    Icon: Wind,
+    title: "Ventilatör",
+    body: "Mekanik ventilatör: VCV/PCV/SIMV/PSV/CPAP modları, ARDS/KOAH presetleri, canlı basınç-akış-hacim dalgaları.",
+    tag: "YENİ",
+    color: "#06b6d4",
   },
 ];
 

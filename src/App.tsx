@@ -57,6 +57,13 @@ const MonitorDemoPage = lazy(() =>
   }))
 );
 
+// Mekanik ventilatör demosu (open-vent-sim deseninden temiz TS port).
+const VentilatorDemoPage = lazy(() =>
+  import("@/pages/VentilatorDemoPage").then((m) => ({
+    default: m.VentilatorDemoPage,
+  }))
+);
+
 export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
@@ -68,10 +75,11 @@ export function App() {
   const isAnim = location.pathname.startsWith("/animasyon-demo");
   const isBedPlay = location.pathname.startsWith("/senaryo-yatak");
   const isMonitor = location.pathname.startsWith("/monitor-demo");
+  const isVentilator = location.pathname.startsWith("/ventilator-demo");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && <Header />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && !isVentilator && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -178,9 +186,23 @@ export function App() {
               </Suspense>
             }
           />
+          <Route
+            path="/ventilator-demo"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                    Ventilatör yükleniyor…
+                  </div>
+                }
+              >
+                <VentilatorDemoPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && <Footer />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && !isVentilator && <Footer />}
     </div>
   );
 }
