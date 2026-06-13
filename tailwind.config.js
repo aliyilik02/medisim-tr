@@ -60,8 +60,20 @@ export default {
         "heartbeat": "heartbeat 1.2s ease-in-out infinite",
         "fade-in": "fadeIn 0.4s ease-out",
         "slide-up": "slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        // Monitör alarm flash (IEC 60601-1-8) — box-shadow ring yanıp söner,
+        // sayı okunaklı kalır. steps() = sert blink (monitör estetiği).
+        "monitor-flash-high": "monitorFlashHigh 0.6s steps(2, end) infinite",
+        "monitor-flash-med": "monitorFlashMed 1.6s steps(2, end) infinite",
       },
       keyframes: {
+        monitorFlashHigh: {
+          "0%, 100%": { boxShadow: "0 0 0 2px rgba(239,68,68,0.9)" },
+          "50%": { boxShadow: "0 0 0 2px rgba(239,68,68,0.18)" },
+        },
+        monitorFlashMed: {
+          "0%, 100%": { boxShadow: "0 0 0 1.5px rgba(245,158,11,0.75)" },
+          "50%": { boxShadow: "0 0 0 1.5px rgba(245,158,11,0.22)" },
+        },
         heartbeat: {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
           "50%": { opacity: "0.85", transform: "scale(1.05)" },

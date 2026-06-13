@@ -91,10 +91,10 @@ export function VitalsMonitor({
         {/* ECG — EcgStrip'e dokunulmaz, HR overlay eklenir */}
         <div className="relative border-b border-ink-800/50">
           <EcgStrip hr={vitals.hr} pattern={ecgPattern} ecgParams={ecgParams} />
-          <div className="absolute left-1.5 top-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-[#00ff66] pointer-events-none z-10">
+          <div className="absolute left-1.5 top-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-[#00E676] pointer-events-none z-10">
             II
           </div>
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs font-bold tabular-nums text-[#00ff66] pointer-events-none z-10">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs font-bold tabular-nums text-[#00E676] pointer-events-none z-10">
             {Math.round(vitals.hr)} bpm
           </div>
         </div>
@@ -132,7 +132,7 @@ export function VitalsMonitor({
         <Tile
           label="HR"
           unit="bpm"
-          color="#00ff66"
+          color="#00E676"
           value={vitals.hr}
           baselineValue={baseline?.hr}
           status={hrStatus(vitals.hr)}

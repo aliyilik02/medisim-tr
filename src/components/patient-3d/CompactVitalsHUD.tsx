@@ -19,6 +19,8 @@ import { Activity, AlertTriangle, Maximize2, X } from "lucide-react";
 import { useState } from "react";
 import { EcgStrip } from "@/components/EcgStrip";
 import { TwelveLeadEcg } from "@/components/TwelveLeadEcg";
+import { PARAM_COLOR, type MonitorParam } from "@/lib/monitorColors";
+import { cn } from "@/lib/cn";
 
 interface Props {
   vitals: PatientVitals;
@@ -28,16 +30,21 @@ interface Props {
   className?: string;
 }
 
-const STATUS_COLOR: Record<VitalStatus, string> = {
-  stable: "text-clinical-stable",
-  warning: "text-clinical-warning",
-  critical: "text-clinical-critical animate-pulse",
+// Dış kart çerçevesi — en kötü vital durumuna göre (subtle).
+const STATUS_BORDER: Record<VitalStatus, string> = {
+  stable: "border-ink-700/60",
+  warning: "border-clinical-warning/50",
+  critical: "border-clinical-critical/70",
 };
 
-const STATUS_BORDER: Record<VitalStatus, string> = {
-  stable: "border-clinical-stable/30",
-  warning: "border-clinical-warning/50",
-  critical: "border-clinical-critical/70 animate-pulse",
+// Hücre durum katmanı: parametre rengi sayıda SABİT kalır; durum yalnız
+// ring/flash ile gösterilir (Philips/IEC 60601-1-8). reduced-motion → statik ring.
+const STATUS_RING: Record<VitalStatus, string> = {
+  stable: "ring-1 ring-ink-700/50",
+  warning:
+    "ring-1 ring-clinical-warning/50 animate-monitor-flash-med motion-reduce:animate-none",
+  critical:
+    "ring-1 ring-clinical-critical/70 animate-monitor-flash-high motion-reduce:animate-none",
 };
 
 export function CompactVitalsHUD({
@@ -74,41 +81,29 @@ export function CompactVitalsHUD({
         </span>
       </header>
 
-      {/* Vital grid 2×3 */}
-      <div className="grid grid-cols-2 gap-2 mb-2">
-        <VitalCell
-          label="NB"
-          value={vitals.hr}
-          unit="/dk"
-          status={statuses.hr}
-        />
+      {/* Vital grid 2×3 — sayı = parametre rengi, ring = durum (Philips) */}
+      <div className="grid grid-cols-2 gap-1.5 mb-2">
+        <VitalCell label="NB" param="hr" value={vitals.hr} unit="/dk" status={statuses.hr} />
         <VitalCell
           label="TA"
+          param="bp"
           value={`${vitals.bp_systolic}/${vitals.bp_diastolic}`}
           unit={`MAP ${map}`}
           status={statuses.sbp}
         />
-        <VitalCell
-          label="SpO₂"
-          value={vitals.spo2}
-          unit="%"
-          status={statuses.spo2}
-        />
-        <VitalCell
-          label="SS"
-          value={vitals.rr}
-          unit="/dk"
-          status={statuses.rr}
-        />
+        <VitalCell label="SpO₂" param="spo2" value={vitals.spo2} unit="%" status={statuses.spo2} />
+        <VitalCell label="SS" param="rr" value={vitals.rr} unit="/dk" status={statuses.rr} />
         <VitalCell
           label="Sıcaklık"
+          param="temp"
           value={vitals.temp.toFixed(1)}
           unit="°C"
           status={statuses.temp}
         />
         {vitals.gcs !== undefined && (
           <VitalCell
-            label="GCS"
+            label="GKS"
+            param="gcs"
             value={vitals.gcs}
             unit="/15"
             status={vitals.gcs <= 8 ? "critical" : vitals.gcs <= 13 ? "warning" : "stable"}
@@ -208,22 +203,34 @@ function TwelveLeadModal({
 
 interface VitalCellProps {
   label: string;
+  param: MonitorParam;
   value: string | number;
   unit: string;
   status: VitalStatus;
 }
 
-function VitalCell({ label, value, unit, status }: VitalCellProps) {
+function VitalCell({ label, param, value, unit, status }: VitalCellProps) {
   return (
-    <div className="bg-ink-950/60 rounded px-2 py-1.5 border border-ink-700/40">
-      <div className="flex items-center justify-between mb-0.5">
-        <span className="text-ink-500 text-[8px] uppercase tracking-[0.12em]">
-          {label}
-        </span>
-        <span className="text-ink-600 text-[8px]">{unit}</span>
+    <div className={cn("rounded-md bg-ink-950/80 px-2.5 py-1.5", STATUS_RING[status])}>
+      <div className="flex items-baseline justify-between">
+        <span className="text-ink-400 text-[8px] uppercase tracking-[0.18em]">{label}</span>
+        {status !== "stable" && (
+          <span
+            className="text-[8px] uppercase tracking-[0.12em] font-bold"
+            style={{ color: status === "critical" ? "#EF4444" : "#F59E0B" }}
+          >
+            {status === "critical" ? "!" : "·"}
+          </span>
+        )}
       </div>
-      <div className={`text-base font-bold tabular-nums leading-none ${STATUS_COLOR[status]}`}>
-        {value}
+      <div className="flex items-end justify-between mt-1">
+        <span
+          className="font-bold tabular-nums leading-none text-[1.7rem]"
+          style={{ color: PARAM_COLOR[param] }}
+        >
+          {value}
+        </span>
+        <span className="text-ink-500 text-[8px] lowercase mb-1">{unit}</span>
       </div>
     </div>
   );

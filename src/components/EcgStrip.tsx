@@ -429,7 +429,7 @@ function sampleEcg(
 }
 
 const PATTERN_COLOR: Record<EcgPattern, string> = {
-  normal:         "#10b981",
+  normal:         "#00E676",
   stemi:          "#f59e0b",
   vt:             "#f59e0b",
   vf:             "#ef4444",
