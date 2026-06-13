@@ -17,6 +17,7 @@ import {
   type PatientVariant,
 } from "@/components/patient-3d/patientModels";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
+import { EQUIPMENT_LABELS, type EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
 import type { PatientVitals } from "@/engine";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
@@ -47,6 +48,9 @@ export function Faz2DemoPage() {
   const [speaking, setSpeaking] = useState(false);
   const [skinTint, setSkinTint] = useState<SkinTint>("normal");
   const [presetLabel, setPresetLabel] = useState<string | null>(null);
+  const [equipment, setEquipment] = useState<EquipmentKind[]>([]);
+  const toggleEquip = (k: EquipmentKind) =>
+    setEquipment((e) => (e.includes(k) ? e.filter((x) => x !== k) : [...e, k]));
 
   // Senaryo mod state
   const [scenarioId, setScenarioId] = useState(DETERIORATION_SCENARIOS[0]?.id ?? "");
@@ -124,6 +128,7 @@ export function Faz2DemoPage() {
           speaking={mode === "manual" && speaking}
           skinTint={effTint}
           skinTone={effSkinTone}
+          equipment={equipment}
         />
 
         {/* Senaryo modu: canlı vital HUD (sağ üst) */}
@@ -132,6 +137,24 @@ export function Faz2DemoPage() {
             <CompactVitalsHUD vitals={vitals} patientAge={scenario.patient.age} />
           </div>
         )}
+
+        {/* Ekipman paneli (sol kenar) — kemik-bağlı, animasyonu takip eder */}
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 px-1.5 py-2 rounded-lg bg-ink-900/85 border border-ink-700/60 backdrop-blur-md">
+          <span className="font-mono text-[8px] text-ink-500 uppercase tracking-[0.15em] text-center pb-0.5">Ekipman</span>
+          {(Object.keys(EQUIPMENT_LABELS) as EquipmentKind[]).map((k) => (
+            <button
+              key={k}
+              onClick={() => toggleEquip(k)}
+              className={`px-2 py-1 rounded font-mono text-[10px] tracking-[0.04em] transition text-left ${
+                equipment.includes(k)
+                  ? "bg-brand/20 text-brand-light border border-brand/40"
+                  : "text-ink-400 hover:text-ink-100 hover:bg-ink-800 border border-transparent"
+              }`}
+            >
+              {EQUIPMENT_LABELS[k]}
+            </button>
+          ))}
+        </div>
 
         {/* ── MANUEL MOD kontrolleri ── */}
         {mode === "manual" && (

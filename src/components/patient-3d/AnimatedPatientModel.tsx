@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useMemo, useRef } from "react";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { SkeletonUtils } from "three-stdlib";
-import { MeshStandardMaterial, SkinnedMesh, type Group, type AnimationClip } from "three";
+import { MeshStandardMaterial, SkinnedMesh, type Group, type Object3D, type AnimationClip } from "three";
 import {
   SKIN_TONE_PRESETS,
   DEFAULT_SKIN_TONE,
@@ -10,6 +10,7 @@ import {
   type PatientVariant,
 } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
+import { buildEquipment, EQUIPMENT_BONE, type EquipmentKind } from "./equipmentMeshes";
 
 // ============================================================
 // Animasyonlu hasta modeli — Faz 2/3 (iskelet animasyon + mimik)
@@ -137,6 +138,8 @@ interface Props {
   skinTint?: SkinTint;
   /** Hasta konuşuyor mu? true iken ağız morph'u (jawOpen) lipsync osilasyonu yapar. */
   speaking?: boolean;
+  /** Hastaya takılı ekipman (kemik-bağlı, animasyonu takip eder). */
+  equipment?: EquipmentKind[];
   /** Wrapper scale (varsayılan canonical eşitleme). */
   scale?: number;
   /** Wrapper konum (yatak/supine hizalama için). */
@@ -151,6 +154,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       skinTone = DEFAULT_SKIN_TONE,
       skinTint = "normal",
       speaking = false,
+      equipment,
       scale = MODEL_SCALE,
       position = [0, -0.243, 0],
     },
@@ -233,6 +237,24 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       mouthRef.current += (target - mouthRef.current) * 0.2;
       setMorph("jawOpen", mouthRef.current);
     });
+
+    // Ekipman — kemiğe ekle (animasyonu otomatik takip eder)
+    useEffect(() => {
+      if (!equipment?.length) return;
+      const added: { parent: Object3D; obj: Object3D }[] = [];
+      for (const kind of equipment) {
+        const spec = EQUIPMENT_BONE[kind];
+        const bone = clone.getObjectByName(spec.bone);
+        if (!bone) continue;
+        const obj = buildEquipment(kind);
+        obj.position.set(spec.offset[0], spec.offset[1], spec.offset[2]);
+        if (spec.rotation) obj.rotation.set(spec.rotation[0], spec.rotation[1], spec.rotation[2]);
+        obj.scale.setScalar(spec.scale ?? 1);
+        bone.add(obj);
+        added.push({ parent: bone, obj });
+      }
+      return () => added.forEach(({ parent, obj }) => parent.remove(obj));
+    }, [clone, equipment]);
 
     return (
       <group ref={ref} scale={scale} position={position}>

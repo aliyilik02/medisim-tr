@@ -15,6 +15,7 @@ import { Box3, Vector3, type Group, type Object3D, type SkinnedMesh, type Mesh }
 import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip } from "./AnimatedPatientModel";
 import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
+import type { EquipmentKind } from "./equipmentMeshes";
 
 // ── Yatak yerleşim ölçüm probu (dev-only, GÖZ yerine SAYI) ──────────────
 // window.__measureBed=true iken hastanın POZLANMIŞ (skinned) dünya bbox'unu
@@ -104,6 +105,8 @@ interface Props {
   clip?: PatientClip;
   /** Hasta konuşuyor mu (lipsync jawOpen). */
   speaking?: boolean;
+  /** Takılı ekipman (kemik-bağlı). */
+  equipment?: EquipmentKind[];
   className?: string;
 }
 
@@ -113,6 +116,7 @@ export function PatientRoomScene({
   skinTint = "normal",
   clip = "laying_idle",
   speaking = false,
+  equipment,
   className,
 }: Props) {
   return (
@@ -134,7 +138,7 @@ export function PatientRoomScene({
         <Suspense fallback={<LoadingFallback />}>
           <ErRoom />
           {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
-          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} speaking={speaking} />
+          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} speaking={speaking} equipment={equipment} />
         </Suspense>
 
         <OrbitControls target={[0, 0.2, 0]} minDistance={0.6} maxDistance={4} enablePan />
@@ -149,10 +153,11 @@ interface BedPatientProps {
   skinTone: SkinTone;
   skinTint: SkinTint;
   speaking: boolean;
+  equipment?: EquipmentKind[];
 }
 
 // Varyant + klip metadata'sından yatak yerleşimini hesaplar.
-function BedPatient({ variant, clip, skinTone, skinTint, speaking }: BedPatientProps) {
+function BedPatient({ variant, clip, skinTone, skinTint, speaking, equipment }: BedPatientProps) {
   const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
   const s = meta.bedScale;
   const groupRef = useRef<Group>(null);
@@ -167,6 +172,7 @@ function BedPatient({ variant, clip, skinTone, skinTint, speaking }: BedPatientP
         skinTone={skinTone}
         skinTint={skinTint}
         speaking={speaking}
+        equipment={equipment}
         scale={1}
         position={[0, 0, 0]}
       />
