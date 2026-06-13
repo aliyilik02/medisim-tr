@@ -50,6 +50,13 @@ const ScenarioBedPlayPage = lazy(() =>
   }))
 );
 
+// Dalga formu monitörü demosu (harici monitör repo'sundan TSX portu).
+const MonitorDemoPage = lazy(() =>
+  import("@/pages/MonitorDemoPage").then((m) => ({
+    default: m.MonitorDemoPage,
+  }))
+);
+
 export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
@@ -60,10 +67,11 @@ export function App() {
   const isFaz2 = location.pathname.startsWith("/faz2-demo");
   const isAnim = location.pathname.startsWith("/animasyon-demo");
   const isBedPlay = location.pathname.startsWith("/senaryo-yatak");
+  const isMonitor = location.pathname.startsWith("/monitor-demo");
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && <Header />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -156,9 +164,23 @@ export function App() {
               </Suspense>
             }
           />
+          <Route
+            path="/monitor-demo"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                    Monitör yükleniyor…
+                  </div>
+                }
+              >
+                <MonitorDemoPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && <Footer />}
+      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && <Footer />}
     </div>
   );
 }
