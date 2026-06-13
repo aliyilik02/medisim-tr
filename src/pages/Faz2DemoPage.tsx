@@ -81,10 +81,11 @@ export function Faz2DemoPage() {
     mode === "scenario" && vitals ? vitalsToVisual(vitals).skinTint : skinTint;
   const effSkinTone = scenario ? patientToSkinTone(scenario.patient) : DEFAULT_SKIN_TONE;
 
-  // Stabilizasyon: vital normal bandında (müdahale sonrası iyileşme).
+  // Stabilizasyon: vital kritik bölgeden çıkmış (müdahale sonrası iyileşme).
+  // Eşikler "kriz dışı" — anaflaksi krizi (SpO2 72/BP 50/HR 152) → recovery.
   const isStable =
     mode === "scenario" && !!vitals &&
-    vitals.spo2 >= 94 && vitals.bp_systolic >= 100 && vitals.rr <= 22 && vitals.hr <= 110;
+    vitals.spo2 >= 94 && vitals.bp_systolic >= 88 && vitals.rr <= 27 && vitals.hr <= 120;
 
   // Manuel mod yardımcıları
   const onVariant = (v: PatientVariant) => {

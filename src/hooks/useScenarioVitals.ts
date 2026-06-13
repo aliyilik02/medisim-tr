@@ -21,6 +21,12 @@ const STEP_MS = 250;
 const O2_CEILING = 94;
 const O2_RATE = 1.4; // %/sn (simüle)
 
+/** O₂ desteği — saf (test edilebilir): SpO2'yi ceiling'e doğru iter. */
+export function applyOxygenSupport(v: PatientVitals, dtSec: number, on: boolean): PatientVitals {
+  if (!on || v.spo2 >= O2_CEILING) return v;
+  return { ...v, spo2: Math.min(O2_CEILING, v.spo2 + O2_RATE * dtSec) };
+}
+
 interface ScenarioVitalsOpts {
   speed?: number;
   /** O₂ ekipmanı takılı mı (SpO2 desteği). */
@@ -32,7 +38,7 @@ export function useScenarioVitals(
   running: boolean,
   opts: ScenarioVitalsOpts = {},
 ) {
-  const { speed = 6, oxygenSupport = false } = opts;
+  const { speed = 8, oxygenSupport = false } = opts;
   const [vitals, setVitals] = useState<PatientVitals | null>(scenario?.initial_vitals ?? null);
   const [given, setGiven] = useState<string[]>([]); // uygulanan müdahale id'leri
   const providerRef = useRef<PhysiologyProvider | null>(null);
@@ -60,12 +66,9 @@ export function useScenarioVitals(
       setVitals((v) => {
         if (!v || !providerRef.current) return v;
         const dt = (STEP_MS / 1000) * speed;
-        let next = providerRef.current.tick(v, dt);
-        // O₂ desteği: SpO2'yi ceiling'e doğru iter (deterioration üstüne biner)
-        if (o2Ref.current && next.spo2 < O2_CEILING) {
-          next = { ...next, spo2: Math.min(O2_CEILING, next.spo2 + O2_RATE * dt) };
-        }
-        return next;
+        const ticked = providerRef.current.tick(v, dt);
+        // O₂ desteği deterioration üstüne biner
+        return applyOxygenSupport(ticked, dt, o2Ref.current);
       });
     }, STEP_MS);
     return () => clearInterval(id);
