@@ -77,17 +77,21 @@ const ROOM_FLOOR_Y = -0.27; // oda zeminini sahne tabanına indir
 const BED_Z = 0.1; // yatak uzun ekseninde konum
 const BED_ROT: [number, number, number] = [0, Math.PI, 0]; // baş başlık ucuna
 
-// Kamera presetleri — hasta -Z'de (baş başlık ucu), monitör sağda.
-export type CameraPreset = "genel" | "bas_ucu" | "monitor";
+// Kamera presetleri. Hasta supine Z ekseninde: baş ≈ -Z (-0.47), ayak ≈ +Z,
+// gövde-sırt Y 0.19, göğüs Y 0.39. Pozlar hasta bbox'ından kalibre.
+export type CameraPreset = "genel" | "bas_ucu" | "yan";
 export const CAMERA_PRESET_LABELS: Record<CameraPreset, string> = {
   genel: "Genel",
   bas_ucu: "Baş ucu",
-  monitor: "Monitör",
+  yan: "Yan",
 };
 const CAMERA_PRESETS: Record<CameraPreset, { pos: [number, number, number]; target: [number, number, number] }> = {
-  genel: { pos: [2.0, 1.4, -1.1], target: [0, 0.2, 0] },
-  bas_ucu: { pos: [1.0, 0.95, -1.35], target: [0, 0.3, -0.45] },
-  monitor: { pos: [2.3, 0.95, 0.35], target: [0.1, 0.25, 0.1] },
+  // 3/4 genel görünüm (tüm yatak + hasta)
+  genel: { pos: [2.0, 1.4, -1.1], target: [0, 0.25, 0] },
+  // Yatak başından yüze bakış (airway POV) — baş -Z'de, kamera ötesinde+yukarıda
+  bas_ucu: { pos: [0.0, 0.92, -1.25], target: [0, 0.3, -0.3] },
+  // Yan profil (göğüs/solunum) — +X yandan, gövde ortasına
+  yan: { pos: [1.75, 0.5, 0.05], target: [0, 0.3, 0.0] },
 };
 
 useGLTF.preload(ROOM_URL);
