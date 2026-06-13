@@ -20,11 +20,9 @@ const ROOM_URL = "/3d/er-room.glb";
 const ROOM_SCALE = 0.64;
 const ROOM_FLOOR_Y = -0.27; // oda zeminini sahne tabanına indir
 // Animasyonlu hasta supine (laying_idle klibi ZATEN yatay → -90° döndürme YOK).
-// Three.js'de gövde Z ekseni boyunca yatıyor (baş -z), y'de yüzüyor. Her varyant
-// ve klip farklı gövde-sırt yüksekliğine (clipMinZ) sahip → tek sabit pozisyon
-// bazılarını yatağa gömüyordu. Çözüm: posY = BED_TOP − clipMinZ × bedScale
-// (her klibin sırtı mattress'a oturur). BED_TOP kadın laying_idle'dan kalibre.
-const BED_TOP = 0.179; // mattress üst yüzey (world Y) — hasta sırtı buraya oturur
+// Three.js'de gövde Z ekseni boyunca yatıyor (baş -z). Yerleşim varyant başına
+// metadata'dan (bedScale + bedPosY, laying_idle'da kalibre). TÜM klipler aynı
+// posY → pelvis sabit, animasyon gövdeyi doğal oynatır (gömülme/havalanma yok).
 const BED_Z = 0.1; // yatak uzun ekseninde konum
 const BED_ROT: [number, number, number] = [0, Math.PI, 0]; // baş başlık ucuna
 
@@ -107,10 +105,8 @@ interface BedPatientProps {
 function BedPatient({ variant, clip, skinTone, skinTint, speaking }: BedPatientProps) {
   const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
   const s = meta.bedScale;
-  const minZ = meta.clipMinZ[clip] ?? meta.clipMinZ.laying_idle ?? 0.85;
-  const posY = BED_TOP - minZ * s + (meta.bedYAdjust ?? 0);
   return (
-    <group position={[0, posY, BED_Z]} rotation={BED_ROT} scale={s}>
+    <group position={[0, meta.bedPosY, BED_Z]} rotation={BED_ROT} scale={s}>
       <AnimatedPatientModel
         variant={variant}
         clip={clip}

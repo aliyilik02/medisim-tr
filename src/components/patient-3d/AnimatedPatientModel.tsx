@@ -77,10 +77,13 @@ export interface AnimatedModelMeta {
   clips: PatientClip[];
   /** Yatak (supine) sahnesinde dünya ölçeği — çocuk küçük. */
   bedScale: number;
-  /** Klip başına gövde-sırt min-Z (GLB birimi). Yatak posY = BED_TOP − minZ×scale + bedYAdjust. */
-  clipMinZ: Partial<Record<PatientClip, number>>;
-  /** Varyant başına dikey düzeltme (world). min-Z formülünün varyant sapması (screenshot kalibre). */
-  bedYAdjust?: number;
+  /**
+   * Yatak sahnesinde wrapper Y konumu (world). laying_idle'da hasta sırtı mattress'a
+   * oturacak şekilde screenshot ile kalibre. TÜM klipler aynı posY kullanır →
+   * pelvis sabit kalır, animasyon (öksürük/kusma/inleme) gövdeyi doğal oynatır.
+   * (Per-klip min-Z denendi: uzuv sarkan kliplerde gövdeyi havalandırdı → terk edildi.)
+   */
+  bedPosY: number;
 }
 
 export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>> = {
@@ -89,30 +92,28 @@ export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>>
     label: "Kadın",
     clips: ["laying_idle", "idle", "talk_gesture", "talk_shrug", "pain", "cough_mild", "cough_severe"],
     bedScale: 0.62,
-    clipMinZ: { laying_idle: 0.853, talk_gesture: 0.85, talk_shrug: 0.843, cough_mild: 0.853, cough_severe: 0.845 },
+    bedPosY: -0.35,
   },
   "male-adult": {
     url: "/3d/patient-animated-male.glb",
     label: "Erkek",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
     bedScale: 0.62,
-    clipMinZ: { laying_idle: 1.127, laying_breathless: 1.112, talk_gesture: 1.101, talk_shrug: 1.104, cough_mild: 1.122, cough_severe: 1.127, moaning: 1.105, vomiting: 1.119, take_pill: 1.122, use_inhaler: 1.125 },
-    bedYAdjust: 0.16,
+    bedPosY: -0.36,
   },
   child: {
     url: "/3d/patient-animated-child.glb",
     label: "Çocuk",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "take_pill", "use_inhaler"],
-    bedScale: 0.5, // çocuk küçük (kullanıcı: fazla uzundu) — kalibre
-    clipMinZ: { laying_idle: 0.649, laying_breathless: 0.633, talk_gesture: 0.634, talk_shrug: 0.634, cough_mild: 0.649, cough_severe: 0.649, take_pill: 0.649, use_inhaler: 0.64 },
+    bedScale: 0.5, // çocuk küçük (kullanıcı: fazla uzundu)
+    bedPosY: -0.146,
   },
   elderly: {
     url: "/3d/patient-animated-elderly.glb",
     label: "Yaşlı",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
     bedScale: 0.62,
-    clipMinZ: { laying_idle: 1.028, laying_breathless: 1.006, talk_gesture: 1.004, talk_shrug: 1.001, cough_mild: 1.028, cough_severe: 1.02, moaning: 1.012, vomiting: 1.007, take_pill: 1.023, use_inhaler: 1.016 },
-    bedYAdjust: 0.14,
+    bedPosY: -0.318,
   },
 };
 export const ANIMATED_VARIANTS = Object.keys(ANIMATED_MODELS) as PatientVariant[];
