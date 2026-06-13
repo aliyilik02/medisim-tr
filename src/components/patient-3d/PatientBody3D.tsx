@@ -1,9 +1,14 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { PerspectiveCamera, Plane, Vector3, type Group } from "three";
+import { PerspectiveCamera, type Group } from "three";
 import { AnatomicPatientModel, type SkinTint } from "./AnatomicPatientModel";
-import { InternalOrgans } from "./InternalOrgans";
+import {
+  DEFAULT_PATIENT_VARIANT,
+  DEFAULT_SKIN_TONE,
+  type PatientVariant,
+  type SkinTone,
+} from "./patientModels";
 import { RegionMarker } from "./RegionMarker";
 import { InspectionPanel } from "./InspectionPanel";
 import { ProcedureOverlay } from "./procedures/ProcedureOverlay";
@@ -19,19 +24,16 @@ interface Props {
   skinTint?: SkinTint;
   /** Sprint B.2 entegrasyon: hasta konuşurken ağız bölgesi shader oscillation. */
   speaking?: boolean;
-  /**
-   * Sprint B.4 — Cilt kesim seviyesi (0.0-1.0).
-   * 1.0 = cilt tamamen kapalı (default).
-   * 0.0 = cilt tamamen açık, iç organlar görünür.
-   * Slider ile yukarıdan aşağıya kademeli açılma.
-   */
-  skinClipLevel?: number;
-  /** B.4 — Kalp/akciğer animasyon hızı için vital'ler. */
+  /** Solunum hızı (rr) için vital — breathing shader'a beslenir. */
   organVitals?: { hr: number; rr: number };
   /** Test ortamında onSelect'i dışarıdan dinleyebilmek için opsiyonel callback. */
   onRegionSelect?: (region: PatientRegion) => void;
   /** Sprint B.2.1: Prosedür animasyonu tamamlandığında engine'e iletilecek ActionRef. */
   onProcedureComplete?: (action: ActionRef) => void;
+  /** Hasta model varyantı (yaş/cinsiyet) — senaryo hastasından türetilir. */
+  variant?: PatientVariant;
+  /** Etnik ten tonu — senaryo hastasından türetilir. */
+  skinTone?: SkinTone;
   className?: string;
 }
 
@@ -75,37 +77,16 @@ export function PatientBody3D({
   breathing = true,
   skinTint = "normal",
   speaking = false,
-  skinClipLevel = 1.0,
   organVitals,
   onRegionSelect,
   onProcedureComplete,
+  variant = DEFAULT_PATIENT_VARIANT,
+  skinTone = DEFAULT_SKIN_TONE,
   className,
 }: Props) {
   const [selected, setSelected] = useState<PatientRegion | null>(null);
   const [activeProcedure, setActiveProcedure] = useState<ProcedureContext | null>(null);
   const bodyRef = useRef<Group>(null);
-
-  // Sprint B.4 — Anatomik atlas tarzı clipping:
-  // Anterior cilt kaldırılır, baş + kollar + bacaklar + sırt görünür kalır.
-  // Model world z bbox ≈ [-0.08, 0.09]. Plane normal (0, 0, -1) anterior'a bakar.
-  // skinClipLevel=1.0 → zClip=0.09 (etkisiz, hiçbir şey clip)
-  // skinClipLevel=0.0 → zClip=-0.08 (tüm anterior clip, sadece sırt görünür)
-  //
-  // Bonus üst sınır: clip sadece chest+abdomen seviyesinde (y 0.20-0.65 arası).
-  // Bunun için ikinci bir plane (y normal) eklemek gerekir. Şimdilik tek plane
-  // yeterli — kafa kısmen clip olur ama görsel olarak daha iyi y range kontrolü
-  // ileride eklenebilir.
-  const zClip = useMemo(() => {
-    return 0.09 - (1 - skinClipLevel) * 0.17;
-  }, [skinClipLevel]);
-
-  const clippingPlanes = useMemo(() => {
-    if (skinClipLevel >= 0.99) return undefined; // clipping yok
-    // Plane normal (0, 0, -1), z > zClip clipped (anterior tarafı kalkar)
-    return [new Plane(new Vector3(0, 0, -1), zClip)];
-  }, [zClip, skinClipLevel]);
-
-  const showOrgans = skinClipLevel < 0.95;
 
   const handleSelect = (region: PatientRegion) => {
     setSelected(region);
@@ -152,7 +133,6 @@ export function PatientBody3D({
         frameloop={breathing || activeProcedure || speaking ? "always" : "demand"}
         dpr={[1, 2]}
         gl={{
-          localClippingEnabled: true,
           antialias: true,
           powerPreference: "high-performance",
         }}
@@ -177,17 +157,12 @@ export function PatientBody3D({
           <AnatomicPatientModel
             ref={bodyRef}
             breathing={breathing}
+            rr={organVitals?.rr ?? 14}
             skinTint={skinTint}
             speaking={speaking}
-            clippingPlanes={clippingPlanes}
+            variant={variant}
+            skinTone={skinTone}
           />
-          {showOrgans && (
-            <InternalOrgans
-              hr={organVitals?.hr ?? 75}
-              rr={organVitals?.rr ?? 14}
-              visible={showOrgans}
-            />
-          )}
           {regions.map((region) => (
             <RegionMarker
               key={region.id}

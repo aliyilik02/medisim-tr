@@ -61,3 +61,15 @@ backend/dist/
 docs/memory/.obsidian/
 public/3d/splanchnology-source/
 public/3d/splanchnology.zip
+
+# 3D üretim hattı (blender-medical-modeling skill) — masterlar + ara çıktılar commit edilmez
+assets/3d-src/
+data/3d-pipeline/
+scratch/
+
+# graphify bilgi grafiği çıktısı (büyük, yeniden üretilebilir)
+graphify-out/
+
+# DİKKAT: public/3d/patient-mimikli.glb (~161MB) OPTIMIZE EDİLMEDEN commit EDİLMEZ —
+# GitHub 100MB hard limit. Optimize: npm run glb:patient (skill: blender-medical-modeling).
+# Optimize çıktısı (<25MB) commit edilebilir; 161MB master LFS/R2 kararı Ali Bey'in.

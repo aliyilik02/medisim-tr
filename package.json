@@ -18,6 +18,12 @@
     "test:e2e:install": "playwright install --with-deps chromium",
     "test:visual": "playwright test dialog-3d-vision.spec.ts",
     "test:visual:update": "playwright test dialog-3d-vision.spec.ts --update-snapshots",
+    "glb:inspect": "gltf-transform inspect",
+    "glb:validate": "gltf-transform validate",
+    "glb:patient": "gltf-transform optimize assets/3d-src/patient-master.glb public/3d/patient-mimikli.glb --compress meshopt --texture-compress webp --texture-size 2048 --simplify false --join false --weld true --prune true --instance false",
+    "glb:room": "gltf-transform optimize assets/3d-src/room-master.glb public/3d/room.glb --compress meshopt --texture-compress webp --texture-size 1024 --simplify true --simplify-error 0.001 --join true --instance true",
+    "glb:check": "node scripts/validate-glb.mjs",
+    "glb:gate": "node scripts/validate-glb.mjs public/3d/patient-mimikli.glb && npm run test:visual",
     "prepare": "husky"
   },
   "dependencies": {
@@ -36,6 +42,7 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.3.0",
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

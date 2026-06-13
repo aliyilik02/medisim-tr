@@ -5,6 +5,45 @@ Yeni model eklerken bu dosyaya da bir bölüm ekleyin.
 
 ---
 
+## patient-{female-adult,male-adult,child,elderly}.glb (CC0 — TEMİZ HAT, AKTİF)
+
+**Eser:** MediSim TR sanal hasta seti — 4 varyant (MPFB2 ile prosedürel üretim)
+**Üretim aracı:** MPFB2 (MakeHuman Plugin for Blender 2) v2.0.15, Blender 5.1.1
+**Lisans:** **CC0 1.0** (kamu malı — MPFB asset'leri CC0). **Atıf gerektirmez, ticari kullanım serbest, viral değil.**
+**Eklenme tarihi:** 2026-06-13 (Blender pipeline — `blender-medical-modeling` skill)
+
+> CC0 → patient-v1/v2 (CC BY) ve eski Daz/Character Creator (lisans belirsiz)
+> `patient-mimikli.glb`'nin yerini ALDI (app MODEL_URL → `patient-female-adult.glb`).
+> KVKK: jenerik avatar, gerçek kişi yüzü/biyometrik veri DEĞİL.
+
+### Varyantlar (her biri ~237 KB, meshopt)
+| Dosya | Boy | Not |
+| --- | --- | --- |
+| `patient-female-adult.glb` | 1.59 m | **app default** (MODEL_URL) |
+| `patient-male-adult.glb` | 1.89 m | erkek yetişkin |
+| `patient-child.glb` | 1.21 m | ~8-10 yaş |
+| `patient-elderly.glb` | 1.77 m | yaşlı erkek |
+
+### Teknik bilgi
+- Format: glTF 2.0 binary, `EXT_meshopt_compression` · glTF-Validator error=0
+- Boyut: **~237 KB** her biri (optimize) / master `assets/3d-src/*-master.glb` (gitignored)
+- Vertex: 13.380 (helper geometri temizlendi) + göz küreleri
+- Materyaller: `Skin_Body` (app `SKIN_MATERIAL_NAMES` tint → siyanoz/ikter/solgunluk), `Eye_Sclera`, `Eye_Iris`
+- Doku YOK — flat baseColor (cilt 0.82,0.62,0.52); tint geçişleri için ideal (sıkıştırma artefaktı yok)
+- Wrapper (`AnatomicPatientModel.tsx`): scale **0.639** + yOffset **-0.243** → world bbox patient-v1 uyumlu (ayak -0.243, baş 0.778). Breathing chest/abdomen merkezi WORLD koord → shader + regions.ts değişmedi.
+- **Morph target (TAM 52 ARKit):** jawOpen/Forward/Left/Right, eyeBlink/Wide/Squint/LookIn/Out/Up/Down L/R, browDown L/R + InnerUp + OuterUp L/R, cheekPuff/Squint, mouthSmile/Frown/Pucker/Funnel/Stretch/Close/Press/Dimple/Roll/Shrug/UpperUp/LowerDown..., noseSneer L/R, tongueOut → lipsync + kırpma + ağrı/distres + bakış. App `eyeBlinkLeft/Right` + `jawOpen` sürüyor.
+- Kaynak: MakeHuman `faceunits01` asset pack (Mika Suominen, files.makehumancommunity.org) MPFB user-data'ya kuruldu, `FaceService.load_targets(load_arkit_faceunits=True)` ile yüklendi.
+- Üretim: `blender-medical-modeling` skill · `.blend` kaynak `assets/3d-src/patient-female-adult.blend`
+
+### Bilinen eksikler (follow-up)
+- Göz küreleri basit sphere (sclera+iris); pupil reaktivite/bakış yönü Faz 3.
+- Body rig yok (poz için Rigify sonra; nefes shader-tabanlı, rig gerekmez).
+- Tek ten tonu (caucasian-ağırlıklı); etnik çeşitlilik sonraki üretim.
+- Varyant seçimi BAĞLANDI (`patientModels.ts` + `patientToVariant`): senaryo hastasının yaş/cinsiyet/`avatar_id`'sinden türetilir; PatientDialog3DPage → PatientBody3D → AnatomicPatientModel. Demo varsayılan female-adult.
+- Görsel test (`dialog-3d-vision.spec.ts`) DOM-tabanlı (image baseline yok); yeni modelle 8/8 pass + in-app Playwright screenshot ile doğrulandı.
+
+---
+
 ## anatomy-internal.glb (Sprint B.4 — iç organlar)
 
 **Eser:** "Splanchnology" (iç organ sistemi — TA2-2019 etiketli)

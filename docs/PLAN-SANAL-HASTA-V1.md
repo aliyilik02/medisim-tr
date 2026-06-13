@@ -93,24 +93,38 @@ Amaç: `/dialog-3d-demo` rotasında uçtan uca oynanabilir bir vaka.
 
 ## 5. Faz 2 — Klinik Sahne (tahmin: 2 gece seansı)
 
+> **Detaylı tasarım:** [`PLAN-FAZ-2-KLINIK-SAHNE.md`](PLAN-FAZ-2-KLINIK-SAHNE.md)
+> (DRAFT, 13 Haz 2026 — mevcut repo ile doğrulandı). Aşağısı özet.
+
 - **Blender MCP ile acil odası:** yatak, monitör direği, infüzyon askısı,
   zemin/duvar — prosedürel kurulum, baked AO, tek GLB (hedef < 5 MB, draco).
   Unity'deki `HospitalRoomBuilder` denemesi konsept referansı olarak kullanılır
   (kod taşınmaz).
 - Hasta yatağa yerleştirilir (mevcut wrapper transform kalıbı).
 - Tıklanabilir muayene noktaları: `Hotspot` tipi + raycast; tıklama Faz 1
-  aksiyon paneline komut düşürür.
+  aksiyon paneline komut düşürür (köprü tek yönlü; fizyoloji yalnız
+  `applyIntervention` yolundan). `available_actions: ActionType[]` tür filtreler.
 - Kamera presetleri: genel / baş ucu / monitör yakın.
 - Görsel doğrulama: 3d-vision-tester ajanı + `test:visual`.
 
 ## 6. Faz 3 — Derinlik (D.1 + D.2)
 
+> **Detaylı tasarım:** [`PLAN-FAZ-3-DERINLIK.md`](PLAN-FAZ-3-DERINLIK.md)
+> (DRAFT, 13 Haz 2026 — mevcut repo ile doğrulandı). Aşağısı özet.
+
 - **Pulse Engine sidecar** (Apache 2.0): Node sidecar + WebSocket,
   `PulsePhysiologyProvider` aynı arayüzü implemente eder
-  (bkz. `pulse-engine-binding` skill). Deploy kararı (Fly.io/Railway) ayrı
+  (bkz. `pulse-engine-binding` skill). Swap noktası `useScenarioRunner` içindeki
+  provider factory'sidir (hook imzası `wsUrl`/`onConnectionChange` ile küçük
+  genişler; sayfa/senaryo değişmez). Deploy kararı (Fly.io/Railway/Render) ayrı
   onay konusu — **büyük karar, Ali Bey'e sorulur**.
 - **RPM avatar** (D.2): ARKit blendshape — göz kırpma, ağrı mimiği, konuşurken
   ağız hareketi (TTS ile senkron). `rpm-avatar` skill kalıbı.
+
+> **Not (13 Haz 2026):** Yukarıdaki §3'teki 2-metotlu `PhysiologyProvider`
+> taslağı eskidir; bağlayıcı imza `src/engine/physiology.ts`'teki 5 metottur
+> (`tick`, `applyIntervention`, `notifyStepChange`, `isPhaseHalted`, `getState`).
+> Detay dokümanlar bu gerçek imzayı kullanır.
 
 ## 7. Araç Entegrasyonu Değerlendirmesi (12 Haziran 2026)
 

@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   Waves,
   Droplet,
-  Scissors,
   Wand2,
   MessageCircle,
   ClipboardList,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { PatientBody3D } from "@/components/patient-3d/PatientBody3D";
 import type { SkinTint } from "@/components/patient-3d/AnatomicPatientModel";
+import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
 import { CompactVitalsHUD } from "@/components/patient-3d/CompactVitalsHUD";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { buildScenarioRegions } from "@/components/patient-3d/scenarioRegions";
@@ -60,7 +60,6 @@ export function PatientDialog3DPage() {
   const [breathing, setBreathing] = useState(true);
   const [manualSkinTint, setManualSkinTint] = useState<SkinTint | null>(null);
   const [speaking, setSpeaking] = useState(false);
-  const [skinClipLevel, setSkinClipLevel] = useState(1.0);
   const [autoTint, setAutoTint] = useState(true);
   const [rightTab, setRightTab] = useState<RightTab>("vaka");
 
@@ -75,6 +74,9 @@ export function PatientDialog3DPage() {
     haltedPhaseIds,
   } = runner;
   const rs = resolvedScenario ?? scenario;
+  // Senaryo hastasının yaş/cinsiyetinden 3D model varyantını türet (CC0 MPFB seti).
+  const patientVariant = useMemo(() => patientToVariant(rs.patient), [rs.patient]);
+  const patientSkinTone = useMemo(() => patientToSkinTone(rs.patient), [rs.patient]);
 
   // Canlı vital (session varsa) veya statik fallback
   const liveVitals = session?.vitals ?? scenario.initial_vitals;
@@ -191,7 +193,8 @@ export function PatientDialog3DPage() {
             breathing={breathing}
             skinTint={skinTint}
             speaking={speaking}
-            skinClipLevel={skinClipLevel}
+            variant={patientVariant}
+            skinTone={patientSkinTone}
             organVitals={{
               hr: liveVitals.hr,
               rr: liveVitals.rr,
@@ -279,36 +282,6 @@ export function PatientDialog3DPage() {
                 <Waves className="w-3 h-3" />
                 Solunum {breathing ? "açık" : "kapalı"}
               </button>
-            </div>
-          </div>
-
-          {/* SOL ALT: Cilt Kesim slider */}
-          <div
-            className="absolute bottom-4 left-4 bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-lg p-3 w-[240px] shadow-xl"
-            data-testid="skin-clip-control"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Scissors className="w-3.5 h-3.5 text-brand" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-brand">
-                Cilt Kesim
-              </span>
-              <span className="ml-auto font-mono text-[10px] text-ink-400 tabular-nums">
-                {Math.round((1 - skinClipLevel) * 100)}% açık
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.02"
-              value={skinClipLevel}
-              onChange={(e) => setSkinClipLevel(parseFloat(e.target.value))}
-              className="w-full accent-brand cursor-pointer"
-              aria-label="Cilt kesim seviyesi"
-            />
-            <div className="flex justify-between font-mono text-[8px] text-ink-500 mt-1">
-              <span>← Anatomik kesit</span>
-              <span>Cilt kapalı →</span>
             </div>
           </div>
 

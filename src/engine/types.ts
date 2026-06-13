@@ -73,6 +73,8 @@ export interface Patient {
   weight_kg: number;
   height_cm?: number;
   avatar_id?: string;
+  /** Etnik ten tonu (3D model Skin_Body baseColor). Bkz. patientModels.ts SkinTone. */
+  skin_tone?: "fair" | "mediterranean" | "tan" | "brown" | "dark";
   chief_complaint: string;
   history_items: string[];
   allergies: string[];

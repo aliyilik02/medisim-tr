@@ -22,7 +22,9 @@ test.describe("Patient 3D demo route", () => {
     // R3F Canvas <canvas> elementini DOM'a basar. WebGL context kurmaya
     // çalıştığı için "domcontentloaded" yerine "load"u bekliyoruz.
     await page.waitForLoadState("load");
-    const canvas = page.locator('canvas');
+    // CompactVitalsHUD de bir <canvas> basıyor → selector'ı 3D sahne canvas'ına
+    // daralt (yoksa strict-mode 2 element çakışması).
+    const canvas = page.getByTestId("patient-3d-canvas").locator("canvas");
     await expect(canvas).toBeVisible({ timeout: 10_000 });
   });
 
@@ -35,7 +37,7 @@ test.describe("Patient 3D demo route", () => {
 
   test("anatomik glTF asset 200 OK döner", async ({ page }) => {
     const responsePromise = page.waitForResponse(
-      (r) => r.url().endsWith("/3d/patient-v1.glb") && r.status() === 200,
+      (r) => r.url().endsWith("/3d/patient-female-adult.glb") && r.status() === 200,
       { timeout: 15_000 },
     );
     await page.goto("/3d-demo");
@@ -43,8 +45,10 @@ test.describe("Patient 3D demo route", () => {
     expect(response.status()).toBe(200);
     const contentLength = response.headers()["content-length"];
     if (contentLength) {
-      // 1.07 MB glTF — şüpheli truncate / 0-byte response yakala
-      expect(Number(contentLength)).toBeGreaterThan(500_000);
+      // ~237 KB MPFB2 CC0 (meshopt). Alt sınır: truncate/0-byte yakala.
+      expect(Number(contentLength)).toBeGreaterThan(100_000);
+      // Üst sınır: ham/optimize edilmemiş master'ın yanlışlıkla gelmesini yakala.
+      expect(Number(contentLength)).toBeLessThan(2_000_000);
     }
   });
 });

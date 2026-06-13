@@ -26,12 +26,10 @@ test.describe("dialog-3d-demo layout + smoke", () => {
     await page.waitForTimeout(3000);
   });
 
-  test("layout — monitor sol üst, slider sol alt, chat sağ panel", async ({ page }) => {
+  test("layout — monitor sol üst, chat sağ panel", async ({ page }) => {
     const monitor = page.getByTestId("compact-vitals-hud");
-    const slider = page.getByTestId("skin-clip-control");
 
     await expect(monitor).toBeVisible();
-    await expect(slider).toBeVisible();
 
     // Faz 1: sağ panel sekmeli — diyalog "Hasta ile Konuş" sekmesinde
     await page.getByTestId("tab-diyalog").click();
@@ -41,10 +39,6 @@ test.describe("dialog-3d-demo layout + smoke", () => {
     const monitorBox = await monitor.boundingBox();
     expect(monitorBox?.x).toBeLessThan(50);
     expect(monitorBox?.y).toBeLessThan(150);
-
-    const sliderBox = await slider.boundingBox();
-    expect(sliderBox?.x).toBeLessThan(50);
-    expect(sliderBox?.y).toBeGreaterThan(500);
   });
 
   test("monitor — başlık + vital + 12-Lead butonu", async ({ page }) => {
@@ -85,27 +79,6 @@ test.describe("dialog-3d-demo layout + smoke", () => {
 
     const newVitalText = await page.getByTestId("compact-vitals-hud").textContent();
     expect(newVitalText).not.toBe(initialVitalText);
-  });
-
-  test("cilt kesim slider hareket eder + organ render etkisi", async ({ page }) => {
-    const slider = page.locator('input[aria-label="Cilt kesim seviyesi"]');
-    const indicator = page.getByTestId("skin-clip-control");
-
-    // Başlangıç: 0%
-    await expect(indicator).toContainText(/0\s*%/);
-
-    // Slider'ı %100 açık konumuna getir (value=0)
-    await slider.evaluate((el: HTMLInputElement) => {
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      setter?.call(el, "0");
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    await page.waitForTimeout(800);
-    await expect(indicator).toContainText(/100\s*%/);
   });
 
   test("dialog chat input + Calgary-Cambridge stepper görünür", async ({ page }) => {
