@@ -54,7 +54,7 @@ export function Faz2DemoPage() {
   const [skinTint, setSkinTint] = useState<SkinTint>("normal");
   const [presetLabel, setPresetLabel] = useState<string | null>(null);
   const [equipment, setEquipment] = useState<EquipmentKind[]>([]);
-  const [camera, setCamera] = useState<CameraPreset>("genel");
+  const [camera, setCamera] = useState<CameraPreset>("onden");
   const toggleEquip = (k: EquipmentKind) =>
     setEquipment((e) => (e.includes(k) ? e.filter((x) => x !== k) : [...e, k]));
 

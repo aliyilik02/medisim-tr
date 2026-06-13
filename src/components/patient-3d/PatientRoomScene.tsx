@@ -79,41 +79,49 @@ const BED_ROT: [number, number, number] = [0, Math.PI, 0]; // baş başlık ucun
 
 // Kamera presetleri. Hasta supine Z ekseninde: baş ≈ -Z (-0.47), ayak ≈ +Z,
 // gövde-sırt Y 0.19, göğüs Y 0.39. Pozlar hasta bbox'ından kalibre.
-export type CameraPreset = "genel" | "bas_ucu" | "yan";
+export type CameraPreset = "onden" | "genel" | "bas_ucu" | "yan";
 export const CAMERA_PRESET_LABELS: Record<CameraPreset, string> = {
+  onden: "Önden",
   genel: "Genel",
   bas_ucu: "Baş ucu",
   yan: "Yan",
 };
+// Varsayılan açılış görünümü (Body Interact tarzı karşıdan/anterior).
+export const DEFAULT_CAMERA_PRESET: CameraPreset = "onden";
 const CAMERA_PRESETS: Record<CameraPreset, { pos: [number, number, number]; target: [number, number, number] }> = {
+  // Karşıdan/anterior — baş tarafından (-Z), alçak-frontal, ortalanmış (Body Interact)
+  onden: { pos: [0, 0.78, -1.3], target: [0, 0.28, -0.05] },
   // 3/4 genel görünüm (tüm yatak + hasta)
   genel: { pos: [2.0, 1.4, -1.1], target: [0, 0.25, 0] },
-  // Yatak başından yüze bakış (airway POV) — baş -Z'de, kamera ötesinde+yukarıda
-  bas_ucu: { pos: [0.0, 0.92, -1.25], target: [0, 0.3, -0.3] },
+  // Baş bölgesi yakın 3/4 (genel tarzı, baş-odaklı; güvenilir)
+  bas_ucu: { pos: [1.3, 0.95, -1.2], target: [0, 0.33, -0.35] },
   // Yan profil (göğüs/solunum) — +X yandan, gövde ortasına
   yan: { pos: [1.75, 0.5, 0.05], target: [0, 0.3, 0.0] },
 };
 
 useGLTF.preload(ROOM_URL);
 
-// Kamera + OrbitControls hedefini preset'e yumuşak taşır.
-function CameraRig({ preset, controlsRef }: { preset: CameraPreset; controlsRef: React.MutableRefObject<{ target: Vector3; update: () => void } | null> }) {
+// Kamera + OrbitControls hedefini preset'e taşır. Per-frame lerp +
+// OrbitControls çakışması kamerayı güvenilmez yapıyordu → preset değişince
+// SNAP (useEffect bir kez): camera.position + controls.target set + update.
+// OrbitControls spherical'ı yeni durumdan senkronize eder (idempotent).
+function CameraRig({
+  preset,
+  controlsRef,
+}: {
+  preset: CameraPreset;
+  controlsRef: React.MutableRefObject<{ target: Vector3; update: () => void } | null>;
+}) {
   const { camera } = useThree();
   const want = CAMERA_PRESETS[preset];
-  const target = useMemo(() => new Vector3(), []);
-  const pos = useMemo(() => new Vector3(), []);
   useEffect(() => {
-    pos.set(...want.pos);
-    target.set(...want.target);
-  }, [preset, want, pos, target]);
-  useFrame(() => {
-    camera.position.lerp(pos, 0.12);
+    camera.position.set(want.pos[0], want.pos[1], want.pos[2]);
     const c = controlsRef.current;
     if (c) {
-      c.target.lerp(target, 0.12);
+      c.target.set(want.target[0], want.target[1], want.target[2]);
       c.update();
     }
-  });
+  }, [preset, want, camera, controlsRef]);
   return null;
 }
 
@@ -157,7 +165,7 @@ export function PatientRoomScene({
   clip = "laying_idle",
   speaking = false,
   equipment,
-  cameraPreset = "genel",
+  cameraPreset = DEFAULT_CAMERA_PRESET,
   className,
 }: Props) {
   const controlsRef = useRef<{ target: Vector3; update: () => void } | null>(null);
@@ -168,7 +176,7 @@ export function PatientRoomScene({
         frameloop="always"
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [2.0, 1.4, -1.1], fov: 38 }}
+        camera={{ position: CAMERA_PRESETS[DEFAULT_CAMERA_PRESET].pos, fov: 38 }}
         shadows
       >
         <color attach="background" args={["#0a0a0c"]} />
