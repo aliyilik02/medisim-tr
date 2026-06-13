@@ -12,6 +12,12 @@ export default defineConfig({
         port: 5173,
         open: true,
     },
+    // Worker'lar ES formatında derlenir — whisper.worker.ts içindeki
+    // transformers.js dinamik import'u code-splitting yapar; iife bunu
+    // desteklemez (build hatası). ES modül worker code-split destekler.
+    worker: {
+        format: "es",
+    },
     build: {
         rollupOptions: {
             output: {
