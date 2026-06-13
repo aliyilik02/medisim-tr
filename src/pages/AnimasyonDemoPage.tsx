@@ -30,6 +30,7 @@ function Loading() {
 // Faz 2/3 — Mixamo iskelet animasyon doğrulama demosu.
 export function AnimasyonDemoPage() {
   const [clip, setClip] = useState<PatientClip>("idle");
+  const [speaking, setSpeaking] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-ink-950 flex flex-col">
@@ -62,7 +63,7 @@ export function AnimasyonDemoPage() {
           <hemisphereLight args={["#ffffff", "#1a1a1f", 0.4]} />
 
           <Suspense fallback={<Loading />}>
-            <AnimatedPatientModel clip={clip} />
+            <AnimatedPatientModel clip={clip} speaking={speaking} />
             {/* zemin */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.243, 0]} receiveShadow>
               <planeGeometry args={[6, 6]} />
@@ -88,6 +89,17 @@ export function AnimasyonDemoPage() {
               {CLIP_LABELS[c]}
             </button>
           ))}
+          <span className="w-px h-5 bg-ink-700/60 mx-1 self-center" />
+          <button
+            onClick={() => setSpeaking((s) => !s)}
+            className={`px-3 py-1.5 rounded font-mono text-[10px] uppercase tracking-[0.08em] transition ${
+              speaking
+                ? "bg-clinical-info/20 text-clinical-info border border-clinical-info/40"
+                : "text-ink-400 hover:text-ink-100 hover:bg-ink-800 border border-transparent"
+            }`}
+          >
+            {speaking ? "Konuşuyor ●" : "Konuş (lipsync)"}
+          </button>
         </div>
       </div>
     </div>
