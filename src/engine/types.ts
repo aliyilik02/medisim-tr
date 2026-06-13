@@ -360,6 +360,32 @@ export interface ActionMatcher {
   site?: string;
 }
 
+/** Vital eşik koşulu — escalation tetiği (eval-monitor FSM'inden uyarlandı). */
+export interface VitalCondition {
+  vital: TrendableVital;
+  op: "lt" | "gt" | "lte" | "gte";
+  value: number;
+  /** Koşul bu kadar simüle sn TUTULU kalmalı (anlık değil; verilmezse anlık) */
+  for_sec?: number;
+}
+
+/**
+ * Faz eskalasyonu — koşul sağlanınca hedef fazı AKTİVE eder. Opsiyonel katman:
+ * eski senaryolar (escalations'sız) aynen çalışır. eval-monitor'un olay/zaman/
+ * vital-eşik state-transition mantığını A'nın deterioration modeline ekler
+ * ("90 sn müdahale yoksa arrest", "SpO2<78 8 sn tutulu → hava yolu ödemi").
+ */
+export interface PhaseEscalation {
+  /** Aktive edilecek hedef faz id'si */
+  to_phase_id: string;
+  /** Faz aktifleştiğinden bu kadar simüle sn sonra tetikle (zaman-tetikli) */
+  after_sec?: number;
+  /** Vital eşik koşulu tutulunca tetikle (vital-eşik-tetikli) */
+  when_vital?: VitalCondition;
+  /** true ise tetiklenince MEVCUT faz da durur (trend'leri kesilir, hedef devralır) */
+  halt_self?: boolean;
+}
+
 export interface DeteriorationPhase {
   id: string;
   label?: string;
@@ -372,6 +398,9 @@ export interface DeteriorationPhase {
   halted_by: ActionMatcher[];
   /** Halt sonrası iyileşme trendi — floor/ceiling iyileşme hedefi olarak kullanılır */
   recovery_trends?: VitalTrend[];
+  /** Opsiyonel — koşul sağlanınca başka fazı aktive eden eskalasyonlar
+      (zaman/vital-eşik tetikli durum geçişi). Verilmezse eski davranış. */
+  escalations?: PhaseEscalation[];
 }
 
 // ------------------------------------------------------------

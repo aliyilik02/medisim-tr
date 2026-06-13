@@ -91,16 +91,41 @@ export function applyTrends(
 // SimplePhysiologyProvider
 // ------------------------------------------------------------
 
+/** Vital eşik koşulu sağlanıyor mu (saf). */
+export function matchesVitalCondition(
+  vitals: PatientVitals,
+  cond: import("./types").VitalCondition
+): boolean {
+  const v = vitals[cond.vital];
+  if (v == null) return false;
+  switch (cond.op) {
+    case "lt": return v < cond.value;
+    case "lte": return v <= cond.value;
+    case "gt": return v > cond.value;
+    case "gte": return v >= cond.value;
+  }
+}
+
 export function createSimplePhysiologyProvider(
   scenario: Scenario
 ): PhysiologyProvider {
   const phases: DeteriorationPhase[] = scenario.deterioration ?? [];
 
-  // Başlangıçta aktif: adım tetikleyicisi olmayan fazlar
+  // Eskalasyon hedefi olan fazlar başta inaktif — escalation/step ile tetiklenir.
+  const escalationTargets = new Set<string>();
+  for (const p of phases) for (const e of p.escalations ?? []) escalationTargets.add(e.to_phase_id);
+
+  // Başlangıçta aktif: adım tetikleyicisi YOK + eskalasyon hedefi DEĞİL
   const activated = new Set<string>(
-    phases.filter((p) => !p.active_from_step_id).map((p) => p.id)
+    phases
+      .filter((p) => !p.active_from_step_id && !escalationTargets.has(p.id))
+      .map((p) => p.id)
   );
   const halted = new Set<string>();
+  // Eskalasyon durumu: faz yaşı (aktiften beri sn) + vital-koşul tutulma süresi
+  const phaseAge = new Map<string, number>();
+  const heldSec = new Map<string, number>(); // key: `${phaseId}#${escIdx}`
+  for (const id of activated) phaseAge.set(id, 0);
 
   return {
     tick(vitals, dtSec) {
@@ -117,6 +142,32 @@ export function createSimplePhysiologyProvider(
           // Tedavisiz seyir
           next = applyTrends(next, phase.trends, dtSec);
         }
+      }
+
+      // Eskalasyon değerlendirmesi — aktif + durdurulmamış fazlar
+      for (const phase of phases) {
+        if (!activated.has(phase.id) || halted.has(phase.id) || !phase.escalations?.length) continue;
+        phaseAge.set(phase.id, (phaseAge.get(phase.id) ?? 0) + dtSec);
+        const age = phaseAge.get(phase.id)!;
+        phase.escalations.forEach((esc, i) => {
+          let trigger = false;
+          if (esc.after_sec != null && age >= esc.after_sec) trigger = true;
+          if (esc.when_vital) {
+            const key = `${phase.id}#${i}`;
+            if (matchesVitalCondition(next, esc.when_vital)) {
+              const held = (heldSec.get(key) ?? 0) + dtSec;
+              heldSec.set(key, held);
+              if (held >= (esc.when_vital.for_sec ?? 0)) trigger = true;
+            } else {
+              heldSec.set(key, 0);
+            }
+          }
+          if (trigger && !activated.has(esc.to_phase_id)) {
+            activated.add(esc.to_phase_id);
+            phaseAge.set(esc.to_phase_id, 0);
+            if (esc.halt_self) halted.add(phase.id);
+          }
+        });
       }
       return next;
     },
@@ -137,8 +188,9 @@ export function createSimplePhysiologyProvider(
     notifyStepChange(stepId) {
       if (!stepId) return;
       for (const phase of phases) {
-        if (phase.active_from_step_id === stepId) {
+        if (phase.active_from_step_id === stepId && !activated.has(phase.id)) {
           activated.add(phase.id);
+          phaseAge.set(phase.id, 0);
         }
       }
     },
