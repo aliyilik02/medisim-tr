@@ -1,5 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, RotateCcw, Cpu, Database } from "lucide-react";
+import {
+  Send,
+  RotateCcw,
+  Cpu,
+  Database,
+  Volume2,
+  VolumeX,
+  Mic,
+  MicOff,
+  Loader2,
+} from "lucide-react";
 import type { Scenario } from "@/engine";
 import {
   generateMockResponse,
@@ -11,6 +21,10 @@ import {
 } from "./mockDialogResponder";
 import { streamChat, pingBackend, type ChatMessage } from "./geminiBackend";
 import { buildPatientPersona } from "./personaBuilder";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+
+const TTS_MUTE_KEY = "medisim:dialog:tts-muted";
 
 // ============================================================
 // DialogChat — Sprint B.2 (Gemini bağlı)
@@ -47,6 +61,37 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // --- Ses (TTS) — hasta yanıtını gerçek sesle oku ---
+  const { speak, cancel: cancelSpeech, speaking, supported: ttsSupported } =
+    useTextToSpeech();
+  // Sustur tercihi localStorage'da saklanır.
+  const [muted, setMuted] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(TTS_MUTE_KEY) === "1";
+  });
+
+  // --- Mikrofon (STT) — öğrenci sesle konuşup input'a yazsın ---
+  const {
+    recording,
+    transcribing,
+    error: sttError,
+    start: startRec,
+    stop: stopRec,
+    supported: sttSupportedFlag,
+  } = useSpeechToText((text) => {
+    // Çevrilen metni mevcut input'a ekle (kullanıcı düzenleyip gönderir).
+    setInput((prev) => (prev ? `${prev} ${text}` : text));
+  });
+
+  // Gerçek TTS konuşma durumunu (onstart/onend) 3D ağız animasyonuna köprüle.
+  // estimateSpeakingMs timer'ı yalnız susturulu / TTS desteklenmeyen durumda
+  // fallback olarak kullanılır (aşağıda speakReply).
+  useEffect(() => {
+    if (ttsSupported && !muted) {
+      onSpeakingChange?.(speaking);
+    }
+  }, [speaking, ttsSupported, muted, onSpeakingChange]);
+
   // İlk render'da backend health check
   useEffect(() => {
     let cancelled = false;
@@ -60,10 +105,27 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
   }, []);
 
   // Hasta konuşma süresi tahmini — kelime sayısı × 350 ms (Türkçe ortalama
-  // okuma + konuşma hızı; gerçek TTS gelince audio duration'a bağlanır).
+  // okuma + konuşma hızı). Artık SADECE fallback: TTS yokken / susturuluyken
+  // 3D ağız animasyonunu kısa süre tetiklemek için. Gerçek seste süre
+  // utterance onstart/onend event'lerinden gelir (useEffect → onSpeakingChange).
   const estimateSpeakingMs = (text: string): number => {
     const words = text.trim().split(/\s+/).length;
     return Math.max(800, Math.min(words * 350, 6000));
+  };
+
+  // Hasta yanıtı geldiğinde çağrılır. Sesli mod açıksa GERÇEK TTS okur
+  // (konuşma durumu utterance event'lerinden useEffect ile sürülür).
+  // Susturuluysa / TTS desteklenmiyorsa, görsel ağız animasyonu için
+  // estimateSpeakingMs ile kısa bir fallback timer çalıştırılır.
+  const speakReply = (text: string) => {
+    if (!text.trim()) return;
+    if (ttsSupported && !muted) {
+      speak(text);
+    } else {
+      onSpeakingChange?.(true);
+      const speakMs = estimateSpeakingMs(text);
+      window.setTimeout(() => onSpeakingChange?.(false), speakMs);
+    }
   };
 
   // Auto scroll
@@ -87,9 +149,7 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
       const reply = generateMockResponse({ scenario, history, currentStage }, text);
       setTurns((prev) => [...prev, reply]);
       setThinking(false);
-      onSpeakingChange?.(true);
-      const speakMs = estimateSpeakingMs(reply.text);
-      window.setTimeout(() => onSpeakingChange?.(false), speakMs);
+      speakReply(reply.text);
     }, 600 + Math.random() * 600);
   };
 
@@ -127,9 +187,7 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
         onDone: () => {
           setThinking(false);
           if (accumulatedText.length > 0) {
-            onSpeakingChange?.(true);
-            const speakMs = estimateSpeakingMs(accumulatedText);
-            window.setTimeout(() => onSpeakingChange?.(false), speakMs);
+            speakReply(accumulatedText);
           }
         },
         onError: (err, detail) => {
@@ -169,9 +227,35 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
   };
 
   const handleReset = () => {
+    cancelSpeech();
+    onSpeakingChange?.(false);
     setTurns([]);
     setCurrentStage("initiating");
     setInput("");
+  };
+
+  // Sesi aç/kapat — localStorage'da saklanır. Kapatınca aktif konuşmayı durdur.
+  const toggleMute = () => {
+    setMuted((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(TTS_MUTE_KEY, next ? "1" : "0");
+      }
+      if (next) {
+        cancelSpeech();
+        onSpeakingChange?.(false);
+      }
+      return next;
+    });
+  };
+
+  // Mikrofon butonu — kayıttaysa durdur, değilse başlat.
+  const toggleMic = () => {
+    if (recording) {
+      stopRec();
+    } else {
+      void startRec();
+    }
   };
 
   const prompts = getStudentPrompts(currentStage, turns.length);
@@ -189,6 +273,26 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
             {scenario.title}
           </h1>
         </div>
+        {ttsSupported && (
+          <button
+            type="button"
+            onClick={toggleMute}
+            title={muted ? "Sesi aç" : "Sesi kapat"}
+            aria-label={muted ? "Sesi aç" : "Sesi kapat"}
+            className={`p-2 rounded border bg-ink-900 transition ${
+              muted
+                ? "border-ink-700 text-ink-500 hover:text-ink-300 hover:border-ink-500"
+                : "border-brand/40 text-brand-light hover:bg-brand/15"
+            }`}
+            data-testid="dialog-mute"
+          >
+            {muted ? (
+              <VolumeX className="w-4 h-4" />
+            ) : (
+              <Volume2 className="w-4 h-4" />
+            )}
+          </button>
+        )}
         <button
           type="button"
           onClick={handleReset}
@@ -272,6 +376,29 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
         </div>
       )}
 
+      {/* STT durum/hata satırı */}
+      {(transcribing || recording || sttError) && (
+        <div className="px-6 pt-2 -mb-1">
+          {recording && (
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-clinical-critical">
+              <span className="w-1.5 h-1.5 rounded-full bg-clinical-critical animate-pulse" />
+              Dinleniyor… (durdurmak için mikrofona tekrar basın)
+            </span>
+          )}
+          {transcribing && (
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-400">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Konuşma çözümleniyor…
+            </span>
+          )}
+          {sttError && !recording && !transcribing && (
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-clinical-warning">
+              {sttError}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Input */}
       <form
         onSubmit={(e) => {
@@ -280,11 +407,34 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
         }}
         className="border-t border-ink-700/50 px-6 py-3 flex gap-2"
       >
+        {sttSupportedFlag && (
+          <button
+            type="button"
+            onClick={toggleMic}
+            disabled={thinking || transcribing}
+            title={recording ? "Kaydı durdur ve çevir" : "Mikrofonla konuş"}
+            aria-label={recording ? "Kaydı durdur" : "Mikrofonla konuş"}
+            className={`px-3 py-2 rounded border transition flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${
+              recording
+                ? "bg-clinical-critical/15 border-clinical-critical/50 text-clinical-critical animate-pulse"
+                : "bg-ink-900 border-ink-700 text-ink-300 hover:text-ink-100 hover:border-ink-500"
+            }`}
+            data-testid="dialog-mic"
+          >
+            {transcribing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : recording ? (
+              <MicOff className="w-4 h-4" />
+            ) : (
+              <Mic className="w-4 h-4" />
+            )}
+          </button>
+        )}
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Hastaya sorunuzu yazın…"
+          placeholder={recording ? "Dinleniyor…" : "Hastaya sorunuzu yazın…"}
           disabled={thinking}
           className="flex-1 bg-ink-900 border border-ink-700 rounded px-3 py-2 text-sm text-ink-50 placeholder:text-ink-500 focus:border-brand/50 focus:outline-none transition"
           data-testid="dialog-input"

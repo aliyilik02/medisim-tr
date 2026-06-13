@@ -28,6 +28,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "clsx": "^2.1.1",
