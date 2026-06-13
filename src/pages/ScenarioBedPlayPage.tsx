@@ -166,36 +166,35 @@ export function ScenarioBedPlayPage() {
 
       {/* Ana içerik */}
       <div className="flex-1 flex min-h-0">
-        {/* Sol: üstte 3D yatak sahnesi, altta hasta başı monitör (kullanıcı tasarımı) */}
-        <div className="flex-1 flex flex-col min-w-0 border-r border-ink-700/50">
-          {/* Üst — 3D hasta */}
-          <div className="relative flex-[5] min-h-0">
-            <PatientRoomScene
-              variant={variant}
-              clip={clip}
-              skinTint={skinTint}
-              skinTone={skinTone}
-              speaking={speaking}
-              equipment={equipment}
-              cameraPreset="genel"
-            />
-            {speaking && (
-              <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-brand-light shadow-lg">
-                <span className="w-2 h-2 bg-brand rounded-full animate-pulse" />
-                Hasta konuşuyor
-              </div>
-            )}
+        {/* Sol: 3D yatak sahnesi + sol üst köşede küçük başucu monitörü (kullanıcı tasarımı) */}
+        <div className="flex-1 relative min-w-0 border-r border-ink-700/50">
+          <PatientRoomScene
+            variant={variant}
+            clip={clip}
+            skinTint={skinTint}
+            skinTone={skinTone}
+            speaking={speaking}
+            equipment={equipment}
+            cameraPreset="genel"
+          />
+          {/* Küçük başucu monitörü — sol üst köşe overlay (eski CompactVitalsHUD yerine).
+              Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
+          <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.6)" }}>
+            <div className="w-[560px] h-[430px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+              <VitalMonitorScreen
+                vitals={patientVitalsToMonitor(liveVitals, scenario.ekg_pattern)}
+                patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
+                bedLabel="Yatak 1 · Acil Servis"
+                showArt={false}
+              />
+            </div>
           </div>
-          {/* Alt — hasta başı monitör (eski CompactVitalsHUD yerine kullanıcı tasarımı) */}
-          <div className="flex-[6] min-h-0 border-t border-ink-700/50">
-            <VitalMonitorScreen
-              vitals={patientVitalsToMonitor(liveVitals, scenario.ekg_pattern)}
-              patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
-              bedLabel="Yatak 1 · Acil Servis"
-              showArt={false}
-              dense
-            />
-          </div>
+          {speaking && (
+            <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-brand-light shadow-lg">
+              <span className="w-2 h-2 bg-brand rounded-full animate-pulse" />
+              Hasta konuşuyor
+            </div>
+          )}
         </div>
 
         {/* Sağ panel: Vaka Akışı | Diyalog */}
