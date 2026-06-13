@@ -38,8 +38,23 @@ const SKIN_TINT_PRESETS: Record<SkinTint, [number, number, number]> = {
 useGLTF.preload(ANIMATED_URL);
 
 /** Oynatılabilir animasyon klipleri (GLB içindeki NLA track adları). */
-export type PatientClip = "idle" | "pain" | "cough_mild" | "cough_severe";
-export const PATIENT_CLIPS: PatientClip[] = ["idle", "pain", "cough_mild", "cough_severe"];
+export type PatientClip =
+  | "laying_idle"
+  | "idle"
+  | "talk_gesture"
+  | "talk_shrug"
+  | "pain"
+  | "cough_mild"
+  | "cough_severe";
+export const PATIENT_CLIPS: PatientClip[] = [
+  "laying_idle",
+  "idle",
+  "talk_gesture",
+  "talk_shrug",
+  "pain",
+  "cough_mild",
+  "cough_severe",
+];
 
 interface Props {
   /** Oynatılacak animasyon klibi. Değişince crossfade ile geçer. */

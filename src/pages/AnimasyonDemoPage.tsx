@@ -10,7 +10,10 @@ import {
 } from "@/components/patient-3d/AnimatedPatientModel";
 
 const CLIP_LABELS: Record<PatientClip, string> = {
+  laying_idle: "Yatıyor (sakin)",
   idle: "Sakin (ayakta)",
+  talk_gesture: "Konuşuyor (el hareketi)",
+  talk_shrug: "Konuşuyor (omuz)",
   pain: "Ağrıyla kıvranma",
   cough_mild: "Hafif öksürük (yatarak)",
   cough_severe: "Şiddetli öksürük (yatarak)",
