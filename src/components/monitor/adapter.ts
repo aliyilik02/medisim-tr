@@ -1,0 +1,64 @@
+// ============================================================
+// Monitör adaptörü — medisim PatientVitals → monitör VitalState
+// ============================================================
+// Portlanan VitalMonitorScreen NATIVE VitalState alıyor (hr/spo2/sbp/dbp/rr/
+// etco2/temp/rhythm). Bu adaptör medisim'in PatientVitals'i + scenario
+// ekg_pattern'ini ona köprüler. Canlı senaryo vitalini zengin monitöre besler.
+// ============================================================
+
+import type { PatientVitals } from "@/engine";
+import type { VitalState, Rhythm } from "./waveform-engine";
+
+// medisim ekg_pattern (senaryo) → monitör Rhythm union
+const RHYTHM_MAP: Record<string, Rhythm> = {
+  normal: "sinus",
+  sinus: "sinus",
+  sinus_tach: "tachy",
+  tachy: "tachy",
+  taskardi: "tachy",
+  sinus_brady: "brady",
+  brady: "brady",
+  bradikardi: "brady",
+  afib: "afib",
+  af: "afib",
+  aflutter: "aflutter",
+  flutter: "aflutter",
+  svt: "svt",
+  vtach: "vtach",
+  vt: "vtach",
+  vfib: "vfib",
+  vf: "vfib",
+  asystole: "asystole",
+  asistoli: "asystole",
+  av1: "av1",
+  av2: "av2",
+  av3: "av3",
+  wpw: "wpw",
+  pea: "pea",
+  pvc: "pvc",
+  bigeminy: "bigeminy",
+  torsades: "torsades",
+  // STEMI sinüs morfolojisi + ST elevasyonu (aşağıda st ile)
+  stemi: "sinus",
+};
+
+export function patientVitalsToMonitor(v: PatientVitals, ekgPattern?: string): VitalState {
+  const key = (ekgPattern ?? "normal").toLowerCase();
+  const rhythm = RHYTHM_MAP[key] ?? "sinus";
+  // ST sapması: STEMI → belirgin elevasyon; ölçülen st_elevation_mm varsa onu kullan.
+  let st = 0;
+  if (key === "stemi") st = 0.18;
+  else if (v.st_elevation_mm != null) st = v.st_elevation_mm * 0.04;
+
+  return {
+    hr: v.hr,
+    spo2: v.spo2,
+    sbp: v.bp_systolic,
+    dbp: v.bp_diastolic,
+    rr: v.rr,
+    etco2: v.etco2 ?? 35,
+    temp: v.temp,
+    rhythm,
+    st: st !== 0 ? st : undefined,
+  };
+}
