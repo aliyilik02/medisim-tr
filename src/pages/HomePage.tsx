@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, GraduationCap, Stethoscope, Timer, Bed, MessageSquare, Film, Sparkles, Wind } from "lucide-react";
+import { ArrowRight, GraduationCap, Stethoscope, Timer, MessageSquare, Sparkles, Wind } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
 import { getStats, listSessions } from "@/storage/sessionHistory";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
@@ -24,13 +24,6 @@ const PATIENT_DEMOS = [
     color: "#0d9488",
   },
   {
-    to: "/faz2-demo",
-    Icon: Bed,
-    title: "Klinik Sahne",
-    body: "Acil servis odası, yatakta sanal hasta. Sakin/öksürük/ağrı/konuşma animasyonları + canlı mimik.",
-    color: "#14b8a6",
-  },
-  {
     to: "/dialog-3d-demo",
     Icon: MessageSquare,
     title: "3D + AI Diyalog",
@@ -38,17 +31,12 @@ const PATIENT_DEMOS = [
     color: "#3b82f6",
   },
   {
-    to: "/animasyon-demo",
-    Icon: Film,
-    title: "Animasyon Stüdyo",
-    body: "İskelet hareket + 52 ARKit yüz mimiği. Klipleri ve lipsync'i tek tek dene.",
-    color: "#a855f7",
-  },
-  {
-    to: "/ventilator-demo",
+    // Eski ayrı vitrinler (Klinik Sahne / Animasyon / Ventilatör) artık 3D
+    // hasta seansının (/hasta/:id) içinde — senaryo seçiminden açılır.
+    to: "/senaryolar",
     Icon: Wind,
-    title: "Ventilatör",
-    body: "Mekanik ventilatör: VCV/PCV/SIMV/PSV/CPAP modları, ARDS/KOAH presetleri, canlı basınç-akış-hacim dalgaları.",
+    title: "3D Hasta Seansı",
+    body: "Acil odası, yatakta sanal hasta, köşe monitör, yatak başı ventilatör ve animasyon — hepsi tek sahnede. Senaryo seç, 3D oyna.",
     tag: "YENİ",
     color: "#06b6d4",
   },
@@ -126,7 +114,7 @@ export function HomePage() {
               Senaryolara Git
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/faz2-demo" className="btn-ghost">
+            <Link to="/senaryolar" className="btn-ghost">
               <Sparkles className="w-4 h-4" />
               3D Sanal Hasta
             </Link>

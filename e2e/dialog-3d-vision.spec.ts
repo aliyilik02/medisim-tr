@@ -67,20 +67,23 @@ test.describe("dialog-3d-demo layout + smoke", () => {
   });
 
   test("senaryo dropdown geçişi vital değiştirir", async ({ page }) => {
-    const initialVitalText = await page.getByTestId("vital-monitor-screen").textContent();
+    // Monitör üst barında canlı saat (HH:MM:SS) var → ham textContent her
+    // okumada değişir (yanlış-pozitif). Saati ve trend sparkline'larını ele,
+    // sistolik TA değerini (monitor-nibp-sys) karşılaştır = anlamlı sinyal.
+    const sys0 = (await page.getByTestId("monitor-nibp-sys").first().textContent())?.trim();
 
     const dkaValue = await page
       .locator("select option")
       .filter({ hasText: /DKA/i })
       .first()
       .getAttribute("value");
-    if (dkaValue) {
-      await page.selectOption("select", dkaValue);
-      await page.waitForTimeout(800);
-    }
+    expect(dkaValue, "DKA senaryosu dropdown'da bulunamadı").toBeTruthy();
+    await page.selectOption("select", dkaValue!);
+    await page.waitForTimeout(1200);
 
-    const newVitalText = await page.getByTestId("vital-monitor-screen").textContent();
-    expect(newVitalText).not.toBe(initialVitalText);
+    const sys1 = (await page.getByTestId("monitor-nibp-sys").first().textContent())?.trim();
+    // Anaflaksi (hipotansif) ↔ DKA farklı baseline sistolik → değer değişmeli
+    expect(sys1).not.toBe(sys0);
   });
 
   test("dialog chat input + Calgary-Cambridge stepper görünür", async ({ page }) => {
@@ -93,6 +96,25 @@ test.describe("dialog-3d-demo layout + smoke", () => {
     // Calgary-Cambridge stage labels
     await expect(page.locator("text=/Kar.ılama/i").first()).toBeVisible();
     await expect(page.locator("text=/Anamnez/i").first()).toBeVisible();
+  });
+
+  test("statik hasta GLB 200 + makul boyut (silinen /3d-demo guard'ı taşındı)", async ({
+    page,
+  }) => {
+    // /3d-demo emekli; AnatomicPatientModel (patient-{female,male,child}*.glb)
+    // hâlâ /dialog-3d-demo'da yükleniyor → bütünlük guard'ı burada.
+    const responsePromise = page.waitForResponse(
+      (r) => /\/3d\/patient-(female|male|child)[^/]*\.glb$/.test(r.url()) && r.status() === 200,
+      { timeout: 15_000 }
+    );
+    await page.goto("/dialog-3d-demo");
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const contentLength = response.headers()["content-length"];
+    if (contentLength) {
+      expect(Number(contentLength)).toBeGreaterThan(50_000);
+      expect(Number(contentLength)).toBeLessThan(5_000_000);
+    }
   });
 
   test("3d canvas render edilir", async ({ page }) => {

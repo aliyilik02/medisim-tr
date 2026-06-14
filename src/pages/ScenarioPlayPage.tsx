@@ -119,6 +119,14 @@ export function ScenarioPlayPage() {
     return () => resetSpecialtyTheme();
   }, [scenario?.specialty]);
 
+  // Yeni bir kritik kontrendikasyon geldiğinde modalı tekrar görünür kıl.
+  // (Motor birleşmesi öncesi handleAction içinde setCriticalModalHidden(false)
+  // ile yapılırdı; criticalInfo artık hook'ta → burada izlenir. Yoksa önceki
+  // modalı X ile kapattıktan sonra 2. kritik SESSİZCE timeout'a düşer = -30.)
+  useEffect(() => {
+    if (criticalInfo) setCriticalModalHidden(false);
+  }, [criticalInfo]);
+
   // Kritik kontrendikasyon süresi doldu — motor finalize eder, sayfa modal
   // gizleme bayrağını da sıfırlar.
   const onCriticalExpired = () => {

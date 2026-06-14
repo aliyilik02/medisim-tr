@@ -167,7 +167,11 @@ export function useScenarioRunner({
     provider,
   });
 
-  // ----- Otomatik başlatma (3D demo akışı)
+  // ----- Otomatik başlatma (3D akışı)
+  // NOT: autoStartMode ile manuel start() KARŞILIKLI DIŞLAYICIDIR. autoStartMode
+  // verildiğinde bu effect senaryo değişiminde session'ı yeniden açar → manuel
+  // start() çağrısını ezer. 2D katman (ScenarioPlayPage) autoStartMode VERMEZ,
+  // start() kullanır; 3D katman autoStartMode verir, start() çağırmaz.
   useEffect(() => {
     if (!scenario || !autoStartMode) return;
     setSession(startSession(scenario, autoStartMode, scenario.difficulty));

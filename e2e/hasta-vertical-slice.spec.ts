@@ -69,12 +69,30 @@ test.describe("dikey dilim — /hasta/:id", () => {
     await expect(page.getByTestId("ventilator-panel")).toHaveCount(0);
     // DOM affordance (3D cihaz tıklamasının eşdeğeri) paneli açar
     await page.getByTestId("ventilator-open").click();
-    await expect(page.getByTestId("ventilator-panel")).toBeVisible();
-    // Preset butonu çalışır (ARDS)
-    await page.getByRole("button", { name: /ARDS/i }).first().click();
+    const panel = page.getByTestId("ventilator-panel");
+    await expect(panel).toBeVisible();
+    // Başlangıç preset = Normal Akciğer → Vt 500 mL panelde görünür
+    await expect(panel.getByText("500", { exact: true }).first()).toBeVisible();
+    // Preset değişimi GERÇEKTEN değeri değiştirir: ARDS → Vt 380 mL
+    await panel.getByRole("button", { name: /ARDS/i }).first().click();
+    await expect(panel.getByText("380", { exact: true }).first()).toBeVisible();
     // Kapat
     await page.getByTestId("ventilator-close").click();
     await expect(page.getByTestId("ventilator-panel")).toHaveCount(0);
+  });
+
+  test("ventilatör pediatrik senaryoda GİZLİ (erişkin preset güvensiz)", async ({
+    page,
+  }) => {
+    // pedi-bronsiyolit-001: ~8 kg infant. Erişkin Vt presetleri (380-500 mL)
+    // klinik olarak tehlikeli → cihaz/buton gizlenir (ventEligible weight<40).
+    await page.goto("/hasta/pedi-bronsiyolit-001");
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(3000);
+    await expect(page.getByTestId("patient-room-canvas")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId("ventilator-open")).toHaveCount(0);
   });
 });
 

@@ -9,7 +9,7 @@
 // Konum sahneye göre kabaca kalibre — ince ayar 3d-vision-tester ile.
 // ============================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 
@@ -38,6 +38,15 @@ export function VentilatorDevice({
   const [hover, setHover] = useState(false);
   const screenColor = active ? SCREEN_ON : SCREEN_OFF;
   const emissiveI = hover ? 1.4 : active ? 0.9 : 0.25;
+
+  // İmleç sızıntısı guard'ı: cihaz hover'dayken unmount/gizlenirse (senaryo
+  // değişimi, pediatrik gate) onPointerOut ateşlenmeyebilir → imleç "pointer"
+  // takılı kalır. Unmount'ta sıfırla.
+  useEffect(() => {
+    return () => {
+      if (typeof document !== "undefined") document.body.style.cursor = "auto";
+    };
+  }, []);
 
   return (
     <group

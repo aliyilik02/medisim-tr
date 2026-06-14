@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X } from "lucide-react";
+import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X, AlertTriangle } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
 import {
@@ -123,8 +123,19 @@ export function ScenarioBedPlayPage() {
     runner.restart();
   };
 
-  // Senaryo değişince takılı ekipmanı sıfırla
-  useEffect(() => setEquipment([]), [scenarioId]);
+  // Senaryo değişince takılı ekipmanı + ventilatör panelini/ayarlarını sıfırla
+  useEffect(() => {
+    setEquipment([]);
+    setVentOpen(false);
+    setVentSettings(VENT_PRESETS.normal.settings);
+    setVentPreset("normal");
+  }, [scenarioId]);
+
+  // Ventilatör uygunluğu: erişkin preset/parametreleri pediatrik hastada
+  // klinik olarak GÜVENSİZ (ör. 9 kg infant'a Vt 200-500 mL = ölümcül).
+  // Pediatrik ventilatör presetleri klinik yazım bekliyor (DRAFT) → o zamana
+  // kadar düşük kilolu/pediatrik senaryolarda cihaz gizli.
+  const ventEligible = (rs.patient.weight_kg ?? 70) >= 40;
 
   const variant = useMemo(() => patientToVariant(rs.patient), [rs.patient]);
   const skinTone = useMemo(() => patientToSkinTone(rs.patient), [rs.patient]);
@@ -213,7 +224,7 @@ export function ScenarioBedPlayPage() {
             speaking={speaking}
             equipment={equipment}
             cameraPreset="genel"
-            showVentilator
+            showVentilator={ventEligible}
             ventilatorActive
             onVentilatorActivate={() => setVentOpen(true)}
           />
@@ -236,16 +247,18 @@ export function ScenarioBedPlayPage() {
             </div>
           )}
           {/* Ventilatör erişim butonu — 3D cihaz tıklamasının DOM eşdeğeri
-              (erişilebilirlik + e2e). Sahnedeki cihazla aynı paneli açar. */}
-          <button
-            type="button"
-            onClick={() => setVentOpen(true)}
-            data-testid="ventilator-open"
-            className="absolute bottom-4 right-4 px-3 py-1.5 rounded-md bg-ink-900/80 border border-ink-600 hover:border-brand/50 hover:text-brand-light backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-200 shadow-lg transition"
-          >
-            <Wind className="w-3.5 h-3.5" />
-            Ventilatör
-          </button>
+              (erişilebilirlik + e2e). Pediatrik senaryoda gizli (ventEligible). */}
+          {ventEligible && (
+            <button
+              type="button"
+              onClick={() => setVentOpen(true)}
+              data-testid="ventilator-open"
+              className="absolute bottom-4 right-4 px-3 py-1.5 rounded-md bg-ink-900/80 border border-ink-600 hover:border-brand/50 hover:text-brand-light backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-200 shadow-lg transition"
+            >
+              <Wind className="w-3.5 h-3.5" />
+              Ventilatör
+            </button>
+          )}
         </div>
 
         {/* Sağ panel: Vaka Akışı | Diyalog */}
@@ -426,6 +439,16 @@ export function ScenarioBedPlayPage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
+            {/* Klinik/kapsam uyarısı — panel bağımsız eğitim simülasyonu;
+                ayarlar hastanın vitallerine ETKİ ETMEZ (sorun #4) + cihaz
+                tıbbi cihaz değildir (sorun #5, dar ekranda da görünür). */}
+            <div className="shrink-0 flex items-center gap-2 px-4 py-1 bg-amber-950/40 border-b border-amber-500/20 text-amber-300/80 font-mono text-[9px] uppercase tracking-[0.1em]">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              <span>
+                Eğitim simülasyonu · tıbbi cihaz değildir · ayarlar hasta
+                vitallerini etkilemez
+              </span>
+            </div>
             {/* Canlı ventilatör ekranı */}
             <div className="flex-1 min-h-0">
               <VentilatorScreen
@@ -435,6 +458,7 @@ export function ScenarioBedPlayPage() {
                 activePreset={ventPreset}
                 patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
                 bedLabel="Yatak 1 · Acil Servis"
+                patientWeightKg={rs.patient.weight_kg}
               />
             </div>
           </div>

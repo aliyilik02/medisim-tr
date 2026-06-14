@@ -451,6 +451,8 @@ export interface VentilatorScreenProps {
   activePreset?: VentPresetKey | null;
   patientName?: string;
   bedLabel?: string;
+  /** Hasta kilosu (kg) — Vt mL/kg alt etiketi için. Default 70 (erişkin). */
+  patientWeightKg?: number;
   /** gömülü/dar slot için yoğun yerleşim (numerik fontlar küçülür) */
   dense?: boolean;
 }
@@ -462,6 +464,7 @@ export function VentilatorScreen({
   activePreset = null,
   patientName = "Demo Hasta",
   bedLabel = "Yatak 1 · Yoğun Bakım",
+  patientWeightKg = 70,
   dense = false,
 }: VentilatorScreenProps) {
   const k = dense ? 0.62 : 1;
@@ -599,7 +602,7 @@ export function VentilatorScreen({
               unit="mL"
               color={VENT_WAVE.volume}
               value={String(Math.round(settings.vt))}
-              sub={`${(settings.vt / 70).toFixed(1)}/kg`}
+              sub={`${(settings.vt / Math.max(1, patientWeightKg)).toFixed(1)}/kg`}
               big
               k={k}
               icon={<Wind size={15} color={VENT_WAVE.volume} />}
