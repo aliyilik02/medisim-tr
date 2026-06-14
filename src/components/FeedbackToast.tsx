@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 
 interface Feedback {
   id: number;
@@ -46,13 +47,23 @@ export function FeedbackToast({
       key={feedback.id}
       className={cn(
         "fixed bottom-6 right-6 max-w-md z-50 animate-slide-up",
-        "panel p-4 border-2",
+        "panel p-4 pr-9 border-2",
         feedback.type === "positive" && "border-clinical-stable/40 bg-clinical-stable/5",
         feedback.type === "negative" && "border-clinical-warning/40 bg-clinical-warning/5",
         feedback.type === "critical" && "border-clinical-critical/40 bg-clinical-critical/10",
         feedback.type === "neutral" && "border-ink-600"
       )}
     >
+      {/* Sağ-üst köşe kapatma X'i — toast alttaki kontrolleri (ör. ventilatör
+          butonu) kapatıyordu; kullanıcı elle kapatabilsin. */}
+      <button
+        onClick={onClose}
+        aria-label="Kapat"
+        data-testid="feedback-close"
+        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded text-ink-400 hover:text-ink-100 hover:bg-ink-700/60 transition"
+      >
+        <X className="w-4 h-4" />
+      </button>
       <div className="flex items-start gap-3">
         <div
           className={cn(
@@ -79,13 +90,6 @@ export function FeedbackToast({
             </p>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="flex-shrink-0 text-ink-500 hover:text-ink-200 text-xl leading-none"
-          aria-label="Kapat"
-        >
-          ×
-        </button>
       </div>
     </div>
   );
