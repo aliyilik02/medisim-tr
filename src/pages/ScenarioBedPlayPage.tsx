@@ -223,7 +223,7 @@ export function ScenarioBedPlayPage() {
             skinTone={skinTone}
             speaking={speaking}
             equipment={equipment}
-            cameraPreset="genel"
+            cameraPreset="onden"
             showVentilator={ventEligible}
             ventilatorActive
             onVentilatorActivate={() => setVentOpen(true)}
