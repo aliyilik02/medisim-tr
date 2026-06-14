@@ -79,6 +79,7 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
               const st = getClinicalStatus(scenario);
               return (
                 <span
+                  data-testid="clinical-status-badge"
                   className={cn(
                     "px-1.5 py-0.5 rounded font-mono text-[8px] uppercase tracking-[0.1em] border whitespace-nowrap",
                     CLINICAL_BADGE[st]

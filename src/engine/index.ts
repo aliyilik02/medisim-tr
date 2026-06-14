@@ -30,7 +30,11 @@ export {
   isScenarioActive,
   buildReviewChecklist,
   autoChecksPass,
+  manualChecklistKeys,
+  canActivate,
+  buildClinicalReviewSnippet,
   CLINICAL_STATUS_ORDER,
   CLINICAL_STATUS_LABEL,
   type ChecklistItem,
+  type SnippetInput,
 } from "./clinical-review";

@@ -22,6 +22,8 @@ import { SCENARIOS } from "@/data/scenarios";
 import {
   getClinicalStatus,
   buildReviewChecklist,
+  canActivate,
+  buildClinicalReviewSnippet,
   CLINICAL_STATUS_ORDER,
   CLINICAL_STATUS_LABEL,
   type ClinicalReviewStatus,
@@ -57,9 +59,6 @@ function StatusBadge({ status }: { status: ClinicalReviewStatus }) {
 
 export function ClinicalReviewPage() {
   const [selectedId, setSelectedId] = useState<string>(SCENARIOS[0]?.id ?? "");
-  // localStorage çalışma defteri — kaydet → tick ile re-render
-  const [tick, setTick] = useState(0);
-  const refresh = () => setTick((t) => t + 1);
 
   const counts = useMemo(() => {
     const c: Record<ClinicalReviewStatus, number> = {
@@ -145,7 +144,7 @@ export function ClinicalReviewPage() {
         {/* Sağ — seçili senaryo review paneli */}
         <section>
           {selected ? (
-            <ReviewPanel key={selected.id + tick} scenario={selected} onSaved={refresh} />
+            <ReviewPanel key={selected.id} scenario={selected} />
           ) : (
             <div className="panel p-8 text-center text-ink-400">
               Senaryo seçin.
@@ -169,13 +168,7 @@ function CheckIcon({ pass }: { pass: boolean | null }) {
   return <CircleDashed className="w-4 h-4 text-ink-500 shrink-0" />;
 }
 
-function ReviewPanel({
-  scenario,
-  onSaved,
-}: {
-  scenario: Scenario;
-  onSaved: () => void;
-}) {
+function ReviewPanel({ scenario }: { scenario: Scenario }) {
   const status = getClinicalStatus(scenario);
   const checklist = useMemo(() => buildReviewChecklist(scenario), [scenario]);
   const local: LocalReview | null = getLocalReview(scenario.id);
@@ -189,10 +182,13 @@ function ReviewPanel({
   const [notes, setNotes] = useState<string>(local?.notes ?? "");
   const [copied, setCopied] = useState(false);
 
-  const autoFail = checklist.filter((c) => c.pass === false);
-  const manualItems = checklist.filter((c) => c.pass === null);
-  const allManualChecked = manualItems.every((c) => manualChecks[c.key]);
-  const readyForActive = autoFail.length === 0 && allManualChecked;
+  // ACTIVE kilidi — saf, test edilebilir predicate (clinical-review.ts).
+  const readyForActive = canActivate(scenario, manualChecks);
+  // Kilit açık değilken ACTIVE seçiliyse snippet'i güvenli tarafa düşür.
+  const effectiveIntended: ClinicalReviewStatus =
+    intended === "ACTIVE" && !readyForActive
+      ? "REVIEWED_PENDING_ACTIVATION"
+      : intended;
 
   const save = () => {
     saveLocalReview(scenario.id, {
@@ -200,25 +196,19 @@ function ReviewPanel({
       intended_status: intended,
       notes,
     });
-    onSaved();
   };
 
-  // Kalıcılaştırma snippet'i — senaryo dosyasına yapıştırılacak clinical_review
-  const snippet = useMemo(() => {
-    const draftAreas = scenario.clinical_review?.draft_areas;
-    const lines = [
-      "  clinical_review: {",
-      `    status: "${intended}",`,
-      `    reviewed_by: "Ali Bey",`,
-      `    reviewed_at: "${new Date().toISOString().slice(0, 10)}",`,
-    ];
-    if (intended !== "ACTIVE" && draftAreas?.length) {
-      lines.push(`    draft_areas: [${draftAreas.map((a) => `"${a}"`).join(", ")}],`);
-    }
-    if (notes.trim()) lines.push(`    notes: ${JSON.stringify(notes.trim())},`);
-    lines.push("  },");
-    return lines.join("\n");
-  }, [intended, notes, scenario]);
+  // Kalıcılaştırma snippet'i — saf üretici (clinical-review.ts). Tarih çağıran
+  // tarafta üretilir (saf fn Date kullanmaz).
+  const snippet = useMemo(
+    () =>
+      buildClinicalReviewSnippet(scenario, {
+        intended: effectiveIntended,
+        notes,
+        reviewedAt: new Date().toISOString().slice(0, 10),
+      }),
+    [scenario, effectiveIntended, notes]
+  );
 
   const theme = getSpecialtyTheme(scenario.specialty);
 
@@ -297,7 +287,12 @@ function ReviewPanel({
                   key={st}
                   disabled={disabled}
                   onClick={() => setIntended(st)}
-                  title={disabled ? "ACTIVE için tüm kontroller geçmeli/işaretlenmeli" : undefined}
+                  aria-label={
+                    disabled
+                      ? `${CLINICAL_STATUS_LABEL[st]} — kilitli: ACTIVE için tüm kontroller geçmeli ve elle maddeler işaretlenmeli`
+                      : CLINICAL_STATUS_LABEL[st]
+                  }
+                  data-testid={`status-${st}`}
                   className={cn(
                     "px-3 py-1.5 rounded-md border text-xs transition",
                     intended === st
@@ -311,6 +306,14 @@ function ReviewPanel({
               );
             })}
           </div>
+          {/* Görünür gerekçe — kilit nedeni tooltip'e gömülü kalmasın (a11y) */}
+          {!readyForActive && (
+            <p className="mt-2 text-[11px] text-ink-400">
+              <span className="text-clinical-warning">ACTIVE kilitli</span> — tüm
+              otomatik kontroller geçmeli ve elle doğrulama maddeleri
+              işaretlenmeli.
+            </p>
+          )}
           {intended === "ACTIVE" && (
             <p className="mt-2 text-[11px] text-clinical-warning">
               ACTIVE = yayında. Yalnızca tüm klinik kontroller doğrulandıysa seç.

@@ -112,3 +112,57 @@ export function buildReviewChecklist(scenario: Scenario): ChecklistItem[] {
 export function autoChecksPass(scenario: Scenario): boolean {
   return buildReviewChecklist(scenario).every((c) => c.pass !== false);
 }
+
+/** Elle doğrulanması gereken checklist madde anahtarları (pass === null). */
+export function manualChecklistKeys(scenario: Scenario): string[] {
+  return buildReviewChecklist(scenario)
+    .filter((c) => c.pass === null)
+    .map((c) => c.key);
+}
+
+/**
+ * Senaryo ACTIVE'e geçirilebilir mi: TÜM otomatik kontroller geçmeli VE
+ * elle-doğrulanır maddelerin HEPSİ işaretlenmiş olmalı. Dashboard'daki ACTIVE
+ * kilidinin saf, test edilebilir karşılığı (klinik disiplinin çekirdek garantisi).
+ */
+export function canActivate(
+  scenario: Scenario,
+  manualChecks: Record<string, boolean>
+): boolean {
+  if (!autoChecksPass(scenario)) return false;
+  return manualChecklistKeys(scenario).every((k) => manualChecks[k] === true);
+}
+
+export interface SnippetInput {
+  intended: ClinicalReviewStatus;
+  notes?: string;
+  reviewedBy?: string;
+  /** ISO tarih (YYYY-MM-DD). Saf fonksiyon — çağıran sağlar (test edilebilir). */
+  reviewedAt: string;
+}
+
+/**
+ * Senaryo dosyasına yapıştırılacak `clinical_review:` TS snippet'ini üretir.
+ * Saf fonksiyon — Date/IO yok. ACTIVE'de draft_areas atlanır; notes JSON
+ * ile kaçışlanır. Kodu DEĞİŞTİRMEZ; sadece metin döner (Ali Bey yapıştırır).
+ */
+export function buildClinicalReviewSnippet(
+  scenario: Scenario,
+  input: SnippetInput
+): string {
+  const { intended, notes, reviewedBy = "Ali Bey", reviewedAt } = input;
+  const draftAreas = scenario.clinical_review?.draft_areas;
+  const lines = [
+    "  clinical_review: {",
+    `    status: "${intended}",`,
+    `    reviewed_by: ${JSON.stringify(reviewedBy)},`,
+    `    reviewed_at: "${reviewedAt}",`,
+  ];
+  // ACTIVE = tüm alanlar onaylı → çözülmemiş DRAFT alanı kalmamalı.
+  if (intended !== "ACTIVE" && draftAreas?.length) {
+    lines.push(`    draft_areas: [${draftAreas.map((a) => JSON.stringify(a)).join(", ")}],`);
+  }
+  if (notes?.trim()) lines.push(`    notes: ${JSON.stringify(notes.trim())},`);
+  lines.push("  },");
+  return lines.join("\n");
+}

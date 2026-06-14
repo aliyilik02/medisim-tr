@@ -13,8 +13,11 @@ test.describe("klinik review dashboard", () => {
     await expect(page.getByRole("heading", { name: /Klinik Review/i })).toBeVisible();
     // Sol listede senaryo seçilebilir (STEMI)
     await page.getByRole("button", { name: /STEMI/i }).first().click();
-    // Sağ panel: otomatik kontroller + kalıcılaştırma snippet'i görünür
-    await expect(page.getByText(/Otomatik Kontroller/i)).toBeVisible();
+    // Sağ panel: otomatik kontroller başlığı (exact — "otomatik kontroller"
+    // ifadesi kilit notunda da geçiyor) + kalıcılaştırma snippet'i görünür
+    await expect(
+      page.getByText("Otomatik Kontroller", { exact: true })
+    ).toBeVisible();
     await expect(page.getByText(/clinical_review:/i)).toBeVisible();
   });
 
@@ -36,7 +39,21 @@ test.describe("klinik review dashboard", () => {
     await expect(
       page.getByRole("heading", { name: /STEMI/i }).first()
     ).toBeVisible({ timeout: 10_000 });
-    // Varsayılan: alan yok → "Taslak" rozeti (en az bir kartta)
-    await expect(page.getByText(/Taslak/i).first()).toBeVisible();
+    // Klinik durum rozeti (testid ile kesin hedef) — varsayılan "Taslak"
+    const badge = page.getByTestId("clinical-status-badge").first();
+    await expect(badge).toBeVisible();
+    await expect(badge).toContainText(/Taslak/i);
+  });
+
+  test("ACTIVE durum butonu başlangıçta KİLİTLİ (elle maddeler işaretsiz)", async ({
+    page,
+  }) => {
+    await page.goto("/klinik-review");
+    await page.waitForLoadState("load");
+    await page.getByRole("button", { name: /STEMI/i }).first().click();
+    // Klinik disiplin garantisi: otomatik ACTIVE'e geçiş engellenir
+    await expect(page.getByTestId("status-ACTIVE")).toBeDisabled();
+    // DRAFT seçilebilir
+    await expect(page.getByTestId("status-DRAFT")).toBeEnabled();
   });
 });
