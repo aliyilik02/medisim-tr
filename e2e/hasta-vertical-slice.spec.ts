@@ -31,6 +31,23 @@ test.describe("dikey dilim — /hasta/:id", () => {
     await expect(page.getByTestId("vaka-panel")).toBeVisible();
   });
 
+  test("kamera preset toggle — açı değiştirir (varsayılan Önden)", async ({
+    page,
+  }) => {
+    await page.goto(`/hasta/${ANAFLAKSI}`);
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(2500);
+    const onden = page.getByTestId("camera-preset-onden");
+    const genel = page.getByTestId("camera-preset-genel");
+    await expect(onden).toBeVisible();
+    // Varsayılan açı Önden (kullanıcı seçimi, commit 978f0c8)
+    await expect(onden).toHaveAttribute("aria-pressed", "true");
+    // Genel'e geçiş → oda/sedye/IV görünür açı
+    await genel.click();
+    await expect(genel).toHaveAttribute("aria-pressed", "true");
+    await expect(onden).toHaveAttribute("aria-pressed", "false");
+  });
+
   test("paramlı seansta senaryo dropdown'u gizli", async ({ page }) => {
     await page.goto(`/hasta/${ANAFLAKSI}`);
     await page.waitForLoadState("load");
