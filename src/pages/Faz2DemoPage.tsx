@@ -177,8 +177,8 @@ export function Faz2DemoPage() {
         {mode === "scenario" && scenario && vitals && (
           <div className="absolute top-3 right-3 w-64 flex flex-col gap-2">
             {/* Başucu monitörü — tam tasarım, w-64 kolona sığacak şekilde CSS scale ile küçültülür. */}
-            <div className="origin-top-right self-end" style={{ transform: "scale(0.45)", marginBottom: "-236px" }}>
-              <div className="w-[560px] h-[430px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+            <div className="origin-top-right self-end" style={{ transform: "scale(0.45)", marginBottom: "-286px" }}>
+              <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
                 <VitalMonitorScreen
                   vitals={patientVitalsToMonitor(vitals, scenario.ekg_pattern)}
                   patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}

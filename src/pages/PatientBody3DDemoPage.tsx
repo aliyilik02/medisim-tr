@@ -104,7 +104,7 @@ export function PatientBody3DDemoPage() {
         {/* Sprint B.3 — Başucu monitörü sağ üst overlay.
             Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
         <div className="absolute top-3 right-3 origin-top-right" style={{ transform: "scale(0.6)" }}>
-          <div className="w-[560px] h-[430px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+          <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
             <VitalMonitorScreen
               vitals={patientVitalsToMonitor(DEMO_SCENARIO.initial_vitals, DEMO_SCENARIO.ekg_pattern)}
               patientName={`${DEMO_SCENARIO.patient.age} yaş ${DEMO_SCENARIO.patient.sex === "M" ? "Erkek" : "Kadın"}`}

@@ -180,7 +180,7 @@ export function ScenarioBedPlayPage() {
           {/* Küçük başucu monitörü — sol üst köşe overlay (eski CompactVitalsHUD yerine).
               Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
           <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.72)" }}>
-            <div className="w-[560px] h-[430px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+            <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
               <VitalMonitorScreen
                 vitals={patientVitalsToMonitor(liveVitals, scenario.ekg_pattern)}
                 patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
