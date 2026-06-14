@@ -27,7 +27,7 @@ test.describe("dialog-3d-demo layout + smoke", () => {
   });
 
   test("layout — monitor sol üst, chat sağ panel", async ({ page }) => {
-    const monitor = page.getByTestId("compact-vitals-hud");
+    const monitor = page.getByTestId("vital-monitor-screen");
 
     await expect(monitor).toBeVisible();
 
@@ -41,12 +41,14 @@ test.describe("dialog-3d-demo layout + smoke", () => {
     expect(monitorBox?.y).toBeLessThan(150);
   });
 
-  test("monitor — başlık + vital + 12-Lead butonu", async ({ page }) => {
-    const monitor = page.getByTestId("compact-vitals-hud");
-    await expect(monitor).toContainText(/MONITOR/i);
-    await expect(monitor.locator("text=/NB|HR/i").first()).toBeVisible();
+  test("monitor — köşe başucu monitörü vital kutuları görünür", async ({ page }) => {
+    const monitor = page.getByTestId("vital-monitor-screen");
+    // Köşe monitör (VitalMonitorScreen): HR + SpO₂ + NIBP kutuları
+    await expect(monitor.locator("text=/HR/i").first()).toBeVisible();
     await expect(monitor.locator("text=/SpO/i").first()).toBeVisible();
-    await expect(monitor.locator('button:has-text("12-Lead")')).toBeVisible();
+    await expect(monitor.locator("text=/NIBP/i").first()).toBeVisible();
+    // Sistolik TA değeri okunabilir
+    await expect(page.getByTestId("monitor-nibp-sys").first()).toBeVisible();
   });
 
   test("cilt tonu 4 buton görünür", async ({ page }) => {
@@ -65,7 +67,7 @@ test.describe("dialog-3d-demo layout + smoke", () => {
   });
 
   test("senaryo dropdown geçişi vital değiştirir", async ({ page }) => {
-    const initialVitalText = await page.getByTestId("compact-vitals-hud").textContent();
+    const initialVitalText = await page.getByTestId("vital-monitor-screen").textContent();
 
     const dkaValue = await page
       .locator("select option")
@@ -77,7 +79,7 @@ test.describe("dialog-3d-demo layout + smoke", () => {
       await page.waitForTimeout(800);
     }
 
-    const newVitalText = await page.getByTestId("compact-vitals-hud").textContent();
+    const newVitalText = await page.getByTestId("vital-monitor-screen").textContent();
     expect(newVitalText).not.toBe(initialVitalText);
   });
 

@@ -10,12 +10,12 @@
 
 import { test, expect, type Page } from "@playwright/test";
 
-/** HUD metninden TA (sistolik) değerini çek — "78/44" deseninin ilk parçası */
+/** Köşe monitör NIBP kutusundan sistolik TA değerini çek */
 async function readSystolic(page: Page): Promise<number> {
-  const hudText =
-    (await page.getByTestId("compact-vitals-hud").textContent()) ?? "";
-  const match = hudText.match(/(\d{2,3})\/(\d{2,3})/);
-  expect(match, `HUD içinde TA deseni bulunamadı: ${hudText}`).not.toBeNull();
+  const sysText =
+    (await page.getByTestId("monitor-nibp-sys").first().textContent()) ?? "";
+  const match = sysText.match(/(\d{2,3})/);
+  expect(match, `NIBP sistolik bulunamadı: ${sysText}`).not.toBeNull();
   return parseInt(match![1], 10);
 }
 

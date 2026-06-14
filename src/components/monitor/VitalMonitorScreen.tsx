@@ -268,6 +268,7 @@ function NibpBox({
 
       <div className="flex items-end gap-1">
         <span
+          data-testid="monitor-nibp-sys"
           className="font-bold leading-none tracking-tight tabular-nums"
           style={{ color: crit ? "#ff6b6b" : "#f4f7f5", fontSize: `${3.0 * k}rem`, fontFamily: MONO }}
         >
@@ -614,6 +615,7 @@ export function VitalMonitorScreen({
 
   return (
     <div
+      data-testid="vital-monitor-screen"
       className="relative flex flex-col h-full bg-[#02100a] text-white"
       style={{
         backgroundImage:

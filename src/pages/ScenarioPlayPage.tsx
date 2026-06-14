@@ -1,44 +1,24 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getScenario } from "@/data/scenarios";
 import {
-  startSession,
-  getCurrentStep,
-  evaluateAction,
-  evaluateDecision,
-  evaluateDecisionMulti,
-  completeStep,
   finalizeSession,
-  applyVitalsChange,
-  pickNextStep,
   getVisibleOptions,
-  resolveScenarioVariant,
-  type SessionState,
-  type ActionRef,
-  type DecisionOption,
   type PlayMode,
   type Difficulty,
   type Scenario,
 } from "@/engine";
-import { getExtendedMedication } from "@/data/medications-extended";
-import { administerMedication } from "@/engine/pharmacology/engine";
-import { getMedication } from "@/data/medications";
 import { seededShuffle } from "@/lib/shuffle";
-import { useVitalsTick } from "@/hooks/useVitalsTick";
+import { useScenarioRunner } from "@/hooks/useScenarioRunner";
 import { useMonitorSounds } from "@/hooks/useMonitorSounds";
-import { useLabResults } from "@/hooks/useLabResults";
 import { PatientCard } from "@/components/PatientCard";
 import { VitalsMonitor } from "@/components/VitalsMonitor";
 import { InventoryPanel } from "@/components/InventoryPanel";
 import { StepDisplay } from "@/components/StepDisplay";
 import { DebriefScreen } from "@/components/DebriefScreen";
-import { FeedbackToast, useFeedback } from "@/components/FeedbackToast";
+import { FeedbackToast } from "@/components/FeedbackToast";
 import { DifficultySelector } from "@/components/DifficultySelector";
-import {
-  CriticalContraindicationModal,
-  buildCriticalInfo,
-  type CriticalContraindicationInfo,
-} from "@/components/CriticalContraindicationModal";
+import { CriticalContraindicationModal } from "@/components/CriticalContraindicationModal";
 import { LabResultsModal } from "@/components/LabResultsModal";
 import { LabOrderCountdownModal } from "@/components/LabOrderCountdownModal";
 import { ImagingResultsModal } from "@/components/ImagingResultsModal";
@@ -48,7 +28,6 @@ import {
   resetSpecialtyTheme,
   getSpecialtyTheme,
 } from "@/hooks/useSpecialtyTheme";
-import { getEffectiveDelaySec } from "@/engine";
 import {
   ArrowLeft,
   GraduationCap,
@@ -62,61 +41,65 @@ import {
 
 const SOUND_STORAGE_KEY = "medisim_sound_enabled";
 
+// ============================================================
+// ScenarioPlayPage — 2D quiz katmanı (ucuz paket)
+// ============================================================
+// Orkestrasyon (session/adım/skor/lab/debrief) artık useScenarioRunner
+// canonical motorunda. Bu sayfa o motoru 2D quiz konfigürasyonuyla tüketir:
+//   - enablePhysiology: false → statik baseline + wall-clock farmakoloji
+//   - examPolicy: "penalize"  → eşleşmeyen aksiyon normal puanlanır
+//   - pharmaFeedbackText: true → "(Farmakoloji: …)" metni
+// 3D pahalı katman (PatientDialog3DPage / ScenarioBedPlayPage) aynı motoru
+// varsayılan (fizyolojili) konfigürasyonla kullanır. Tek beyin, iki kabuk.
+// ============================================================
+
 export function ScenarioPlayPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const scenario = useMemo(() => (id ? getScenario(id) : undefined), [id]);
 
-  const [session, setSession] = useState<SessionState | null>(null);
+  // UI-only state (motorun parçası değil)
   const [soundEnabled, setSoundEnabled] = useState<boolean>(
     () => localStorage.getItem(SOUND_STORAGE_KEY) === "true"
   );
-  const [actionsThisStep, setActionsThisStep] = useState<ActionRef[]>([]);
-  const [pointsThisStep, setPointsThisStep] = useState(0);
-  const [criticalErrorsThisStep, setCriticalErrorsThisStep] = useState(0);
-  const [decisionAnswered, setDecisionAnswered] = useState<{
-    optionId: string;
-    feedback: string;
-  } | null>(null);
-  const [decisionMultiAnswered, setDecisionMultiAnswered] = useState<{
-    optionIds: string[];
-    feedback: string;
-  } | null>(null);
-  const [criticalInfo, setCriticalInfo] =
-    useState<CriticalContraindicationInfo | null>(null);
   const [criticalModalHidden, setCriticalModalHidden] = useState(false);
-  const [openLabPanelId, setOpenLabPanelId] = useState<string | null>(null);
-  const [openImagingId, setOpenImagingId] = useState<string | null>(null);
-  const [labCountdownInfo, setLabCountdownInfo] = useState<{
-    panelId: string;
-    panelName: string;
-    delaySec: number;
-  } | null>(null);
 
-  const { feedback, show, clear } = useFeedback();
-
-  // Varyantlı senaryo — session.variant_id uygulanmış hali
-  const resolvedScenario = useMemo(
-    () =>
-      scenario
-        ? resolveScenarioVariant(scenario, session?.variant_id)
-        : undefined,
-    [scenario, session?.variant_id]
-  );
-
-  // Lab / imaging hook
-  const { getLabStatus, orderLab, getReadyPanel, imagingResults } = useLabResults({
-    scenario: resolvedScenario,
-    sessionStartedAt: session?.started_at,
-    sessionMode: session?.mode,
-  });
-
-  // Canlı monitör tick
-  useVitalsTick({
-    scenario: resolvedScenario,
+  const {
     session,
-    setSession,
-    paused: criticalInfo !== null,
+    resolvedScenario,
+    currentStep,
+    actionsThisStep,
+    canContinue,
+    decisionAnswered,
+    decisionMultiAnswered,
+    criticalInfo,
+    setCriticalInfo,
+    feedback,
+    clearFeedback,
+    getLabStatus,
+    getReadyPanel,
+    imagingResults,
+    openLabPanelId,
+    setOpenLabPanelId,
+    openImagingId,
+    setOpenImagingId,
+    labCountdownInfo,
+    setLabCountdownInfo,
+    handleAction,
+    handleDecision,
+    handleDecisionMulti,
+    handleOrderLab,
+    handleInfoContinue,
+    handleActionStepContinue,
+    handleCriticalExpired,
+    finishEarly,
+    start,
+    restart,
+  } = useScenarioRunner({
+    scenario,
+    enablePhysiology: false,
+    examPolicy: "penalize",
+    pharmaFeedbackText: true,
   });
 
   useEffect(() => {
@@ -136,25 +119,17 @@ export function ScenarioPlayPage() {
     return () => resetSpecialtyTheme();
   }, [scenario?.specialty]);
 
-  const handleCriticalExpired = useCallback(() => {
-    if (!resolvedScenario) return;
-    setCriticalInfo(null);
+  // Kritik kontrendikasyon süresi doldu — motor finalize eder, sayfa modal
+  // gizleme bayrağını da sıfırlar.
+  const onCriticalExpired = () => {
+    handleCriticalExpired();
     setCriticalModalHidden(false);
-    show({
-      text: "Kritik kontrendikasyon düzeltme süresi doldu. Hastada ciddi komplikasyon gelişti.",
-      points: -30,
-      type: "critical",
-    });
-    // Modal timer async çağırır — functional form ile stale session.total_score riski ortadan kalkar
-    setSession((s) => {
-      if (!s) return s;
-      return finalizeSession(
-        { ...s, total_score: s.total_score - 30 },
-        resolvedScenario,
-        "abandoned"
-      );
-    });
-  }, [resolvedScenario, show]);
+  };
+
+  const onRestart = () => {
+    restart();
+    setCriticalModalHidden(false);
+  };
 
   if (!scenario) {
     return (
@@ -172,7 +147,7 @@ export function ScenarioPlayPage() {
       <ModeSelector
         scenario={scenario}
         onStart={(mode, difficulty, variantId) =>
-          setSession(startSession(scenario, mode, difficulty, variantId))
+          start(mode, difficulty, variantId)
         }
         onBack={() => navigate("/senaryolar")}
       />
@@ -184,277 +159,21 @@ export function ScenarioPlayPage() {
       <DebriefScreen
         scenario={resolvedScenario ?? scenario}
         session={session}
-        onRestart={() => {
-          setSession(null);
-          setActionsThisStep([]);
-          setPointsThisStep(0);
-          setCriticalErrorsThisStep(0);
-          setDecisionAnswered(null);
-          setDecisionMultiAnswered(null);
-          setCriticalInfo(null);
-          setCriticalModalHidden(false);
-        }}
+        onRestart={onRestart}
       />
     );
   }
 
   const rs = resolvedScenario ?? scenario;
-  const currentStep = getCurrentStep(rs, session);
   if (!currentStep) {
     return (
       <DebriefScreen
         scenario={rs}
         session={finalizeSession(session, rs)}
-        onRestart={() => setSession(null)}
+        onRestart={onRestart}
       />
     );
   }
-
-  // ----- Aksiyon handler
-  const handleAction = (action: ActionRef) => {
-    if (currentStep.kind !== "action") {
-      show({ text: "Bu adımda envanter kullanılmıyor.", points: 0, type: "neutral" });
-      return;
-    }
-
-    let pharmaPoints = 0;
-    let pharmaCritical: CriticalContraindicationInfo | null = null;
-
-    if (action.type === "give_medication") {
-      const extended = getExtendedMedication(action.target_id);
-      if (extended) {
-        const doseGiven =
-          extended.dose_band.default_dose *
-          (extended.dose_band.weight_based ? rs.patient.weight_kg : 1);
-
-        const result = administerMedication({
-          medication: extended,
-          doseGiven,
-          patient: rs.patient,
-          vitals: session.vitals,
-          activeMedicationIds: session.active_medication_ids ?? [],
-          sourceStepId: currentStep.id,
-          timingOverride: rs.medication_timing_overrides?.[extended.id],
-        });
-
-        pharmaPoints = result.points_delta;
-
-        if (result.requires_correction) {
-          const criticalContra = result.triggered_contraindications.find(
-            (c) => c.severity === "kritik"
-          );
-          if (criticalContra) {
-            const medName =
-              getMedication(action.target_id)?.name_tr ?? action.target_id;
-            pharmaCritical = buildCriticalInfo({
-              medicationName: medName,
-              effect: criticalContra.effect,
-              message: criticalContra.message,
-              feedback: criticalContra.feedback,
-              graceSec: result.requires_correction.grace_sec,
-              antidotes: result.requires_correction.expected_antidotes,
-            });
-          }
-        }
-
-        if (result.active_instance) {
-          const newActive = result.active_instance;
-          setSession((s) =>
-            s
-              ? {
-                  ...s,
-                  active_medications: [...(s.active_medications ?? []), newActive],
-                  active_medication_ids: [
-                    ...(s.active_medication_ids ?? []),
-                    newActive.medication_id,
-                  ],
-                }
-              : s
-          );
-        }
-      }
-    }
-
-    const evaluation = evaluateAction(
-      currentStep,
-      action,
-      rs,
-      session.selected_difficulty
-    );
-
-    // Çift cezalama önleme:
-    // Senaryo bu aksiyonu expected_outcomes'ta özel olarak ele aldıysa
-    // (matched_outcome dolu), senaryo yazarının verdiği puan otoritedir.
-    // Pharma engine'in eklediği puanı kullanma — ama kritik kontrendikasyon
-    // modali yine açılır (klinik uyarı kaybolmaz).
-    const effectivePharmaPoints = evaluation.matched_outcome ? 0 : pharmaPoints;
-
-    const totalPoints = evaluation.points + effectivePharmaPoints;
-    const isCritical = evaluation.critical || pharmaCritical !== null;
-
-    let combinedFeedback = evaluation.feedback;
-    if (effectivePharmaPoints !== 0 && !pharmaCritical) {
-      combinedFeedback +=
-        effectivePharmaPoints < 0
-          ? ` (Farmakoloji: ${effectivePharmaPoints} — doz/kontrendikasyon)`
-          : "";
-    }
-
-    show({
-      text: combinedFeedback,
-      points: totalPoints,
-      type: isCritical ? "critical" : totalPoints > 0 ? "positive" : "negative",
-    });
-
-    setActionsThisStep((prev) => [...prev, action]);
-    setPointsThisStep((p) => p + totalPoints);
-    if (isCritical) setCriticalErrorsThisStep((c) => c + 1);
-
-    if (evaluation.vitals_change) {
-      const vc = evaluation.vitals_change;
-      setSession((s) =>
-        s
-          ? {
-              ...s,
-              baseline_vitals: applyVitalsChange(s.baseline_vitals, vc),
-              vitals: applyVitalsChange(s.vitals, vc),
-            }
-          : s
-      );
-    }
-
-    if (pharmaCritical) {
-      setCriticalInfo(pharmaCritical);
-      setCriticalModalHidden(false);
-    }
-
-    if (evaluation.unlocks.length > 0 && !pharmaCritical) {
-      // Stale closure'u önle: toplam puanı şimdi hesapla, timeout'a geç
-      const stepTotalPts = pointsThisStep + totalPoints;
-      setTimeout(() => finishStep(evaluation.unlocks[0], stepTotalPts), 1200);
-    }
-  };
-
-  // ----- Tekli karar handler
-  const handleDecision = (option: DecisionOption) => {
-    if (currentStep.kind !== "decision" || decisionAnswered) return;
-
-    const evaluation = evaluateDecision(
-      currentStep,
-      option.id,
-      session.selected_difficulty,
-      rs
-    );
-    if (!evaluation) return;
-
-    setDecisionAnswered({ optionId: option.id, feedback: option.feedback });
-
-    show({
-      text: evaluation.feedback,
-      points: evaluation.points,
-      type: evaluation.points > 0 ? "positive" : "negative",
-    });
-
-    setPointsThisStep(evaluation.points);
-    // overridePoints ile stale closure sorununu önle
-    setTimeout(() => finishStep(null, evaluation.points), 1800);
-  };
-
-  // ----- Çoklu karar handler
-  const handleDecisionMulti = (optionIds: string[]) => {
-    if (currentStep.kind !== "decision" || decisionMultiAnswered) return;
-
-    const evaluation = evaluateDecisionMulti(
-      currentStep,
-      optionIds,
-      session.selected_difficulty,
-      rs
-    );
-    if (!evaluation) return;
-
-    setDecisionMultiAnswered({ optionIds, feedback: evaluation.feedback });
-
-    show({
-      text: evaluation.all_correct
-        ? "Mükemmel! Tüm doğrular seçildi."
-        : evaluation.points > 0
-        ? "Kısmi başarı — bazı doğrular eksik."
-        : "Hatalı veya eksik seçim.",
-      points: evaluation.points,
-      type: evaluation.all_correct
-        ? "positive"
-        : evaluation.points > 0
-        ? "positive"
-        : "negative",
-    });
-
-    setPointsThisStep(evaluation.points);
-    // overridePoints ile stale closure sorununu önle
-    setTimeout(() => finishStep(null, evaluation.points), 2200);
-  };
-
-  // Lab ısmarlandığında: önce skor (eğer bu step'te order_test outcome varsa), sonra timer
-  const handleOrderLab = (panelId: string) => {
-    if (
-      currentStep.kind === "action" &&
-      currentStep.expected_outcomes.some(
-        (o) => o.action.type === "order_test" && o.action.target_id === panelId
-      )
-    ) {
-      handleAction({ type: "order_test", target_id: panelId });
-    }
-    orderLab(panelId);
-    if (rs) {
-      const delaySec = getEffectiveDelaySec(rs, panelId, session?.mode);
-      const panelName = rs.lab_panels?.[panelId]?.name_tr ?? panelId;
-      setLabCountdownInfo({ panelId, panelName, delaySec });
-    }
-  };
-
-  const handleInfoContinue = () => finishStep(null);
-  const handleActionStepContinue = () => finishStep(null);
-
-  // overridePoints: decision/unlock timeout'larından geçilir
-  // Functional setSession ile stale closure sorunu çözüldü: s her zaman güncel state
-  const finishStep = (unlockId: string | null, overridePoints?: number) => {
-    if (!currentStep) return;
-
-    // Closure değerlerini yerel değişkenlere al — setSession callback'i bunları yakalar
-    const pts = overridePoints !== undefined ? overridePoints : pointsThisStep;
-    const actions = actionsThisStep;
-    const critErrors = criticalErrorsThisStep;
-    const stepId = currentStep.id;
-
-    setSession((s) => {
-      if (!s) return s;
-      const nextStepId =
-        unlockId ??
-        pickNextStep(rs, stepId, [], s.selected_difficulty);
-
-      let newSession = completeStep(
-        s,           // stale closure yerine güncel state
-        stepId,
-        pts,
-        actions,
-        critErrors,
-        nextStepId
-      );
-
-      if (newSession.finished) newSession = finalizeSession(newSession, rs, "completed");
-      return newSession;
-    });
-
-    setActionsThisStep([]);
-    setPointsThisStep(0);
-    setCriticalErrorsThisStep(0);
-    setDecisionAnswered(null);
-    setDecisionMultiAnswered(null);
-  };
-
-  const canContinue =
-    currentStep.kind === "action" &&
-    (!currentStep.min_actions ||
-      actionsThisStep.length >= currentStep.min_actions);
 
   const visibleSteps = rs.steps.filter((s) => {
     const d = session.selected_difficulty;
@@ -544,29 +263,11 @@ export function ScenarioPlayPage() {
               <span className="text-ink-100 tabular-nums">{session.total_score}</span>
               <span className="text-ink-500">puan</span>
             </div>
-            {/* Erken bitir — partial olarak finalizeSession */}
+            {/* Erken bitir — partial olarak finalizeSession (motor finishEarly) */}
             <button
               onClick={() => {
                 if (confirm("Senaryoyu şimdi bitir ve sonuçları gör? (Aktif adımdaki puanın korunur, harf notu hesaplanmaz)")) {
-                  setSession((s) => {
-                    if (!s) return s;
-                    // Aktif adımda iz bırakıldıysa (puan, aksiyon veya kritik hata) senkron flush
-                    const hasProgress =
-                      pointsThisStep !== 0 ||
-                      actionsThisStep.length > 0 ||
-                      criticalErrorsThisStep > 0;
-                    const flushed = (hasProgress && currentStep)
-                      ? completeStep(
-                          s,
-                          currentStep.id,
-                          pointsThisStep,
-                          actionsThisStep,
-                          criticalErrorsThisStep,
-                          null
-                        )
-                      : s;
-                    return finalizeSession(flushed, rs, "partial");
-                  });
+                  finishEarly();
                 }
               }}
               className="text-xs text-ink-500 hover:text-clinical-warning border border-ink-700 hover:border-clinical-warning/50 rounded px-2 py-0.5 transition"
@@ -642,14 +343,14 @@ export function ScenarioPlayPage() {
         </div>
       </div>
 
-      <FeedbackToast feedback={feedback} mode={session.mode} onClose={clear} />
+      <FeedbackToast feedback={feedback} mode={session.mode} onClose={clearFeedback} />
 
       <CriticalContraindicationModal
         info={criticalInfo}
         hidden={criticalModalHidden}
         showGuidance={session.mode !== "sinav"}
         onResolved={() => { setCriticalInfo(null); setCriticalModalHidden(false); }}
-        onExpired={handleCriticalExpired}
+        onExpired={onCriticalExpired}
         onDismiss={() => setCriticalModalHidden(true)}
       />
 

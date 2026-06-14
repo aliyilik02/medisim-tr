@@ -35,6 +35,7 @@ import {
   type ActionRef,
   type DecisionOption,
   type PlayMode,
+  type Difficulty,
   type Scenario,
   type Step,
   type PhysiologyProvider,
@@ -54,6 +55,24 @@ interface UseScenarioRunnerParams {
   scenario: Scenario | undefined;
   /** Otomatik başlatma modu — verilirse mount/senaryo değişiminde session açılır */
   autoStartMode?: PlayMode;
+  /**
+   * Fizyoloji sağlayıcısı (deterioration + TEK SAAT) açık mı.
+   * Default: true (3D pahalı katman). 2D quiz katmanı `false` geçer —
+   * statik baseline + wall-clock farmakoloji (eski ScenarioPlayPage davranışı).
+   */
+  enablePhysiology?: boolean;
+  /**
+   * Muayene/prosedür politikası.
+   * "free" (default, 3D): senaryoda karşılığı olmayan examine/procedure
+   *   cezasız (fizik muayene serbest; zaman maliyeti deterioration ile işler).
+   * "penalize" (2D quiz): eşleşmeyen aksiyon normal puanlanır (eski davranış).
+   */
+  examPolicy?: "free" | "penalize";
+  /**
+   * Pharma puan farkını feedback metnine ekle ("(Farmakoloji: -X …)").
+   * Default: false (3D). 2D quiz `true` geçer (eski ScenarioPlayPage metni).
+   */
+  pharmaFeedbackText?: boolean;
 }
 
 export interface LabCountdownInfo {
@@ -65,6 +84,9 @@ export interface LabCountdownInfo {
 export function useScenarioRunner({
   scenario,
   autoStartMode,
+  enablePhysiology = true,
+  examPolicy = "free",
+  pharmaFeedbackText = false,
 }: UseScenarioRunnerParams) {
   const [session, setSession] = useState<SessionState | null>(null);
   const [actionsThisStep, setActionsThisStep] = useState<ActionRef[]>([]);
@@ -110,7 +132,7 @@ export function useScenarioRunner({
   } | null>(null);
 
   const provider = useMemo(() => {
-    if (!rs || !session) return null;
+    if (!enablePhysiology || !rs || !session) return null;
     const key = `${rs.id}:${session.started_at}`;
     if (providerRef.current?.key !== key) {
       providerRef.current = {
@@ -220,15 +242,14 @@ export function useScenarioRunner({
         action.type === "procedure" || action.type === "examine";
 
       if (currentStep.kind !== "action") {
-        // 3D muayene politikası: karar/bilgi adımında fizik muayene serbest,
-        // diğer aksiyonlar bu adımda işlenmez.
-        if (!isExamLike) {
-          show({
-            text: "Bu adımda envanter kullanılmıyor.",
-            points: 0,
-            type: "neutral",
-          });
-        }
+        // 3D muayene politikası: karar/bilgi adımında fizik muayene serbest
+        // (sessiz). 2D quiz (penalize): her zaman uyarı göster.
+        if (examPolicy === "free" && isExamLike) return;
+        show({
+          text: "Bu adımda envanter kullanılmıyor.",
+          points: 0,
+          type: "neutral",
+        });
         return;
       }
 
@@ -249,9 +270,10 @@ export function useScenarioRunner({
             vitals: session.vitals,
             activeMedicationIds: session.active_medication_ids ?? [],
             sourceStepId: currentStep.id,
-            // TEK SAAT: administered_at/expires_at simüle eksende yazılır —
-            // useVitalsTick pharma tick'i de aynı eksenle okur.
-            now: session.sim_time_ms ?? session.started_at,
+            // TEK SAAT: provider'lı (3D) oturumda administered_at/expires_at
+            // simüle eksende yazılır — useVitalsTick pharma tick'i de aynı
+            // eksenle okur. Provider'sız (2D quiz) oturumda wall-clock korunur.
+            now: provider ? (session.sim_time_ms ?? session.started_at) : Date.now(),
             timingOverride: rs.medication_timing_overrides?.[extended.id],
           });
 
@@ -305,8 +327,10 @@ export function useScenarioRunner({
 
       // 3D muayene politikası: senaryoda karşılığı olmayan muayene/prosedür
       // cezalandırılmaz (fizik muayene öğrenmenin parçası; zaman maliyeti
-      // deterioration trendi ile zaten işliyor).
-      const freeExam = isExamLike && !evaluation.matched_outcome;
+      // deterioration trendi ile zaten işliyor). 2D quiz (penalize): freeExam
+      // hiç tetiklenmez → eşleşmeyen aksiyon normal puanlanır (eski davranış).
+      const freeExam =
+        examPolicy === "free" && isExamLike && !evaluation.matched_outcome;
 
       // Çift cezalama önleme: senaryo outcome'ı varsa pharma puanı yutulur
       const effectivePharmaPoints = evaluation.matched_outcome
@@ -318,10 +342,21 @@ export function useScenarioRunner({
       const isCritical =
         !freeExam && (evaluation.critical || pharmaCritical !== null);
 
+      // 2D quiz: pharma puan farkını feedback metnine ekle (eski davranış).
+      let feedbackText = freeExam
+        ? "Muayene yapıldı — bulgular değerlendirildi."
+        : evaluation.feedback;
+      if (
+        pharmaFeedbackText &&
+        !freeExam &&
+        effectivePharmaPoints < 0 &&
+        !pharmaCritical
+      ) {
+        feedbackText += ` (Farmakoloji: ${effectivePharmaPoints} — doz/kontrendikasyon)`;
+      }
+
       show({
-        text: freeExam
-          ? "Muayene yapıldı — bulgular değerlendirildi."
-          : evaluation.feedback,
+        text: feedbackText,
         points: totalPoints,
         type: isCritical
           ? "critical"
@@ -357,7 +392,17 @@ export function useScenarioRunner({
         setTimeout(() => finishStep(evaluation.unlocks[0], stepTotalPts), 1200);
       }
     },
-    [rs, session, currentStep, provider, show, pointsThisStep, finishStep]
+    [
+      rs,
+      session,
+      currentStep,
+      provider,
+      show,
+      pointsThisStep,
+      finishStep,
+      examPolicy,
+      pharmaFeedbackText,
+    ]
   );
 
   // ----- Karar handler'ları
@@ -485,12 +530,8 @@ export function useScenarioRunner({
     [finishStep]
   );
 
-  const restart = useCallback(() => {
-    if (!scenario || !autoStartMode) {
-      setSession(null);
-      return;
-    }
-    setSession(startSession(scenario, autoStartMode, scenario.difficulty));
+  // Tüm adım/oturum yan-state'ini sıfırla — start/restart ortak yardımcısı.
+  const resetStepState = useCallback(() => {
     setActionsThisStep([]);
     setScoredActionsThisStep(0);
     setPointsThisStep(0);
@@ -502,7 +543,28 @@ export function useScenarioRunner({
     setOpenLabPanelId(null);
     setOpenImagingId(null);
     setLabCountdownInfo(null);
-  }, [scenario, autoStartMode]);
+  }, []);
+
+  // Manuel başlatma — 2D quiz katmanı ModeSelector akışı (mod/zorluk/varyant
+  // kullanıcı seçer). autoStartMode'lu 3D akışı bunu kullanmaz.
+  const start = useCallback(
+    (mode: PlayMode, difficulty: Difficulty, variantId?: string) => {
+      if (!scenario) return;
+      setSession(startSession(scenario, mode, difficulty, variantId));
+      resetStepState();
+    },
+    [scenario, resetStepState]
+  );
+
+  const restart = useCallback(() => {
+    if (!scenario || !autoStartMode) {
+      setSession(null);
+      resetStepState();
+      return;
+    }
+    setSession(startSession(scenario, autoStartMode, scenario.difficulty));
+    resetStepState();
+  }, [scenario, autoStartMode, resetStepState]);
 
   const canContinue =
     currentStep?.kind === "action" &&
@@ -544,6 +606,7 @@ export function useScenarioRunner({
     handleActionStepContinue,
     handleCriticalExpired,
     finishEarly,
+    start,
     restart,
   };
 }
