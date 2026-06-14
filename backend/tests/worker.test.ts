@@ -41,6 +41,9 @@ function makeEnv(): Env {
         store.set(key, value);
       },
     } as unknown as KVNamespace,
+    // Tier-2: bu testler DB/auth kullanmıyor — minimal stub (typecheck için).
+    DB: {} as unknown as D1Database,
+    JWT_SECRET: "test-jwt-secret-stub",
   };
 }
 

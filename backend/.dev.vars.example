@@ -3,3 +3,11 @@
 #
 # Google AI Studio key: https://aistudio.google.com/apikey (kart gerekmez)
 GEMINI_API_KEY=AIzaSy_REPLACE_ME
+
+# Tier-2 auth (D1 + JWT cookie):
+#   JWT_SECRET — oturum imzası. Üret: openssl rand -base64 48
+JWT_SECRET=REPLACE_uzun_rastgele_deger
+#   SIGNUP_INVITE_CODE — ilk eğitmen/admin bootstrap (boşsa /api/auth/register kapalı)
+SIGNUP_INVITE_CODE=REPLACE_davet_kodu
+#
+# D1 local: `npx wrangler d1 migrations apply DB --local` (şema 0001_init.sql)

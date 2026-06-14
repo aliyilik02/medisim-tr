@@ -8,6 +8,7 @@
 // ============================================================
 
 import { handleChat } from "./handlers/chat";
+import { handleLogin, handleMe, handleLogout, handleConsent, handleRegister } from "./handlers/auth";
 import { corsHeaders, handlePreflight, withCors } from "./middleware/cors";
 import { checkRateLimit, rateLimitResponse } from "./middleware/rate-limit";
 import type { Env } from "./types";
@@ -31,7 +32,7 @@ function notFoundResponse(): Response {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // Preflight
@@ -42,6 +43,23 @@ export default {
     // Health (rate-limit'siz)
     if (url.pathname === "/api/health" && request.method === "GET") {
       return withCors(healthResponse(), request);
+    }
+
+    // ── Auth (Tier-2) — JSON, cookie tabanlı oturum ──
+    if (url.pathname === "/api/auth/login" && request.method === "POST") {
+      return withCors(await handleLogin(request, env), request);
+    }
+    if (url.pathname === "/api/auth/me" && request.method === "GET") {
+      return withCors(await handleMe(request, env), request);
+    }
+    if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+      return withCors(handleLogout(), request);
+    }
+    if (url.pathname === "/api/auth/consent" && request.method === "POST") {
+      return withCors(await handleConsent(request, env), request);
+    }
+    if (url.pathname === "/api/auth/register" && request.method === "POST") {
+      return withCors(await handleRegister(request, env), request);
     }
 
     // Chat

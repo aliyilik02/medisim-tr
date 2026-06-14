@@ -13,8 +13,22 @@ compatibility_flags = ["nodejs_compat"]
 binding = "RATE_LIMIT"
 id = "PLACEHOLDER_REPLACE_AFTER_KV_CREATE"
 
+# ─────────────────────────────────────────────────────────────
+# D1 — Tier-2 auth + kurum + seans (KVKK: pseudonim PII).
+# Oluştur:  npx wrangler d1 create medisim   → çıkan database_id'yi yaz.
+# Migrasyon: npx wrangler d1 migrations apply DB [--local]
+# EU jurisdiction: D1 oluştururken --location=weur (veri residency).
+# ─────────────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "medisim"
+database_id = "PLACEHOLDER_REPLACE_AFTER_D1_CREATE"
+migrations_dir = "migrations"
+
 # Secrets (.dev.vars local, `wrangler secret put` prod):
-#   GEMINI_API_KEY
+#   GEMINI_API_KEY        — Gemini proxy
+#   JWT_SECRET            — oturum imzası (uzun rastgele; `openssl rand -base64 48`)
+#   SIGNUP_INVITE_CODE    — ilk eğitmen/admin bootstrap (yoksa kayıt kapalı)
 
 [observability]
 enabled = true

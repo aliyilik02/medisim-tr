@@ -31,6 +31,9 @@ export function corsHeaders(request: Request): Record<string, string> {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
+    // Oturum cookie'si çapraz-origin gönderilebilsin (auth). Origin spesifik
+    // olmalı (yukarıda allowlist'ten geliyor — '*' ile credentials çalışmaz).
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
