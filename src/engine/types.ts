@@ -477,6 +477,29 @@ export interface PatientVariant {
 }
 
 // ------------------------------------------------------------
+// Klinik Review Hattı (CLAUDE.md "Klinik İçerik Disiplini")
+// ------------------------------------------------------------
+// Bayrak akışı: DRAFT → REVIEWED_PENDING_ACTIVATION → ACTIVE.
+// ACTIVE'e geçişi SADECE Ali Bey yapar (otonom değil). Alan yoksa güvenli
+// varsayılan DRAFT (getClinicalStatus). Önceden yorum konvansiyonuyla
+// tutuluyordu; artık tipli alan + /klinik-review dashboard ile izlenir.
+export type ClinicalReviewStatus =
+  | "DRAFT"
+  | "REVIEWED_PENDING_ACTIVATION"
+  | "ACTIVE";
+
+export interface ClinicalReview {
+  status: ClinicalReviewStatus;
+  /** Onaylayan (Ali Bey). */
+  reviewed_by?: string;
+  /** Review/onay tarihi (ISO). */
+  reviewed_at?: string;
+  /** Hâlâ review bekleyen klinik alanlar (ör. "deterioration", "auscultation"). */
+  draft_areas?: string[];
+  notes?: string;
+}
+
+// ------------------------------------------------------------
 // Ana Senaryo Tipi
 // ------------------------------------------------------------
 
@@ -554,6 +577,10 @@ export interface Scenario {
 
   // Faz 1 — Oskültasyon bölge→ses eşlemesi. Key = PatientRegion id (regions.ts)
   auscultation?: Record<string, AuscultationOverride>;
+
+  // Klinik review durumu (opsiyonel; yoksa getClinicalStatus DRAFT döner).
+  // ACTIVE'e geçişi sadece Ali Bey yapar — /klinik-review dashboard'dan.
+  clinical_review?: ClinicalReview;
 }
 
 // ------------------------------------------------------------

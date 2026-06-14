@@ -25,3 +25,12 @@ export {
   getEffectivePassingScore,
   STANDARD_GRADE_THRESHOLDS,
 } from "./grading";
+export {
+  getClinicalStatus,
+  isScenarioActive,
+  buildReviewChecklist,
+  autoChecksPass,
+  CLINICAL_STATUS_ORDER,
+  CLINICAL_STATUS_LABEL,
+  type ChecklistItem,
+} from "./clinical-review";

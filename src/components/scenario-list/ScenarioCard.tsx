@@ -1,8 +1,15 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import type { Scenario } from "@/engine/types";
+import { getClinicalStatus, CLINICAL_STATUS_LABEL } from "@/engine";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
 import { SpecialtyIcon } from "@/assets/specialty-icons";
+
+const CLINICAL_BADGE: Record<string, string> = {
+  DRAFT: "text-clinical-warning border-clinical-warning/40 bg-clinical-warning/10",
+  REVIEWED_PENDING_ACTIVATION: "text-clinical-info border-clinical-info/40 bg-clinical-info/10",
+  ACTIVE: "text-clinical-stable border-clinical-stable/40 bg-clinical-stable/10",
+};
 
 // Zorluk üçgenleri — dolu/boş
 function DifficultyPips({ level }: { level: number }) {
@@ -66,8 +73,24 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
           >
             <SpecialtyIcon specialty={scenario.specialty} className="w-7 h-7" />
           </div>
-          <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-500 text-right leading-tight mt-0.5">
-            {scenario.id.toUpperCase()}
+          <div className="flex flex-col items-end gap-1.5">
+            {/* Klinik onay durumu — DRAFT/REVIEWED/ACTIVE */}
+            {(() => {
+              const st = getClinicalStatus(scenario);
+              return (
+                <span
+                  className={cn(
+                    "px-1.5 py-0.5 rounded font-mono text-[8px] uppercase tracking-[0.1em] border whitespace-nowrap",
+                    CLINICAL_BADGE[st]
+                  )}
+                >
+                  {CLINICAL_STATUS_LABEL[st]}
+                </span>
+              );
+            })()}
+            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-500 text-right leading-tight">
+              {scenario.id.toUpperCase()}
+            </div>
           </div>
         </div>
 

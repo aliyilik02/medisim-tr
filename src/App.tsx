@@ -12,6 +12,7 @@ import { ScenarioListPage } from "@/pages/ScenarioListPage";
 import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
 import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
 import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
+import { ClinicalReviewPage } from "@/pages/ClinicalReviewPage";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -62,6 +63,7 @@ export function App() {
           <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
           <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
           <Route path="/gecmis" element={<SessionHistoryPage />} />
+          <Route path="/klinik-review" element={<ClinicalReviewPage />} />
 
           {/* Pahalı katman canonical akış — gerçek senaryo seansı */}
           <Route
@@ -151,6 +153,7 @@ function Header() {
             { to: "/", label: "Ana Sayfa", exact: true },
             { to: "/senaryolar", label: "Senaryolar" },
             { to: "/gecmis", label: "Geçmiş" },
+            { to: "/klinik-review", label: "Klinik Review" },
           ].map(({ to, label, exact }) => (
             <NavLink
               key={to}
