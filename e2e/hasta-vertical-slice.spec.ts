@@ -81,6 +81,22 @@ test.describe("dikey dilim — /hasta/:id", () => {
     await expect(page.getByTestId("ventilator-panel")).toHaveCount(0);
   });
 
+  test("debrief — FHIR Bundle (.json) indirilebilir", async ({ page }) => {
+    await page.goto(`/hasta/${ANAFLAKSI}`);
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(3000);
+    // finishEarly confirm() → otomatik onayla
+    page.on("dialog", (d) => d.accept());
+    await page.getByTestId("finish-early").click();
+    // Debrief açılır → FHIR indir butonu
+    const fhirBtn = page.getByTestId("download-fhir");
+    await expect(fhirBtn).toBeVisible({ timeout: 10_000 });
+    const downloadPromise = page.waitForEvent("download");
+    await fhirBtn.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/medisim-fhir-.*\.json$/);
+  });
+
   test("ventilatör pediatrik senaryoda GİZLİ (erişkin preset güvensiz)", async ({
     page,
   }) => {

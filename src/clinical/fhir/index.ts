@@ -13,3 +13,4 @@ export {
   vitalsToObservations,
   type ScenarioToPatientOptions,
 } from "./scenarioToFhir";
+export { buildScenarioFhirBundle, sessionToFhirBundle } from "./fhirBundle";

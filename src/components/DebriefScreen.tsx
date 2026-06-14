@@ -11,11 +11,13 @@ import {
   XCircle,
   MinusCircle,
   Save,
+  Share2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { AIDebriefPanel } from "@/components/AIDebriefPanel";
 import { saveSession } from "@/storage/sessionHistory";
+import { sessionToFhirBundle } from "@/clinical/fhir";
 
 interface Props {
   scenario: Scenario;
@@ -268,6 +270,24 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
     }
   }
 
+  // FHIR R4 Bundle dışa aktarımı — birlikte çalışabilirlik (medplum tipleri).
+  // Senkron + saf (async import gerekmez); JSON blob indirir.
+  function handleDownloadFhir() {
+    setExportError(null);
+    try {
+      const bundle = sessionToFhirBundle(scenario, session, {
+        referenceYear: new Date().getFullYear(),
+      });
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], {
+        type: "application/fhir+json",
+      });
+      triggerDownload(blob, `medisim-fhir-${scenario.id}-${protocolId(session)}.json`);
+    } catch (err) {
+      console.error("[MediSim] FHIR export error:", err);
+      setExportError("FHIR Bundle oluşturulamadı. Lütfen tekrar deneyin.");
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 animate-fade-in">
       <div className="space-y-4">
@@ -498,6 +518,15 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
           >
             <TableProperties className="w-4 h-4 text-brand-light" />
             {excelLoading ? "Hazırlanıyor…" : "Excel İndir"}
+          </button>
+          <button
+            onClick={handleDownloadFhir}
+            data-testid="download-fhir"
+            className="btn-ghost flex items-center gap-2"
+            title="FHIR R4 Bundle (birlikte çalışabilirlik)"
+          >
+            <Share2 className="w-4 h-4 text-brand-light" />
+            FHIR İndir
           </button>
           <Link to="/" className="btn-ghost ml-auto">
             <Home className="w-4 h-4" />
