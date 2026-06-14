@@ -9,6 +9,8 @@
    Veri modeli `scratch/eval-monitor/export/medsim-types.ts` ile birebir uyumlu.
    ========================================================================= */
 
+import { ECG_SINUS_CYCLE, ECG_SINUS_LEN } from "./waveform-data";
+
 /* ---------- tipler ---------- */
 export type Rhythm =
   | "sinus"
@@ -240,6 +242,23 @@ function pqrstWave(u: number, opts?: PqrstOpts): number {
   return y;
 }
 
+/* Fizyolojik sinüs morfolojisini ECGSYN tablosundan örnekle (McSharry 2003).
+   u ∈ [0,1) beat fazı → ECG_SINUS_CYCLE'a lineer interpolasyon. Tablo R-tepe=+1
+   olacak şekilde normalize; bu yüzden pqrstWave ile aynı ölçekte (R≈1.0).
+   ST sapması tabloya plato olarak EKLENİR (paced/wide kompleks dışı durumlar
+   için mevcut davranışla aynı: S–T arası segment). */
+function sampleSinusTable(u: number, st?: number): number {
+  const p = wrap01(u);
+  const fidx = p * ECG_SINUS_LEN;
+  const i0 = Math.floor(fidx) % ECG_SINUS_LEN;
+  const i1 = (i0 + 1) % ECG_SINUS_LEN;
+  const frac = fidx - Math.floor(fidx);
+  let y = ECG_SINUS_CYCLE[i0] * (1 - frac) + ECG_SINUS_CYCLE[i1] * frac;
+  // ST segment elevasyonu (+) / depresyonu (-): pqrstWave ile aynı plato penceresi.
+  if (st) y += st * smooth(0.285, 0.33, p) * (1 - smooth(0.4, 0.47, p));
+  return y;
+}
+
 // geniş ventriküler kompleks (PVC / ventriküler kaçış). dir polariteyi çevirir.
 function wideComplex(u: number, dir?: number): number {
   const d = dir == null ? 1 : dir;
@@ -342,7 +361,9 @@ export function sampleECG(
     return pqrstWave(u, { tAmp: 0.22, st: stv });
   }
   // sinus / tachy / brady (+ opsiyonel ST sapması)
-  return pqrstWave(u, { st: stv });
+  // Fizyolojik morfoloji: ECGSYN tablosu (McSharry 2003). HR fazı (beat) zaten
+  // tachy/brady'de hızı belirler; morfoloji tabloyla gerçekçi P-QRS-T verir.
+  return sampleSinusTable(u, stv);
 }
 
 /* SpO2 plethysmograph. p = beat fazı; genlik dışarıda SpO2 ile ölçeklenir. */
