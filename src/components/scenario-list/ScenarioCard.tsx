@@ -33,29 +33,19 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
   const theme = getSpecialtyTheme(scenario.specialty);
 
   return (
-    <Link
-      to={`/oyna/${scenario.id}`}
+    <div
       className={cn(
         "group relative flex flex-col",
         "bg-ink-900 border border-ink-700 rounded-lg overflow-hidden",
         "hover:-translate-y-0.5 hover:border-opacity-80",
         "transition-all duration-200 ease-out",
-        "focus:outline-none",
         "animate-slide-up"
       )}
       style={{
         animationDelay: `${delay}ms`,
         borderLeftColor: theme.accent,
         borderLeftWidth: "2px",
-        // Focus ring — specialty rengiyle
-        "--tw-ring-color": theme.accentGlow,
       } as React.CSSProperties}
-      onFocus={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 2px ${theme.accentGlow}`;
-      }}
-      onBlur={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = "";
-      }}
     >
       {/* Hover glow overlay */}
       <div
@@ -115,7 +105,24 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
             <span>{scenario.scoring.max_points}p</span>
           </div>
         </div>
+
+        {/* İki katman aksiyon — ucuz 2D quiz / pahalı 3D sanal hasta */}
+        <div className="relative flex items-center gap-2 pt-3">
+          <Link
+            to={`/oyna/${scenario.id}`}
+            className="flex-1 text-center px-3 py-2 rounded-md font-mono text-[11px] uppercase tracking-[0.08em] text-ink-300 border border-ink-600 hover:bg-ink-700 hover:text-ink-100 transition"
+          >
+            2D Oyna
+          </Link>
+          <Link
+            to={`/hasta/${scenario.id}`}
+            className="flex-1 text-center px-3 py-2 rounded-md font-mono text-[11px] uppercase tracking-[0.08em] text-brand-light border border-brand/40 hover:bg-brand/10 transition"
+            style={{ background: theme.accentBg }}
+          >
+            3D Hasta
+          </Link>
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }

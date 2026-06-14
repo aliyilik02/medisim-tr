@@ -1,5 +1,12 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Link, NavLink, useLocation } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Link,
+  NavLink,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { HomePage } from "@/pages/HomePage";
 import { ScenarioListPage } from "@/pages/ScenarioListPage";
 import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
@@ -8,59 +15,28 @@ import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Sprint A — 3D demo route lazy yüklenir. three/R3F bundle main'i şişirmesin.
-const PatientBody3DDemoPage = lazy(() =>
-  import("@/pages/PatientBody3DDemoPage").then((m) => ({
-    default: m.PatientBody3DDemoPage,
-  }))
-);
+// ============================================================
+// Dikey dilim (stratejik değerlendirme ① / sorun #3 — demo fragmentasyon):
+// Pahalı katman tek canonical akış → /hasta/:id (ScenarioBedPlayPage,
+// param-aware). Saf özellik-vitrini demoları (/3d-demo, /dialog-demo,
+// /faz2-demo, /animasyon-demo, /monitor-demo, /ventilator-demo) artık
+// /senaryolar'a yönlenir — parçalar dikey dilim içinde birleşti. Fonksiyonel
+// akışlar korunur: /dialog-3d-demo (ayakta + diyalog, e2e'li),
+// /senaryo-yatak (paramsız dev gezinti — aynı ScenarioBedPlayPage).
+// ============================================================
 
-// Sprint B.2 — AI hasta diyaloğu demo (mock backend).
-const DialogDemoPage = lazy(() =>
-  import("@/pages/DialogDemoPage").then((m) => ({
-    default: m.DialogDemoPage,
-  }))
-);
-
-// Sprint B.2 entegrasyon — 3D model + AI diyalog yan yana, mock lipsync.
+// Sprint B.2 entegrasyon — 3D model + AI diyalog yan yana (ayakta hasta).
 const PatientDialog3DPage = lazy(() =>
   import("@/pages/PatientDialog3DPage").then((m) => ({
     default: m.PatientDialog3DPage,
   }))
 );
 
-// Faz 2 — Klinik Sahne (supine hasta + acil servis odası).
-const Faz2DemoPage = lazy(() =>
-  import("@/pages/Faz2DemoPage").then((m) => ({
-    default: m.Faz2DemoPage,
-  }))
-);
-
-// Faz 2/3 — İskelet animasyon demosu (Mixamo: idle/pain/cough).
-const AnimasyonDemoPage = lazy(() =>
-  import("@/pages/AnimasyonDemoPage").then((m) => ({
-    default: m.AnimasyonDemoPage,
-  }))
-);
-
-// Tam senaryo motoru + supine yatak hastası (PatientDialog3D'nin yatak versiyonu).
+// Pahalı katman canonical: tam senaryo motoru + supine yatak hastası +
+// köşe monitör + diyalog + (Faz B) 3D ventilatör cihazı.
 const ScenarioBedPlayPage = lazy(() =>
   import("@/pages/ScenarioBedPlayPage").then((m) => ({
     default: m.ScenarioBedPlayPage,
-  }))
-);
-
-// Dalga formu monitörü demosu (harici monitör repo'sundan TSX portu).
-const MonitorDemoPage = lazy(() =>
-  import("@/pages/MonitorDemoPage").then((m) => ({
-    default: m.MonitorDemoPage,
-  }))
-);
-
-// Mekanik ventilatör demosu (open-vent-sim deseninden temiz TS port).
-const VentilatorDemoPage = lazy(() =>
-  import("@/pages/VentilatorDemoPage").then((m) => ({
-    default: m.VentilatorDemoPage,
   }))
 );
 
@@ -68,18 +44,16 @@ export function App() {
   const location = useLocation();
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
-  const is3dDemo = location.pathname.startsWith("/3d-demo");
-  const isDialogDemo = location.pathname.startsWith("/dialog-demo");
   const isDialog3d = location.pathname.startsWith("/dialog-3d-demo");
-  const isFaz2 = location.pathname.startsWith("/faz2-demo");
-  const isAnim = location.pathname.startsWith("/animasyon-demo");
   const isBedPlay = location.pathname.startsWith("/senaryo-yatak");
-  const isMonitor = location.pathname.startsWith("/monitor-demo");
-  const isVentilator = location.pathname.startsWith("/ventilator-demo");
+  const isHasta = location.pathname.startsWith("/hasta/");
+  // Tam-ekran immersive sayfalarda site Header/Footer gizlenir.
+  const immersive =
+    isPlayPage || isEditorPage || isDialog3d || isBedPlay || isHasta;
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && !isVentilator && <Header />}
+      {!immersive && <Header />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -88,34 +62,24 @@ export function App() {
           <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
           <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
           <Route path="/gecmis" element={<SessionHistoryPage />} />
+
+          {/* Pahalı katman canonical akış — gerçek senaryo seansı */}
           <Route
-            path="/3d-demo"
+            path="/hasta/:id"
             element={
               <Suspense
                 fallback={
                   <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    3D yükleniyor…
+                    Hasta sahnesi yükleniyor…
                   </div>
                 }
               >
-                <PatientBody3DDemoPage />
+                <ScenarioBedPlayPage />
               </Suspense>
             }
           />
-          <Route
-            path="/dialog-demo"
-            element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    Diyalog yükleniyor…
-                  </div>
-                }
-              >
-                <DialogDemoPage />
-              </Suspense>
-            }
-          />
+
+          {/* Fonksiyonel akış — ayakta hasta + AI diyalog (e2e kapsamlı) */}
           <Route
             path="/dialog-3d-demo"
             element={
@@ -130,34 +94,8 @@ export function App() {
               </Suspense>
             }
           />
-          <Route
-            path="/faz2-demo"
-            element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    Klinik sahne yükleniyor…
-                  </div>
-                }
-              >
-                <Faz2DemoPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/animasyon-demo"
-            element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    Animasyon yükleniyor…
-                  </div>
-                }
-              >
-                <AnimasyonDemoPage />
-              </Suspense>
-            }
-          />
+
+          {/* Dev gezinti — paramsız ScenarioBedPlayPage (senaryo dropdown) */}
           <Route
             path="/senaryo-yatak"
             element={
@@ -172,37 +110,19 @@ export function App() {
               </Suspense>
             }
           />
-          <Route
-            path="/monitor-demo"
-            element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    Monitör yükleniyor…
-                  </div>
-                }
-              >
-                <MonitorDemoPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/ventilator-demo"
-            element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    Ventilatör yükleniyor…
-                  </div>
-                }
-              >
-                <VentilatorDemoPage />
-              </Suspense>
-            }
-          />
+
+          {/* Emekli edilen saf özellik-vitrini demoları → senaryo listesi.
+              Parçaları (3D/diyalog/monitör/animasyon/ventilatör) /hasta/:id
+              dikey diliminde birleşti (sorun #3 — fragmentasyon). */}
+          <Route path="/3d-demo" element={<Navigate to="/senaryolar" replace />} />
+          <Route path="/dialog-demo" element={<Navigate to="/senaryolar" replace />} />
+          <Route path="/faz2-demo" element={<Navigate to="/senaryolar" replace />} />
+          <Route path="/animasyon-demo" element={<Navigate to="/senaryolar" replace />} />
+          <Route path="/monitor-demo" element={<Navigate to="/senaryolar" replace />} />
+          <Route path="/ventilator-demo" element={<Navigate to="/senaryolar" replace />} />
         </Routes>
       </main>
-      {!isPlayPage && !isEditorPage && !is3dDemo && !isDialogDemo && !isDialog3d && !isFaz2 && !isAnim && !isBedPlay && !isMonitor && !isVentilator && <Footer />}
+      {!immersive && <Footer />}
     </div>
   );
 }

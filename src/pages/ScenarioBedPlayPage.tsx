@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
@@ -62,7 +62,17 @@ const EQUIPMENT_ID_MAP: Record<string, EquipmentKind> = {
 type RightTab = "vaka" | "diyalog";
 
 export function ScenarioBedPlayPage() {
-  const [scenarioId, setScenarioId] = useState<string>(SCENARIOS[0].id);
+  // /hasta/:id → gerçek senaryo seansı (param). /senaryo-yatak (paramsız) →
+  // dev dropdown ile senaryo gezme. routeId varsa dropdown gizlenir.
+  const { id: routeId } = useParams<{ id: string }>();
+  const [scenarioId, setScenarioId] = useState<string>(
+    routeId ?? SCENARIOS[0].id
+  );
+
+  // routeId değişirse (aynı sayfada /hasta/:id → başka :id navigasyonu) takip et
+  useEffect(() => {
+    if (routeId) setScenarioId(routeId);
+  }, [routeId]);
   const [rightTab, setRightTab] = useState<RightTab>("vaka");
   const [speaking, setSpeaking] = useState(false);
   // Hastaya takılı ekipman — verilen ekipman aksiyonlarından lokal izlenir
@@ -151,17 +161,21 @@ export function ScenarioBedPlayPage() {
           </div>
         )}
 
-        <select
-          value={scenarioId}
-          onChange={(e) => setScenarioId(e.target.value)}
-          className="bg-ink-900 border border-ink-700 rounded px-2 py-1.5 text-xs text-ink-100 hover:border-ink-500 focus:border-brand/50 focus:outline-none transition max-w-[220px]"
-        >
-          {SCENARIOS.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.title}
-            </option>
-          ))}
-        </select>
+        {/* Senaryo seçici — sadece dev gezinti modunda (/senaryo-yatak, paramsız).
+            Gerçek seansta (/hasta/:id) senaryo route'tan sabit. */}
+        {!routeId && (
+          <select
+            value={scenarioId}
+            onChange={(e) => setScenarioId(e.target.value)}
+            className="bg-ink-900 border border-ink-700 rounded px-2 py-1.5 text-xs text-ink-100 hover:border-ink-500 focus:border-brand/50 focus:outline-none transition max-w-[220px]"
+          >
+            {SCENARIOS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
+        )}
       </header>
 
       {/* Ana içerik */}

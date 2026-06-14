@@ -20,16 +20,18 @@ test.describe("Ana akış", () => {
     await page.goto("/");
     await page.getByRole("link", { name: /Senaryolar/i }).first().click();
     await expect(page).toHaveURL(/\/senaryolar/);
-    // En az 1 senaryo kartı bulunmalı (en kötü ihtimal şu an 14)
-    const cards = page.getByRole("link", { name: /STEMI|DKA|Bronşiyolit|Anaflaksi/i });
-    await expect(cards.first()).toBeVisible();
+    // En az 1 senaryo kartı başlığı görünmeli (kart artık tek link değil —
+    // başlık + iki katman aksiyon: 2D Oyna / 3D Hasta)
+    await expect(page.getByRole("heading", { name: /STEMI/i }).first()).toBeVisible();
+    // İki katman bağlantısı kartta mevcut
+    await expect(page.locator('a[href^="/oyna/"]').first()).toBeVisible();
+    await expect(page.locator('a[href^="/hasta/"]').first()).toBeVisible();
   });
 
-  test("STEMI senaryosu başlatılabilir — oyna sayfası açılır", async ({ page }) => {
+  test("STEMI senaryosu başlatılabilir — 2D oyna sayfası açılır", async ({ page }) => {
     await page.goto("/senaryolar");
-    // İlk STEMI içeren karta tıkla
-    const stemiCard = page.getByRole("link").filter({ hasText: /STEMI/i }).first();
-    await stemiCard.click();
+    // STEMI kartının 2D Oyna bağlantısı (href ile kesin hedef)
+    await page.locator('a[href="/oyna/kardiyoloji-stemi-001"]').first().click();
     await expect(page).toHaveURL(/\/oyna\/kardiyoloji-stemi-001/);
     // Hasta paneli render olmuş olmalı
     await expect(page.getByText(/yaş/i).first()).toBeVisible({ timeout: 10_000 });

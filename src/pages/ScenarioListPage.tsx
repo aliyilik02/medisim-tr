@@ -61,12 +61,22 @@ function LocalScenarioRow({ scenario, onDelete }: { scenario: StoredScenario; on
           <Trash2 className="w-3.5 h-3.5" />
         </button>
         {!scenario._draft && (
-          <Link
-            to={`/oyna/${scenario.id}`}
-            className="ml-1 px-3 py-1.5 rounded font-mono text-[11px] text-brand-light border border-brand/30 hover:bg-brand/10 transition"
-          >
-            Oyna
-          </Link>
+          <>
+            {/* Ucuz katman — 2D tıkla-devam quiz */}
+            <Link
+              to={`/oyna/${scenario.id}`}
+              className="ml-1 px-3 py-1.5 rounded font-mono text-[11px] text-ink-300 border border-ink-600 hover:bg-ink-700 hover:text-ink-100 transition"
+            >
+              2D Oyna
+            </Link>
+            {/* Pahalı katman — 3D sanal hasta sahnesi (dikey dilim) */}
+            <Link
+              to={`/hasta/${scenario.id}`}
+              className="ml-1 px-3 py-1.5 rounded font-mono text-[11px] text-brand-light border border-brand/30 hover:bg-brand/10 transition"
+            >
+              3D Hasta
+            </Link>
+          </>
         )}
         {scenario._draft && (
           <Link

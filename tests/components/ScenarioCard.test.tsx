@@ -21,10 +21,12 @@ describe("ScenarioCard", () => {
     expect(screen.getByText(stemi.description)).toBeInTheDocument();
   });
 
-  test("doğru oyna URL'i içerir", () => {
+  test("iki katman URL'i içerir — 2D /oyna + 3D /hasta", () => {
     renderInRouter(<ScenarioCard scenario={stemi} />);
-    const link = screen.getByRole("link");
-    expect(link.getAttribute("href")).toBe("/oyna/kardiyoloji-stemi-001");
+    const play2d = screen.getByRole("link", { name: /2D Oyna/i });
+    const play3d = screen.getByRole("link", { name: /3D Hasta/i });
+    expect(play2d.getAttribute("href")).toBe("/oyna/kardiyoloji-stemi-001");
+    expect(play3d.getAttribute("href")).toBe("/hasta/kardiyoloji-stemi-001");
   });
 
   test("zorluk seviyesi aria-label'da", () => {
@@ -56,9 +58,13 @@ describe("ScenarioCard — pediatri farklı specialty", () => {
     expect(screen.getByText(bron.title)).toBeInTheDocument();
   });
 
-  test("href pediatri senaryosunu hedefler", () => {
+  test("href pediatri senaryosunu hedefler — her iki katman", () => {
     renderInRouter(<ScenarioCard scenario={bron} />);
-    const link = screen.getByRole("link");
-    expect(link.getAttribute("href")).toBe("/oyna/pedi-bronsiyolit-001");
+    expect(
+      screen.getByRole("link", { name: /2D Oyna/i }).getAttribute("href")
+    ).toBe("/oyna/pedi-bronsiyolit-001");
+    expect(
+      screen.getByRole("link", { name: /3D Hasta/i }).getAttribute("href")
+    ).toBe("/hasta/pedi-bronsiyolit-001");
   });
 });
