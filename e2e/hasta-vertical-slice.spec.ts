@@ -38,6 +38,44 @@ test.describe("dikey dilim — /hasta/:id", () => {
     // /hasta/:id sabit senaryo → dropdown yok (sadece /senaryo-yatak dev modunda)
     await expect(page.locator("header select")).toHaveCount(0);
   });
+
+  test("animasyonlu hasta GLB 200 + makul boyut (truncate/master guard)", async ({
+    page,
+  }) => {
+    // /3d-demo emekli oldu; model-bütünlük guard'ı canonical route'a taşındı.
+    const responsePromise = page.waitForResponse(
+      (r) => r.url().endsWith("/3d/patient-animated.glb") && r.status() === 200,
+      { timeout: 15_000 }
+    );
+    await page.goto(`/hasta/${ANAFLAKSI}`);
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const contentLength = response.headers()["content-length"];
+    if (contentLength) {
+      // ~890 KB Mixamo+meshopt. Alt sınır: 0-byte/truncate; üst: ham master.
+      expect(Number(contentLength)).toBeGreaterThan(100_000);
+      expect(Number(contentLength)).toBeLessThan(5_000_000);
+    }
+  });
+
+  test("ventilatör — buton paneli açar, preset değişir, kapanır", async ({
+    page,
+  }) => {
+    await page.goto(`/hasta/${ANAFLAKSI}`);
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(3000);
+
+    // Panel başta kapalı
+    await expect(page.getByTestId("ventilator-panel")).toHaveCount(0);
+    // DOM affordance (3D cihaz tıklamasının eşdeğeri) paneli açar
+    await page.getByTestId("ventilator-open").click();
+    await expect(page.getByTestId("ventilator-panel")).toBeVisible();
+    // Preset butonu çalışır (ARDS)
+    await page.getByRole("button", { name: /ARDS/i }).first().click();
+    // Kapat
+    await page.getByTestId("ventilator-close").click();
+    await expect(page.getByTestId("ventilator-panel")).toHaveCount(0);
+  });
 });
 
 test.describe("demo emekliliği — saf vitrinler /senaryolar'a yönlenir", () => {

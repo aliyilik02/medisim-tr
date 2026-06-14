@@ -16,6 +16,7 @@ import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip } from "./Anima
 import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
 import type { EquipmentKind } from "./equipmentMeshes";
+import { VentilatorDevice } from "./VentilatorDevice";
 
 // ── Yatak yerleşim ölçüm probu (dev-only, GÖZ yerine SAYI) ──────────────
 // window.__measureBed=true iken hastanın POZLANMIŞ (skinned) dünya bbox'unu
@@ -184,6 +185,12 @@ interface Props {
   cameraPreset?: CameraPreset;
   /** Canlı kamera okuyucu — orbit ederken pos+target göster (kalibrasyon). */
   cameraDebug?: boolean;
+  /** Yatak başı 3D ventilatör cihazını göster (tıklanınca onVentilatorActivate). */
+  showVentilator?: boolean;
+  /** Ventilatör cihazına tıklanınca (panel aç). */
+  onVentilatorActivate?: () => void;
+  /** Ventilatör çalışıyor mu (ekran/LED durumu). */
+  ventilatorActive?: boolean;
   className?: string;
 }
 
@@ -196,6 +203,9 @@ export function PatientRoomScene({
   equipment,
   cameraPreset = DEFAULT_CAMERA_PRESET,
   cameraDebug = false,
+  showVentilator = false,
+  onVentilatorActivate,
+  ventilatorActive = true,
   className,
 }: Props) {
   const controlsRef = useRef<{ target: Vector3; update: () => void } | null>(null);
@@ -220,6 +230,10 @@ export function PatientRoomScene({
           <ErRoom />
           {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
           <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} speaking={speaking} equipment={equipment} />
+          {/* Yatak başı 3D ventilatör cihazı — tıklanınca panel açar */}
+          {showVentilator && (
+            <VentilatorDevice onActivate={onVentilatorActivate} active={ventilatorActive} />
+          )}
         </Suspense>
 
         <OrbitControls ref={controlsRef as never} target={[0, 0.2, 0]} minDistance={0.6} maxDistance={4} enablePan />

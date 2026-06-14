@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon } from "lucide-react";
+import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
 import {
@@ -10,6 +10,14 @@ import {
 import type { EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
 import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
 import { patientVitalsToMonitor } from "@/components/monitor/adapter";
+import { VentilatorScreen } from "@/components/ventilator/VentilatorScreen";
+import {
+  VENT_PRESETS,
+  VENT_PARAM,
+  type VentSettings,
+  type VentMode,
+  type VentPresetKey,
+} from "@/components/ventilator/ventilator-engine";
 import { DialogChat } from "@/components/dialog/DialogChat";
 import { StepDisplay } from "@/components/StepDisplay";
 import { InventoryPanel } from "@/components/InventoryPanel";
@@ -77,6 +85,21 @@ export function ScenarioBedPlayPage() {
   const [speaking, setSpeaking] = useState(false);
   // Hastaya takılı ekipman — verilen ekipman aksiyonlarından lokal izlenir
   const [equipment, setEquipment] = useState<EquipmentKind[]>([]);
+
+  // ── Yatak başı 3D ventilatör cihazı + paneli (Faz B.2) ──────────────
+  const [ventOpen, setVentOpen] = useState(false);
+  const [ventSettings, setVentSettings] = useState<VentSettings>(
+    VENT_PRESETS.normal.settings
+  );
+  const [ventPreset, setVentPreset] = useState<VentPresetKey | null>("normal");
+  const ventPatchSettings = (p: Partial<VentSettings>) => {
+    setVentPreset(null);
+    setVentSettings((s) => ({ ...s, ...p }));
+  };
+  const ventPickPreset = (key: VentPresetKey) => {
+    setVentSettings(VENT_PRESETS[key].settings);
+    setVentPreset(key);
+  };
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
 
@@ -190,6 +213,9 @@ export function ScenarioBedPlayPage() {
             speaking={speaking}
             equipment={equipment}
             cameraPreset="genel"
+            showVentilator
+            ventilatorActive
+            onVentilatorActivate={() => setVentOpen(true)}
           />
           {/* Küçük başucu monitörü — sol üst köşe overlay (eski CompactVitalsHUD yerine).
               Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
@@ -209,6 +235,17 @@ export function ScenarioBedPlayPage() {
               Hasta konuşuyor
             </div>
           )}
+          {/* Ventilatör erişim butonu — 3D cihaz tıklamasının DOM eşdeğeri
+              (erişilebilirlik + e2e). Sahnedeki cihazla aynı paneli açar. */}
+          <button
+            type="button"
+            onClick={() => setVentOpen(true)}
+            data-testid="ventilator-open"
+            className="absolute bottom-4 right-4 px-3 py-1.5 rounded-md bg-ink-900/80 border border-ink-600 hover:border-brand/50 hover:text-brand-light backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-200 shadow-lg transition"
+          >
+            <Wind className="w-3.5 h-3.5" />
+            Ventilatör
+          </button>
         </div>
 
         {/* Sağ panel: Vaka Akışı | Diyalog */}
@@ -339,6 +376,107 @@ export function ScenarioBedPlayPage() {
         if (!img) return null;
         return <ImagingResultsModal result={img} onClose={() => runner.setOpenImagingId(null)} />;
       })()}
+
+      {/* Ventilatör paneli — 3D cihaz (veya DOM butonu) ile açılır */}
+      {ventOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => setVentOpen(false)}
+          data-testid="ventilator-panel"
+        >
+          <div
+            className="relative w-full max-w-5xl h-[85vh] flex flex-col rounded-xl overflow-hidden border border-white/10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Kontrol şeridi — preset + parametre slider'ları */}
+            <div className="shrink-0 flex flex-wrap items-center gap-3 px-4 py-2 border-b border-white/10 bg-[#03100a] text-white/80">
+              <span className="text-[11px] uppercase tracking-wider text-white/40">
+                Preset
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {(["normal", "ards", "copd"] as VentPresetKey[]).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => ventPickPreset(key)}
+                    title={VENT_PRESETS[key].note}
+                    className={
+                      "text-[11px] font-medium px-2.5 py-1 rounded border transition-colors " +
+                      (ventPreset === key
+                        ? "text-black border-transparent bg-brand"
+                        : "text-white/60 border-white/15 hover:border-white/35")
+                    }
+                  >
+                    {VENT_PRESETS[key].label}
+                  </button>
+                ))}
+              </div>
+              <div className="h-6 w-px bg-white/10" />
+              <VentSlider label="FiO₂" p={VENT_PARAM.fio2} value={ventSettings.fio2} onChange={(v) => ventPatchSettings({ fio2: v })} unit="%" />
+              <VentSlider label="PEEP" p={VENT_PARAM.peep} value={ventSettings.peep} onChange={(v) => ventPatchSettings({ peep: v })} unit="cmH₂O" />
+              <VentSlider label="RR" p={VENT_PARAM.rr} value={ventSettings.rr} onChange={(v) => ventPatchSettings({ rr: v })} unit="/dk" />
+              <VentSlider label="Vt" p={VENT_PARAM.vt} value={ventSettings.vt} onChange={(v) => ventPatchSettings({ vt: v })} unit="mL" />
+              <VentSlider label="I:E (1:x)" p={VENT_PARAM.ie} value={ventSettings.ie} onChange={(v) => ventPatchSettings({ ie: v })} unit="" />
+              <button
+                type="button"
+                onClick={() => setVentOpen(false)}
+                data-testid="ventilator-close"
+                className="ml-auto p-1.5 rounded text-white/50 hover:text-white hover:bg-white/10 transition"
+                title="Kapat"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Canlı ventilatör ekranı */}
+            <div className="flex-1 min-h-0">
+              <VentilatorScreen
+                settings={ventSettings}
+                onChangeMode={(mode: VentMode) => ventPatchSettings({ mode })}
+                onPickPreset={ventPickPreset}
+                activePreset={ventPreset}
+                patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
+                bedLabel="Yatak 1 · Acil Servis"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// Ventilatör paneli için kompakt parametre slider'ı
+function VentSlider({
+  label,
+  p,
+  value,
+  onChange,
+  unit,
+}: {
+  label: string;
+  p: { min: number; max: number; step: number };
+  value: number;
+  onChange: (v: number) => void;
+  unit: string;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-[11px] text-white/60">
+      <span className="text-right">{label}</span>
+      <input
+        type="range"
+        min={p.min}
+        max={p.max}
+        step={p.step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-24 accent-brand"
+        aria-label={label}
+      />
+      <span
+        className="w-14 tabular-nums text-white/80"
+        style={{ fontFamily: "'Geist Mono', monospace" }}
+      >
+        {value} {unit}
+      </span>
+    </label>
   );
 }
