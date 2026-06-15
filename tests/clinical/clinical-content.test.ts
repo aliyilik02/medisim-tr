@@ -240,16 +240,17 @@ describe("Pediatrik dozlama — mg/kg (ağırlık-temelli)", () => {
   // CLAUDE.md 9.D mg/kg YANINDA max doz da ister. Mevcut iki pediatrik
   // senaryodan:
   //   - pediatri-sepsis-001: "maks 60 mL/kg" VAR (sıvı yüklenme tavanı).
-  //   - bronsiyolit (destek-tedavi senaryosu): mg/kg yalnızca bir YANLIŞ
-  //     seçenekte ("nebülize adrenalin 0.5 mg/kg"); açık bir "max doz"
-  //     üst-sınır ifadesi YOK. Bronşiyolit ağırlıklı destek tedavi
-  //     olduğundan ağırlık-temelli ilaç max dozu klinik olarak da seyrek.
-  // Bu GERÇEK bir eksik. Testi sahte geçirmek için kuralı zayıflatmıyoruz;
-  // todo'ya alıp Ali Bey'e bildiriyoruz. (Doğrulamayı görmek için aşağıdaki
-  // diagnostic test her pediatrik senaryoda max-doz durumunu console'a yazar.)
-  test.todo(
-    "her pediatrik senaryoda açık 'max doz' üst sınırı (bronşiyolit eksik — Ali Bey'e bildirildi)"
-  );
+  //   - bronsiyolit: nebülize adrenalin seçeneğine Ali Bey onayıyla
+  //     "(max 5 mg/doz)" tavanı eklendi (15 Haz 2026 klinik review).
+  // Boşluk kapandı → todo gerçek hard-fail teste yükseltildi.
+  test("her pediatrik senaryoda açık 'max doz' üst sınırı (CLAUDE.md 9.D)", () => {
+    for (const s of PEDIATRIC_SCENARIOS) {
+      expect(
+        MAX_DOSE_RE.test(serialize(s)),
+        `${s.id}: pediatrik 'max doz' üst sınırı bulunamadı (CLAUDE.md 9.D Kural 1)`
+      ).toBe(true);
+    }
+  });
 
   // Tanısal (hard-fail DEĞİL): max-doz durumunu raporlar, boşluğu görünür kılar.
   test("[tanı] pediatrik senaryolarda max-doz durumu raporu", () => {

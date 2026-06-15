@@ -236,7 +236,7 @@ export const scenario_bronsiyolit: Scenario = {
         },
         {
           id: "opt-adrenalin-nebul",
-          text: "Nebülize adrenalin 0.5 mg/kg",
+          text: "Nebülize adrenalin 0.5 mg/kg (max 5 mg/doz)",
           correct: false,
           points: -5,
           feedback:

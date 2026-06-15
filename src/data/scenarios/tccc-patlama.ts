@@ -43,8 +43,9 @@ export const scenario_tccc_patlama: Scenario = {
   last_updated: "2026-04-27",
 
   // ICD-10 (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
-  // SNOMED CT yok: T07 'Multiple injuries, unspecified' için stabil SNOMED eşleşmesi yok.
-  clinical_codes: { icd10: "T07" },
+  // SNOMED CT: 217745001 'Blast injury (disorder)' — patlama vakasına en
+  // spesifik eşleşme (Ali Bey klinik onayı, 15 Haz 2026). ICD-10 T07 ile birlikte.
+  clinical_codes: { icd10: "T07", snomed_ct: "217745001" },
 
   patient: {
     age: 24,
