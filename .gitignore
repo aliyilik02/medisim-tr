@@ -70,6 +70,9 @@ scratch/
 # graphify bilgi grafiği çıktısı (büyük, yeniden üretilebilir)
 graphify-out/
 
-# DİKKAT: public/3d/patient-mimikli.glb (~161MB) OPTIMIZE EDİLMEDEN commit EDİLMEZ —
-# GitHub 100MB hard limit. Optimize: npm run glb:patient (skill: blender-medical-modeling).
-# Optimize çıktısı (<25MB) commit edilebilir; 161MB master LFS/R2 kararı Ali Bey'in.
+# DİKKAT: patient-mimikli.* = Daz/Character Creator kökenli (Std_Skin_* texture).
+# Optimize edilmiş (17MB, <100MB) olsa BİLE LİSANS netleşmeden commit EDİLMEZ — Ali Bey kararı.
+# Kalıcı çözüm: MPFB2 (CC0) yeniden üretim. Yanlışlıkla git add -A tuzağını kapatmak için ignore:
+public/3d/patient-mimikli.glb
+public/3d/patient-mimikli.tsx
+public/3d/export_glb.py
