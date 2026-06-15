@@ -43,7 +43,10 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: "http://localhost:5173",
-    reuseExistingServer: !process.env.CI,
+    // E2E auth bypass — backend olmadan auth gate'i atla (authStore E2E seam).
+    // reuseExistingServer:false → flag'siz çalışan dev server'ı kullanma, taze başlat.
+    env: { VITE_E2E: "1" },
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

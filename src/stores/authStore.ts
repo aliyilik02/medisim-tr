@@ -14,6 +14,20 @@ import type { UserPublic, SignupParams } from "@/api/auth";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
+// E2E seam: Playwright'ta backend yok → auth gate tüm route'ları /login'e
+// yönlendirip uygulamayı test edilemez kılar. VITE_E2E=1 (yalnız playwright
+// webServer'ında set) ile mock eğitmen oturumu açılır. Production build'de
+// VITE_E2E tanımsız → gerçek auth akışı (güvenlik etkilenmez).
+const E2E_BYPASS = import.meta.env.VITE_E2E === "1";
+const E2E_USER: UserPublic = {
+  id: "e2e-instructor",
+  role: "instructor",
+  handle: "e2e",
+  email: "e2e@medisim.test",
+  institution_id: "e2e-inst",
+  consent: true,
+};
+
 export interface AuthState {
   user: UserPublic | null;
   status: AuthStatus;
@@ -36,6 +50,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
 
   checkAuth: async () => {
+    if (E2E_BYPASS) {
+      set((s) => ({
+        ...s,
+        user: E2E_USER,
+        status: "authenticated",
+        consentGiven: true,
+        error: null,
+      }));
+      return;
+    }
     set((s) => ({ ...s, status: "loading", error: null }));
     try {
       const user = await authApi.getMe();
