@@ -29,6 +29,7 @@ import { LabOrderCountdownModal } from "@/components/LabOrderCountdownModal";
 import { ImagingResultsModal } from "@/components/ImagingResultsModal";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
+import { mapVitalsToVisuals } from "@/clinical/clinicalVisualMapping";
 import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
 import { getVisibleOptions } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
@@ -147,6 +148,9 @@ export function ScenarioBedPlayPage() {
     return resolveClipForVariant(ideal, ANIMATED_MODELS[variant]?.clips ?? []);
   }, [liveVitals, speaking, variant]);
   const skinTint = vitalsToVisual(liveVitals).skinTint;
+  // Sürekli klinik görsel (siyanoz/solgun/terleme/benekli) — deterioration
+  // tick'i sonrası canlı vital'den. Ayrık skinTint'in üstüne biner.
+  const visualState = useMemo(() => mapVitalsToVisuals(liveVitals), [liveVitals]);
 
   // Debrief
   if (session?.finished) {
@@ -220,6 +224,7 @@ export function ScenarioBedPlayPage() {
             variant={variant}
             clip={clip}
             skinTint={skinTint}
+            visualState={visualState}
             skinTone={skinTone}
             speaking={speaking}
             equipment={equipment}

@@ -17,6 +17,7 @@ import {
   type PatientVariant,
   type SkinTone,
 } from "./patientModels";
+import type { VisualState } from "@/clinical/clinicalVisualMapping";
 
 // onBeforeCompile callback'inin Three.js dahili shader objesinin tipi.
 type ShaderRef = {
@@ -64,6 +65,10 @@ interface Props {
   variant?: PatientVariant;
   /** Etnik ten tonu (Skin_Body baseColor). Cyanosis/pallor tint üzerine biner. */
   skinTone?: SkinTone;
+  /** Sürekli klinik görsel durum (clinicalVisualMapping). Verilirse shader
+      uniform'ları (uCyanosis/uPallor/uDiaphoresis/uMottled) per-frame sürülür —
+      ayrık skinTint preset'inin ÜSTÜNE biner. */
+  visualState?: VisualState;
 }
 
 export const AnatomicPatientModel = forwardRef<Group, Props>(
@@ -75,6 +80,7 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
       speaking = false,
       variant = DEFAULT_PATIENT_VARIANT,
       skinTone = DEFAULT_SKIN_TONE,
+      visualState,
     },
     ref,
   ) => {
@@ -105,6 +111,12 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
             shader.uniforms.uBreathAmplitude = { value: breathAmplitudeLocal };
             shader.uniforms.uSkinTint = { value: SKIN_TINT_PRESETS[skinTint] };
             shader.uniforms.uBreathSpeed = { value: (rr / 60) * 2 * Math.PI };
+            // Sürekli klinik görsel uniform'ları (varsayılan 0 — visualState
+            // verilince per-frame sürülür). Fragment yalnız cilt materyalinde.
+            shader.uniforms.uCyanosis = { value: 0 };
+            shader.uniforms.uPallor = { value: 0 };
+            shader.uniforms.uDiaphoresis = { value: 0 };
+            shader.uniforms.uMottled = { value: 0 };
 
             // Vertex shader modifikasyonları (solunum için)
             shader.vertexShader = shader.vertexShader
@@ -142,6 +154,12 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
     // Cilt tonu yumuşak geçiş — current → target lerp (~1.5sn)
     const currentTintRef = useRef<[number, number, number]>([1, 1, 1]);
     const targetTintRef = useRef<[number, number, number]>(SKIN_TINT_PRESETS[skinTint]);
+
+    // Sürekli klinik görsel — her render ref'e aynala (stale-closure önleme:
+    // useFrame içinde state okumak yerine ref). Yumuşatma için current lerp.
+    const visualStateRef = useRef<VisualState | undefined>(visualState);
+    visualStateRef.current = visualState;
+    const clinicalRef = useRef({ cyanosis: 0, pallor: 0, diaphoresis: 0, mottled: 0 });
 
     useEffect(() => {
       targetTintRef.current = SKIN_TINT_PRESETS[skinTint];
@@ -196,6 +214,21 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
 
       shaderRefs.current.forEach((shader) => {
         if (shader.uniforms.uSkinTint) shader.uniforms.uSkinTint.value = cur;
+      });
+
+      // 2b. Sürekli klinik görsel uniform lerp (visualState ref'ten)
+      const vs = visualStateRef.current;
+      const cl = clinicalRef.current;
+      const k = Math.min(delta / 1.2, 1.0);
+      cl.cyanosis += ((vs?.cyanosis ?? 0) - cl.cyanosis) * k;
+      cl.pallor += ((vs?.pallor ?? 0) - cl.pallor) * k;
+      cl.diaphoresis += ((vs?.diaphoresis ?? 0) - cl.diaphoresis) * k;
+      cl.mottled += ((vs?.mottled ?? 0) - cl.mottled) * k;
+      shaderRefs.current.forEach((shader) => {
+        if (shader.uniforms.uCyanosis) shader.uniforms.uCyanosis.value = cl.cyanosis;
+        if (shader.uniforms.uPallor) shader.uniforms.uPallor.value = cl.pallor;
+        if (shader.uniforms.uDiaphoresis) shader.uniforms.uDiaphoresis.value = cl.diaphoresis;
+        if (shader.uniforms.uMottled) shader.uniforms.uMottled.value = cl.mottled;
       });
 
       // 3. Göz kırpma (Blink) animasyonu (4 saniyede bir hızlı kapanıp açılma)

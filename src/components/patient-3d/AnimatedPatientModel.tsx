@@ -10,6 +10,11 @@ import {
   type PatientVariant,
 } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
+import type { VisualState } from "@/clinical/clinicalVisualMapping";
+
+// Sürekli klinik görsel renk faktörleri (per-frame harman, shader değil —
+// bed sahnesi MeshStandardMaterial; GLSL derleme riski yok).
+const CYANOSIS_FACTOR: [number, number, number] = [0.6, 0.7, 0.96];
 import { buildEquipment, EQUIPMENT_BONE, type EquipmentKind } from "./equipmentMeshes";
 
 // ============================================================
@@ -144,6 +149,10 @@ interface Props {
   scale?: number;
   /** Wrapper konum (yatak/supine hizalama için). */
   position?: [number, number, number];
+  /** Sürekli klinik görsel durum (clinicalVisualMapping). Verilirse cilt rengi
+      per-frame siyanoz/solgunluk ile harmanlanır, terleme parlaklık katar —
+      ayrık skinTint'in ÜSTÜNE. Verilmezse ayrık skinTint davranışı korunur. */
+  visualState?: VisualState;
 }
 
 export const AnimatedPatientModel = forwardRef<Group, Props>(
@@ -157,6 +166,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       equipment,
       scale = MODEL_SCALE,
       position = [0, -0.243, 0],
+      visualState,
     },
     ref,
   ) => {
@@ -169,20 +179,34 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
     const { actions } = useAnimations(animations, clone);
 
-    // Cilt tonu × vital tint → material baseColor (çarpımsal)
+    // Cilt tonu × vital tint → material baseColor (çarpımsal). Ayrıca base
+    // rengi + cilt materyallerini ref'e topla (per-frame sürekli görsel için).
+    const skinMatsRef = useRef<MeshStandardMaterial[]>([]);
+    const baseSkinRef = useRef<[number, number, number]>([1, 1, 1]);
     useMemo(() => {
       const [sr, sg, sb] = SKIN_TONE_PRESETS[skinTone];
       const [tr, tg, tb] = SKIN_TINT_PRESETS[skinTint];
+      const base: [number, number, number] = [sr * tr, sg * tg, sb * tb];
+      baseSkinRef.current = base;
+      const mats: MeshStandardMaterial[] = [];
       clone.traverse((obj) => {
         if ("isMesh" in obj && (obj as any).isMesh) {
           const mat = (obj as any).material as MeshStandardMaterial;
           if (mat && SKIN_MATERIAL_NAMES.includes(mat.name)) {
-            mat.color.setRGB(sr * tr, sg * tg, sb * tb);
+            mat.color.setRGB(base[0], base[1], base[2]);
             mat.needsUpdate = true;
+            mats.push(mat);
           }
         }
       });
+      skinMatsRef.current = mats;
     }, [clone, skinTone, skinTint]);
+
+    // Sürekli klinik görsel — render'da ref'e aynala (stale-closure önleme),
+    // useFrame içinde yumuşatılmış değerle cilt rengini sür.
+    const visualStateRef = useRef<VisualState | undefined>(visualState);
+    visualStateRef.current = visualState;
+    const clinicalRef = useRef({ cyanosis: 0, pallor: 0, diaphoresis: 0, mottled: 0 });
 
     // Klip geçişi — crossfade
     const prevClip = useRef<PatientClip | null>(null);
@@ -220,7 +244,45 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     };
 
     const mouthRef = useRef(0);
-    useFrame((state) => {
+    useFrame((state, delta) => {
+      // ── Sürekli klinik görsel — cilt rengi harmanı (visualState varsa) ──
+      const vs = visualStateRef.current;
+      const mats = skinMatsRef.current;
+      if (vs && mats.length) {
+        const cl = clinicalRef.current;
+        const k = Math.min(delta / 1.2, 1.0);
+        cl.cyanosis += (vs.cyanosis - cl.cyanosis) * k;
+        cl.pallor += (vs.pallor - cl.pallor) * k;
+        cl.diaphoresis += (vs.diaphoresis - cl.diaphoresis) * k;
+        cl.mottled += (vs.mottled - cl.mottled) * k;
+
+        const [br, bg, bb] = baseSkinRef.current;
+        // Siyanoz — base → base × mavi-mor faktör
+        let r = br * (1 - cl.cyanosis) + br * CYANOSIS_FACTOR[0] * cl.cyanosis;
+        let g = bg * (1 - cl.cyanosis) + bg * CYANOSIS_FACTOR[1] * cl.cyanosis;
+        let b = bb * (1 - cl.cyanosis) + bb * CYANOSIS_FACTOR[2] * cl.cyanosis;
+        // Solgunluk — luminansa (griye) doğru, hafif açık
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        r = r * (1 - cl.pallor) + lum * 1.06 * cl.pallor;
+        g = g * (1 - cl.pallor) + lum * 1.06 * cl.pallor;
+        b = b * (1 - cl.pallor) + lum * 1.06 * cl.pallor;
+        // Mottled — koyu-mor (uniform yaklaşım; desenli sürüm shader yolunda)
+        const mf = cl.mottled * 0.5;
+        r = r * (1 - mf) + r * 0.72 * mf;
+        g = g * (1 - mf) + g * 0.58 * mf;
+        b = b * (1 - mf) + b * 0.66 * mf;
+
+        for (const mat of mats) {
+          mat.color.setRGB(r, g, b);
+          // Diaforez — roughness düşür (terli parlama). Base bir kez yakalanır.
+          if (mat.userData.__baseRough === undefined) {
+            mat.userData.__baseRough = mat.roughness;
+          }
+          const baseRough = mat.userData.__baseRough as number;
+          mat.roughness = baseRough * (1 - cl.diaphoresis) + 0.25 * cl.diaphoresis;
+        }
+      }
+
       // Göz kırpma — 4sn'de bir hızlı kapanıp açılma (eyeBlinkLeft/Right ARKit)
       const t = state.clock.getElapsedTime();
       const cyc = t % 4.0;

@@ -13,6 +13,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, ContactShadows } from "@react-three/drei";
 import { Box3, Vector3, type Group, type Object3D, type SkinnedMesh, type Mesh } from "three";
 import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip } from "./AnimatedPatientModel";
+import type { VisualState } from "@/clinical/clinicalVisualMapping";
 import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
 import type { EquipmentKind } from "./equipmentMeshes";
@@ -262,6 +263,8 @@ interface Props {
   variant?: PatientVariant;
   skinTone?: SkinTone;
   skinTint?: SkinTint;
+  /** Sürekli klinik görsel (siyanoz/solgun/terleme/benekli) — vital→shader/renk. */
+  visualState?: VisualState;
   /** Oynatılacak klip (senaryo durumundan: laying_idle, talk, cough, pain). */
   clip?: PatientClip;
   /** Hasta konuşuyor mu (lipsync jawOpen). */
@@ -285,6 +288,7 @@ export function PatientRoomScene({
   variant = "female-adult",
   skinTone = DEFAULT_SKIN_TONE,
   skinTint = "normal",
+  visualState,
   clip = "laying_idle",
   speaking = false,
   equipment,
@@ -339,7 +343,7 @@ export function PatientRoomScene({
           {/* IV direği + sıvı torbası — sedye başı-sol yanı */}
           <IVPole />
           {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
-          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} speaking={speaking} equipment={equipment} />
+          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} visualState={visualState} speaking={speaking} equipment={equipment} />
           {/* Yatak başı 3D ventilatör cihazı — tıklanınca panel açar */}
           {showVentilator && (
             <VentilatorDevice onActivate={onVentilatorActivate} active={ventilatorActive} />
@@ -413,12 +417,13 @@ interface BedPatientProps {
   clip: PatientClip;
   skinTone: SkinTone;
   skinTint: SkinTint;
+  visualState?: VisualState;
   speaking: boolean;
   equipment?: EquipmentKind[];
 }
 
 // Varyant + klip metadata'sından yatak yerleşimini hesaplar.
-function BedPatient({ variant, clip, skinTone, skinTint, speaking, equipment }: BedPatientProps) {
+function BedPatient({ variant, clip, skinTone, skinTint, visualState, speaking, equipment }: BedPatientProps) {
   const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
   const s = meta.bedScale;
   const groupRef = useRef<Group>(null);
@@ -432,6 +437,7 @@ function BedPatient({ variant, clip, skinTone, skinTint, speaking, equipment }: 
         clip={clip}
         skinTone={skinTone}
         skinTint={skinTint}
+        visualState={visualState}
         speaking={speaking}
         equipment={equipment}
         scale={1}
