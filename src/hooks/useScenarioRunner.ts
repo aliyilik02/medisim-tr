@@ -31,6 +31,7 @@ import {
   resolveScenarioVariant,
   getEffectiveDelaySec,
   createSimplePhysiologyProvider,
+  getPedagogy,
   type SessionState,
   type ActionRef,
   type DecisionOption,
@@ -114,6 +115,22 @@ export function useScenarioRunner({
   const [haltedPhaseIds, setHaltedPhaseIds] = useState<string[]>([]);
 
   const { feedback, show, clear } = useFeedback();
+
+  // Pedagojik mod davranışı (egitim=öğretici, klinik=uygulama, sinav=sınav).
+  const pedagogy = useMemo(
+    () => getPedagogy(session?.mode ?? "klinik"),
+    [session?.mode]
+  );
+  // Anlık geri bildirim kapısı: sınav modunda kritik dışı toast bastırılır
+  // (güvenlik-kritik kontrendikasyon uyarısı sınavda dahi gösterilir).
+  const notify = useCallback(
+    (args: { text: string; points: number; type: string }) => {
+      if (pedagogy.showFeedback || args.type === "critical") {
+        show(args as Parameters<typeof show>[0]);
+      }
+    },
+    [pedagogy, show]
+  );
 
   const resolvedScenario = useMemo(
     () =>
@@ -359,7 +376,7 @@ export function useScenarioRunner({
         feedbackText += ` (Farmakoloji: ${effectivePharmaPoints} — doz/kontrendikasyon)`;
       }
 
-      show({
+      notify({
         text: feedbackText,
         points: totalPoints,
         type: isCritical
@@ -402,6 +419,7 @@ export function useScenarioRunner({
       currentStep,
       provider,
       show,
+      notify,
       pointsThisStep,
       finishStep,
       examPolicy,
@@ -415,6 +433,18 @@ export function useScenarioRunner({
       if (!rs || !session || !currentStep) return;
       if (currentStep.kind !== "decision" || decisionAnswered) return;
 
+      // Karar → fizyoloji köprüsü: reperfüzyon gibi kritik kararlar
+      // deterioration fazını durdurur. handleAction yalnız ActionRef alır;
+      // karar seçenekleri "decision" ActionType'ı ile sentezlenir →
+      // deterioration.halted_by [{type:"decision", target_id: option.id}] eşleşir.
+      if (provider) {
+        provider.applyIntervention(session.vitals, {
+          type: "decision",
+          target_id: option.id,
+        });
+        setHaltedPhaseIds(provider.getState().halted);
+      }
+
       const evaluation = evaluateDecision(
         currentStep,
         option.id,
@@ -424,7 +454,7 @@ export function useScenarioRunner({
       if (!evaluation) return;
 
       setDecisionAnswered({ optionId: option.id, feedback: option.feedback });
-      show({
+      notify({
         text: evaluation.feedback,
         points: evaluation.points,
         type: evaluation.points > 0 ? "positive" : "negative",
@@ -432,7 +462,7 @@ export function useScenarioRunner({
       setPointsThisStep(evaluation.points);
       setTimeout(() => finishStep(null, evaluation.points), 1800);
     },
-    [rs, session, currentStep, decisionAnswered, show, finishStep]
+    [rs, session, currentStep, decisionAnswered, notify, finishStep, provider]
   );
 
   const handleDecisionMulti = useCallback(
@@ -449,7 +479,7 @@ export function useScenarioRunner({
       if (!evaluation) return;
 
       setDecisionMultiAnswered({ optionIds, feedback: evaluation.feedback });
-      show({
+      notify({
         text: evaluation.all_correct
           ? "Mükemmel! Tüm doğrular seçildi."
           : evaluation.points > 0
@@ -461,7 +491,7 @@ export function useScenarioRunner({
       setPointsThisStep(evaluation.points);
       setTimeout(() => finishStep(null, evaluation.points), 2200);
     },
-    [rs, session, currentStep, decisionMultiAnswered, show, finishStep]
+    [rs, session, currentStep, decisionMultiAnswered, notify, finishStep]
   );
 
   // ----- Lab sipariş
@@ -581,6 +611,7 @@ export function useScenarioRunner({
     setSession,
     resolvedScenario: rs,
     currentStep,
+    pedagogy,
     actionsThisStep,
     scoredActionsThisStep,
     canContinue,

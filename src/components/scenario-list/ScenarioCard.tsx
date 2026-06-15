@@ -4,6 +4,7 @@ import type { Scenario } from "@/engine/types";
 import { getClinicalStatus, CLINICAL_STATUS_LABEL } from "@/engine";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
 import { SpecialtyIcon } from "@/assets/specialty-icons";
+import { Launch3DMenu } from "./Launch3DMenu";
 
 const CLINICAL_BADGE: Record<string, string> = {
   DRAFT: "text-clinical-warning border-clinical-warning/40 bg-clinical-warning/10",
@@ -138,13 +139,11 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
           >
             2D Oyna
           </Link>
-          <Link
-            to={`/hasta/${scenario.id}`}
-            className="flex-1 text-center px-3 py-2 rounded-md font-mono text-[11px] uppercase tracking-[0.08em] text-brand-light border border-brand/40 hover:bg-brand/10 transition"
-            style={{ background: theme.accentBg }}
-          >
-            3D Hasta
-          </Link>
+          <Launch3DMenu
+            scenarioId={scenario.id}
+            linkClassName="flex-1 text-center px-3 py-2 rounded-l-md font-mono text-[11px] uppercase tracking-[0.08em] text-brand-light border border-brand/40 hover:bg-brand/10 transition"
+            linkStyle={{ background: theme.accentBg }}
+          />
         </div>
       </div>
     </div>

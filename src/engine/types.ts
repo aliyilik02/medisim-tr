@@ -578,6 +578,12 @@ export interface Scenario {
   // Faz 1 — Oskültasyon bölge→ses eşlemesi. Key = PatientRegion id (regions.ts)
   auscultation?: Record<string, AuscultationOverride>;
 
+  // ÖĞRETİCİ mod (egitim/teaching) — adım açıklama metinleri. Key = step.id.
+  // Sistem o adımda doğru aksiyonu otomatik uygularken bu metni gösterir.
+  // Ses ENTEGRASYONU yok (şimdilik) — text alanı ileride TTS'e bağlanacak yapıda.
+  // ⚠️ Klinik içerik: DRAFT (narration tıbbi açıklama içerir) — review zorunlu.
+  teaching_narration?: Record<string, string>;
+
   // Klinik review durumu (opsiyonel; yoksa getClinicalStatus DRAFT döner).
   // ACTIVE'e geçişi sadece Ali Bey yapar — /klinik-review dashboard'dan.
   clinical_review?: ClinicalReview;

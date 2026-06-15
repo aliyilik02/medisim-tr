@@ -26,6 +26,17 @@ export {
   STANDARD_GRADE_THRESHOLDS,
 } from "./grading";
 export {
+  PEDAGOGY,
+  PEDAGOGY_ORDER,
+  getPedagogy,
+  type PedagogyBehavior,
+} from "./pedagogy";
+export {
+  pickTeachingAction,
+  teachingNarration,
+  type TeachingPlan,
+} from "./teaching";
+export {
   getClinicalStatus,
   isScenarioActive,
   buildReviewChecklist,

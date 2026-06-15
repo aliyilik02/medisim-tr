@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X, AlertTriangle } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
@@ -31,11 +31,20 @@ import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals } from "@/clinical/clinicalVisualMapping";
 import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
-import { getVisibleOptions } from "@/engine";
+import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
 import { cn } from "@/lib/cn";
-import type { ActionRef } from "@/engine";
+import type { ActionRef, PlayMode } from "@/engine";
+
+// ?mod= query → pedagojik mod (egitim=öğretici, klinik=uygulama, sinav=sınav).
+// Geçersiz/yoksa varsayılan "klinik" (interaktif — e2e auto-start davranışı korunur,
+// öğretici auto-play yalnız explicit ?mod=egitim ile devreye girer).
+function parsePlayMode(raw: string | null): PlayMode {
+  return raw && (PEDAGOGY_ORDER as string[]).includes(raw)
+    ? (raw as PlayMode)
+    : "klinik";
+}
 
 // ============================================================
 // ScenarioBedPlayPage — TAM senaryo motoru + supine yatak hastası
@@ -104,11 +113,20 @@ export function ScenarioBedPlayPage() {
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
 
+  // Pedagojik mod — ?mod= query'den (senaryo listesinde seçilir). Default klinik.
+  const [searchParams] = useSearchParams();
+  const playMode = parsePlayMode(searchParams.get("mod"));
+  const pedagogy = getPedagogy(playMode);
+
   // Tam döngü orkestrasyonu (aksiyon/karar/lab/fizyoloji/debrief + dahili
   // useVitalsTick ile zaman-bazlı deterioration)
-  const runner = useScenarioRunner({ scenario, autoStartMode: "egitim" });
+  const runner = useScenarioRunner({ scenario, autoStartMode: playMode });
   const { session, resolvedScenario, currentStep } = runner;
   const rs = resolvedScenario ?? scenario;
+
+  // Öğretici (teaching/egitim) mod state'i — otomatik sürücü + narration paneli.
+  const [narration, setNarration] = useState<string | null>(null);
+  const teachingHandledRef = useRef<string | null>(null);
 
   // Aksiyonu motora ilet + ekipmansa hastada göster
   const onAction = (action: ActionRef) => {
@@ -121,6 +139,7 @@ export function ScenarioBedPlayPage() {
 
   const onRestart = () => {
     setEquipment([]);
+    teachingHandledRef.current = null; // öğretici sürücü baştan anlatsın
     runner.restart();
   };
 
@@ -130,7 +149,53 @@ export function ScenarioBedPlayPage() {
     setVentOpen(false);
     setVentSettings(VENT_PRESETS.normal.settings);
     setVentPreset("normal");
+    teachingHandledRef.current = null;
   }, [scenarioId]);
+
+  // ── Öğretici (teaching/egitim) otomatik sürücü ──
+  // Yalnız pedagogy.autoPlay modunda: önce adım açıklamasını göster, sonra
+  // doğru aksiyonu sistem uygular. Handler'lar ref'ten okunur (stale-closure
+  // önleme); effect currentStep.id değişince yeniden çalışır.
+  const teachingApi = useRef({ runner, onAction, rs });
+  teachingApi.current = { runner, onAction, rs };
+  useEffect(() => {
+    if (!pedagogy.autoPlay) {
+      setNarration(null);
+      return;
+    }
+    if (!session || session.finished || !currentStep) return;
+    if (teachingHandledRef.current === currentStep.id) return;
+    teachingHandledRef.current = currentStep.id;
+
+    const step = currentStep;
+    const api = teachingApi.current;
+    const override = api.rs.teaching_narration?.[step.id];
+    setNarration(teachingNarration(step, override));
+    const plan = pickTeachingAction(step);
+
+    const READ_MS = 3200; // öğrenci açıklamayı okusun
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    timers.push(
+      setTimeout(() => {
+        const a = teachingApi.current;
+        if (plan.kind === "info") {
+          a.runner.handleInfoContinue();
+        } else if (plan.kind === "action") {
+          a.onAction(plan.action);
+          // unlocks yoksa runner kendiliğinden ilerletmez → elle devam
+          if (plan.advanceManually) {
+            timers.push(setTimeout(() => a.runner.handleActionStepContinue(), 1600));
+          }
+        } else if (plan.kind === "decision" && step.kind === "decision") {
+          const opt = step.options.find((o) => o.id === plan.optionId);
+          if (opt) a.runner.handleDecision(opt);
+        }
+        // skip: net doğru aksiyon yok — kullanıcı ilerletir (öğreticide nadir)
+      }, READ_MS)
+    );
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedagogy.autoPlay, session?.finished, currentStep?.id]);
 
   // Ventilatör uygunluğu: erişkin preset/parametreleri pediatrik hastada
   // klinik olarak GÜVENSİZ (ör. 9 kg infant'a Vt 200-500 mL = ölümcül).
@@ -179,6 +244,21 @@ export function ScenarioBedPlayPage() {
 
         {session && (
           <div className="flex items-center gap-3 font-mono text-xs shrink-0">
+            {/* Pedagojik mod rozeti (egitim/klinik/sinav) */}
+            <span
+              data-testid="pedagogy-mode"
+              title={pedagogy.description}
+              className={cn(
+                "px-2 py-0.5 rounded uppercase tracking-[0.12em] text-[10px] border",
+                playMode === "sinav"
+                  ? "text-clinical-critical border-clinical-critical/40 bg-clinical-critical/10"
+                  : playMode === "egitim"
+                  ? "text-brand-light border-brand/40 bg-brand/10"
+                  : "text-clinical-stable border-clinical-stable/40 bg-clinical-stable/10"
+              )}
+            >
+              {pedagogy.label}
+            </span>
             <span className="text-ink-400">
               Adım {stepIndex >= 0 ? stepIndex + 1 : "—"} / {rs.steps.length}
             </span>
@@ -263,6 +343,20 @@ export function ScenarioBedPlayPage() {
               <Wind className="w-3.5 h-3.5" />
               Ventilatör
             </button>
+          )}
+
+          {/* Öğretici (teaching) narration paneli — sistem doğru adımı uygularken
+              açıklar. Yalnız egitim modunda (pedagogy.narration). TTS'e hazır yapı. */}
+          {pedagogy.narration && narration && (
+            <div
+              data-testid="teaching-narration"
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[78%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-xl flex items-start gap-2.5"
+            >
+              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-brand/30 flex items-center justify-center font-mono text-[10px] text-brand-light">
+                ⊕
+              </span>
+              <p className="text-[12px] leading-relaxed text-ink-100">{narration}</p>
+            </div>
           )}
         </div>
 
