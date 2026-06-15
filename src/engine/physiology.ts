@@ -26,8 +26,11 @@ import type {
 export interface PhysiologyProviderState {
   /** Aktifleşmiş faz id'leri (adım tetiklemeli fazlar dahil) */
   activated: string[];
-  /** Müdahale ile durdurulmuş faz id'leri */
+  /** Müdahale (intervention) ile durdurulmuş faz id'leri — recovery_trends çalışır. */
   halted: string[];
+  /** Eskalasyon (halt_self) ile durdurulmuş faz id'leri — TAM durur, recovery YOK.
+      'halted' (reperfüzyon→iyileşme) ile ayrıdır: faz devri (handoff) bunu kullanır. */
+  stopped: string[];
 }
 
 export interface PhysiologyProvider {
@@ -122,6 +125,10 @@ export function createSimplePhysiologyProvider(
       .map((p) => p.id)
   );
   const halted = new Set<string>();
+  // Eskalasyon (halt_self) ile durdurulan fazlar — TAM durur (trend YOK,
+  // recovery YOK). 'halted'tan ayrı: handoff'ta önceki faz buraya girer,
+  // recovery_trends'li olsa bile iyileşmez (escalation≠reperfüzyon).
+  const stopped = new Set<string>();
   // Eskalasyon durumu: faz yaşı (aktiften beri sn) + vital-koşul tutulma süresi
   const phaseAge = new Map<string, number>();
   const heldSec = new Map<string, number>(); // key: `${phaseId}#${escIdx}`
@@ -132,6 +139,8 @@ export function createSimplePhysiologyProvider(
       let next = vitals;
       for (const phase of phases) {
         if (!activated.has(phase.id)) continue;
+        // Eskalasyonla durdurulmuş faz: hiçbir trend uygulanmaz (devredildi).
+        if (stopped.has(phase.id)) continue;
 
         if (halted.has(phase.id)) {
           // Müdahale edildi — iyileşme trendi (varsa) hedefe doğru
@@ -146,7 +155,7 @@ export function createSimplePhysiologyProvider(
 
       // Eskalasyon değerlendirmesi — aktif + durdurulmamış fazlar
       for (const phase of phases) {
-        if (!activated.has(phase.id) || halted.has(phase.id) || !phase.escalations?.length) continue;
+        if (!activated.has(phase.id) || halted.has(phase.id) || stopped.has(phase.id) || !phase.escalations?.length) continue;
         phaseAge.set(phase.id, (phaseAge.get(phase.id) ?? 0) + dtSec);
         const age = phaseAge.get(phase.id)!;
         phase.escalations.forEach((esc, i) => {
@@ -165,7 +174,9 @@ export function createSimplePhysiologyProvider(
           if (trigger && !activated.has(esc.to_phase_id)) {
             activated.add(esc.to_phase_id);
             phaseAge.set(esc.to_phase_id, 0);
-            if (esc.halt_self) halted.add(phase.id);
+            // halt_self: önceki fazı DURDUR (handoff) — 'stopped'a koy, 'halted'a
+            // DEĞİL: recovery_trends'li faz escalation'da yanlışlıkla iyileşmesin.
+            if (esc.halt_self) stopped.add(phase.id);
           }
         });
       }
@@ -200,7 +211,7 @@ export function createSimplePhysiologyProvider(
     },
 
     getState() {
-      return { activated: [...activated], halted: [...halted] };
+      return { activated: [...activated], halted: [...halted], stopped: [...stopped] };
     },
   };
 }

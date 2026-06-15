@@ -45,7 +45,7 @@ export function pickTeachingAction(step: Step): TeachingPlan {
     .filter((o) => o.correct && !o.critical)
     .sort((a, b) => b.points - a.points)[0];
   const fallback = step.options
-    .filter((o) => o.points > 0)
+    .filter((o) => o.points > 0 && !o.critical)
     .sort((a, b) => b.points - a.points)[0];
   const pick = correct ?? fallback;
   return pick

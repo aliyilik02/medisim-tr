@@ -83,7 +83,9 @@ describe("zaman tetikli eskalasyon", () => {
     expect(p.getState().activated).not.toContain("arrest");
     tickN(p, base, 2);
     expect(p.getState().activated).toContain("arrest");
-    expect(p.getState().halted).toContain("shock"); // halt_self
+    // halt_self → 'stopped' (eskalasyon devri), 'halted' (reperfüzyon) DEĞİL.
+    expect(p.getState().stopped).toContain("shock");
+    expect(p.getState().halted).not.toContain("shock");
   });
 
   test("erken müdahale (adrenalin) → eskalasyon önlenir (faz halted, yaş artmaz)", () => {

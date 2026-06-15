@@ -282,6 +282,6 @@ describe("SimplePhysiologyProvider — kötüleşme döngüsü", () => {
   test("deterioration tanımsız senaryoda no-op", () => {
     const provider = createSimplePhysiologyProvider(makeScenario([]));
     expect(provider.tick(BASE_VITALS, 60)).toEqual(BASE_VITALS);
-    expect(provider.getState()).toEqual({ activated: [], halted: [] });
+    expect(provider.getState()).toEqual({ activated: [], halted: [], stopped: [] });
   });
 });

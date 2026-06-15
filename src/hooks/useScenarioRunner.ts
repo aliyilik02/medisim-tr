@@ -117,19 +117,12 @@ export function useScenarioRunner({
   const { feedback, show, clear } = useFeedback();
 
   // Pedagojik mod davranışı (egitim=öğretici, klinik=uygulama, sinav=sınav).
+  // NOT: anlık geri bildirim bastırma FeedbackToast'ın işi (sinav'da metni gizler,
+  // puan deltasını gösterir) — burada show() koşulsuz çağrılır ki 2D quiz sinav
+  // davranışı (puan-deltası görünür) korunsun. pedagogy return'de expose edilir.
   const pedagogy = useMemo(
     () => getPedagogy(session?.mode ?? "klinik"),
     [session?.mode]
-  );
-  // Anlık geri bildirim kapısı: sınav modunda kritik dışı toast bastırılır
-  // (güvenlik-kritik kontrendikasyon uyarısı sınavda dahi gösterilir).
-  const notify = useCallback(
-    (args: { text: string; points: number; type: string }) => {
-      if (pedagogy.showFeedback || args.type === "critical") {
-        show(args as Parameters<typeof show>[0]);
-      }
-    },
-    [pedagogy, show]
   );
 
   const resolvedScenario = useMemo(
@@ -376,7 +369,7 @@ export function useScenarioRunner({
         feedbackText += ` (Farmakoloji: ${effectivePharmaPoints} — doz/kontrendikasyon)`;
       }
 
-      notify({
+      show({
         text: feedbackText,
         points: totalPoints,
         type: isCritical
@@ -419,7 +412,6 @@ export function useScenarioRunner({
       currentStep,
       provider,
       show,
-      notify,
       pointsThisStep,
       finishStep,
       examPolicy,
@@ -454,7 +446,7 @@ export function useScenarioRunner({
       if (!evaluation) return;
 
       setDecisionAnswered({ optionId: option.id, feedback: option.feedback });
-      notify({
+      show({
         text: evaluation.feedback,
         points: evaluation.points,
         type: evaluation.points > 0 ? "positive" : "negative",
@@ -462,7 +454,7 @@ export function useScenarioRunner({
       setPointsThisStep(evaluation.points);
       setTimeout(() => finishStep(null, evaluation.points), 1800);
     },
-    [rs, session, currentStep, decisionAnswered, notify, finishStep, provider]
+    [rs, session, currentStep, decisionAnswered, show, finishStep, provider]
   );
 
   const handleDecisionMulti = useCallback(
@@ -479,7 +471,7 @@ export function useScenarioRunner({
       if (!evaluation) return;
 
       setDecisionMultiAnswered({ optionIds, feedback: evaluation.feedback });
-      notify({
+      show({
         text: evaluation.all_correct
           ? "Mükemmel! Tüm doğrular seçildi."
           : evaluation.points > 0
@@ -491,7 +483,7 @@ export function useScenarioRunner({
       setPointsThisStep(evaluation.points);
       setTimeout(() => finishStep(null, evaluation.points), 2200);
     },
-    [rs, session, currentStep, decisionMultiAnswered, notify, finishStep]
+    [rs, session, currentStep, decisionMultiAnswered, show, finishStep]
   );
 
   // ----- Lab sipariş

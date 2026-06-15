@@ -73,6 +73,23 @@ describe("pickTeachingAction", () => {
     expect(pickTeachingAction(infoStep).kind).toBe("info");
   });
 
+  test("decision — kritik+pozitif puanlı seçenek asla seçilmez (correct yoksa)", () => {
+    const trap: Step = {
+      id: "s-trap",
+      title: "Tuzak",
+      prompt: "?",
+      kind: "decision",
+      options: [
+        { id: "opt_kritik", text: "Kritik ama puanlı", correct: false, points: 8, feedback: "tuzak", critical: true },
+        { id: "opt_notr", text: "Nötr", correct: false, points: 2, feedback: "düşük" },
+      ],
+    };
+    const plan = pickTeachingAction(trap);
+    // correct yok → fallback pozitif+kritik-olmayan: opt_notr (kritik asla)
+    expect(plan.kind).toBe("decision");
+    if (plan.kind === "decision") expect(plan.optionId).toBe("opt_notr");
+  });
+
   test("kritik seçenekler asla seçilmez", () => {
     const onlyCritical: Step = {
       ...actionStep,

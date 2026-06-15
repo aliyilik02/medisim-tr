@@ -54,10 +54,30 @@ describe("STEMI deterioration — tedavisiz seyir", () => {
     expect(p.getState().activated).toContain("stemi-sok");
   });
 
+  test("handoff: eskalasyonda önceki faz 'stopped' (trend toplanmaz)", () => {
+    const p = fresh();
+    run(p, { ...INIT }, 200); // 180sn sonra sok aktif, iskemi durmalı
+    const st = p.getState();
+    expect(st.stopped).toContain("stemi-iskemi"); // halt_self → stopped
+    expect(st.halted).not.toContain("stemi-iskemi"); // reperfüzyon değil
+    // Yalnız tek faz aktif-sürer → SBP düşüşü tek-faz oranında (süperpozisyon yok).
+    // 180-360 arası yalnız stemi-sok (bp -0.083/sn) çalışır.
+    const a = run(p, { bp_systolic: 120, hr: 100, bp_diastolic: 80, spo2: 95, temp: 37, rr: 20, pain: 5, glucose: 180, gcs: 15 }, 10);
+    // 10sn'de tek faz: ~-0.83 mmHg (iki faz toplansaydı ~-1.9 olurdu)
+    expect(120 - a.bp_systolic).toBeLessThan(1.2);
+  });
+
   test("uzun tedavisiz seyir SBP'yi şok eşiğinin altına çeker (<90)", () => {
     const p = fresh();
-    const after = run(p, { ...INIT }, 400);
+    // Handoff (tek-faz) deterioration daha yavaş; arrest fazına (540sn) kadar sür.
+    const after = run(p, { ...INIT }, 600);
     expect(after.bp_systolic).toBeLessThan(90);
+  });
+
+  test("arrest fazı aktif (uzun seyir)", () => {
+    const p = fresh();
+    run(p, { ...INIT }, 600);
+    expect(p.getState().activated).toContain("stemi-arrest");
   });
 });
 
@@ -93,5 +113,16 @@ describe("STEMI deterioration — reperfüzyon halt + recovery", () => {
     const p = fresh();
     p.applyIntervention(INIT, { type: "give_medication", target_id: "aspirin" });
     expect(p.getState().halted).not.toContain("stemi-iskemi");
+  });
+
+  test("ARREST fazında reperfüzyon kurtarmaz (halted_by YOK, recovery YOK)", () => {
+    const p = fresh();
+    const arrest = run(p, { ...INIT }, 600); // arrest aktif
+    expect(p.getState().activated).toContain("stemi-arrest");
+    p.applyIntervention(arrest, TNK);
+    p.applyIntervention(arrest, PCI);
+    const after = run(p, arrest, 60);
+    // Arrest terminal: reperfüzyon ile toparlamaz, SBP düşmeye devam eder/sabit kalmaz yukarı.
+    expect(after.bp_systolic).toBeLessThanOrEqual(arrest.bp_systolic);
   });
 });

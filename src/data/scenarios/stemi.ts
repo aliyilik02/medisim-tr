@@ -111,12 +111,17 @@ export const scenario_stemi: Scenario = {
   // NOT: Faz geçiş süreleri EĞİTİMSEL olarak sıkıştırılmıştır (gerçek STEMI
   //   saatler alır; simülasyonda öğrenci müdahale döngüsü için dakikalara indirildi).
   //   Bu gerçek klinik zaman tahmini DEĞİLDİR. Eğitim amaçlıdır.
-  // MOTOR NOTU: 4 faz escalation-zinciriyle kademelenir (after_sec). halt_self
-  //   KULLANILMADI — floor clamp doğal handoff yapar (faz-N kendi floor'unda
-  //   durur, faz-N+1 daha düşük floor'a sürer). recovery_trends SADECE faz-1'de:
-  //   reperfüzyon tüm fazları halt eder, faz-1'in tek-oran iyileşmesi çalışır
-  //   (çok-faz recovery toplamı önlenir). halted_by: tenecteplase (fibrinoliz) +
-  //   opt_pci_transfer (primer PCI kararı — runner decision→provider köprüsü).
+  // MOTOR NOTU: 4 faz escalation-zinciriyle kademelenir (after_sec) ve her
+  //   geçişte halt_self:true ile ÖNCEKİ faz DURUR (handoff) — yalnız en ileri
+  //   faz aktif olur, trendler TOPLANMAZ (faz oranları authored haliyle geçerli).
+  //   halt_self önceki fazı 'stopped'a koyar (physiology.ts), 'halted'a değil →
+  //   recovery_trends'li faz eskalasyonda yanlışlıkla iyileşmez.
+  //   recovery_trends faz-1/2/3'te (her birinde aynı tek-oran): reperfüzyon o an
+  //   aktif olan fazı halt eder, recovery o fazda çalışır. ARREST'te recovery YOK
+  //   ve halted_by YOK — reperfüzyon tek başına arresti çözmez (CPR/defibrilasyon
+  //   ACLS gerektirir, bu modelin dışında); arrest terminal seyreder.
+  //   halted_by: tenecteplase (fibrinoliz) + opt_pci_transfer (primer PCI kararı —
+  //   runner decision→provider köprüsü).
   // DRAFT — Ali Bey onayı + status değişikliği bekliyor.
   // ─────────────────────────────────────────────
   deterioration: [
@@ -132,15 +137,14 @@ export const scenario_stemi: Scenario = {
         { type: "give_medication", target_id: "tenecteplase" },
         { type: "decision", target_id: "opt_pci_transfer" },
       ],
-      // Reperfüzyon sonrası iyileşme — tek-oran (yalnız bu fazda; çok-faz
-      // recovery toplamını önler). Tüm vitaller hedefe doğru toparlanır.
+      // Reperfüzyon sonrası iyileşme (her aktif fazda aynı tek-oran hedef).
       recovery_trends: [
         { vital: "bp_systolic", delta_per_sec: 0.1, ceiling: 120 },
         { vital: "spo2", delta_per_sec: 0.08, ceiling: 96 },
         { vital: "hr", delta_per_sec: -0.07, floor: 75 },
         { vital: "gcs", delta_per_sec: 0.01, ceiling: 15 },
       ],
-      escalations: [{ to_phase_id: "stemi-sok", after_sec: 180 }],
+      escalations: [{ to_phase_id: "stemi-sok", after_sec: 180, halt_self: true }],
     },
     {
       id: "stemi-sok",
@@ -154,7 +158,13 @@ export const scenario_stemi: Scenario = {
         { type: "give_medication", target_id: "tenecteplase" },
         { type: "decision", target_id: "opt_pci_transfer" },
       ],
-      escalations: [{ to_phase_id: "stemi-kotulesme", after_sec: 180 }],
+      recovery_trends: [
+        { vital: "bp_systolic", delta_per_sec: 0.1, ceiling: 120 },
+        { vital: "spo2", delta_per_sec: 0.08, ceiling: 96 },
+        { vital: "hr", delta_per_sec: -0.07, floor: 75 },
+        { vital: "gcs", delta_per_sec: 0.01, ceiling: 15 },
+      ],
+      escalations: [{ to_phase_id: "stemi-kotulesme", after_sec: 180, halt_self: true }],
     },
     {
       id: "stemi-kotulesme",
@@ -169,24 +179,27 @@ export const scenario_stemi: Scenario = {
         { type: "give_medication", target_id: "tenecteplase" },
         { type: "decision", target_id: "opt_pci_transfer" },
       ],
-      escalations: [{ to_phase_id: "stemi-arrest", after_sec: 180 }],
+      recovery_trends: [
+        { vital: "bp_systolic", delta_per_sec: 0.1, ceiling: 120 },
+        { vital: "spo2", delta_per_sec: 0.08, ceiling: 96 },
+        { vital: "hr", delta_per_sec: -0.07, floor: 75 },
+        { vital: "gcs", delta_per_sec: 0.01, ceiling: 15 },
+      ],
+      escalations: [{ to_phase_id: "stemi-arrest", after_sec: 180, halt_self: true }],
     },
     {
       id: "stemi-arrest",
       label: "SCAI E — Refrakter / kardiyak arrest (VF→asistoli)",
-      // Terminal faz: reperfüzyon tek başına yetmez (CPR/defibrilasyon gerekir
-      // — bu modelin dışında). recovery_trends YOK; halted_by korunur (geç
-      // reperfüzyon kötüleşmeyi en azından durdurur).
+      // Terminal faz: halted_by YOK + recovery_trends YOK. Reperfüzyon tek başına
+      // arresti durdurmaz/çözmez — ACLS (CPR + defibrilasyon) gerekir (model dışı).
+      // Hasta arrest seyrini sürdürür → öğrenci 'arrestte ilaç/karar yetmez' öğrenir.
       trends: [
         { vital: "bp_systolic", delta_per_sec: -0.36, floor: 0 },
         { vital: "hr", delta_per_sec: -0.5, floor: 0 },
         { vital: "spo2", delta_per_sec: -0.1, floor: 60 },
         { vital: "gcs", delta_per_sec: -0.02, floor: 3 },
       ],
-      halted_by: [
-        { type: "give_medication", target_id: "tenecteplase" },
-        { type: "decision", target_id: "opt_pci_transfer" },
-      ],
+      halted_by: [],
     },
   ],
 

@@ -191,11 +191,17 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       const mats: MeshStandardMaterial[] = [];
       clone.traverse((obj) => {
         if ("isMesh" in obj && (obj as any).isMesh) {
-          const mat = (obj as any).material as MeshStandardMaterial;
+          const mesh = obj as any;
+          const mat = mesh.material as MeshStandardMaterial;
           if (mat && SKIN_MATERIAL_NAMES.includes(mat.name)) {
-            mat.color.setRGB(base[0], base[1], base[2]);
-            mat.needsUpdate = true;
-            mats.push(mat);
+            // SkeletonUtils.clone materyali REFERANSLA paylaşır (drei useGLTF
+            // global cache). Per-frame mat.color/roughness mutasyonu cache'i
+            // kalıcı bozar (başka sayfada siyanotik/terli hasta sızar) → klonla.
+            const local = mat.clone();
+            mesh.material = local;
+            local.color.setRGB(base[0], base[1], base[2]);
+            local.needsUpdate = true;
+            mats.push(local);
           }
         }
       });
