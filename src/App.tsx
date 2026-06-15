@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import {
   Routes,
   Route,
@@ -13,7 +13,11 @@ import { ScenarioPlayPage } from "@/pages/ScenarioPlayPage";
 import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
 import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
 import { ClinicalReviewPage } from "@/pages/ClinicalReviewPage";
-import { Activity } from "lucide-react";
+import { LoginPage } from "@/pages/LoginPage";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { EducationalDisclaimer } from "@/components/EducationalDisclaimer";
+import { useAuthStore } from "@/stores/authStore";
+import { Activity, LogOut } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 // ============================================================
@@ -43,6 +47,13 @@ const ScenarioBedPlayPage = lazy(() =>
 
 export function App() {
   const location = useLocation();
+  // Mount'ta mevcut cookie oturumunu doğrula (getMe). Tek sefer.
+  const checkAuth = useAuthStore((s) => s.checkAuth);
+  useEffect(() => {
+    void checkAuth();
+  }, [checkAuth]);
+
+  const isLoginPage = location.pathname.startsWith("/login");
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
   const isDialog3d = location.pathname.startsWith("/dialog-3d-demo");
@@ -54,30 +65,78 @@ export function App() {
 
   return (
     <div className="min-h-screen grid-overlay">
-      {!immersive && <Header />}
+      {!immersive && !isLoginPage && <Header />}
       <main>
         <Routes>
+          {/* Açık (public) — landing + giriş */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/senaryolar" element={<ScenarioListPage />} />
-          <Route path="/oyna/:id" element={<ScenarioPlayPage />} />
-          <Route path="/senaryo-editor" element={<ScenarioEditorPage />} />
-          <Route path="/senaryo-editor/:id" element={<ScenarioEditorPage />} />
-          <Route path="/gecmis" element={<SessionHistoryPage />} />
-          <Route path="/klinik-review" element={<ClinicalReviewPage />} />
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Korumalı (eğitmen oturumu + KVKK rıza gerekli) */}
+          <Route
+            path="/senaryolar"
+            element={
+              <ProtectedRoute>
+                <ScenarioListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/oyna/:id"
+            element={
+              <ProtectedRoute>
+                <ScenarioPlayPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/senaryo-editor"
+            element={
+              <ProtectedRoute>
+                <ScenarioEditorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/senaryo-editor/:id"
+            element={
+              <ProtectedRoute>
+                <ScenarioEditorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gecmis"
+            element={
+              <ProtectedRoute>
+                <SessionHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/klinik-review"
+            element={
+              <ProtectedRoute>
+                <ClinicalReviewPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Pahalı katman canonical akış — gerçek senaryo seansı */}
           <Route
             path="/hasta/:id"
             element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    Hasta sahnesi yükleniyor…
-                  </div>
-                }
-              >
-                <ScenarioBedPlayPage />
-              </Suspense>
+              <ProtectedRoute>
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                      Hasta sahnesi yükleniyor…
+                    </div>
+                  }
+                >
+                  <ScenarioBedPlayPage />
+                </Suspense>
+              </ProtectedRoute>
             }
           />
 
@@ -85,15 +144,17 @@ export function App() {
           <Route
             path="/dialog-3d-demo"
             element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    3D + Diyalog yükleniyor…
-                  </div>
-                }
-              >
-                <PatientDialog3DPage />
-              </Suspense>
+              <ProtectedRoute>
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                      3D + Diyalog yükleniyor…
+                    </div>
+                  }
+                >
+                  <PatientDialog3DPage />
+                </Suspense>
+              </ProtectedRoute>
             }
           />
 
@@ -101,15 +162,17 @@ export function App() {
           <Route
             path="/senaryo-yatak"
             element={
-              <Suspense
-                fallback={
-                  <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                    Yatak senaryosu yükleniyor…
-                  </div>
-                }
-              >
-                <ScenarioBedPlayPage />
-              </Suspense>
+              <ProtectedRoute>
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                      Yatak senaryosu yükleniyor…
+                    </div>
+                  }
+                >
+                  <ScenarioBedPlayPage />
+                </Suspense>
+              </ProtectedRoute>
             }
           />
 
@@ -124,7 +187,10 @@ export function App() {
           <Route path="/ventilator-demo" element={<Navigate to="/senaryolar" replace />} />
         </Routes>
       </main>
-      {!immersive && <Footer />}
+      {!immersive && !isLoginPage && <Footer />}
+      {/* Disclaimer: immersive sayfalarda footer gizli → sabit köşe rozeti.
+          Login kendi disclaimer'ını gösterir. */}
+      {immersive && <EducationalDisclaimer variant="fixed" />}
     </div>
   );
 }
@@ -184,10 +250,49 @@ function Header() {
           >
             + Senaryo
           </Link>
+          <SessionControl />
         </nav>
       </div>
     </header>
   );
+}
+
+// Oturum göstergesi + çıkış (eğitmen). Oturumsuzken "Giriş" linki.
+function SessionControl() {
+  const status = useAuthStore((s) => s.status);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  if (status === "authenticated" && user) {
+    return (
+      <div className="ml-2 flex items-center gap-2">
+        <span className="font-mono text-[10px] text-ink-500 hidden sm:inline">
+          {user.handle}
+        </span>
+        <button
+          type="button"
+          onClick={() => logout()}
+          title="Çıkış yap"
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] text-ink-400 hover:text-clinical-critical transition"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <Link
+        to="/login"
+        className="ml-2 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] text-ink-300 hover:text-ink-100 transition"
+      >
+        Giriş
+      </Link>
+    );
+  }
+
+  return null;
 }
 
 function Footer() {
