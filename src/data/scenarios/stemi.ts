@@ -102,6 +102,104 @@ export const scenario_stemi: Scenario = {
 
   ekg_pattern: "stemi",
 
+  // ─────────────────────────────────────────────
+  // STEMI deterioration — SCAI Shock Classification (A-B-C-D-E) temelli.
+  // Eşik değerleri: ESC 2023 ACS Kılavuzu + SCAI Consensus + ACLS.
+  //   - Kardiyojenik şok: SBP <90 mmHg (SHOCK/IABP-SHOCK II)
+  //   - Norepinefrin eşiği: SBP <70 mmHg
+  //   - Reperfüzyon ana kurtarıcı (kapı-iğne 30dk hedefi)
+  // NOT: Faz geçiş süreleri EĞİTİMSEL olarak sıkıştırılmıştır (gerçek STEMI
+  //   saatler alır; simülasyonda öğrenci müdahale döngüsü için dakikalara indirildi).
+  //   Bu gerçek klinik zaman tahmini DEĞİLDİR. Eğitim amaçlıdır.
+  // MOTOR NOTU: 4 faz escalation-zinciriyle kademelenir (after_sec). halt_self
+  //   KULLANILMADI — floor clamp doğal handoff yapar (faz-N kendi floor'unda
+  //   durur, faz-N+1 daha düşük floor'a sürer). recovery_trends SADECE faz-1'de:
+  //   reperfüzyon tüm fazları halt eder, faz-1'in tek-oran iyileşmesi çalışır
+  //   (çok-faz recovery toplamı önlenir). halted_by: tenecteplase (fibrinoliz) +
+  //   opt_pci_transfer (primer PCI kararı — runner decision→provider köprüsü).
+  // DRAFT — Ali Bey onayı + status değişikliği bekliyor.
+  // ─────────────────────────────────────────────
+  deterioration: [
+    {
+      id: "stemi-iskemi",
+      label: "SCAI B→C — İskemik progresyon (tedavisiz)",
+      trends: [
+        { vital: "hr", delta_per_sec: 0.083, ceiling: 115 },
+        { vital: "bp_systolic", delta_per_sec: -0.11, floor: 100 },
+        { vital: "spo2", delta_per_sec: -0.022, floor: 92 },
+      ],
+      halted_by: [
+        { type: "give_medication", target_id: "tenecteplase" },
+        { type: "decision", target_id: "opt_pci_transfer" },
+      ],
+      // Reperfüzyon sonrası iyileşme — tek-oran (yalnız bu fazda; çok-faz
+      // recovery toplamını önler). Tüm vitaller hedefe doğru toparlanır.
+      recovery_trends: [
+        { vital: "bp_systolic", delta_per_sec: 0.1, ceiling: 120 },
+        { vital: "spo2", delta_per_sec: 0.08, ceiling: 96 },
+        { vital: "hr", delta_per_sec: -0.07, floor: 75 },
+        { vital: "gcs", delta_per_sec: 0.01, ceiling: 15 },
+      ],
+      escalations: [{ to_phase_id: "stemi-sok", after_sec: 180 }],
+    },
+    {
+      id: "stemi-sok",
+      label: "SCAI C — Klasik kardiyojenik şok (SBP <90)",
+      trends: [
+        { vital: "hr", delta_per_sec: 0.056, ceiling: 125 },
+        { vital: "bp_systolic", delta_per_sec: -0.083, floor: 85 },
+        { vital: "spo2", delta_per_sec: -0.022, floor: 88 },
+      ],
+      halted_by: [
+        { type: "give_medication", target_id: "tenecteplase" },
+        { type: "decision", target_id: "opt_pci_transfer" },
+      ],
+      escalations: [{ to_phase_id: "stemi-kotulesme", after_sec: 180 }],
+    },
+    {
+      id: "stemi-kotulesme",
+      label: "SCAI D — Kötüleşen şok (norepinefrin eşiği, bilinç bulanması)",
+      trends: [
+        { vital: "hr", delta_per_sec: 0.056, ceiling: 135 },
+        { vital: "bp_systolic", delta_per_sec: -0.11, floor: 65 },
+        { vital: "spo2", delta_per_sec: -0.033, floor: 82 },
+        { vital: "gcs", delta_per_sec: -0.003, floor: 13 },
+      ],
+      halted_by: [
+        { type: "give_medication", target_id: "tenecteplase" },
+        { type: "decision", target_id: "opt_pci_transfer" },
+      ],
+      escalations: [{ to_phase_id: "stemi-arrest", after_sec: 180 }],
+    },
+    {
+      id: "stemi-arrest",
+      label: "SCAI E — Refrakter / kardiyak arrest (VF→asistoli)",
+      // Terminal faz: reperfüzyon tek başına yetmez (CPR/defibrilasyon gerekir
+      // — bu modelin dışında). recovery_trends YOK; halted_by korunur (geç
+      // reperfüzyon kötüleşmeyi en azından durdurur).
+      trends: [
+        { vital: "bp_systolic", delta_per_sec: -0.36, floor: 0 },
+        { vital: "hr", delta_per_sec: -0.5, floor: 0 },
+        { vital: "spo2", delta_per_sec: -0.1, floor: 60 },
+        { vital: "gcs", delta_per_sec: -0.02, floor: 3 },
+      ],
+      halted_by: [
+        { type: "give_medication", target_id: "tenecteplase" },
+        { type: "decision", target_id: "opt_pci_transfer" },
+      ],
+    },
+  ],
+
+  // Klinik review — deterioration DRAFT (ACTIVE'e Ali Bey geçirir).
+  clinical_review: {
+    status: "DRAFT",
+    draft_areas: ["deterioration"],
+    notes:
+      "STEMI deterioration SCAI A-E faz zinciri (15 Haz 2026). delta_per_sec/" +
+      "floor değerleri ESC 2023 + SCAI temelli, faz süreleri eğitimsel sıkıştırma. " +
+      "Klinik review + ACTIVE onayı Ali Bey'de.",
+  },
+
   lab_panels: {
     "stemi-troponin-hs": {
       id: "stemi-troponin-hs",
