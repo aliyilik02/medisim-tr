@@ -44,7 +44,9 @@ export function ScenarioCard({ scenario, delay = 0 }: Props) {
     <div
       className={cn(
         "group relative flex flex-col",
-        "bg-ink-900 border border-ink-700 rounded-lg overflow-hidden",
+        // overflow-visible: mod-seç dropdown'u (Launch3DMenu) kart dışına taşabilsin.
+        // Hover-glow overlay kendi rounded-lg'siyle zaten kırpılı → köşe bleed yok.
+        "bg-ink-900 border border-ink-700 rounded-lg overflow-visible",
         "hover:-translate-y-0.5 hover:border-opacity-80",
         "transition-all duration-200 ease-out",
         "animate-slide-up"

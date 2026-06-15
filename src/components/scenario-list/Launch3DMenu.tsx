@@ -48,8 +48,8 @@ export function Launch3DMenu({ scenarioId, linkClassName, linkStyle }: Props) {
       {open && (
         <>
           {/* Dışarı tıkla → kapat */}
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 left-0 top-full mt-1 z-20 bg-ink-900 border border-ink-700 rounded-md shadow-2xl p-1">
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 z-40 w-56 max-w-[80vw] bg-ink-900 border border-ink-600 rounded-md shadow-2xl p-1">
             <div className="px-2 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-ink-500">
               Mod seç
             </div>
