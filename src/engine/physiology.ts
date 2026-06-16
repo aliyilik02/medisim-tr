@@ -21,6 +21,7 @@ import type {
   ActionMatcher,
   VitalTrend,
   DeteriorationPhase,
+  PhaseSignal,
 } from "./types";
 
 export interface PhysiologyProviderState {
@@ -44,6 +45,12 @@ export interface PhysiologyProvider {
   notifyStepChange(stepId: string | null): void;
   /** Bu faz müdahale ile durduruldu mu? (oskültasyon resolved_sound geçişi için) */
   isPhaseHalted(phaseId: string): boolean;
+  /** Aktif dominant fazın faz-senkron sinyali (EKG paterni + kalp sesi + görsel).
+      Sinyal tanımlı (signal alanı dolu) aktif faz yoksa null → eski senaryolar
+      etkilenmez. Faz içi evrim (VF→asistoli, ekg_late_after_sec) ve reperfüzyon
+      (recovering kolu) burada çözülür. TEK faz sinyali kaynağı; EKG, ses ve görsel
+      bunu dinler (opsiyonel: Pulse provider implement etmez → null). */
+  getActivePhaseSignal?(vitals: PatientVitals): PhaseSignal | null;
   /** Test/debug görünürlüğü */
   getState(): PhysiologyProviderState;
 }
@@ -137,6 +144,14 @@ export function createSimplePhysiologyProvider(
   return {
     tick(vitals, dtSec) {
       let next = vitals;
+      // Faz yaşı: aktif & durdurulmamış tüm fazlar için tek yerden ilerlet
+      // (escalation zamanlaması + faz içi evrim VF→asistoli için). Halted faz
+      // da yaşlanır (zararsız — escalation halted'ı atlar, recovery yaşı kullanmaz).
+      for (const phase of phases) {
+        if (activated.has(phase.id) && !stopped.has(phase.id)) {
+          phaseAge.set(phase.id, (phaseAge.get(phase.id) ?? 0) + dtSec);
+        }
+      }
       for (const phase of phases) {
         if (!activated.has(phase.id)) continue;
         // Eskalasyonla durdurulmuş faz: hiçbir trend uygulanmaz (devredildi).
@@ -156,8 +171,7 @@ export function createSimplePhysiologyProvider(
       // Eskalasyon değerlendirmesi — aktif + durdurulmamış fazlar
       for (const phase of phases) {
         if (!activated.has(phase.id) || halted.has(phase.id) || stopped.has(phase.id) || !phase.escalations?.length) continue;
-        phaseAge.set(phase.id, (phaseAge.get(phase.id) ?? 0) + dtSec);
-        const age = phaseAge.get(phase.id)!;
+        const age = phaseAge.get(phase.id) ?? 0;
         phase.escalations.forEach((esc, i) => {
           let trigger = false;
           if (esc.after_sec != null && age >= esc.after_sec) trigger = true;
@@ -208,6 +222,55 @@ export function createSimplePhysiologyProvider(
 
     isPhaseHalted(phaseId) {
       return halted.has(phaseId);
+    },
+
+    getActivePhaseSignal(vitals): PhaseSignal | null {
+      // Dominant faz = sinyal tanımlı, aktif & durdurulmamış, en YÜKSEK index'li
+      // (escalation zinciri sonra gelen fazı daha ileri = daha şiddetli yapar).
+      let dominant: DeteriorationPhase | null = null;
+      let dominantIdx = -1;
+      phases.forEach((p, i) => {
+        if (!p.signal) return;
+        if (!activated.has(p.id) || stopped.has(p.id)) return;
+        if (i > dominantIdx) {
+          dominant = p;
+          dominantIdx = i;
+        }
+      });
+      if (!dominant) return null;
+      const dom: DeteriorationPhase = dominant;
+      const spec = dom.signal!;
+
+      // Müdahale ile durduruldu → reperfüzyon/iyileşme kolu: ST rezolüsyonu.
+      // Vitaller toparlandıysa sinüse döner; değilse ST elevasyonu sürer (yavaş
+      // rezolüsyon proxy'si). Kalp sesi normalleşir, dramatik görsel kalkar.
+      if (halted.has(dom.id)) {
+        const recovered =
+          (vitals.bp_systolic ?? 0) >= 115 && (vitals.hr ?? 999) <= 95;
+        return {
+          phaseId: "recovering",
+          phaseIndex: -2,
+          ekg: recovered ? "sinus" : "st_elevation",
+          heartSound: "normal",
+          visual: {},
+          recovering: true,
+        };
+      }
+
+      // Tedavisiz seyir: faz içi geç evrim (örn. VF→asistoli) faz yaşına bağlı.
+      const age = phaseAge.get(dom.id) ?? 0;
+      const late =
+        spec.ekg_late_after_sec != null && age >= spec.ekg_late_after_sec;
+      return {
+        phaseId: dom.id,
+        phaseIndex: dominantIdx,
+        ekg: late && spec.ekg_late ? spec.ekg_late : spec.ekg,
+        heartSound:
+          late && spec.heart_sound_late ? spec.heart_sound_late : spec.heart_sound,
+        visual: spec.visual ?? {},
+        recovering: false,
+        narration: spec.narration,
+      };
     },
 
     getState() {

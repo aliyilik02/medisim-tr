@@ -40,6 +40,7 @@ import {
   type Scenario,
   type Step,
   type PhysiologyProvider,
+  type PhaseSignal,
 } from "@/engine";
 import { getExtendedMedication } from "@/data/medications-extended";
 import { administerMedication } from "@/engine/pharmacology/engine";
@@ -82,6 +83,33 @@ export interface LabCountdownInfo {
   delaySec: number;
 }
 
+// Faz sinyali değişti mi? Her tick'te session.vitals yeni obje → effect koşar;
+// bu sığ kıyas yalnız anlamlı değişimde (EKG/ses/görsel/recovering) state yazar →
+// gereksiz re-render yok (monitör/ses/görsel ancak faz değişince güncellenir).
+function phaseSignalsEqual(
+  a: PhaseSignal | null,
+  b: PhaseSignal | null
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (
+    a.phaseId !== b.phaseId ||
+    a.ekg !== b.ekg ||
+    a.heartSound !== b.heartSound ||
+    a.recovering !== b.recovering
+  )
+    return false;
+  const av = a.visual;
+  const bv = b.visual;
+  return (
+    av.cyanosis_boost === bv.cyanosis_boost &&
+    av.pallor_boost === bv.pallor_boost &&
+    av.diaphoresis_boost === bv.diaphoresis_boost &&
+    av.mottled_boost === bv.mottled_boost &&
+    av.breath_stopped === bv.breath_stopped
+  );
+}
+
 export function useScenarioRunner({
   scenario,
   autoStartMode,
@@ -113,6 +141,10 @@ export function useScenarioRunner({
     useState<LabCountdownInfo | null>(null);
   // Reaktif fizyoloji sinyali — oskültasyon resolved ses geçişi bunu izler
   const [haltedPhaseIds, setHaltedPhaseIds] = useState<string[]>([]);
+  // Faz-senkron sinyal (TEK kaynak): dominant fazın EKG paterni + kalp sesi +
+  // görsel. Monitör, oskültasyon ve 3D görsel hepsi bunu okur. Her tick yeniden
+  // hesaplanır, yalnız anlamlı değişimde state'e yazılır (phaseSignalsEqual).
+  const [phaseSignal, setPhaseSignal] = useState<PhaseSignal | null>(null);
 
   const { feedback, show, clear } = useFeedback();
 
@@ -160,6 +192,19 @@ export function useScenarioRunner({
     }
   }, [provider, session?.current_step_id]);
 
+  // Faz-senkron sinyali her tick'te yeniden hesapla (session.vitals değişince).
+  // Tek kaynak: provider.getActivePhaseSignal. Eşitse state'e yazma (re-render
+  // yok). Provider yoksa (2D quiz / Pulse) veya sinyal tanımsızsa → null.
+  const liveVitalsForSignal = session?.vitals;
+  useEffect(() => {
+    if (!provider || !liveVitalsForSignal) {
+      setPhaseSignal((prev) => (prev === null ? prev : null));
+      return;
+    }
+    const next = provider.getActivePhaseSignal?.(liveVitalsForSignal) ?? null;
+    setPhaseSignal((prev) => (phaseSignalsEqual(prev, next) ? prev : next));
+  }, [provider, liveVitalsForSignal]);
+
   // ----- Lab / imaging
   const { getLabStatus, orderLab, getReadyPanel, imagingResults } =
     useLabResults({
@@ -193,6 +238,7 @@ export function useScenarioRunner({
     setDecisionMultiAnswered(null);
     setCriticalInfo(null);
     setHaltedPhaseIds([]);
+    setPhaseSignal(null);
     setOpenLabPanelId(null);
     setOpenImagingId(null);
     setLabCountdownInfo(null);
@@ -566,6 +612,7 @@ export function useScenarioRunner({
     setDecisionMultiAnswered(null);
     setCriticalInfo(null);
     setHaltedPhaseIds([]);
+    setPhaseSignal(null);
     setOpenLabPanelId(null);
     setOpenImagingId(null);
     setLabCountdownInfo(null);
@@ -612,6 +659,7 @@ export function useScenarioRunner({
     criticalInfo,
     setCriticalInfo,
     haltedPhaseIds,
+    phaseSignal,
     feedback,
     clearFeedback: clear,
     // Lab/imaging

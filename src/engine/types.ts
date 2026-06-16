@@ -386,6 +386,73 @@ export interface PhaseEscalation {
   halt_self?: boolean;
 }
 
+// ------------------------------------------------------------
+// Faz-senkron sinyal — EKG / ses / görsel TEK kaynaktan (STEMI gerçeklik paketi)
+// ------------------------------------------------------------
+// Deterioration'ın aktif fazı, monitör EKG paterni + oskültasyon kalp sesi +
+// 3D görsel dramatik katman için TEK gerçek kaynaktır. physiology.ts
+// getActivePhaseSignal() ile dışa verir; useScenarioRunner EKG+ses+görsele
+// dağıtır (kod tekrarı yok). Faz içi evrim (VF→asistoli) ve reperfüzyon
+// (recovering) burada çözülür.
+// ⚠️ KLİNİK İÇERİK: EKG/ses/görsel faz eşlemesi DRAFT — review zorunlu.
+
+/** Monitör EKG faz paterni — STEMI iskemi→aritmi→arrest evrim vokabüleri.
+    waveform-engine Rhythm + ST sapmasına adapter.ts'de eşlenir.
+    Klinik sıra (SAEM M3 + LITFL ECG Library): ST elevasyonu → VES → VT salvosu
+    → VF → asistoli. */
+export type EkgPattern =
+  | "sinus" // normal
+  | "st_elevation" // STEMI baseline: ST elevasyonlu sinüs
+  | "st_elev_pvc" // ST elevasyon + ara sıra VES (iritabl miyokard başlangıcı)
+  | "vt_salvo" // multifokal VES + R-on-T + VT salvoları (VF riski — LITFL)
+  | "vfib" // ventriküler fibrilasyon
+  | "asystole"; // asistoli (düz hat)
+
+/** Oskültasyon kalp sesi faz paterni. auscultationAudio'da .ogg'a eşlenir. */
+export type HeartSound =
+  | "normal"
+  | "tachy"
+  | "s3_gallop" // pompa yetmezliği (placeholder — ses dosyası eklenecek)
+  | "muffled" // düşük debili / şok (placeholder)
+  | "silent"; // arrest — nabız / ses yok
+
+/** 3D görsel dramatik katman — vital-tabanlı baseline'ın ÜSTÜNE eklenir (0-1). */
+export interface PhaseVisualHint {
+  cyanosis_boost?: number;
+  pallor_boost?: number;
+  diaphoresis_boost?: number;
+  mottled_boost?: number;
+  /** true → nefes animasyonu durur (arrest). */
+  breath_stopped?: boolean;
+}
+
+/** Faz başına senkron sinyal — senaryo yazarı tanımlar (klinik DRAFT). */
+export interface PhaseSignalSpec {
+  ekg: EkgPattern;
+  heart_sound: HeartSound;
+  /** Faz İÇİ geç evrim (örn. VF→asistoli): after_sec sonra ekg_late'e geçer. */
+  ekg_late?: EkgPattern;
+  heart_sound_late?: HeartSound;
+  ekg_late_after_sec?: number;
+  visual?: PhaseVisualHint;
+  /** Faz aktifleşince öğretici modda gösterilecek anlatım (klinik DRAFT). */
+  narration?: string;
+}
+
+/** physiology.getActivePhaseSignal() çıktısı — dağıtım için çözülmüş sinyal. */
+export interface PhaseSignal {
+  /** Dominant faz id, "baseline" (faz yok) veya "recovering" (reperfüzyon sonrası). */
+  phaseId: string;
+  /** deterioration[] index; -1 baseline, -2 recovering. */
+  phaseIndex: number;
+  ekg: EkgPattern;
+  heartSound: HeartSound;
+  visual: PhaseVisualHint;
+  /** Bu faz müdahale ile durduruldu mu (recovery kolu). */
+  recovering: boolean;
+  narration?: string;
+}
+
 export interface DeteriorationPhase {
   id: string;
   label?: string;
@@ -401,6 +468,10 @@ export interface DeteriorationPhase {
   /** Opsiyonel — koşul sağlanınca başka fazı aktive eden eskalasyonlar
       (zaman/vital-eşik tetikli durum geçişi). Verilmezse eski davranış. */
   escalations?: PhaseEscalation[];
+  /** Faz-senkron sinyal — EKG paterni + kalp sesi + görsel dramatik katman
+      (STEMI gerçeklik paketi). Verilmezse getActivePhaseSignal o faz için null
+      döner → eski senaryolar etkilenmez. ⚠️ KLİNİK İÇERİK: DRAFT. */
+  signal?: PhaseSignalSpec;
 }
 
 // ------------------------------------------------------------

@@ -208,7 +208,10 @@ export function PatientDialog3DPage() {
           <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.45)" }}>
             <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
               <VitalMonitorScreen
-                vitals={patientVitalsToMonitor(liveVitals, scenario.ekg_pattern)}
+                vitals={patientVitalsToMonitor(
+                  liveVitals,
+                  runner.phaseSignal?.ekg ?? scenario.ekg_pattern,
+                )}
                 patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
                 bedLabel="Yatak 1 · Acil Servis"
                 showArt={false}

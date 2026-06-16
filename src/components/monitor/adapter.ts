@@ -40,14 +40,23 @@ const RHYTHM_MAP: Record<string, Rhythm> = {
   torsades: "torsades",
   // STEMI sinüs morfolojisi + ST elevasyonu (aşağıda st ile)
   stemi: "sinus",
+  // Faz-senkron EKG paternleri (EkgPattern, physiology.getActivePhaseSignal) →
+  // monitör ritmi. ST elevasyonu ST_ELEVATION_PATTERNS ile ayrıca uygulanır.
+  st_elevation: "sinus",
+  st_elev_pvc: "pvc",
+  vt_salvo: "vt_salvo",
 };
+
+// Belirgin ST elevasyonu (~4.5mm → 0.18 normalize) gerektiren paternler.
+const ST_ELEVATION_PATTERNS = new Set(["stemi", "st_elevation", "st_elev_pvc"]);
 
 export function patientVitalsToMonitor(v: PatientVitals, ekgPattern?: string): VitalState {
   const key = (ekgPattern ?? "normal").toLowerCase();
   const rhythm = RHYTHM_MAP[key] ?? "sinus";
-  // ST sapması: STEMI → belirgin elevasyon; ölçülen st_elevation_mm varsa onu kullan.
+  // ST sapması: ST-elevasyonlu paternler → belirgin elevasyon; ölçülen
+  // st_elevation_mm varsa onu kullan (faz sinyali ST paterni dayatmadıysa).
   let st = 0;
-  if (key === "stemi") st = 0.18;
+  if (ST_ELEVATION_PATTERNS.has(key)) st = 0.18;
   else if (v.st_elevation_mm != null) st = v.st_elevation_mm * 0.04;
 
   return {

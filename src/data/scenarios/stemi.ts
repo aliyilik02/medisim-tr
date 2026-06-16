@@ -145,6 +145,15 @@ export const scenario_stemi: Scenario = {
         { vital: "gcs", delta_per_sec: 0.01, ceiling: 15 },
       ],
       escalations: [{ to_phase_id: "stemi-sok", after_sec: 180, halt_self: true }],
+      // Faz-senkron sinyal (DRAFT): iskemik baseline — V1-V4 ST elevasyonu.
+      signal: {
+        ekg: "st_elevation",
+        heart_sound: "normal",
+        visual: { diaphoresis_boost: 0.1 },
+        narration:
+          "İskemik faz: V1-V4'te ST elevasyonu sürüyor. Tedavisiz HR yükseliyor, " +
+          "kan basıncı düşmeye başlıyor — reperfüzyon (PCI/tromboliz) penceresi açık.",
+      },
     },
     {
       id: "stemi-sok",
@@ -165,6 +174,16 @@ export const scenario_stemi: Scenario = {
         { vital: "gcs", delta_per_sec: 0.01, ceiling: 15 },
       ],
       escalations: [{ to_phase_id: "stemi-kotulesme", after_sec: 180, halt_self: true }],
+      // Faz-senkron sinyal (DRAFT): kardiyojenik şok — ST elevasyonu + ara sıra VES.
+      signal: {
+        ekg: "st_elev_pvc",
+        heart_sound: "tachy",
+        visual: { diaphoresis_boost: 0.3, pallor_boost: 0.15 },
+        narration:
+          "Kardiyojenik şok (SBP <90): EKG'de ST elevasyonu sürerken ara sıra " +
+          "ventriküler erken vurular (VES) çıkıyor — iritabl miyokard. Taşikardi, " +
+          "soğuk terleme ve solgunluk belirginleşiyor.",
+      },
     },
     {
       id: "stemi-kotulesme",
@@ -186,6 +205,21 @@ export const scenario_stemi: Scenario = {
         { vital: "gcs", delta_per_sec: 0.01, ceiling: 15 },
       ],
       escalations: [{ to_phase_id: "stemi-arrest", after_sec: 180, halt_self: true }],
+      // Faz-senkron sinyal (DRAFT): kötüleşen şok — multifokal VES + VT salvoları.
+      signal: {
+        ekg: "vt_salvo",
+        heart_sound: "muffled",
+        visual: {
+          cyanosis_boost: 0.2,
+          pallor_boost: 0.25,
+          diaphoresis_boost: 0.35,
+          mottled_boost: 0.2,
+        },
+        narration:
+          "Kötüleşen şok: Multifokal VES ve kısa VT salvoları başladı (R-on-T → " +
+          "VF riski, LITFL). Bilinç bulanıyor, kalp sesleri derinden geliyor, cilt " +
+          "benekleniyor — kardiyak arrest eşiğinde.",
+      },
     },
     {
       id: "stemi-arrest",
@@ -200,6 +234,25 @@ export const scenario_stemi: Scenario = {
         { vital: "gcs", delta_per_sec: -0.02, floor: 3 },
       ],
       halted_by: [],
+      // Faz-senkron sinyal (DRAFT): kardiyak arrest — VF, ~45 sn sonra asistoliye.
+      // breath_stopped → 3D nefes animasyonu durur; silent → kalp sesi yok.
+      signal: {
+        ekg: "vfib",
+        heart_sound: "silent",
+        ekg_late: "asystole",
+        heart_sound_late: "silent",
+        ekg_late_after_sec: 45,
+        visual: {
+          cyanosis_boost: 0.6,
+          pallor_boost: 0.5,
+          mottled_boost: 0.4,
+          breath_stopped: true,
+        },
+        narration:
+          "Kardiyak arrest: Ventriküler fibrilasyon — nabız ve solunum yok. " +
+          "Tedavisiz ~45 sn sonra asistoliye (düz hat) döner. Reperfüzyon tek " +
+          "başına yetmez; ACLS (CPR + defibrilasyon) gerekir.",
+      },
     },
   ],
 
@@ -210,7 +263,9 @@ export const scenario_stemi: Scenario = {
     notes:
       "STEMI deterioration SCAI A-E faz zinciri (15 Haz 2026). delta_per_sec/" +
       "floor değerleri ESC 2023 + SCAI temelli, faz süreleri eğitimsel sıkıştırma. " +
-      "Klinik review + ACTIVE onayı Ali Bey'de.",
+      "16 Haz 2026: faz-senkron sinyal (signal) eklendi — EKG paterni (ST→VES→VT→" +
+      "VF→asistoli, SAEM/LITFL), kalp sesi ve görsel dramatik katman. EKG/ses/görsel " +
+      "faz eşlemesi DRAFT. Klinik review + ACTIVE onayı Ali Bey'de.",
   },
 
   lab_panels: {

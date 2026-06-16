@@ -28,6 +28,7 @@ export type Rhythm =
   | "torsades"
   | "pea"
   | "vtach"
+  | "vt_salvo"
   | "vfib"
   | "asystole";
 
@@ -126,6 +127,7 @@ export const RHYTHM_LABEL: Record<Rhythm, string> = {
   tachy: "Sinüs Taşikardi",
   brady: "Sinüs Bradikardi",
   vtach: "Ventriküler Taşikardi",
+  vt_salvo: "VT Salvoları (R-on-T, iritabl miyokard)",
   vfib: "Ventriküler Fibrilasyon",
   asystole: "Asistoli",
   afib: "Atriyal Fibrilasyon",
@@ -297,6 +299,16 @@ export function sampleECG(
   const N = Math.floor(beat);
   const u = beat - N;
 
+  if (rhythm === "vt_salvo") {
+    // VT salvoları: ~7 atımlık döngünün 3'ü monomorfik VT run (geniş-QRS),
+    // aralarda ST-elevasyonlu sinüs + ara sıra R-on-T VES. "İritabl miyokard"
+    // görünümü (LITFL) — sürekli VT'den (vtach) farklı: nabız korunur (perfüze).
+    const inRun = (((N % 7) + 7) % 7) >= 4;
+    if (inRun)
+      return 0.72 * Math.sin(2 * Math.PI * (u - 0.12)) + 0.12 * Math.sin(4 * Math.PI * u);
+    if (hash01(N) < 0.5) return wideComplex(u, hash01(N * 7.3) < 0.5 ? -1 : 1); // R-on-T VES
+    return pqrstWave(u, { st: stv });
+  }
   if (rhythm === "svt") {
     // dar, hızlı, düzenli; P önceki T'de gömülü, küçük T
     return pqrstWave(u, { p: false, tAmp: 0.18 });
