@@ -28,6 +28,7 @@ import { ImagingResultsModal } from "@/components/ImagingResultsModal";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
+import { phaseTransitionNarration } from "@/engine";
 import { getVisibleOptions, type ActionRef } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
@@ -75,7 +76,13 @@ export function PatientDialog3DPage() {
     currentStep,
     haltedPhaseIds,
     phaseSignal,
+    pedagogy,
   } = runner;
+
+  // Faz geçişi anlatımı (öğretici mod — bu sayfa daima egitim). Dominant fazın
+  // klinik anlatımı; deterioration ilerledikçe metin değişir (EKG/ses/görsel ile senkron).
+  const phaseNarration =
+    pedagogy.narration && phaseSignal ? phaseTransitionNarration(phaseSignal) : null;
   const rs = resolvedScenario ?? scenario;
   // Senaryo hastasının yaş/cinsiyetinden 3D model varyantını türet (CC0 MPFB seti).
   const patientVariant = useMemo(() => patientToVariant(rs.patient), [rs.patient]);
@@ -230,6 +237,20 @@ export function PatientDialog3DPage() {
               />
             </div>
           </div>
+
+          {/* ALT ORTA: Faz-senkron öğretici anlatım — deterioration ilerledikçe
+              EKG/ses/görsel ile senkron klinik metin (öğretici mod). */}
+          {phaseNarration && (
+            <div
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[80%] px-4 py-2.5 rounded-lg bg-ink-950/85 border border-clinical-warning/40 backdrop-blur-md shadow-xl"
+              data-testid="phase-narration"
+            >
+              <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-clinical-warning mb-1">
+                Klinik Seyir
+              </div>
+              <p className="text-[12px] leading-relaxed text-ink-100">{phaseNarration}</p>
+            </div>
+          )}
 
           {/* SAĞ ÜST: Kontrol kümesi (cilt tonu + solunum + speaking) */}
           <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">

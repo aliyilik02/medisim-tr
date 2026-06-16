@@ -34,6 +34,7 @@ export {
 export {
   pickTeachingAction,
   teachingNarration,
+  phaseTransitionNarration,
   type TeachingPlan,
 } from "./teaching";
 export {

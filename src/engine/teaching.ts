@@ -6,7 +6,7 @@
 // (ScenarioBedPlayPage) bu planı runner handler'larıyla zamanlayıp uygular.
 // ============================================================
 
-import type { Step, ActionRef } from "./types";
+import type { Step, ActionRef, PhaseSignal } from "./types";
 
 export type TeachingPlan =
   // advanceManually: outcome'un unlocks'u YOKSA true → sayfa elle ilerletmeli
@@ -65,4 +65,28 @@ export function teachingNarration(step: Step, override?: string): string {
   }
   if (step.kind === "info") return `${step.title}. ${step.content ?? ""}`.trim();
   return step.title;
+}
+
+/**
+ * Faz-senkron geçiş anlatımı (öğretici mod). Faz signal spec'inde authored
+ * `narration` varsa onu; yoksa EKG paternine göre jenerik şablon döner (sinyalli
+ * her senaryoda çalışır). null → anlatım yok (baseline/sinüs).
+ * ⚠️ KLİNİK İÇERİK: faz anlatımı DRAFT.
+ */
+export function phaseTransitionNarration(signal: PhaseSignal): string | null {
+  if (signal.narration && signal.narration.trim()) return signal.narration;
+  if (signal.recovering)
+    return "Reperfüzyon sonrası: EKG'de ST elevasyonu geriliyor, ritim ve hemodinami toparlanıyor.";
+  switch (signal.ekg) {
+    case "st_elev_pvc":
+      return "Hasta kötüleşiyor — EKG'de ventriküler erken vurular (VES) başladı (iritabl miyokard).";
+    case "vt_salvo":
+      return "Kritik kötüleşme — VT salvoları (R-on-T): ventriküler fibrilasyon riski yüksek.";
+    case "vfib":
+      return "Kardiyak arrest — ventriküler fibrilasyon! Nabız yok; ACLS (CPR + defibrilasyon) başlat.";
+    case "asystole":
+      return "Asistoli — düz hat. Şoklanamaz ritim; CPR + adrenalin, geri döndürülebilir nedenleri ara.";
+    default:
+      return null;
+  }
 }

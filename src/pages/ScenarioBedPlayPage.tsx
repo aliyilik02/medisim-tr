@@ -31,7 +31,7 @@ import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
 import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
-import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration } from "@/engine";
+import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
 import { cn } from "@/lib/cn";
@@ -127,6 +127,8 @@ export function ScenarioBedPlayPage() {
   // Öğretici (teaching/egitim) mod state'i — otomatik sürücü + narration paneli.
   const [narration, setNarration] = useState<string | null>(null);
   const teachingHandledRef = useRef<string | null>(null);
+  // Faz geçişi narration — son gösterilen faz sinyali anahtarı (phaseId:ekg).
+  const prevPhaseKeyRef = useRef<string | null>(null);
 
   // Aksiyonu motora ilet + ekipmansa hastada göster
   const onAction = (action: ActionRef) => {
@@ -196,6 +198,23 @@ export function ScenarioBedPlayPage() {
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedagogy.autoPlay, session?.finished, currentStep?.id]);
+
+  // ── Faz geçişi narration (öğretici mod) ──
+  // Deterioration fazı değişince (ya da VF→asistoli faz-içi evrim) öğretici
+  // modda "hasta kötüleşiyor → EKG'de VES başladı" gibi metin gösterir. İlk
+  // atama (mount) hariç — adım anlatımını ezmesin. Anahtar phaseId:ekg.
+  const phaseSignal = runner.phaseSignal;
+  useEffect(() => {
+    const key = phaseSignal ? `${phaseSignal.phaseId}:${phaseSignal.ekg}` : null;
+    const prev = prevPhaseKeyRef.current;
+    if (key !== prev) {
+      if (prev !== null && phaseSignal && pedagogy.narration) {
+        const text = phaseTransitionNarration(phaseSignal);
+        if (text) setNarration(text);
+      }
+      prevPhaseKeyRef.current = key;
+    }
+  }, [phaseSignal, pedagogy.narration]);
 
   // Ventilatör uygunluğu: erişkin preset/parametreleri pediatrik hastada
   // klinik olarak GÜVENSİZ (ör. 9 kg infant'a Vt 200-500 mL = ölümcül).
