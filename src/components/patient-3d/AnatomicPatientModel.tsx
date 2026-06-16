@@ -142,14 +142,11 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
       });
     }, [clone, skinTint, skinTone]);
 
-    // Solunum Açık/Kapalı kontrolü
-    useEffect(() => {
-      shaderRefs.current.forEach((shader) => {
-        if (shader.uniforms.uBreathAmplitude) {
-          shader.uniforms.uBreathAmplitude.value = breathing ? breathAmplitudeLocal : 0;
-        }
-      });
-    }, [breathing, breathAmplitudeLocal]);
+    // Solunum amplitüdü — ref-based useFrame lerp (anlık değil, ~1sn yumuşak).
+    // Hedef = solunum açık VE breathingRate>0 ise tam amplitüd, değilse 0.
+    // arrest → visualState.breathingRate 0 (applyPhaseVisual breath_stopped) →
+    // göğüs hareketi yumuşakça durur (faz-senkron nefes durması).
+    const breathAmpRef = useRef(breathing ? breathAmplitudeLocal : 0);
 
     // Cilt tonu yumuşak geçiş — current → target lerp (~1.5sn)
     const currentTintRef = useRef<[number, number, number]>([1, 1, 1]);
@@ -198,10 +195,18 @@ export const AnatomicPatientModel = forwardRef<Group, Props>(
     const currentJawRef = useRef(0);
 
     useFrame((state, delta) => {
-      // 1. Shader zaman ve hız güncellemeleri
+      // 1. Shader zaman + solunum hız/amplitüd. Amplitüd hedefe lerp'lenir
+      //    (breathingRate 0 → arrest nefes durması yumuşak; manuel breathing
+      //    toggle da aynı yoldan). Stale-closure yok: ref + visualStateRef.
+      const breathOn =
+        breathing && (visualStateRef.current?.breathingRate ?? rr) > 0;
+      const targetAmp = breathOn ? breathAmplitudeLocal : 0;
+      breathAmpRef.current +=
+        (targetAmp - breathAmpRef.current) * Math.min(delta / 1.0, 1.0);
       shaderRefs.current.forEach((shader) => {
         if (shader.uniforms.uTime) shader.uniforms.uTime.value = state.clock.getElapsedTime();
         if (shader.uniforms.uBreathSpeed) shader.uniforms.uBreathSpeed.value = (rr / 60) * 2 * Math.PI;
+        if (shader.uniforms.uBreathAmplitude) shader.uniforms.uBreathAmplitude.value = breathAmpRef.current;
       });
 
       // 2. Cilt tonu lerp geçişi

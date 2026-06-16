@@ -29,7 +29,7 @@ import { LabOrderCountdownModal } from "@/components/LabOrderCountdownModal";
 import { ImagingResultsModal } from "@/components/ImagingResultsModal";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
-import { mapVitalsToVisuals } from "@/clinical/clinicalVisualMapping";
+import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
 import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
 import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
@@ -215,7 +215,11 @@ export function ScenarioBedPlayPage() {
   const skinTint = vitalsToVisual(liveVitals).skinTint;
   // Sürekli klinik görsel (siyanoz/solgun/terleme/benekli) — deterioration
   // tick'i sonrası canlı vital'den. Ayrık skinTint'in üstüne biner.
-  const visualState = useMemo(() => mapVitalsToVisuals(liveVitals), [liveVitals]);
+  // Sürekli klinik görsel + faz-senkron dramatik katman (tek faz sinyali kaynağı).
+  const visualState = useMemo(
+    () => applyPhaseVisual(mapVitalsToVisuals(liveVitals), runner.phaseSignal?.visual),
+    [liveVitals, runner.phaseSignal],
+  );
 
   // Debrief
   if (session?.finished) {

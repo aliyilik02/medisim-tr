@@ -12,7 +12,7 @@
 // sonrası) hesaplanır.
 // ============================================================
 
-import type { PatientVitals } from "@/engine";
+import type { PatientVitals, PhaseVisualHint } from "@/engine";
 
 export interface VisualState {
   /** 0-1 — siyanoz (mavi-mor dudak/uç). SpO2<92 → artar. */
@@ -52,6 +52,30 @@ export function mapVitalsToVisuals(vitals: PatientVitals): VisualState {
     mottled: clamp01((90 - vitals.bp_systolic) / 30),
     breathingRate: vitals.rr,
     consciousness: clamp01(gcs / 15),
+  };
+}
+
+/**
+ * Faz-senkron dramatik katman: vital-tabanlı VisualState'in ÜSTÜNE faz görsel
+ * hint'lerini ekler (0-1 clamp). Vital mapping doğru kalır (siyanoz/solgun
+ * vital'den hesaplanır); bu katman dominant fazın dramatik yoğunluğunu bindirir
+ * (örn. şokta terleme boost, arrest'te nefes durması). Saf fonksiyon — hint
+ * yoksa base aynen döner (eski davranış). Geçiş yumuşaklığı tüketici tarafta
+ * (AnatomicPatientModel useFrame lerp ~1.2sn) sağlanır.
+ */
+export function applyPhaseVisual(
+  base: VisualState,
+  hint?: PhaseVisualHint
+): VisualState {
+  if (!hint) return base;
+  return {
+    ...base,
+    cyanosis: clamp01(base.cyanosis + (hint.cyanosis_boost ?? 0)),
+    pallor: clamp01(base.pallor + (hint.pallor_boost ?? 0)),
+    diaphoresis: clamp01(base.diaphoresis + (hint.diaphoresis_boost ?? 0)),
+    mottled: clamp01(base.mottled + (hint.mottled_boost ?? 0)),
+    // Arrest → nefes durur (breathingRate 0 → shader amplitüdü 0'a iner).
+    breathingRate: hint.breath_stopped ? 0 : base.breathingRate,
   };
 }
 

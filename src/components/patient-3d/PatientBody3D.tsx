@@ -16,6 +16,7 @@ import { AttachedEquipmentLayer } from "./procedures/AttachedEquipmentLayer";
 import type { ProcedureContext, ProcedureKind } from "./procedures/types";
 import type { PatientRegion } from "./regions";
 import type { ActionRef } from "@/engine/types";
+import type { VisualState } from "@/clinical/clinicalVisualMapping";
 import { playAuscultation, stopAuscultation } from "./auscultationAudio";
 
 interface Props {
@@ -35,6 +36,10 @@ interface Props {
   variant?: PatientVariant;
   /** Etnik ten tonu — senaryo hastasından türetilir. */
   skinTone?: SkinTone;
+  /** Sürekli klinik görsel (clinicalVisualMapping + faz dramatik katman).
+      Verilirse shader uniform'ları (cyanosis/pallor/diaphoresis/mottled +
+      faz-senkron nefes durması) sürülür — ayrık skinTint üstüne biner. */
+  visualState?: VisualState;
   className?: string;
 }
 
@@ -107,6 +112,7 @@ export function PatientBody3D({
   onProcedureComplete,
   variant = DEFAULT_PATIENT_VARIANT,
   skinTone = DEFAULT_SKIN_TONE,
+  visualState,
   className,
 }: Props) {
   const [selected, setSelected] = useState<PatientRegion | null>(null);
@@ -210,6 +216,7 @@ export function PatientBody3D({
             speaking={speaking}
             variant={variant}
             skinTone={skinTone}
+            visualState={visualState}
           />
           {regions.map((region) => (
             <RegionMarker

@@ -27,6 +27,7 @@ import { LabOrderCountdownModal } from "@/components/LabOrderCountdownModal";
 import { ImagingResultsModal } from "@/components/ImagingResultsModal";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
+import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
 import { getVisibleOptions, type ActionRef } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
@@ -87,6 +88,14 @@ export function PatientDialog3DPage() {
   const autoVisualParams = useMemo(
     () => vitalsToVisual(liveVitals),
     [liveVitals],
+  );
+
+  // Sürekli klinik görsel (cyanosis/pallor/diaphoresis/mottled) + faz dramatik
+  // katman (terleme/siyanoz boost, arrest nefes durması). Tek faz sinyali
+  // kaynağı (phaseSignal.visual) buraya biner; AnatomicPatientModel lerp'ler.
+  const visualState = useMemo(
+    () => applyPhaseVisual(mapVitalsToVisuals(liveVitals), phaseSignal?.visual),
+    [liveVitals, phaseSignal],
   );
 
   const skinTint: SkinTint = autoTint
@@ -198,6 +207,7 @@ export function PatientDialog3DPage() {
             speaking={speaking}
             variant={patientVariant}
             skinTone={patientSkinTone}
+            visualState={visualState}
             organVitals={{
               hr: liveVitals.hr,
               rr: liveVitals.rr,
