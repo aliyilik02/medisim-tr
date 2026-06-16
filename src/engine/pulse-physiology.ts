@@ -205,6 +205,15 @@ export function createPulsePhysiologyProvider(
       return fallback.isPhaseHalted(phaseId);
     },
 
+    getActivePhaseSignal(vitals) {
+      // Faz-senkron sinyal (EKG/ses/görsel) fallback faz makinesinden gelir —
+      // tick/applyIntervention zaten fallback'e delege ettiği için faz state'i
+      // (activated/halted/phaseAge) Pulse swap'inde de canlı kalır. Pulse kendi
+      // EKG paternini üretene dek bu doğru köprü (yoksa phaseSignal hep null →
+      // faz-senkron EKG/kalp sesi/3D katman/narration kaybolurdu).
+      return fallback.getActivePhaseSignal?.(vitals) ?? null;
+    },
+
     getState(): PhysiologyProviderState {
       return fallback.getState();
     },

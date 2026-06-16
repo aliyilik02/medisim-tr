@@ -108,6 +108,23 @@ describe("createPulsePhysiologyProvider — offline delege (WS yok)", () => {
     });
     expect(pulse.getState().halted).toContain("untreated-anaphylaxis");
   });
+
+  test("getActivePhaseSignal fallback faz sinyalini forward eder (Pulse swap regresyonu)", () => {
+    const stemi = getScenario("kardiyoloji-stemi-001");
+    if (!stemi) throw new Error("STEMI senaryosu bulunamadı");
+    const pulse = createPulsePhysiologyProvider(stemi);
+    const simple = createSimplePhysiologyProvider(stemi);
+    const pSig = pulse.getActivePhaseSignal!(stemi.initial_vitals);
+    const sSig = simple.getActivePhaseSignal!(stemi.initial_vitals);
+    expect(pSig).not.toBeNull();
+    expect(pSig).toEqual(sSig); // Pulse offline → fallback sinyali birebir
+    expect(pSig!.ekg).toBe("st_elevation");
+  });
+
+  test("signal'siz senaryoda getActivePhaseSignal null döner", () => {
+    const pulse = createPulsePhysiologyProvider(anaflaksi);
+    expect(pulse.getActivePhaseSignal!(anaflaksi.initial_vitals)).toBeNull();
+  });
 });
 
 describe("createPulsePhysiologyProvider — sahte WS bağlı", () => {

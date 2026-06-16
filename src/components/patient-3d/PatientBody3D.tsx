@@ -181,7 +181,14 @@ export function PatientBody3D({
       <Canvas
         data-testid="patient-3d-canvas"
         frameloop={
-          breathing || activeProcedure || speaking || attachedEquipment.length > 0
+          // visualState verilince useFrame (nefes amplitüdü lerp + cyanosis/pallor
+          // /diaphoresis/mottled lerp + arrest nefes durması) sürekli çalışmalı —
+          // aksi halde breathing=false + demand modda useFrame donar, görsel takılır.
+          breathing ||
+          activeProcedure ||
+          speaking ||
+          attachedEquipment.length > 0 ||
+          visualState
             ? "always"
             : "demand"
         }
