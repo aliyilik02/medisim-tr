@@ -8,8 +8,29 @@
 // Atıf: public/sounds/auscultation/SOUNDS-LICENSE.md
 // ============================================================
 
+import type { HeartSound } from "@/engine";
+
 let currentAudio: HTMLAudioElement | null = null;
 let stopTimer: number | null = null;
+
+// HeartSound (faz sinyali) → .ogg dosya kökü. null = ses çalma (arrest/sessiz).
+// ⚠️ PLACEHOLDER: s3_gallop ve muffled için lisanslı ses dosyası HENÜZ YOK —
+// şimdilik mevcut en yakın "alternatif" kalp sesine (heart_61bpm) düşülür.
+// Gerçek S3 gallop + muffled sesleri AYRI iş (lisanslı kaynak gerekir):
+//   → heart_s3_gallop.ogg (pompa yetmezliği) + heart_muffled.ogg (düşük debi)
+// Dosyalar eklenince bu tablodaki değerleri güncelle (kod yapısı hazır).
+const HEART_SOUND_FILE: Record<HeartSound, string | null> = {
+  normal: "heart_normal",
+  tachy: "heart_61bpm", // pragmatik: mevcut tek "alternatif hız" kalp sesi
+  s3_gallop: "heart_61bpm", // PLACEHOLDER → heart_s3_gallop.ogg eklenecek
+  muffled: "heart_61bpm", // PLACEHOLDER → heart_muffled.ogg eklenecek
+  silent: null, // arrest — nabız/ses yok
+};
+
+/** Faz kalp sesini .ogg dosya köküne çevirir. null → ses çalınmaz (sessiz). */
+export function heartSoundFile(sound: HeartSound): string | null {
+  return HEART_SOUND_FILE[sound];
+}
 
 /**
  * Oskültasyon sesini çal. Önceki ses çalıyorsa durdurulur.

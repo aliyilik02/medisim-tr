@@ -71,3 +71,16 @@ Yeni ses eklerken bu dosyaya da bir bölüm ekleyin.
 - **Solunum (lung):** wheeze, crackles, raller, ronkus, normal, stridor (eklenecek)
 - **Kalp (heart):** S1, S2, S3, S4, sistolik üfürüm, diyastolik üfürüm, normal sinus (eklenecek)
 - **Bağırsak (bowel):** hiperaktif, hipoaktif, normal (eklenecek)
+
+## Faz-senkron kalp sesi — bekleyen dosyalar (16 Haz 2026)
+
+STEMI faz-senkron sistemi `HeartSound` tipini `.ogg`'a eşler
+(`auscultationAudio.ts` → `HEART_SOUND_FILE`). Eksik sesler şimdilik mevcut
+`heart_61bpm.ogg`'a (placeholder) düşürülür — sessiz fail değil, ama klinik
+olarak doğru değil. Eklenecek (lisanslı CC BY/BY-SA kaynak, AYRI iş):
+
+- **heart_s3_gallop.ogg** — S3 gallop (pompa yetmezliği, kardiyojenik şok fazı)
+- **heart_muffled.ogg** — köreltilmiş/derinden kalp sesi (düşük debi, kötüleşen şok)
+
+Dosyalar eklendiğinde `HEART_SOUND_FILE` tablosundaki `s3_gallop`/`muffled`
+değerlerini güncelle. `silent` (arrest) bilinçli ses çalmaz.

@@ -73,6 +73,7 @@ export function PatientDialog3DPage() {
     resolvedScenario,
     currentStep,
     haltedPhaseIds,
+    phaseSignal,
   } = runner;
   const rs = resolvedScenario ?? scenario;
   // Senaryo hastasının yaş/cinsiyetinden 3D model varyantını türet (CC0 MPFB seti).
@@ -99,9 +100,10 @@ export function PatientDialog3DPage() {
   }, [scenarioId]);
 
   // Oskültasyon: senaryo bölge→ses eşlemesi + faz durumuna göre resolved geçiş
+  // + faz-senkron kalp sesi (kardiyak noktalar dominant fazın sesini çalar).
   const regions = useMemo(
-    () => buildScenarioRegions(DEFAULT_REGIONS, rs, haltedPhaseIds),
-    [rs, haltedPhaseIds],
+    () => buildScenarioRegions(DEFAULT_REGIONS, rs, haltedPhaseIds, phaseSignal),
+    [rs, haltedPhaseIds, phaseSignal],
   );
 
   // 3D prosedür (stetoskop, oksijen maskesi…) → motor aksiyonu

@@ -9,36 +9,59 @@
 // PatientBody3D değişmeden çalışır — ses id'si region prop'undan akar.
 // ============================================================
 
-import type { Scenario } from "@/engine";
+import type { Scenario, PhaseSignal } from "@/engine";
 import type { PatientRegion } from "./regions";
+import { heartSoundFile } from "./auscultationAudio";
+
+// Kardiyak oskültasyon noktaları (Erb / Mitral / Aortik) — faz-senkron kalp
+// sesi bunlara uygulanır (senaryo override'ı yoksa).
+const CARDIAC_REGION_IDS = new Set(["chest-front", "chest-left", "chest-right"]);
+
+/** Ses atanan bölgede stetoskop prosedürü mutlaka açık olsun. */
+function ensureStethoscope(region: PatientRegion): PatientRegion["availableProcedures"] {
+  return region.availableProcedures?.includes("stethoscope")
+    ? region.availableProcedures
+    : [...(region.availableProcedures ?? []), "stethoscope"];
+}
 
 export function buildScenarioRegions(
   baseRegions: PatientRegion[],
   scenario: Scenario | undefined,
-  haltedPhaseIds: string[]
+  haltedPhaseIds: string[],
+  phaseSignal?: PhaseSignal | null
 ): PatientRegion[] {
   const overrides = scenario?.auscultation;
-  if (!overrides) return baseRegions;
+  // Faz-senkron kalp sesi: dominant fazın heartSound'u (silent → null = ses yok).
+  const phaseHeart = phaseSignal ? heartSoundFile(phaseSignal.heartSound) : undefined;
+
+  // Hiçbir kaynak yoksa (override yok + faz sinyali yok) — eski davranış.
+  if (!overrides && !phaseSignal) return baseRegions;
 
   const haltedSet = new Set(haltedPhaseIds);
 
   return baseRegions.map((region) => {
-    const o = overrides[region.id];
-    if (!o) return region;
-
-    const resolved =
-      o.phase_id !== undefined && haltedSet.has(o.phase_id);
-    const soundId =
-      resolved && o.resolved_sound_id ? o.resolved_sound_id : o.sound_id;
-
-    return {
-      ...region,
-      auscultationSoundId: soundId,
-      placeholderNote: o.note ?? region.placeholderNote,
-      // Ses atanan bölgede stetoskop prosedürü mutlaka açık olsun
-      availableProcedures: region.availableProcedures?.includes("stethoscope")
-        ? region.availableProcedures
-        : [...(region.availableProcedures ?? []), "stethoscope"],
-    };
+    const o = overrides?.[region.id];
+    // 1) Senaryo authored override'ı (halted→resolved) — öncelikli.
+    if (o) {
+      const resolved = o.phase_id !== undefined && haltedSet.has(o.phase_id);
+      const soundId =
+        resolved && o.resolved_sound_id ? o.resolved_sound_id : o.sound_id;
+      return {
+        ...region,
+        auscultationSoundId: soundId,
+        placeholderNote: o.note ?? region.placeholderNote,
+        availableProcedures: ensureStethoscope(region),
+      };
+    }
+    // 2) Faz-senkron kalp sesi (kardiyak noktalar) — override yoksa.
+    //    silent (phaseHeart === null) → auscultationSoundId undefined (ses yok).
+    if (phaseSignal && CARDIAC_REGION_IDS.has(region.id)) {
+      return {
+        ...region,
+        auscultationSoundId: phaseHeart ?? undefined,
+        availableProcedures: ensureStethoscope(region),
+      };
+    }
+    return region;
   });
 }
