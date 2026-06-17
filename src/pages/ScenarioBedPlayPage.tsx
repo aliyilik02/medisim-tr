@@ -11,6 +11,9 @@ import type { EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
 import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
 import { patientVitalsToMonitor } from "@/components/monitor/adapter";
 import { VentilatorScreen } from "@/components/ventilator/VentilatorScreen";
+import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
+import { buildScenarioRegions } from "@/components/patient-3d/scenarioRegions";
+import { AuscultationOverlay } from "@/components/patient-3d/AuscultationOverlay";
 import {
   VENT_PRESETS,
   VENT_PARAM,
@@ -240,6 +243,21 @@ export function ScenarioBedPlayPage() {
     [liveVitals, runner.phaseSignal],
   );
 
+  // Oskültasyon — faz-senkron kalp/akciğer sesi yatak-başına taşındı (Yol-3'ten).
+  // buildScenarioRegions dominant fazın kalp sesini kardiyak noktalara yazar
+  // (silent fazda undefined = ses yok). Senaryo authored override öncelikli.
+  // STEMI gerçeklik paketinin ses ayağı (commit 37bcbe5) — klinik mantık değişmez.
+  const auscultationRegions = useMemo(
+    () =>
+      buildScenarioRegions(
+        DEFAULT_REGIONS,
+        rs,
+        runner.haltedPhaseIds,
+        runner.phaseSignal,
+      ),
+    [rs, runner.haltedPhaseIds, runner.phaseSignal],
+  );
+
   // Debrief
   if (session?.finished) {
     return <DebriefScreen scenario={rs} session={session} onRestart={onRestart} />;
@@ -357,6 +375,12 @@ export function ScenarioBedPlayPage() {
               Hasta konuşuyor
             </div>
           )}
+          {/* Oskültasyon noktaları — faz-senkron kalp/akciğer sesi (Yol-3'ten
+              taşındı). Sol kenar, başucu monitörünün altı. */}
+          <AuscultationOverlay
+            regions={auscultationRegions}
+            className="absolute top-1/2 -translate-y-1/2 left-3"
+          />
           {/* Ventilatör erişim butonu — 3D cihaz tıklamasının DOM eşdeğeri
               (erişilebilirlik + e2e). Pediatrik senaryoda gizli (ventEligible). */}
           {ventEligible && (
