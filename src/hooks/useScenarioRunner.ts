@@ -247,6 +247,12 @@ export function useScenarioRunner({
   const currentStep: Step | null =
     rs && session ? getCurrentStep(rs, session) : null;
 
+  // Öğretici (egitim) modunda otomatik adım geçişi YOK — öğrenci "Sonraki
+  // Adıma Geç" ile kendi temposunda ilerletir. unlock'lu aksiyonun hedef adımı
+  // burada bekletilir ki manuel devam onu kullansın (linear pickNextStep'e
+  // düşüp dinamik unlock kaybolmasın). Klinik/sınav modunda eski otomatik akış.
+  const pendingUnlockRef = useRef<string | null>(null);
+
   // ----- Adım sonlandırma
   const finishStep = useCallback(
     (unlockId: string | null, overridePoints?: number) => {
@@ -283,6 +289,7 @@ export function useScenarioRunner({
       setCriticalErrorsThisStep(0);
       setDecisionAnswered(null);
       setDecisionMultiAnswered(null);
+      pendingUnlockRef.current = null;
     },
     [currentStep, rs, pointsThisStep, actionsThisStep, criticalErrorsThisStep]
   );
@@ -448,8 +455,13 @@ export function useScenarioRunner({
       if (pharmaCritical) setCriticalInfo(pharmaCritical);
 
       if (evaluation.unlocks.length > 0 && !pharmaCritical) {
-        const stepTotalPts = pointsThisStep + totalPoints;
-        setTimeout(() => finishStep(evaluation.unlocks[0], stepTotalPts), 1200);
+        if (session.mode === "egitim") {
+          // Öğretici: otomatik geçme — hedef adımı beklet, öğrenci ilerletsin.
+          pendingUnlockRef.current = evaluation.unlocks[0];
+        } else {
+          const stepTotalPts = pointsThisStep + totalPoints;
+          setTimeout(() => finishStep(evaluation.unlocks[0], stepTotalPts), 1200);
+        }
       }
     },
     [
@@ -498,7 +510,10 @@ export function useScenarioRunner({
         type: evaluation.points > 0 ? "positive" : "negative",
       });
       setPointsThisStep(evaluation.points);
-      setTimeout(() => finishStep(null, evaluation.points), 1800);
+      // Öğretici modda otomatik geçme — öğrenci "Sonraki Adıma Geç" ile ilerler.
+      if (session.mode !== "egitim") {
+        setTimeout(() => finishStep(null, evaluation.points), 1800);
+      }
     },
     [rs, session, currentStep, decisionAnswered, show, finishStep, provider]
   );
@@ -527,7 +542,9 @@ export function useScenarioRunner({
         type: evaluation.points > 0 ? "positive" : "negative",
       });
       setPointsThisStep(evaluation.points);
-      setTimeout(() => finishStep(null, evaluation.points), 2200);
+      if (session.mode !== "egitim") {
+        setTimeout(() => finishStep(null, evaluation.points), 2200);
+      }
     },
     [rs, session, currentStep, decisionMultiAnswered, show, finishStep]
   );
@@ -597,10 +614,14 @@ export function useScenarioRunner({
   }, [rs, currentStep, pointsThisStep, actionsThisStep, criticalErrorsThisStep]);
 
   const handleInfoContinue = useCallback(() => finishStep(null), [finishStep]);
-  const handleActionStepContinue = useCallback(
-    () => finishStep(null),
-    [finishStep]
-  );
+  // Manuel "Sonraki Adıma Geç" — action + (öğretici modda) decision için ortak.
+  // Bekletilen unlock varsa onu kullan (öğretici: unlock'lu aksiyon otomatik
+  // geçmemişti); yoksa linear akış (finishStep(null) → pickNextStep).
+  const handleActionStepContinue = useCallback(() => {
+    const unlock = pendingUnlockRef.current;
+    pendingUnlockRef.current = null;
+    finishStep(unlock);
+  }, [finishStep]);
 
   // Tüm adım/oturum yan-state'ini sıfırla — start/restart ortak yardımcısı.
   const resetStepState = useCallback(() => {
@@ -639,10 +660,15 @@ export function useScenarioRunner({
     resetStepState();
   }, [scenario, autoStartMode, resetStepState]);
 
+  // Action: min_actions karşılanınca. Öğretici (egitim) modda DECISION de manuel
+  // ilerler (otomatik setTimeout kaldırıldı) → cevap verilince "devam" çıkar.
   const canContinue =
-    currentStep?.kind === "action" &&
-    (!currentStep.min_actions ||
-      scoredActionsThisStep >= currentStep.min_actions);
+    (currentStep?.kind === "action" &&
+      (!currentStep.min_actions ||
+        scoredActionsThisStep >= currentStep.min_actions)) ||
+    (session?.mode === "egitim" &&
+      currentStep?.kind === "decision" &&
+      (decisionAnswered !== null || decisionMultiAnswered !== null));
 
   return {
     // State

@@ -48,25 +48,80 @@ const infoStep: Step = {
 };
 
 describe("pickTeachingAction", () => {
-  test("action — en yüksek pozitif, kritik olmayan outcome (unlock var → otomatik ilerleme)", () => {
+  test("action — TÜM pozitif kritik-olmayan outcome'lar (puan-azalan), kritik dışlanır", () => {
     const plan = pickTeachingAction(actionStep);
-    expect(plan.kind).toBe("action");
-    if (plan.kind === "action") {
-      expect(plan.action.target_id).toBe("aspirin");
-      expect(plan.advanceManually).toBe(false); // unlocks var
+    expect(plan.kind).toBe("actions");
+    if (plan.kind === "actions") {
+      // aspirin(10) + morfin(5) uygulanır; "yanlis" (critical) dışlanır.
+      expect(plan.actions.map((a) => a.target_id)).toEqual(["aspirin", "morfin"]);
     }
   });
 
-  test("action — unlock yoksa advanceManually true", () => {
+  test("action — tek outcome → tek elemanlı actions", () => {
     const plan = pickTeachingAction(actionStepNoUnlock);
-    expect(plan.kind).toBe("action");
-    if (plan.kind === "action") expect(plan.advanceManually).toBe(true);
+    expect(plan.kind).toBe("actions");
+    if (plan.kind === "actions") expect(plan.actions).toHaveLength(1);
   });
 
-  test("decision — correct, kritik olmayan en yüksek puanlı", () => {
+  test("BUG FIX: çoklu doğru aksiyon adımında HEPSİ uygulanır (puan kaybı yok)", () => {
+    const multi: Step = {
+      id: "s-multi",
+      title: "STEMI ilk tedavi",
+      prompt: "?",
+      kind: "action",
+      expected_outcomes: [
+        { action: { type: "give_medication", target_id: "aspirin" }, points: 20, feedback: "ASA" },
+        { action: { type: "give_medication", target_id: "tikagrelor" }, points: 20, feedback: "P2Y12" },
+        { action: { type: "give_medication", target_id: "heparin" }, points: 15, feedback: "antikoagülan" },
+      ],
+    };
+    const plan = pickTeachingAction(multi);
+    expect(plan.kind).toBe("actions");
+    if (plan.kind === "actions") expect(plan.actions).toHaveLength(3);
+  });
+
+  test("difficulty filtresi — S4+ outcome diff 3'te seçilmez", () => {
+    const diffStep: Step = {
+      id: "s-diff",
+      title: "Zorluk",
+      prompt: "?",
+      kind: "action",
+      expected_outcomes: [
+        { action: { type: "give_medication", target_id: "temel" }, points: 10, feedback: "her seviye" },
+        { action: { type: "give_medication", target_id: "ileri" }, points: 30, feedback: "S4+", min_difficulty: 4 },
+      ],
+    };
+    const plan = pickTeachingAction(diffStep, 3);
+    expect(plan.kind).toBe("actions");
+    if (plan.kind === "actions") {
+      expect(plan.actions.map((a) => a.target_id)).toEqual(["temel"]);
+    }
+  });
+
+  test("decision (tekli) — correct, kritik olmayan en yüksek puanlı", () => {
     const plan = pickTeachingAction(decisionStep);
     expect(plan.kind).toBe("decision");
     if (plan.kind === "decision") expect(plan.optionId).toBe("opt_pci");
+  });
+
+  test("decision_multi — allow_multiple adımda TÜM doğru seçenekler", () => {
+    const multiDecision: Step = {
+      id: "s-multidec",
+      title: "Ek derivasyon",
+      prompt: "?",
+      kind: "decision",
+      allow_multiple: true,
+      options: [
+        { id: "opt_v4r", text: "V4R", correct: true, points: 15, feedback: "sağ V" },
+        { id: "opt_v7v9", text: "V7-V9", correct: true, points: 12, feedback: "posterior" },
+        { id: "opt_hic", text: "Gereksiz", correct: false, points: -8, feedback: "hayır" },
+      ],
+    };
+    const plan = pickTeachingAction(multiDecision);
+    expect(plan.kind).toBe("decision_multi");
+    if (plan.kind === "decision_multi") {
+      expect(plan.optionIds.sort()).toEqual(["opt_v4r", "opt_v7v9"]);
+    }
   });
 
   test("info → kind info", () => {
@@ -85,12 +140,11 @@ describe("pickTeachingAction", () => {
       ],
     };
     const plan = pickTeachingAction(trap);
-    // correct yok → fallback pozitif+kritik-olmayan: opt_notr (kritik asla)
     expect(plan.kind).toBe("decision");
     if (plan.kind === "decision") expect(plan.optionId).toBe("opt_notr");
   });
 
-  test("kritik seçenekler asla seçilmez", () => {
+  test("kritik aksiyonlar asla seçilmez → skip", () => {
     const onlyCritical: Step = {
       ...actionStep,
       expected_outcomes: [

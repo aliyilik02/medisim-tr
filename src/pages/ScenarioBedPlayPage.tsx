@@ -176,28 +176,39 @@ export function ScenarioBedPlayPage() {
     const api = teachingApi.current;
     const override = api.rs.teaching_narration?.[step.id];
     setNarration(teachingNarration(step, override));
-    const plan = pickTeachingAction(step);
+    // Zorluğu geç → S4+ outcome'lar seçilip motorda eşleşmeyip ceza yememeli.
+    const plan = pickTeachingAction(step, session.selected_difficulty);
 
-    const READ_MS = 3200; // öğrenci açıklamayı okusun
+    const READ_MS = 2800; // öğrenci açıklamayı okusun
+    const ACTION_GAP_MS = 1400; // aksiyonlar arası (her biri görünür)
     const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(
-      setTimeout(() => {
-        const a = teachingApi.current;
-        if (plan.kind === "info") {
-          a.runner.handleInfoContinue();
-        } else if (plan.kind === "action") {
-          a.onAction(plan.action);
-          // unlocks yoksa runner kendiliğinden ilerletmez → elle devam
-          if (plan.advanceManually) {
-            timers.push(setTimeout(() => a.runner.handleActionStepContinue(), 1600));
-          }
-        } else if (plan.kind === "decision" && step.kind === "decision") {
+
+    // ÖĞRETİCİ AKIŞI: sistem doğru aksiyon(lar)ı GÖSTERİR ama adımı OTOMATİK
+    // İLERLETMEZ — öğrenci "Sonraki Adıma Geç" ile kendi temposunda devam eder
+    // (Ali Bey: çok hızlıydı). Puanlama: action adımında doğru olan TÜM
+    // aksiyonlar sırayla uygulanır (eski tekil seçim puanın çoğunu kaybediyordu).
+    if (plan.kind === "actions") {
+      plan.actions.forEach((action, i) => {
+        timers.push(
+          setTimeout(() => teachingApi.current.onAction(action), READ_MS + i * ACTION_GAP_MS),
+        );
+      });
+    } else if (plan.kind === "decision" && step.kind === "decision") {
+      timers.push(
+        setTimeout(() => {
           const opt = step.options.find((o) => o.id === plan.optionId);
-          if (opt) a.runner.handleDecision(opt);
-        }
-        // skip: net doğru aksiyon yok — kullanıcı ilerletir (öğreticide nadir)
-      }, READ_MS)
-    );
+          if (opt) teachingApi.current.runner.handleDecision(opt);
+        }, READ_MS),
+      );
+    } else if (plan.kind === "decision_multi" && step.kind === "decision") {
+      timers.push(
+        setTimeout(
+          () => teachingApi.current.runner.handleDecisionMulti(plan.optionIds),
+          READ_MS,
+        ),
+      );
+    }
+    // info / skip: sadece anlatım gösterilir; öğrenci "Devam" ile ilerletir.
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedagogy.autoPlay, session?.finished, currentStep?.id]);

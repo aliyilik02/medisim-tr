@@ -6,45 +6,78 @@
 // (ScenarioBedPlayPage) bu planı runner handler'larıyla zamanlayıp uygular.
 // ============================================================
 
-import type { Step, ActionRef, PhaseSignal } from "./types";
+import type { Step, ActionRef, PhaseSignal, Difficulty } from "./types";
+import { isVisibleAtDifficulty } from "./engine";
 
 export type TeachingPlan =
-  // advanceManually: outcome'un unlocks'u YOKSA true → sayfa elle ilerletmeli
-  // (unlocks varsa runner finishStep'i otomatik tetikler, çift-ilerleme olmasın).
-  | { kind: "action"; action: ActionRef; feedback: string; advanceManually: boolean }
+  // ÇOĞUL: adımda doğru olan TÜM aksiyonlar uygulanır (puan-azalan sıralı).
+  // Eski tekil "action" planı bir action adımının yalnız EN YÜKSEK puanlı
+  // outcome'unu uyguluyordu → çoklu-doğru adımlarda (STEMI s1/s3/s6) puanın
+  // çoğu kaybolurdu. Artık hepsi uygulanır.
+  | { kind: "actions"; actions: ActionRef[]; feedback: string }
   | { kind: "decision"; optionId: string; feedback: string }
+  // decision_multi: allow_multiple adımda TÜM doğru seçenekler işaretlenir.
+  | { kind: "decision_multi"; optionIds: string[]; feedback: string }
   | { kind: "info" }
   | { kind: "skip" }; // net doğru aksiyon yok — sadece anlat/bekle
 
 /**
- * Adımın "doğru" otomatik aksiyonunu seç:
- *   - action: en yüksek pozitif puanlı, kritik OLMAYAN beklenen outcome.
- *   - decision: correct=true (kritik değil) en yüksek puanlı; yoksa pozitif puanlı.
+ * Adımın "doğru" otomatik aksiyon(lar)ını seç:
+ *   - action: zorluğa görünür, pozitif puanlı, kritik OLMAYAN TÜM outcome'lar
+ *     (puan-azalan). Çoklu-doğru adımda hepsi uygulanır → tam puan.
+ *   - decision (allow_multiple): correct=true (kritik değil) TÜM seçenekler.
+ *   - decision (tekli): correct=true en yüksek puanlı; yoksa pozitif puanlı.
  *   - info: ilerle.
  *   - aksi: skip (net doğru yok — sayfa sadece anlatır/bekler).
+ *
+ * difficulty: outcome/option'lar zorluğa göre filtrelenir (verilmezse 3).
+ * Aksi halde S4+ bir outcome seçilip motorda eşleşmez → yanlış ceza (-5).
  */
-export function pickTeachingAction(step: Step): TeachingPlan {
+export function pickTeachingAction(step: Step, difficulty?: Difficulty): TeachingPlan {
+  const diff: Difficulty = difficulty ?? 3;
   if (step.kind === "info") return { kind: "info" };
 
   if (step.kind === "action") {
-    const best = step.expected_outcomes
-      .filter((o) => o.points > 0 && !o.critical)
-      .sort((a, b) => b.points - a.points)[0];
-    return best
+    const good = step.expected_outcomes
+      .filter(
+        (o) =>
+          o.points > 0 &&
+          !o.critical &&
+          isVisibleAtDifficulty(o.min_difficulty, o.max_difficulty, diff)
+      )
+      .sort((a, b) => b.points - a.points);
+    return good.length
+      ? { kind: "actions", actions: good.map((o) => o.action), feedback: good[0].feedback }
+      : { kind: "skip" };
+  }
+
+  // decision — çoklu (allow_multiple): tüm doğru (kritik değil) seçenekler
+  if (step.allow_multiple) {
+    const correctIds = step.options
+      .filter(
+        (o) =>
+          o.correct &&
+          !o.critical &&
+          isVisibleAtDifficulty(o.min_difficulty, o.max_difficulty, diff)
+      )
+      .map((o) => o.id);
+    return correctIds.length
       ? {
-          kind: "action",
-          action: best.action,
-          feedback: best.feedback,
-          advanceManually: !best.unlocks?.length,
+          kind: "decision_multi",
+          optionIds: correctIds,
+          feedback: "Tüm doğru seçenekler işaretlendi.",
         }
       : { kind: "skip" };
   }
 
-  // decision
-  const correct = step.options
+  // decision — tekli
+  const visible = step.options.filter((o) =>
+    isVisibleAtDifficulty(o.min_difficulty, o.max_difficulty, diff)
+  );
+  const correct = visible
     .filter((o) => o.correct && !o.critical)
     .sort((a, b) => b.points - a.points)[0];
-  const fallback = step.options
+  const fallback = visible
     .filter((o) => o.points > 0 && !o.critical)
     .sort((a, b) => b.points - a.points)[0];
   const pick = correct ?? fallback;
@@ -60,7 +93,7 @@ export function pickTeachingAction(step: Step): TeachingPlan {
 export function teachingNarration(step: Step, override?: string): string {
   if (override && override.trim()) return override;
   const plan = pickTeachingAction(step);
-  if (plan.kind === "action" || plan.kind === "decision") {
+  if (plan.kind === "actions" || plan.kind === "decision" || plan.kind === "decision_multi") {
     return `${step.title} — Doğru adım uygulanıyor: ${plan.feedback}`;
   }
   if (step.kind === "info") return `${step.title}. ${step.content ?? ""}`.trim();

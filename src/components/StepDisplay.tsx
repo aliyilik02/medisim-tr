@@ -127,6 +127,21 @@ export function StepDisplay({
         />
       )}
 
+      {/* Karar sonrası manuel ilerleme — öğretici modda otomatik geçiş YOK
+          (öğrenci kendi temposunda ilerler). canContinue yalnız egitim modda
+          + cevap verilince true gelir (useScenarioRunner). */}
+      {step.kind === "decision" &&
+        canContinue &&
+        (decisionAnswered || decisionMultiAnswered) && (
+          <button
+            onClick={onActionStepContinue}
+            className="btn-primary w-full justify-center mt-4"
+          >
+            Sonraki Adıma Geç
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+
       {/* Görsel ek */}
       {step.kind === "decision" && step.display && (
         <div className="panel-inset p-4 flex items-center gap-3 mt-4">
