@@ -15,10 +15,13 @@ import type { UserPublic, SignupParams } from "@/api/auth";
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 // E2E seam: Playwright'ta backend yok → auth gate tüm route'ları /login'e
-// yönlendirip uygulamayı test edilemez kılar. VITE_E2E=1 (yalnız playwright
-// webServer'ında set) ile mock eğitmen oturumu açılır. Production build'de
-// VITE_E2E tanımsız → gerçek auth akışı (güvenlik etkilenmez).
-const E2E_BYPASS = import.meta.env.VITE_E2E === "1";
+// yönlendirip uygulamayı test edilemez kılar. VITE_E2E=1 (playwright webServer
+// veya dev login-bypass .env.local) ile mock eğitmen oturumu açılır. Production
+// build'de VITE_E2E tanımsız → gerçek auth akışı (güvenlik etkilenmez).
+// MODE !== "test": vitest unit testleri GERÇEK auth akışını test eder — env'e
+// sızan VITE_E2E bypass'ı testte devre dışı (yalnız tarayıcı dev/e2e'de aktif).
+const E2E_BYPASS =
+  import.meta.env.VITE_E2E === "1" && import.meta.env.MODE !== "test";
 const E2E_USER: UserPublic = {
   id: "e2e-instructor",
   role: "instructor",
