@@ -24,18 +24,12 @@ import { cn } from "@/lib/cn";
 // Dikey dilim (stratejik değerlendirme ① / sorun #3 — demo fragmentasyon):
 // Pahalı katman tek canonical akış → /hasta/:id (ScenarioBedPlayPage,
 // param-aware). Saf özellik-vitrini demoları (/3d-demo, /dialog-demo,
-// /faz2-demo, /animasyon-demo, /monitor-demo, /ventilator-demo) artık
-// /senaryolar'a yönlenir — parçalar dikey dilim içinde birleşti. Fonksiyonel
-// akışlar korunur: /dialog-3d-demo (ayakta + diyalog, e2e'li),
-// /senaryo-yatak (paramsız dev gezinti — aynı ScenarioBedPlayPage).
+// /faz2-demo, /animasyon-demo, /monitor-demo, /ventilator-demo, /dialog-3d-demo)
+// artık /senaryolar'a yönlenir — parçalar dikey dilim içinde birleşti.
+// Yol-3 (PatientDialog3DPage, ayakta + diyalog) emekliye ayrıldı: oskültasyon
+// ses ayağı yatak-başına taşındıktan sonra (AuscultationOverlay) silindi —
+// tek canonical akış /hasta/:id + /senaryo-yatak (dev gezinti).
 // ============================================================
-
-// Sprint B.2 entegrasyon — 3D model + AI diyalog yan yana (ayakta hasta).
-const PatientDialog3DPage = lazy(() =>
-  import("@/pages/PatientDialog3DPage").then((m) => ({
-    default: m.PatientDialog3DPage,
-  }))
-);
 
 // Pahalı katman canonical: tam senaryo motoru + supine yatak hastası +
 // köşe monitör + diyalog + (Faz B) 3D ventilatör cihazı.
@@ -56,12 +50,10 @@ export function App() {
   const isLoginPage = location.pathname.startsWith("/login");
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
-  const isDialog3d = location.pathname.startsWith("/dialog-3d-demo");
   const isBedPlay = location.pathname.startsWith("/senaryo-yatak");
   const isHasta = location.pathname.startsWith("/hasta/");
   // Tam-ekran immersive sayfalarda site Header/Footer gizlenir.
-  const immersive =
-    isPlayPage || isEditorPage || isDialog3d || isBedPlay || isHasta;
+  const immersive = isPlayPage || isEditorPage || isBedPlay || isHasta;
 
   return (
     <div className="min-h-screen grid-overlay">
@@ -140,24 +132,6 @@ export function App() {
             }
           />
 
-          {/* Fonksiyonel akış — ayakta hasta + AI diyalog (e2e kapsamlı) */}
-          <Route
-            path="/dialog-3d-demo"
-            element={
-              <ProtectedRoute>
-                <Suspense
-                  fallback={
-                    <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
-                      3D + Diyalog yükleniyor…
-                    </div>
-                  }
-                >
-                  <PatientDialog3DPage />
-                </Suspense>
-              </ProtectedRoute>
-            }
-          />
-
           {/* Dev gezinti — paramsız ScenarioBedPlayPage (senaryo dropdown) */}
           <Route
             path="/senaryo-yatak"
@@ -181,6 +155,7 @@ export function App() {
               dikey diliminde birleşti (sorun #3 — fragmentasyon). */}
           <Route path="/3d-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/dialog-demo" element={<Navigate to="/senaryolar" replace />} />
+          <Route path="/dialog-3d-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/faz2-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/animasyon-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/monitor-demo" element={<Navigate to="/senaryolar" replace />} />

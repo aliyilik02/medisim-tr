@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, GraduationCap, Stethoscope, Timer, MessageSquare, Sparkles, Wind } from "lucide-react";
+import { ArrowRight, GraduationCap, Stethoscope, Timer, Sparkles, Wind } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
 import { getStats, listSessions } from "@/storage/sessionHistory";
 import { getSpecialtyTheme } from "@/hooks/useSpecialtyTheme";
@@ -24,19 +24,13 @@ const PATIENT_DEMOS = [
     color: "#0d9488",
   },
   {
-    to: "/dialog-3d-demo",
-    Icon: MessageSquare,
-    title: "3D + AI Diyalog",
-    body: "Hastayla konuş — yapay zekâ yanıtlar, 3D model dudak senkronu ve mimikle eşlik eder.",
-    color: "#3b82f6",
-  },
-  {
-    // Eski ayrı vitrinler (Klinik Sahne / Animasyon / Ventilatör) artık 3D
-    // hasta seansının (/hasta/:id) içinde — senaryo seçiminden açılır.
+    // Eski ayrı vitrinler (Klinik Sahne / Animasyon / Ventilatör / AI diyalog)
+    // artık 3D hasta seansının (/hasta/:id) içinde — senaryo seçiminden açılır.
+    // AI diyalog: yatak seansı sağ panel "Hasta ile Konuş" sekmesi.
     to: "/senaryolar",
     Icon: Wind,
     title: "3D Hasta Seansı",
-    body: "Acil odası, yatakta sanal hasta, köşe monitör, yatak başı ventilatör ve animasyon — hepsi tek sahnede. Senaryo seç, 3D oyna.",
+    body: "Acil odası, yatakta sanal hasta, köşe monitör, oskültasyon, ventilatör, animasyon ve AI diyalog — hepsi tek sahnede. Senaryo seç, 3D oyna.",
     tag: "YENİ",
     color: "#06b6d4",
   },
@@ -141,7 +135,7 @@ export function HomePage() {
           <h2 className="t-title text-ink-50">Sanal Hasta — 3D</h2>
           <div className="font-mono text-[10px] text-ink-600 uppercase tracking-[0.15em]">/ Etkileşimli Model</div>
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           {PATIENT_DEMOS.map(({ to, Icon, title, body, tag, color }, i) => (
             <Link
               key={to}
