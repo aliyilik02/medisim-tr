@@ -14,6 +14,7 @@ import { ScenarioEditorPage } from "@/pages/ScenarioEditorPage";
 import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
 import { ClinicalReviewPage } from "@/pages/ClinicalReviewPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { InstructorPage } from "@/pages/InstructorPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { EducationalDisclaimer } from "@/components/EducationalDisclaimer";
 import { useAuthStore } from "@/stores/authStore";
@@ -113,6 +114,15 @@ export function App() {
               </ProtectedRoute>
             }
           />
+          {/* Eğitmen paneli — yalnızca instructor/admin (öğrenci erişemez) */}
+          <Route
+            path="/egitmen"
+            element={
+              <ProtectedRoute requireRole={["instructor", "admin"]}>
+                <InstructorPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Pahalı katman canonical akış — gerçek senaryo seansı */}
           <Route
@@ -171,6 +181,8 @@ export function App() {
 }
 
 function Header() {
+  const role = useAuthStore((s) => s.user?.role);
+  const isInstructor = role === "instructor" || role === "admin";
   return (
     <header className="border-b border-ink-700/50 bg-ink-950/90 backdrop-blur-md sticky top-0 z-40 h-14">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
@@ -219,6 +231,26 @@ function Header() {
               )}
             </NavLink>
           ))}
+          {isInstructor && (
+            <NavLink
+              to="/egitmen"
+              className={({ isActive }) =>
+                cn(
+                  "relative px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] transition",
+                  isActive ? "text-ink-50" : "text-ink-400 hover:text-ink-200 hover:bg-ink-800"
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  Eğitmen
+                  {isActive && (
+                    <span className="absolute bottom-0 left-3 right-3 h-px bg-brand rounded-full" />
+                  )}
+                </>
+              )}
+            </NavLink>
+          )}
           <Link
             to="/senaryo-editor"
             className="ml-2 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] text-brand-light border border-brand/25 hover:bg-brand/10 transition"

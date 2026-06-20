@@ -12,10 +12,19 @@ import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { ConsentGate } from "@/legal/kvkk-aydinlatma";
+import type { UserPublic } from "@/api/auth";
 
-export function ProtectedRoute({ children }: { children: ReactNode }) {
+export function ProtectedRoute({
+  children,
+  requireRole,
+}: {
+  children: ReactNode;
+  /** Verilirse yalnızca bu rollerdeki kullanıcılar erişir (örn. eğitmen paneli). */
+  requireRole?: UserPublic["role"][];
+}) {
   const status = useAuthStore((s) => s.status);
   const consentGiven = useAuthStore((s) => s.consentGiven);
+  const user = useAuthStore((s) => s.user);
 
   if (status === "loading") {
     return (
@@ -32,6 +41,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!consentGiven) {
     return <ConsentGate />;
+  }
+
+  // Rol kapısı — yetkisiz kullanıcı senaryolara yönlendirilir.
+  if (requireRole && (!user || !requireRole.includes(user.role))) {
+    return <Navigate to="/senaryolar" replace />;
   }
 
   return <>{children}</>;

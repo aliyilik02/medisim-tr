@@ -10,6 +10,7 @@ import type { UserPublic } from "@/api/auth";
 vi.mock("@/api/auth", () => ({
   getMe: vi.fn(),
   login: vi.fn(),
+  loginStudent: vi.fn(),
   logout: vi.fn(),
   signup: vi.fn(),
   submitConsent: vi.fn(),
@@ -19,6 +20,7 @@ import * as authApi from "@/api/auth";
 
 const mockGetMe = authApi.getMe as Mock;
 const mockLogin = authApi.login as Mock;
+const mockLoginStudent = authApi.loginStudent as Mock;
 const mockLogout = authApi.logout as Mock;
 const mockConsent = authApi.submitConsent as Mock;
 
@@ -81,6 +83,34 @@ describe("login", () => {
     mockLogin.mockRejectedValue(new Error("Kimlik veya şifre hatalı"));
     await expect(
       useAuthStore.getState().login("dr@kurum.edu.tr", "yanlis"),
+    ).rejects.toThrow();
+    const s = useAuthStore.getState();
+    expect(s.error).toBe("Kimlik veya şifre hatalı");
+    expect(s.status).not.toBe("authenticated");
+  });
+});
+
+describe("loginStudent", () => {
+  test("başarılı öğrenci girişi authenticated yapar (e-postasız)", async () => {
+    mockLoginStudent.mockResolvedValue({
+      ...USER,
+      role: "student",
+      email: null,
+      handle: "ogr_01",
+      consent: false,
+    });
+    await useAuthStore.getState().loginStudent("ege-tip", "ogr_01", "parola1");
+    const s = useAuthStore.getState();
+    expect(mockLoginStudent).toHaveBeenCalledWith("ege-tip", "ogr_01", "parola1");
+    expect(s.status).toBe("authenticated");
+    expect(s.user?.role).toBe("student");
+    expect(s.consentGiven).toBe(false); // KVKK rıza henüz yok
+  });
+
+  test("hatalı öğrenci girişi error set eder ve fırlatır", async () => {
+    mockLoginStudent.mockRejectedValue(new Error("Kimlik veya şifre hatalı"));
+    await expect(
+      useAuthStore.getState().loginStudent("ege-tip", "ogr_01", "yanlis"),
     ).rejects.toThrow();
     const s = useAuthStore.getState();
     expect(s.error).toBe("Kimlik veya şifre hatalı");

@@ -17,11 +17,12 @@ import { EducationalDisclaimer } from "@/components/EducationalDisclaimer";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REDIRECT_AFTER_LOGIN = "/senaryolar";
 
-type Mode = "login" | "signup";
+type Mode = "login" | "student" | "signup";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
+  const loginStudent = useAuthStore((s) => s.loginStudent);
   const signup = useAuthStore((s) => s.signup);
   const serverError = useAuthStore((s) => s.error);
   const clearError = useAuthStore((s) => s.clearError);
@@ -45,6 +46,13 @@ export function LoginPage() {
   };
 
   const validate = (): string | null => {
+    if (mode === "student") {
+      // Öğrenci: kurum kısa adı + handle + şifre (e-postasız)
+      if (institutionSlug.trim().length < 1) return "Kurum kodu gerekli.";
+      if (handle.trim().length < 2) return "Kullanıcı adı en az 2 karakter.";
+      if (password.length < 1) return "Şifre boş olamaz.";
+      return null;
+    }
     if (!EMAIL_RE.test(email)) return "Geçerli bir e-posta girin.";
     if (mode === "login") {
       if (password.length < 1) return "Şifre boş olamaz.";
@@ -70,6 +78,8 @@ export function LoginPage() {
     try {
       if (mode === "login") {
         await login(email.trim().toLowerCase(), password);
+      } else if (mode === "student") {
+        await loginStudent(institutionSlug.trim().toLowerCase(), handle.trim(), password);
       } else {
         await signup({
           email: email.trim().toLowerCase(),
@@ -113,29 +123,70 @@ export function LoginPage() {
 
         <div className="bg-ink-900 border border-ink-700/60 rounded-lg p-6 shadow-xl">
           <h1 className="font-display text-lg mb-1">
-            {mode === "login" ? "Eğitmen Girişi" : "Davet Kodu ile Kayıt"}
+            {mode === "login"
+              ? "Eğitmen Girişi"
+              : mode === "student"
+                ? "Öğrenci Girişi"
+                : "Davet Kodu ile Kayıt"}
           </h1>
           <p className="text-[12px] text-ink-500 mb-5">
             {mode === "login"
               ? "Hesabınızla giriş yapın."
-              : "Kayıt yalnızca davet kodu ile açıktır."}
+              : mode === "student"
+                ? "Eğitmeninizin verdiği kurum kodu ve kullanıcı adıyla girin."
+                : "Kayıt yalnızca davet kodu ile açıktır."}
           </p>
 
           <div className="space-y-3" onKeyDown={onKeyDown}>
-            <div>
-              <label className={labelClass} htmlFor="email">
-                E-posta
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-                placeholder="hoca@kurum.edu.tr"
-              />
-            </div>
+            {mode !== "student" && (
+              <div>
+                <label className={labelClass} htmlFor="email">
+                  E-posta
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                  placeholder="hoca@kurum.edu.tr"
+                />
+              </div>
+            )}
+
+            {mode === "student" && (
+              <>
+                <div>
+                  <label className={labelClass} htmlFor="stuInst">
+                    Kurum Kodu
+                  </label>
+                  <input
+                    id="stuInst"
+                    type="text"
+                    autoComplete="organization"
+                    value={institutionSlug}
+                    onChange={(e) => setInstitutionSlug(e.target.value)}
+                    className={inputClass}
+                    placeholder="ege-tip"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="stuHandle">
+                    Kullanıcı Adı
+                  </label>
+                  <input
+                    id="stuHandle"
+                    type="text"
+                    autoComplete="username"
+                    value={handle}
+                    onChange={(e) => setHandle(e.target.value)}
+                    className={inputClass}
+                    placeholder="ogrenci_123"
+                  />
+                </div>
+              </>
+            )}
 
             {mode === "signup" && (
               <>
@@ -228,22 +279,41 @@ export function LoginPage() {
             >
               {submitting
                 ? "Lütfen bekleyin…"
-                : mode === "login"
-                  ? "Giriş Yap"
-                  : "Kayıt Ol"}
+                : mode === "signup"
+                  ? "Kayıt Ol"
+                  : "Giriş Yap"}
             </button>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-ink-700/40 text-center">
-            {mode === "login" ? (
+          <div className="mt-5 pt-4 border-t border-ink-700/40 flex flex-col items-center gap-2">
+            {mode === "login" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => switchMode("student")}
+                  className="font-mono text-[11px] text-brand-light hover:underline"
+                >
+                  Öğrenci misiniz? Öğrenci girişi →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode("signup")}
+                  className="font-mono text-[11px] text-ink-400 hover:text-ink-200"
+                >
+                  Davet kodu ile kayıt ol →
+                </button>
+              </>
+            )}
+            {mode === "student" && (
               <button
                 type="button"
-                onClick={() => switchMode("signup")}
-                className="font-mono text-[11px] text-brand-light hover:underline"
+                onClick={() => switchMode("login")}
+                className="font-mono text-[11px] text-ink-400 hover:text-ink-200"
               >
-                Davet kodu ile kayıt ol →
+                ← Eğitmen girişine dön
               </button>
-            ) : (
+            )}
+            {mode === "signup" && (
               <button
                 type="button"
                 onClick={() => switchMode("login")}

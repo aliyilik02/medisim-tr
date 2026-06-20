@@ -40,6 +40,7 @@ export interface AuthState {
   /** Mount'ta çağrılır — getMe ile mevcut cookie oturumunu doğrular. */
   checkAuth: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  loginStudent: (institution: string, handle: string, password: string) => Promise<void>;
   signup: (params: SignupParams) => Promise<void>;
   logout: () => Promise<void>;
   setConsent: () => Promise<void>;
@@ -83,6 +84,24 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((s) => ({ ...s, error: null }));
     try {
       const user = await authApi.login(email, password);
+      set((s) => ({
+        ...s,
+        user,
+        status: "authenticated",
+        consentGiven: user.consent,
+        error: null,
+      }));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Giriş başarısız";
+      set((s) => ({ ...s, error: msg }));
+      throw e;
+    }
+  },
+
+  loginStudent: async (institution, handle, password) => {
+    set((s) => ({ ...s, error: null }));
+    try {
+      const user = await authApi.loginStudent(institution, handle, password);
       set((s) => ({
         ...s,
         user,

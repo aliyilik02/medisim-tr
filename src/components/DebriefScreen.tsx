@@ -18,6 +18,8 @@ import { cn } from "@/lib/cn";
 import { AIDebriefPanel } from "@/components/AIDebriefPanel";
 import { saveSession } from "@/storage/sessionHistory";
 import { sessionToFhirBundle } from "@/clinical/fhir";
+import { submitAttempt } from "@/api/attempts";
+import { useAuthStore } from "@/stores/authStore";
 
 interface Props {
   scenario: Scenario;
@@ -223,8 +225,9 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
   const [exportError, setExportError]  = useState<string | null>(null);
   const [saveStatus, setSaveStatus]    = useState<"idle" | "saved" | "error">("idle");
   const savedRef = useRef(false);
+  const authStatus = useAuthStore((s) => s.status);
 
-  // Tek seferlik otomatik kayıt
+  // Tek seferlik otomatik kayıt (yerel geçmiş + giriş yapıldıysa backend attempt)
   useEffect(() => {
     if (savedRef.current) return;
     savedRef.current = true;
@@ -234,6 +237,32 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
     } catch {
       setSaveStatus("error");
     }
+
+    // Backend persistence — best-effort: oturum varsa attempt kaydet.
+    // Hata UI'ı bozmaz (yerel kayıt zaten yapıldı); sessizce yutulur.
+    // E2E bypass'ta gerçek backend yok → istek atma (#8 — sahte oturum).
+    const e2eBypass = import.meta.env.VITE_E2E === "1";
+    if (!e2eBypass && authStatus === "authenticated" && session.finished) {
+      submitAttempt({
+        scenario_id: scenario.id,
+        score,
+        max_score: max,
+        started_at: Math.floor(session.started_at / 1000),
+        finished_at: Math.floor(Date.now() / 1000),
+        summary_json: {
+          grade: session.grade ?? null,
+          mode: session.mode,
+          difficulty: session.selected_difficulty,
+          percent,
+          critical_errors: totalErrors,
+          completion_status: session.completion_status ?? "completed",
+          duration_seconds: totalTime,
+        },
+      }).catch(() => {
+        /* backend ulaşılamaz / config yok → yerel kayıt yeterli */
+      });
+    }
+
     // Toast 3 sn sonra kaybolur
     const t = setTimeout(() => setSaveStatus("idle"), 3000);
     return () => clearTimeout(t);

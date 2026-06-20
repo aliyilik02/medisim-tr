@@ -78,7 +78,7 @@ export async function getMe(): Promise<UserPublic | null> {
   return data.user;
 }
 
-// ── POST /api/auth/login — başarıda user, hatada throw ──
+// ── POST /api/auth/login (eğitmen/admin) — e-posta + şifre ──
 export async function login(
   email: string,
   password: string,
@@ -86,6 +86,23 @@ export async function login(
   const res = await authFetch("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  const data = (await res.json()) as { user: UserPublic };
+  return data.user;
+}
+
+// ── POST /api/auth/login (öğrenci) — kurum slug + handle + şifre (e-postasız) ──
+// Backend aynı uca {institution, handle, password} kabul eder (KVKK: öğrenci
+// PII minimal, e-posta yok). Eğitmen öğrenciye kurum kodu + handle'ı verir.
+export async function loginStudent(
+  institution: string,
+  handle: string,
+  password: string,
+): Promise<UserPublic> {
+  const res = await authFetch("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ institution, handle, password }),
   });
   if (!res.ok) throw new Error(await readError(res));
   const data = (await res.json()) as { user: UserPublic };

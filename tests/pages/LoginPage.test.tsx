@@ -11,6 +11,7 @@ import { useAuthStore } from "@/stores/authStore";
 vi.mock("@/api/auth", () => ({
   getMe: vi.fn(),
   login: vi.fn(),
+  loginStudent: vi.fn(),
   logout: vi.fn(),
   signup: vi.fn(),
   submitConsent: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock("@/api/auth", () => ({
 
 import * as authApi from "@/api/auth";
 const mockLogin = authApi.login as Mock;
+const mockLoginStudent = authApi.loginStudent as Mock;
 
 function renderLogin() {
   return render(
@@ -50,6 +52,14 @@ describe("LoginPage render", () => {
     fireEvent.click(screen.getByRole("button", { name: /davet kodu ile kayıt/i }));
     expect(screen.getByLabelText("Davet Kodu")).toBeInTheDocument();
     expect(screen.getByLabelText(/takma ad/i)).toBeInTheDocument();
+  });
+
+  test("öğrenci moduna geçince kurum kodu + kullanıcı adı çıkar, e-posta gizlenir", () => {
+    renderLogin();
+    fireEvent.click(screen.getByRole("button", { name: /öğrenci girişi/i }));
+    expect(screen.getByLabelText("Kurum Kodu")).toBeInTheDocument();
+    expect(screen.getByLabelText("Kullanıcı Adı")).toBeInTheDocument();
+    expect(screen.queryByLabelText("E-posta")).not.toBeInTheDocument();
   });
 });
 
@@ -86,6 +96,26 @@ describe("LoginPage validation", () => {
     fireEvent.click(screen.getByRole("button", { name: /giriş yap/i }));
     await waitFor(() =>
       expect(mockLogin).toHaveBeenCalledWith("dr@kurum.edu.tr", "secret123"),
+    );
+  });
+
+  test("öğrenci modu loginStudent(kurum, handle, şifre) çağırır", async () => {
+    mockLoginStudent.mockResolvedValue({
+      id: "s1",
+      role: "student",
+      handle: "ogr_01",
+      email: null,
+      institution_id: "i1",
+      consent: false,
+    });
+    renderLogin();
+    fireEvent.click(screen.getByRole("button", { name: /öğrenci girişi/i }));
+    fireEvent.change(screen.getByLabelText("Kurum Kodu"), { target: { value: "Ege-Tip" } });
+    fireEvent.change(screen.getByLabelText("Kullanıcı Adı"), { target: { value: "ogr_01" } });
+    fireEvent.change(screen.getByLabelText("Şifre"), { target: { value: "parola1" } });
+    fireEvent.click(screen.getByRole("button", { name: /giriş yap/i }));
+    await waitFor(() =>
+      expect(mockLoginStudent).toHaveBeenCalledWith("ege-tip", "ogr_01", "parola1"),
     );
   });
 });

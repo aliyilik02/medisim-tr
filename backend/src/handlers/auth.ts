@@ -44,7 +44,8 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
   if (password.length < 1) return bad("password_required");
 
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  const institution = typeof body.institution === "string" ? body.institution.trim() : "";
+  // slug kayıtta lowercase saklanıyor → girişte de normalize et (#5).
+  const institution = typeof body.institution === "string" ? body.institution.trim().toLowerCase() : "";
   const handle = typeof body.handle === "string" ? body.handle.trim() : "";
 
   const user = email
@@ -140,7 +141,8 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (/UNIQUE/i.test(msg)) return bad("already_exists", "handle veya e-posta zaten kayıtlı", 409);
-    return bad("db_error", msg, 500);
+    console.error("[auth] register insertUser:", msg); // ham mesaj log'a, istemciye generic (#10)
+    return bad("server_error", "Sunucu hatası", 500);
   }
 
   const token = await signJwt({ sub: userId, role, inst: inst.id }, env.JWT_SECRET, SESSION_TTL_SEC);

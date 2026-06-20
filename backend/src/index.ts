@@ -9,6 +9,13 @@
 
 import { handleChat } from "./handlers/chat";
 import { handleLogin, handleMe, handleLogout, handleConsent, handleRegister } from "./handlers/auth";
+import {
+  handleCreateClass,
+  handleListClasses,
+  handleGetClass,
+  handleCreateStudent,
+} from "./handlers/classes";
+import { handleCreateAttempt, handleListAttempts } from "./handlers/attempts";
 import { corsHeaders, handlePreflight, withCors } from "./middleware/cors";
 import { checkRateLimit, rateLimitResponse } from "./middleware/rate-limit";
 import type { Env } from "./types";
@@ -60,6 +67,36 @@ export default {
     }
     if (url.pathname === "/api/auth/register" && request.method === "POST") {
       return withCors(await handleRegister(request, env), request);
+    }
+
+    // ── Sınıf / öğrenci (Tier-2 inc-3) — eğitmen rol-kapılı ──
+    if (url.pathname === "/api/classes" && request.method === "POST") {
+      return withCors(await handleCreateClass(request, env), request);
+    }
+    if (url.pathname === "/api/classes" && request.method === "GET") {
+      return withCors(await handleListClasses(request, env), request);
+    }
+    // /api/classes/:id  ve  /api/classes/:id/students
+    {
+      const m = url.pathname.match(/^\/api\/classes\/([A-Za-z0-9-]+)(\/students)?$/);
+      if (m) {
+        const classId = m[1];
+        const isStudents = m[2] === "/students";
+        if (isStudents && request.method === "POST") {
+          return withCors(await handleCreateStudent(request, env, classId), request);
+        }
+        if (!isStudents && request.method === "GET") {
+          return withCors(await handleGetClass(request, env, classId), request);
+        }
+      }
+    }
+
+    // ── Seans denemeleri (Tier-2 inc-3) ──
+    if (url.pathname === "/api/attempts" && request.method === "POST") {
+      return withCors(await handleCreateAttempt(request, env), request);
+    }
+    if (url.pathname === "/api/attempts" && request.method === "GET") {
+      return withCors(await handleListAttempts(request, env), request);
     }
 
     // Chat
