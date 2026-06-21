@@ -84,30 +84,31 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     equipment_id: "oksijen_maske",
     label: "Rezervuarlı Oksijen Maskesi",
     system: "solunum",
-    // SADECE hipoksemide etki — normoksemik hastada SpO2 yükseltmez.
-    condition: { kind: "vital", vital: "spo2", op: "lt", value: 94 },
+    // SADECE hipoksemide (SpO2<90) etki — ESC 2023/BTS: normoksemik hastada
+    // rutin O2 endike DEĞİL (hiperoksi koroner vazokonstriksiyon → zarar).
+    condition: { kind: "vital", vital: "spo2", op: "lt", value: 90 },
     effects: [
-      { vital: "spo2", amount: 6, toward: 97 }, // TODO_KLINIK: NRB maske ~%85-90 FiO2 SpO2 yanıtı
+      { vital: "spo2", amount: 4, toward: 96 }, // NRB ~%85-90 FiO2; hipoksemide birkaç sn'de +2-4%
     ],
-    onset_sec: 30, // TODO_KLINIK
+    onset_sec: 20,
     opens_iv_route: false,
-    note: "Yüksek akımlı oksijen (rezervuarlı maske) başlandı.",
-    source: "TODO_KLINIK: BTS Oksijen Kılavuzu 2017",
-    status: "DRAFT",
+    note: "Yüksek akımlı oksijen (rezervuarlı maske) — yalnız hipoksemide.",
+    source: "ESC 2023 ACS (rutin O2 SpO2<90) + BTS Oksijen Kılavuzu 2017",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   nazal_kanul: {
     equipment_id: "nazal_kanul",
     label: "Nazal Kanül",
     system: "solunum",
-    condition: { kind: "vital", vital: "spo2", op: "lt", value: 94 },
+    condition: { kind: "vital", vital: "spo2", op: "lt", value: 90 },
     effects: [
-      { vital: "spo2", amount: 3, toward: 95 }, // TODO_KLINIK: 1-6 L/dk düşük akım kazanımı
+      { vital: "spo2", amount: 2, toward: 94 }, // 1-6 L/dk düşük akım kazanımı
     ],
-    onset_sec: 40, // TODO_KLINIK
+    onset_sec: 30,
     opens_iv_route: false,
-    note: "Düşük akımlı oksijen (nazal kanül) başlandı.",
-    source: "TODO_KLINIK: BTS Oksijen Kılavuzu 2017",
-    status: "DRAFT",
+    note: "Düşük akımlı oksijen (nazal kanül) — yalnız hipoksemide.",
+    source: "ESC 2023 ACS (rutin O2 SpO2<90) + BTS Oksijen Kılavuzu 2017",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   hfnc: {
     equipment_id: "hfnc",
@@ -148,14 +149,14 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     // SADECE şoklanabilir ritimde (VF / nabızsız VT salvosu).
     condition: { kind: "rhythm", in: ["vfib", "vt_salvo"] },
     effects: [
-      { vital: "hr", amount: -60, toward: 80 }, // TODO_KLINIK: başarılı defib sonrası perfüze ritim HR (faz halt'i deterioration durdurur)
-      { vital: "bp_systolic", amount: 30, toward: 100 }, // TODO_KLINIK: ROSC sonrası perfüzyon
+      { vital: "hr", amount: -60, toward: 80 }, // başarılı defib → organize perfüze ritim HR
+      { vital: "bp_systolic", amount: 30, toward: 100 }, // ROSC sonrası perfüzyon
     ],
     onset_sec: 0, // anlık (şok)
     opens_iv_route: false,
-    note: "Defibrilasyon uygulandı — şoklanabilir ritim sonlandırılmaya çalışıldı.",
-    source: "TODO_KLINIK: AHA ACLS 2020 (şoklanabilir ritim algoritması)",
-    status: "DRAFT",
+    note: "Defibrilasyon uygulandı — şoklanabilir ritim (VF/VT) sonlandırılmaya çalışıldı.",
+    source: "AHA ACLS 2020 (şoklanabilir ritim algoritması, 200 J bifazik)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   iv_kateter_18g: {
     equipment_id: "iv_kateter_18g",
@@ -166,8 +167,8 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     onset_sec: 0,
     opens_iv_route: true,
     note: "Geniş çaplı IV damar yolu açıldı (sıvı/ilaç yolu).",
-    source: "TODO_KLINIK: UÇEP-2020",
-    status: "DRAFT",
+    source: "UÇEP-2020 / AHA ACLS (IV erişim — vital etkisi yok, yol açar)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   iv_kateter_20g: {
     equipment_id: "iv_kateter_20g",
@@ -178,8 +179,8 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     onset_sec: 0,
     opens_iv_route: true,
     note: "IV damar yolu açıldı (ilaç yolu).",
-    source: "TODO_KLINIK: UÇEP-2020",
-    status: "DRAFT",
+    source: "UÇEP-2020 / AHA ACLS (IV erişim — vital etkisi yok, yol açar)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   io_seti: {
     equipment_id: "io_seti",
@@ -204,8 +205,8 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     onset_sec: 0,
     opens_iv_route: false,
     note: "Hasta monitörüne bağlandı — sürekli vital izlem.",
-    source: "İzlem ekipmanı — fizyolojik etki yok.",
-    status: "DRAFT",
+    source: "İzlem ekipmanı — fizyolojik etki yok (tanısal görünürlük).",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   ekg_12: {
     equipment_id: "ekg_12",
@@ -216,8 +217,8 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     onset_sec: 0,
     opens_iv_route: false,
     note: "12 derivasyonlu EKG çekildi — tanısal ritim/iskemi değerlendirmesi.",
-    source: "İzlem/tanı ekipmanı — doğrudan vital etkisi yok.",
-    status: "DRAFT",
+    source: "ESC 2023 ACS (ilk 10 dk EKG Class I) — tanısal, vital etkisi yok.",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   pulse_oksimetre: {
     equipment_id: "pulse_oksimetre",
@@ -228,8 +229,8 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     onset_sec: 0,
     opens_iv_route: false,
     note: "Pulse oksimetre takıldı — SpO2 sürekli izlem.",
-    source: "İzlem ekipmanı — fizyolojik etki yok.",
-    status: "DRAFT",
+    source: "İzlem ekipmanı — fizyolojik etki yok (SpO2 görünürlüğü).",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
 };
 

@@ -108,6 +108,13 @@ export const scenario_stemi = defineScenario({
 
   ekg_pattern: "stemi",
 
+  // Blok 2 — merkezi ekipman-etki mapper'ı açık. STEMI'de elle ekipman
+  // vitals_change YOK (deterioration fazları + pharmacology yönetir) → çift
+  // sayım riski yok. Mapper koşullu etkiler: O2 SADECE SpO2<90 (normoksemik
+  // 96'da etkisiz = oksijen tuzağı), defib SADECE VF/VT (arrest/kötüleşme fazı),
+  // IV kateter ilaç yolu açar, monitör/EKG tanısal. Bkz equipment/catalog.ts.
+  use_central_equipment_effects: true,
+
   // ─────────────────────────────────────────────
   // STEMI deterioration — SCAI Shock Classification (A-B-C-D-E) temelli.
   // Eşik değerleri: ESC 2023 ACS Kılavuzu + SCAI Consensus + ACLS.

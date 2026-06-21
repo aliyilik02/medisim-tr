@@ -144,21 +144,29 @@ describe("katalog bütünlüğü", () => {
     }
   });
 
-  it("tüm etki değerleri DRAFT (hiçbiri ACTIVE değil — klinik review bekliyor)", () => {
+  it("hiçbir etki ACTIVE değil — DRAFT veya REVIEWED_PENDING_ACTIVATION (ACTIVE'i Ali Bey verir)", () => {
+    // STEMI olgunlaştırma turu: kaynak-doğrulanmış ekipmanlar (O2/defib/IV/monitör/
+    // EKG/pulseoks) REVIEWED_PENDING_ACTIVATION'a alındı. Geri kalan DRAFT.
+    // Hiçbiri ACTIVE değil — görsel test + Ali Bey onayı şart.
     for (const eff of Object.values(EQUIPMENT_EFFECTS)) {
-      expect(eff.status).toBe("DRAFT");
+      expect(eff.status, `${eff.equipment_id} ACTIVE olmamalı`).not.toBe("ACTIVE");
+      expect(["DRAFT", "REVIEWED_PENDING_ACTIVATION"]).toContain(eff.status);
     }
   });
 
-  it("etki yapan ekipmanlar TODO_KLINIK kaynağı taşır", () => {
+  it("etki yapan ekipmanlar kaynak taşır: DRAFT→TODO_KLINIK, REVIEWED→gerçek kaynak", () => {
     const withEffects = Object.values(EQUIPMENT_EFFECTS).filter((e) => e.effects.length > 0);
     expect(withEffects.length).toBeGreaterThan(0);
     for (const eff of withEffects) {
-      // amount değerleri klinik DRAFT — kaynak alanı doğrulama beklediğini belgeler
-      const hasTodo =
-        eff.source.includes("TODO_KLINIK") ||
-        Object.values(eff).some((v) => typeof v === "string" && v.includes("TODO_KLINIK"));
-      expect(hasTodo || eff.status === "DRAFT").toBe(true);
+      const hasTodo = eff.source.includes("TODO_KLINIK");
+      if (eff.status === "DRAFT") {
+        // DRAFT etki değeri: klinik doğrulama beklediğini TODO_KLINIK ile belgeler
+        expect(hasTodo, `${eff.equipment_id} DRAFT ama TODO_KLINIK yok`).toBe(true);
+      } else {
+        // REVIEWED: gerçek kaynak (TODO_KLINIK kalıntısı OLMAMALI)
+        expect(hasTodo, `${eff.equipment_id} REVIEWED ama hâlâ TODO_KLINIK`).toBe(false);
+        expect(eff.source.length, `${eff.equipment_id} kaynak boş`).toBeGreaterThan(5);
+      }
     }
   });
 });
