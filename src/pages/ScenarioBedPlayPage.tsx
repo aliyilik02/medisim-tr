@@ -35,7 +35,7 @@ import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
 import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
-import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration } from "@/engine";
+import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration, matchReasoningPrompt, isReasoningCorrect } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
 import { cn } from "@/lib/cn";
@@ -141,10 +141,8 @@ export function ScenarioBedPlayPage() {
   const reasoningShownRef = useRef<Set<string>>(new Set());
 
   const triggerReasoning = (triggerId: string) => {
-    if (playMode !== "egitim") return; // klinik/sinav modunda HİÇ çıkmaz
-    const prompts = rs.reasoning_prompts;
-    if (!prompts) return;
-    const p = prompts.find((rp) => rp.triggerIds.includes(triggerId));
+    // matchReasoningPrompt: SADECE egitim modunda eşleşir (klinik/sinav → null).
+    const p = matchReasoningPrompt(rs.reasoning_prompts, triggerId, playMode);
     if (!p) return;
     if (reasoningShownRef.current.has(p.id)) return; // her prompt 1 kez
     reasoningShownRef.current.add(p.id);
@@ -165,7 +163,7 @@ export function ScenarioBedPlayPage() {
   const handleReasoningAnswer = (selectedIndex: number) => {
     const p = reasoningQueue[0];
     if (!p) return;
-    const correct = !!p.options[selectedIndex]?.correct;
+    const correct = isReasoningCorrect(p, selectedIndex);
     runner.setSession((s) =>
       s
         ? {

@@ -195,7 +195,7 @@ function ScoreBar({
 // ── Klinik Muhakeme bölümü (SADECE egitim modu, CEZASIZ öğretici) ──
 // Egitim modunda cevaplanan "neden?" prompt'ları için öğretici geri bildirim.
 // Yanlış seçimde suçlayıcı değil: "aksiyonun doğruydu, gerekçe şöyle olmalı".
-function ReasoningDebrief({ scenario, session }: { scenario: Scenario; session: SessionState }) {
+export function ReasoningDebrief({ scenario, session }: { scenario: Scenario; session: SessionState }) {
   if (session.mode !== "egitim") return null;
   const answers = session.reasoning_answers ?? [];
   const prompts = scenario.reasoning_prompts ?? [];

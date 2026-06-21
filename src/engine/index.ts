@@ -37,6 +37,7 @@ export {
   phaseTransitionNarration,
   type TeachingPlan,
 } from "./teaching";
+export { matchReasoningPrompt, isReasoningCorrect } from "./reasoning";
 export {
   getClinicalStatus,
   isScenarioActive,
