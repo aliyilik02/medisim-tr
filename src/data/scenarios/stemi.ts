@@ -1,4 +1,4 @@
-import type { Scenario } from "@/engine";
+import { defineScenario } from "@/engine";
 
 // ============================================================
 // STEMI Senaryosu — Anterior STEMI, 62y Erkek
@@ -10,7 +10,7 @@ import type { Scenario } from "@/engine";
 //         PCI sonrası yönetim (DAPT, statin, ACEi), komplikasyon dalı
 // ============================================================
 
-export const scenario_stemi: Scenario = {
+export const scenario_stemi = defineScenario({
   id: "kardiyoloji-stemi-001",
   version: "0.3.0",
   title: "62 Yaş Erkek — Akut Göğüs Ağrısı (STEMI)",
@@ -63,13 +63,17 @@ export const scenario_stemi: Scenario = {
     gcs: 15,
   },
 
+  // NOT: katalog-id'ler (medications.ts). Kardiyojenik şok vazopressörü =
+  // noradrenalin (SOAP-II 1. tercih; dopamin geri planda). Statin teaching
+  // s6'da decision (statin_yuksek_doz) ile verilir — atorvastatin katalogda
+  // ayrı id olmadığından give_medication değil karar olarak modellenir.
   available_medications: [
     "aspirin",
     "klopidogrel",
-    "tikagrelor",        // S4-5
-    "prasugrel",         // S4-5
+    "tikagrelor",
+    "prasugrel",
     "heparin",
-    "enoksaparin",       // S3+
+    "enoksaparin",
     "nitrogliserin",
     "metoprolol",
     "morfin",
@@ -77,13 +81,12 @@ export const scenario_stemi: Scenario = {
     "tenecteplase",
     "atropin",
     "adrenalin",
-    "amiodaron",         // VT/VF dalı için
-    "lidokain",          // VT alternatifi
-    "norepinefrin",      // Kardiyojenik şok: 1. tercih vazopressör (SOAP-II)
-    "dobutamin",         // Kardiyojenik şok: inotropik destek
-    "dopamin",           // Kardiyojenik şok: eski seçenek (SOAP-II'de kötü)
-    "furosemid",         // Pulmoner ödem
-    "atorvastatin",      // Yüksek doz statin (80 mg) — sekonder profilaksi
+    "amiodaron",
+    "lidokain",
+    "noradrenalin",
+    "dobutamin",
+    "dopamin",
+    "furosemid",
   ],
 
   available_equipment: [
@@ -1234,16 +1237,6 @@ export const scenario_stemi: Scenario = {
           min_difficulty: 4,
         },
         {
-          action: {
-            type: "give_medication",
-            target_id: "atorvastatin",
-            dose: "80 mg",
-          },
-          points: 15,
-          feedback:
-            "Doğru — Atorvastatin 80 mg yüksek doz statin. ACS akut fazında başlanır (ESC 2023 Class I). LDL hedef <55 mg/dL. Plak stabilizasyonu + antiinflamatuvar etki.",
-        },
-        {
           action: { type: "order_test", target_id: "stemi-eko-yatakbasi" },
           points: 12,
           feedback:
@@ -1535,4 +1528,4 @@ export const scenario_stemi: Scenario = {
     ],
     next_scenarios: [],
   },
-};
+});
