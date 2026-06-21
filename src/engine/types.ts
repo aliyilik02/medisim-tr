@@ -665,6 +665,49 @@ export interface Scenario {
 }
 
 // ------------------------------------------------------------
+// ÜRETİM KONTRATI — Blok 1 (16→400 senaryo temeli)
+// ------------------------------------------------------------
+// Mevcut 14 senaryo `Scenario` tipinde KALIR (geriye uyumluluk: pek çok
+// alan opsiyonel). ÜRETİLEN her YENİ senaryo ise `ProductionScenario`
+// daraltılmış tipine uymalı — opsiyonel alanları derleme-zamanı ZORUNLU
+// yapar. Böylece eski senaryolar kırılmadan yeni üretim disipline edilir.
+//
+// Bu tip "alan VAR mı" kontratını taşır. "Alan İÇERİĞİ yeterli mi"
+// (deterioration ≥1 faz, gerçek dallanma, katalog-id geçerli, max_points
+// ulaşılabilir, references dolu) kontrolü Blok 3 validate.mjs'in işidir —
+// çünkü TS tipi bir dizinin boş-olmadığını veya bir id'nin katalogda
+// olduğunu güvenle ifade edemez.
+//
+// ⚠️ KLİNİK İÇERİK: Üretilen senaryo `clinical_review.status: "DRAFT"`
+// ile doğar. ACTIVE'e geçişi SADECE Ali Bey yapar (CLAUDE.md kural 3).
+
+export interface ProductionScenario extends Scenario {
+  /** Oynanabilir seviyeler — üretimde min 3 seviye (validate kontrol eder). */
+  supported_difficulties: Difficulty[];
+  /** EN AZ 1 kötüleşme fazı ZORUNLU — statik/cansız senaryo üretilemez.
+      (Dizinin boş-olmadığını validate.mjs doğrular.) */
+  deterioration: DeteriorationPhase[];
+  /** Klinik review durumu ZORUNLU — üretimde "DRAFT" ile doğar. */
+  clinical_review: ClinicalReview;
+  /** Ekipman etkisi merkezi mapper'dan gelsin (Blok 2). Üretilen senaryolarda
+      açık (true) — eski elle vitals_change yerine merkezi fizyoloji.
+      ⚠️ Opsiyonel bırakıldı: ekipman kullanmayan saf-karar senaryosu da geçerli. */
+  use_central_equipment_effects?: boolean;
+}
+
+/**
+ * Üretim senaryosu tanımlama yardımcısı — derleme-zamanı kontrat kapısı.
+ * Yeni üretilen her senaryo dosyası `export const scenario_x = defineScenario({...})`
+ * ile yazılır; eksik zorunlu alan (deterioration/clinical_review/...) derleme
+ * hatası verir. Identity fonksiyon — runtime maliyeti yok.
+ *
+ * Mevcut 14 senaryo bunu KULLANMAZ (düz `Scenario` tipinde kalır) — geriye uyumlu.
+ */
+export function defineScenario(s: ProductionScenario): ProductionScenario {
+  return s;
+}
+
+// ------------------------------------------------------------
 // Oyun Oturumu (Runtime State)
 // ------------------------------------------------------------
 
