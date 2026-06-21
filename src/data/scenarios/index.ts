@@ -13,6 +13,8 @@ import { scenario_rsi_entübasyon } from "./rsi-entübasyon";
 import { scenario_preeklampsi } from "./preeklampsi";
 import { scenario_sepsis_hemsirelik } from "./sepsis-hemsirelik";
 import { scenario_tccc_patlama } from "./tccc-patlama";
+// Üretim hattı pilotu (DRAFT) — Blok 5
+import { scenario_toksikoloji_opioid_overdoz } from "./toksikoloji-opioid-overdoz";
 
 export const SCENARIOS: Scenario[] = [
   // Kardiyoloji
@@ -38,6 +40,8 @@ export const SCENARIOS: Scenario[] = [
   scenario_sepsis_hemsirelik,
   // Askeri / TCCC
   scenario_tccc_patlama,
+  // Toksikoloji (üretim hattı pilotu — DRAFT)
+  scenario_toksikoloji_opioid_overdoz,
 ];
 
 export function getScenario(id: string): Scenario | undefined {
