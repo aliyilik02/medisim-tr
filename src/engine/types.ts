@@ -658,6 +658,10 @@ export interface Scenario {
   // Klinik review durumu (opsiyonel; yoksa getClinicalStatus DRAFT döner).
   // ACTIVE'e geçişi sadece Ali Bey yapar — /klinik-review dashboard'dan.
   clinical_review?: ClinicalReview;
+
+  // Klinik muhakeme prompt'ları (egitim modu — "neden?" öğretici, CEZASIZ).
+  // ⚠️ Klinik içerik: her prompt'ta status (DRAFT → ACTIVE). Puanı ETKİLEMEZ.
+  reasoning_prompts?: ReasoningPrompt[];
 }
 
 // ------------------------------------------------------------
@@ -727,4 +731,40 @@ export interface SessionState {
   floored_score?: number;
   finished: boolean;
   grade?: "A" | "B" | "C" | "D" | "F";
+
+  // Klinik muhakeme cevapları (SADECE egitim modu) — CEZASIZ.
+  // ⚠️ Skor/grade hesabına GİRMEZ; yalnız debrief öğretici gösterimi için.
+  reasoning_answers?: ReasoningAnswer[];
+}
+
+// ------------------------------------------------------------
+// Klinik muhakeme (egitim modu — "neden?" öğretici katman, CEZASIZ)
+// ------------------------------------------------------------
+// Kritik aksiyon yapılınca (sadece egitim) gerekçe sorulur. Yanlış gerekçe
+// PUAN KIRMAZ — debrief'te öğretici geri bildirim gösterilir. Klinik içerik:
+// her prompt'ta `status` bayrağı (DRAFT → ACTIVE; ACTIVE'i Ali Bey verir).
+
+export interface ReasoningOption {
+  text: string;
+  correct: boolean;
+}
+
+export interface ReasoningPrompt {
+  id: string;                 // benzersiz prompt id
+  // Bu hedeflerden biri seçilince çıkar: aksiyon target_id (ör. "aspirin")
+  // VEYA decision option id (ör. "opt_pci_transfer"). Reperfüzyon birden çok
+  // yolla yapıldığı için liste (PCI kararı VEYA tromboliz VEYA tenecteplase).
+  triggerIds: string[];
+  question: string;
+  options: ReasoningOption[]; // 1 doğru + çeldiriciler
+  explanation: string;        // debrief öğretici açıklama
+  source: string;             // klinik kaynak (ör. "ESC 2023 ACS Guidelines")
+  status: "DRAFT" | "REVIEWED_PENDING_ACTIVATION" | "ACTIVE";
+}
+
+export interface ReasoningAnswer {
+  prompt_id: string;
+  selected_index: number;     // seçilen option indeksi
+  correct: boolean;           // öğretici (PUANI ETKİLEMEZ)
+  answered_at: number;        // ms
 }

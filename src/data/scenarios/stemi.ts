@@ -268,6 +268,73 @@ export const scenario_stemi: Scenario = {
       "faz eşlemesi DRAFT. Klinik review + ACTIVE onayı Ali Bey'de.",
   },
 
+  // ── Klinik muhakeme (egitim modu, CEZASIZ — "neden?") ──
+  // 3 kritik aksiyonda gerekçe sorulur. SADECE egitim modunda çıkar, puanı
+  // ETKİLEMEZ; öğretici geri bildirim debrief'te. İçerik DRAFT (ESC 2023);
+  // ACTIVE'e geçişi görsel test sonrası Ali Bey verir.
+  reasoning_prompts: [
+    {
+      id: "rp-reperfuzyon",
+      // Reperfüzyon iki yolla: PCI kararı (decision) VEYA tromboliz/tenecteplase.
+      triggerIds: ["opt_pci_transfer", "opt_pci_hesapla", "opt_tromboliz", "tenecteplase"],
+      question: "Neden acil reperfüzyon (damar açma) uyguluyorsun?",
+      options: [
+        {
+          text: "Tıkalı koroner damarı açıp kan akışını yeniden sağlamak için — geçen her dakika daha fazla kalp kası ölür",
+          correct: true,
+        },
+        { text: "Ağrıyı dindirmek için", correct: false },
+        { text: "Kalp ritmini düzeltmek için", correct: false },
+      ],
+      explanation:
+        "Reperfüzyon STEMI'nin asıl hayat kurtaran tedavisidir. Tıkalı damar açılmazsa " +
+        "miyokard ölür ('zaman = kas'). ESC 2023: semptomlar <12 saatse derhal reperfüzyon; " +
+        "PCI <2 saatte yapılabiliyorsa tercih edilir. Hedef kapı-balon <90 dk. Ağrı/ritim " +
+        "tedavisi ayrı konulardır.",
+      source: "ESC 2023 ACS Guidelines",
+      status: "DRAFT",
+    },
+    {
+      id: "rp-aspirin",
+      triggerIds: ["aspirin"],
+      question: "Neden aspirin veriyorsun?",
+      options: [
+        {
+          text: "Trombosit (kan pulcuğu) kümelenmesini engelleyip pıhtının büyümesini sınırlamak için",
+          correct: true,
+        },
+        { text: "Var olan pıhtıyı eritmek için (kan sulandırıcı)", correct: false },
+        { text: "Ağrı kesici olarak", correct: false },
+      ],
+      explanation:
+        "ÖNEMLİ ayrım: Aspirin bir trombolitik (pıhtı eritici) DEĞİLDİR — var olan pıhtıyı " +
+        "eritmez, sadece büyümesini durdurur. Pıhtıyı eriten fibrinolitiktir (ör. tenecteplase). " +
+        "Aspirin trombosit agregasyonunu geri dönüşsüz engeller. ISIS-2: STEMI mortalitesini azaltır.",
+      source: "ESC 2023 ACS Guidelines / ISIS-2",
+      status: "DRAFT",
+    },
+    {
+      id: "rp-oksijen",
+      triggerIds: ["oksijen_maske"],
+      question: "Hastanın SpO₂ değeri %96. Oksijen başlıyorsun — neden?",
+      options: [
+        // Öğretici amaçlı: doğru cevap aslında 'rutin oksijen gerekmez'.
+        {
+          text: "SpO₂ normal (≥%90) olduğu için aslında rutin oksijen GEREKMEZ",
+          correct: true,
+        },
+        { text: "Her kalp krizinde oksijen verilir", correct: false },
+        { text: "Zarar vermez, garanti olsun diye", correct: false },
+      ],
+      explanation:
+        "En sık yapılan hatalardan biri. ESC 2023: hipoksemisi olmayan hastada (SpO₂ ≥%90) " +
+        "rutin oksijen sonuçları iyileştirmez ve hiperoksemi komplike olmayan MI'da zararlı " +
+        "olabilir (koroner vazokonstriksiyon). Oksijen yalnız SpO₂ düşükse verilir.",
+      source: "ESC 2023 ACS Guidelines",
+      status: "DRAFT",
+    },
+  ],
+
   lab_panels: {
     "stemi-troponin-hs": {
       id: "stemi-troponin-hs",
