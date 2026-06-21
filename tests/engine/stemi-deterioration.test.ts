@@ -115,6 +115,21 @@ describe("STEMI deterioration — reperfüzyon halt + recovery", () => {
     expect(p.getState().halted).not.toContain("stemi-iskemi");
   });
 
+  test("GERÇEK DALLANMA: erken reperfüzyon vs gecikme → ayrışan sonuç", () => {
+    // Reperfüzyon kararı senaryonun sonucunu DEĞİŞTİRİR (consequence-branch):
+    // erken PCI kararı → faz durur, hasta arrest'e gitmez.
+    const erken = fresh();
+    erken.applyIntervention(INIT, PCI);          // 0. sn'de reperfüzyon
+    run(erken, { ...INIT }, 600);
+    expect(erken.getState().activated).not.toContain("stemi-arrest");
+    expect(erken.getState().halted).toContain("stemi-iskemi");
+
+    // Gecikme (müdahalesiz) → arrest fazına ulaşır.
+    const gecikme = fresh();
+    run(gecikme, { ...INIT }, 600);
+    expect(gecikme.getState().activated).toContain("stemi-arrest");
+  });
+
   test("ARREST fazında reperfüzyon kurtarmaz (halted_by YOK, recovery YOK)", () => {
     const p = fresh();
     const arrest = run(p, { ...INIT }, 600); // arrest aktif
