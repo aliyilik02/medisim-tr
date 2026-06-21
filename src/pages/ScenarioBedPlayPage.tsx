@@ -182,6 +182,8 @@ export function ScenarioBedPlayPage() {
   const onRestart = () => {
     setEquipment([]);
     teachingHandledRef.current = null; // öğretici sürücü baştan anlatsın
+    reasoningShownRef.current = new Set(); // tekrar oynamada muhakeme yeniden çıksın
+    setReasoningQueue([]);
     runner.restart();
   };
 
@@ -192,6 +194,8 @@ export function ScenarioBedPlayPage() {
     setVentSettings(VENT_PRESETS.normal.settings);
     setVentPreset("normal");
     teachingHandledRef.current = null;
+    reasoningShownRef.current = new Set(); // senaryo değişince muhakeme durumu temizlen
+    setReasoningQueue([]);
   }, [scenarioId]);
 
   // ── Öğretici (teaching/egitim) otomatik sürücü ──
