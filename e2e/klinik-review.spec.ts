@@ -12,7 +12,9 @@ test.describe("klinik review dashboard", () => {
     await page.waitForLoadState("load");
     await expect(page.getByRole("heading", { name: /Klinik Review/i })).toBeVisible();
     // Sol listede senaryo seçilebilir (STEMI)
-    await page.getByRole("button", { name: /STEMI/i }).first().click();
+    // STEMI'yi ayırt edici başlıkla hedefle — başka senaryo başlığı da "STEMI"
+    // içeriyor (kardiyojenik-sok "STEMI Sonrası Şok"); STEMI artık İncelendi grubunda.
+    await page.getByRole("button", { name: /Akut Göğüs Ağrısı/i }).first().click();
     // Sağ panel: otomatik kontroller başlığı (exact — "otomatik kontroller"
     // ifadesi kilit notunda da geçiyor) + kalıcılaştırma snippet'i görünür
     await expect(
@@ -24,7 +26,9 @@ test.describe("klinik review dashboard", () => {
   test("review çalışması yerel kaydedilir (localStorage)", async ({ page }) => {
     await page.goto("/klinik-review");
     await page.waitForLoadState("load");
-    await page.getByRole("button", { name: /STEMI/i }).first().click();
+    // STEMI'yi ayırt edici başlıkla hedefle — başka senaryo başlığı da "STEMI"
+    // içeriyor (kardiyojenik-sok "STEMI Sonrası Şok"); STEMI artık İncelendi grubunda.
+    await page.getByRole("button", { name: /Akut Göğüs Ağrısı/i }).first().click();
     await page.getByTestId("review-save").click();
     // localStorage'a yazıldı
     const stored = await page.evaluate(() =>
@@ -42,7 +46,8 @@ test.describe("klinik review dashboard", () => {
     // Klinik durum rozeti (testid ile kesin hedef) — varsayılan "Taslak"
     const badge = page.getByTestId("clinical-status-badge").first();
     await expect(badge).toBeVisible();
-    await expect(badge).toContainText(/Taslak/i);
+    // İlk kart STEMI — 21 Haz olgunlaştırma sonrası REVIEWED → "İncelendi" rozeti.
+    await expect(badge).toContainText(/İncelendi/i);
   });
 
   test("ACTIVE durum butonu başlangıçta KİLİTLİ (elle maddeler işaretsiz)", async ({
@@ -50,7 +55,9 @@ test.describe("klinik review dashboard", () => {
   }) => {
     await page.goto("/klinik-review");
     await page.waitForLoadState("load");
-    await page.getByRole("button", { name: /STEMI/i }).first().click();
+    // STEMI'yi ayırt edici başlıkla hedefle — başka senaryo başlığı da "STEMI"
+    // içeriyor (kardiyojenik-sok "STEMI Sonrası Şok"); STEMI artık İncelendi grubunda.
+    await page.getByRole("button", { name: /Akut Göğüs Ağrısı/i }).first().click();
     // Klinik disiplin garantisi: otomatik ACTIVE'e geçiş engellenir
     await expect(page.getByTestId("status-ACTIVE")).toBeDisabled();
     // DRAFT seçilebilir
