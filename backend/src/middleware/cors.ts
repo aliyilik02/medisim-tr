@@ -12,7 +12,14 @@ const ALLOWED_ORIGINS = [
   "http://127.0.0.1:5173",
 ];
 
-const ALLOWED_ORIGIN_PATTERNS = [/^https:\/\/[a-z0-9-]+\.pages\.dev$/i];
+// Pages preview + lokal dev (Vite portu 5173 doluysa 5174/5175… seçer).
+// localhost/127.0.0.1 origin'i yalnız kullanıcının kendi makinesinde oluşur →
+// uzak saldırgan taklit edemez; oturum cookie'si kısa ömürlü + httpOnly.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/[a-z0-9-]+\.pages\.dev$/i,
+  /^http:\/\/localhost:\d+$/i,
+  /^http:\/\/127\.0\.0\.1:\d+$/i,
+];
 
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
