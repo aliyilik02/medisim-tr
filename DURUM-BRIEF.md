@@ -1,7 +1,35 @@
 # DURUM BRİEFİ — Senaryo Üretim Sistemi (16→400) — 21 Haziran 2026
 
-> **PUSH YOK** — 5 blok lokal commit (cd17155..12da68c), feat/backend-cf-worker.
+> **PUSH YOK** — feat/backend-cf-worker. Üretim sistemi 5 blok (cd17155..12da68c)
+> + STEMI olgunlaştırma 6 aşama (163f2e6..2836121).
 > Önkoşul: klinik muhakeme katmanı zaten bitmişti (8ffe62e..91b23ec, committed).
+
+---
+
+## ⭐ STEMI OLGUNLAŞTIRMA — REVIEWED (ACTIVE DEĞİL) — 14-senaryo hattının İLK uygulaması
+
+> **⚠️ STEMI ACTIVE DEĞİL → `REVIEWED_PENDING_ACTIVATION`. ACTIVE'i Ali Bey GÖRSEL TEST sonrası verir.**
+> Klinik değerler GERÇEK (ESC 2023 kaynaklı, TODO_KLINIK değil) — Claude.ai doğrulama + ürün-sahibi onayı.
+
+| Aşama | Commit | Ne yapıldı |
+|-------|--------|------------|
+| A0 | (rapor) | Mevcut vs onaylı paket fark tablosu — zaten doğru olanlar NOT edildi (KORU) |
+| A1 | 163f2e6 | `Scenario`→`defineScenario`; katalog-id: norepinefrin→noradrenalin, atorvastatin çıkarıldı (statin teaching s6 decision'da) |
+| A2 | df1963a | ESC 2023 değerleri: vital HR98/SpO2 96/RR20; heparin **5000→4000** çelişkisi; tenecteplase kiloya-göre doz; fibrinoliz→klopidogrel; nitro SBP<90 kontrend. feedback |
+| A3 | dc5101f | `use_central_equipment_effects:true`; mapper O2 eşiği <94→**<90**; STEMI ekipmanları REVIEWED (defib/O2/IV/monitör/EKG) |
+| A4 | 07c3eef | deterioration SCAI A-E + faz-senkron **KORUNDU**; reperfüzyon sonuç-dallanma testi |
+| A5 | 816e12a | clinical_review **REVIEWED_PENDING_ACTIVATION**; reasoning 3 prompt REVIEWED; referanslar (ESC 2023 kesin sitasyon + AHA/ACC 2025); **reviewed_by dürüst (sahte doktor YOK)** |
+| A6 | 2836121 | 15 kanıt testi (nitro/oksijen/mapper/fibrinoliz/heparin/dürüstlük); e2e klinik-review düzelt |
+
+**Kapanan farklar:** heparin doz çelişkisi (5000>max4000), SpO2 tutarsızlığı (vital 94 vs prompt 96 → 96), tenecteplase doz eksik, fibrinoliz-klopidogrel kuralı eksik, 2 katalog-id (norepinefrin/atorvastatin), DRAFT→REVIEWED.
+**KORUNAN (doğruydu):** deterioration trendleri + SCAI escalation + faz-senkron sinyal, aspirin/tika/prasu dozları, oksijen tuzağı muhakeme, nitro kontrendikasyon (motor zaten enforce ediyordu).
+**Çift-sayım YOK:** STEMI'de elle ekipman vitals_change yoktu → mapper bağı temiz.
+**Hâlâ AÇIK:** Ali Bey görsel/3D test → onay → ACTIVE (`draft_areas: ["gorsel-3d-test-onayi"]`). Bağımsız klinik uzman review önerilir.
+**Sağlık:** tsc 0 · 882 vitest (866+16) · 23 e2e · geriye uyumlu.
+
+> **Bu, 14 senaryo olgunlaştırma hattının ŞABLONU.** Diğer 13: aynı 6 aşama (kontrat→değer→mapper→deterioration→review→test).
+
+---
 
 ## Sonuç: 5 blok TAMAM, hepsi yeşil
 
