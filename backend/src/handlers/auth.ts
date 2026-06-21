@@ -46,7 +46,8 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   // slug kayıtta lowercase saklanıyor → girişte de normalize et (#5).
   const institution = typeof body.institution === "string" ? body.institution.trim().toLowerCase() : "";
-  const handle = typeof body.handle === "string" ? body.handle.trim() : "";
+  // handle öğrenci girişinde case-insensitive (oluşturmada da lowercase saklanır).
+  const handle = typeof body.handle === "string" ? body.handle.trim().toLowerCase() : "";
 
   const user = email
     ? await findUserByEmail(env.DB, email)

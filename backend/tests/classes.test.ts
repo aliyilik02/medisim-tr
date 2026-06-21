@@ -135,6 +135,18 @@ describe("POST /api/classes/:id/students — öğrenci hesabı", () => {
     expect(lBody.user.consent).toBe(false); // KVKK rıza henüz yok
   });
 
+  it("handle case-insensitive: BÜYÜK harfle açılan öğrenci küçük harfle giriş yapar", async () => {
+    const cookie = await registerInstructor();
+    const cls = (await (await call("/api/classes", "POST", { name: "Sınıf" }, cookie)).json()) as { class: { id: string } };
+    // BÜYÜK harfli handle ile oluştur
+    const cRes = await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "Veli_1", password: "parola1" }, cookie);
+    expect(((await cRes.json()) as { student: { handle: string } }).student.handle).toBe("veli_1"); // lowercase saklandı
+    // farklı case ile giriş → başarılı
+    const login = await call("/api/auth/login", "POST", { institution: "okul", handle: "VELI_1", password: "parola1" });
+    expect(login.status).toBe(200);
+    expect(((await login.json()) as { user: { role: string } }).user.role).toBe("student");
+  });
+
   it("aynı handle ikinci kez → 409", async () => {
     const cookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Sınıf S" }, cookie)).json()) as { class: { id: string } };

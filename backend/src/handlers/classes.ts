@@ -182,7 +182,8 @@ export async function handleCreateStudent(
 
   const body = await readJson(request);
   if (!body) return bad("invalid_json");
-  const handle = typeof body.handle === "string" ? body.handle.trim() : "";
+  // handle lowercase saklanır → öğrenci girişi büyük/küçük harf duyarlı olmaz.
+  const handle = typeof body.handle === "string" ? body.handle.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
   if (handle.length < 2) return bad("invalid_handle", "handle ≥2 karakter");
   if (password.length < 6) return bad("weak_password", "Şifre ≥6 karakter");
