@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import type { Scenario, SessionState } from "@/engine";
+import type { Scenario, SessionState, ReasoningPrompt } from "@/engine";
 import {
   BookOpen,
   AlertTriangle,
@@ -12,6 +12,7 @@ import {
   MinusCircle,
   Save,
   Share2,
+  Lightbulb,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/cn";
@@ -186,6 +187,71 @@ function ScoreBar({
         <span className="font-mono text-xs text-ink-500">
           geçme sınırı {passingPct}%
         </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Klinik Muhakeme bölümü (SADECE egitim modu, CEZASIZ öğretici) ──
+// Egitim modunda cevaplanan "neden?" prompt'ları için öğretici geri bildirim.
+// Yanlış seçimde suçlayıcı değil: "aksiyonun doğruydu, gerekçe şöyle olmalı".
+function ReasoningDebrief({ scenario, session }: { scenario: Scenario; session: SessionState }) {
+  if (session.mode !== "egitim") return null;
+  const answers = session.reasoning_answers ?? [];
+  const prompts = scenario.reasoning_prompts ?? [];
+  if (answers.length === 0 || prompts.length === 0) return null;
+
+  const rows = answers
+    .map((a) => ({ a, p: prompts.find((x) => x.id === a.prompt_id) }))
+    .filter((r): r is { a: (typeof answers)[number]; p: ReasoningPrompt } => r.p != null);
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="panel p-6 border border-brand/30 bg-brand/[0.03]" data-testid="reasoning-debrief">
+      <div className="flex items-center gap-2 mb-4">
+        <Lightbulb className="w-4 h-4 text-brand-light" />
+        <h2 className="font-display text-lg">Klinik Muhakeme</h2>
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-500">
+          öğretici · puana etkisi yok
+        </span>
+      </div>
+      <div className="space-y-4">
+        {rows.map(({ a, p }) => {
+          const chosen = p.options[a.selected_index];
+          const correctOpt = p.options.find((o) => o.correct);
+          return (
+            <div key={p.id} className="panel-inset p-4" data-testid="reasoning-debrief-row">
+              <div className="text-sm font-medium text-ink-100 mb-2">{p.question}</div>
+              <div
+                className={cn(
+                  "flex items-start gap-2 text-[13px] mb-2",
+                  a.correct ? "text-clinical-stable" : "text-clinical-warning",
+                )}
+              >
+                {a.correct ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                )}
+                <span>
+                  <span className="text-ink-400">Senin gerekçen: </span>
+                  {chosen?.text ?? "—"}
+                </span>
+              </div>
+              {!a.correct && correctOpt && (
+                <div className="text-[13px] text-ink-200 mb-2">
+                  <span className="text-clinical-stable font-medium">Aksiyonun doğruydu</span>, ama
+                  gerekçe şöyle olmalı:{" "}
+                  <span className="text-ink-50">{correctOpt.text}</span>
+                </div>
+              )}
+              <p className="text-[12px] text-ink-400 leading-relaxed">{p.explanation}</p>
+              <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ink-600">
+                Kaynak: {p.source}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -449,6 +515,9 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
 
         {/* ── Adım tablosu ── */}
         <StepTable scenario={scenario} session={session} />
+
+        {/* ── Klinik Muhakeme (egitim modu, öğretici/cezasız) ── */}
+        <ReasoningDebrief scenario={scenario} session={session} />
 
         {/* ── AI Debrief ── */}
         <AIDebriefPanel scenario={scenario} session={session} />
