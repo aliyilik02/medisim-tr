@@ -1,9 +1,9 @@
 // ============================================================
 // STEMI deterioration — faz zinciri + reperfüzyon halt/recovery
 // ============================================================
-// Klinik DEĞERLER review bekliyor (DRAFT); bu test MOTOR davranışını
-// doğrular: tedavisiz kötüleşme, escalation, reperfüzyon (tenecteplase +
-// PCI kararı) ile halt + recovery.
+// Klinik değerler REVIEWED_PENDING_ACTIVATION (21 Haz, ESC 2023 kaynaklı,
+// ACTIVE Ali Bey'de); bu test MOTOR davranışını doğrular: tedavisiz kötüleşme,
+// escalation, reperfüzyon (tenecteplase + PCI kararı) ile halt + recovery.
 
 import { describe, expect, test } from "vitest";
 import { createSimplePhysiologyProvider } from "@/engine";
@@ -28,10 +28,12 @@ function run(
 }
 
 describe("STEMI deterioration — tedavisiz seyir", () => {
-  test("senaryoda deterioration tanımlı (4 faz)", () => {
+  test("senaryoda deterioration tanımlı (4 faz) + REVIEWED (ACTIVE değil)", () => {
     expect(scenario_stemi.deterioration?.length).toBe(4);
-    expect(scenario_stemi.clinical_review?.status).toBe("DRAFT");
-    expect(scenario_stemi.clinical_review?.draft_areas).toContain("deterioration");
+    // 21 Haz olgunlaştırma: klinik değerler kaynak-doğrulandı → REVIEWED_PENDING_ACTIVATION.
+    // ACTIVE DEĞİL — görsel test + Ali Bey onayı bekliyor.
+    expect(scenario_stemi.clinical_review?.status).toBe("REVIEWED_PENDING_ACTIVATION");
+    expect(scenario_stemi.clinical_review?.status).not.toBe("ACTIVE");
   });
 
   test("tedavisiz SBP düşer (iskemi fazı, floor 100)", () => {

@@ -24,8 +24,10 @@ export const scenario_stemi = defineScenario({
   modes: ["quiz", "interactive_3d"],
   language: "tr",
   author: "MediSim TR Ekibi",
-  reviewed_by: "ESC 2023, AHA/ACC 2022, TKD 2022 uyumlu",
-  last_updated: "2026-04-23",
+  reviewed_by:
+    "Kaynak-doğrulama: ESC 2023 ACS + AHA/ACC 2025 + TKD 2022 (Claude.ai + ürün-sahibi). " +
+    "Bağımsız klinik uzman review önerilir. ACTIVE değil — REVIEWED_PENDING_ACTIVATION.",
+  last_updated: "2026-06-21",
 
   // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
   clinical_codes: { icd10: "I21.0", snomed_ct: "401303003" },
@@ -269,22 +271,30 @@ export const scenario_stemi = defineScenario({
     },
   ],
 
-  // Klinik review — deterioration DRAFT (ACTIVE'e Ali Bey geçirir).
+  // Klinik review — REVIEWED_PENDING_ACTIVATION (21 Haz 2026 olgunlaştırma).
+  // Klinik değerler kaynak-doğrulandı; ACTIVE'e geçişi görsel test sonrası Ali Bey verir.
   clinical_review: {
-    status: "DRAFT",
-    draft_areas: ["deterioration"],
+    status: "REVIEWED_PENDING_ACTIVATION",
+    reviewed_by:
+      "Kaynak-doğrulama: ESC 2023 ACS Guidelines (Eur Heart J 2023;44(38):3720) + " +
+      "AHA/ACC 2025 ACS; Claude.ai klinik araştırma; ürün-sahibi onayı. " +
+      "Bağımsız klinik uzman review önerilir.",
+    reviewed_at: "2026-06-21",
+    // Görsel/3D test sonrası Ali Bey ACTIVE verir; o ana dek bekleyen alan.
+    draft_areas: ["gorsel-3d-test-onayi"],
     notes:
-      "STEMI deterioration SCAI A-E faz zinciri (15 Haz 2026). delta_per_sec/" +
-      "floor değerleri ESC 2023 + SCAI temelli, faz süreleri eğitimsel sıkıştırma. " +
-      "16 Haz 2026: faz-senkron sinyal (signal) eklendi — EKG paterni (ST→VES→VT→" +
-      "VF→asistoli, SAEM/LITFL), kalp sesi ve görsel dramatik katman. EKG/ses/görsel " +
-      "faz eşlemesi DRAFT. Klinik review + ACTIVE onayı Ali Bey'de.",
+      "21 Haz 2026 olgunlaştırma (üretim hattı ilk uygulaması): doz/vital/kontrendikasyon " +
+      "değerleri ESC 2023 kaynaklı, gerçek (placeholder değil). Heparin max-4000 çelişkisi, " +
+      "SpO2 96 oksijen-tuzağı tutarlılığı, tenecteplase kiloya-göre doz + fibrinoliz-klopidogrel " +
+      "eşleşmesi düzeltildi. Ekipman merkezi mapper'a bağlandı (O2 SpO2<90, defib VF/VT). " +
+      "deterioration SCAI A-E + faz-senkron sinyal KORUNDU. ⚠️ ACTIVE DEĞİL — görsel test + " +
+      "Ali Bey onayı sonrası. reviewed_by'da bağımsız klinik uzman imzası YOKTUR (dürüstlük).",
   },
 
   // ── Klinik muhakeme (egitim modu, CEZASIZ — "neden?") ──
   // 3 kritik aksiyonda gerekçe sorulur. SADECE egitim modunda çıkar, puanı
-  // ETKİLEMEZ; öğretici geri bildirim debrief'te. İçerik DRAFT (ESC 2023);
-  // ACTIVE'e geçişi görsel test sonrası Ali Bey verir.
+  // ETKİLEMEZ; öğretici geri bildirim debrief'te. İçerik REVIEWED_PENDING_ACTIVATION
+  // (ESC 2023 kaynaklı); ACTIVE'e geçişi görsel test sonrası Ali Bey verir.
   reasoning_prompts: [
     {
       id: "rp-reperfuzyon",
@@ -305,7 +315,7 @@ export const scenario_stemi = defineScenario({
         "PCI <2 saatte yapılabiliyorsa tercih edilir. Hedef kapı-balon <90 dk. Ağrı/ritim " +
         "tedavisi ayrı konulardır.",
       source: "ESC 2023 ACS Guidelines",
-      status: "DRAFT",
+      status: "REVIEWED_PENDING_ACTIVATION",
     },
     {
       id: "rp-aspirin",
@@ -324,7 +334,7 @@ export const scenario_stemi = defineScenario({
         "eritmez, sadece büyümesini durdurur. Pıhtıyı eriten fibrinolitiktir (ör. tenecteplase). " +
         "Aspirin trombosit agregasyonunu geri dönüşsüz engeller. ISIS-2: STEMI mortalitesini azaltır.",
       source: "ESC 2023 ACS Guidelines / ISIS-2",
-      status: "DRAFT",
+      status: "REVIEWED_PENDING_ACTIVATION",
     },
     {
       id: "rp-oksijen",
@@ -344,7 +354,7 @@ export const scenario_stemi = defineScenario({
         "rutin oksijen sonuçları iyileştirmez ve hiperoksemi komplike olmayan MI'da zararlı " +
         "olabilir (koroner vazokonstriksiyon). Oksijen yalnız SpO₂ düşükse verilir.",
       source: "ESC 2023 ACS Guidelines",
-      status: "DRAFT",
+      status: "REVIEWED_PENDING_ACTIVATION",
     },
   ],
 
@@ -1524,8 +1534,9 @@ export const scenario_stemi = defineScenario({
       "Re-oklüzyon + stent trombozu post-PCI ilk 24-48 saatte yüksek risk — klinik kötüleşmede tekrar anjio.",
     ],
     references: [
-      "ESC 2023 ACS Yönetim Kılavuzu (Byrne et al., Eur Heart J 2023)",
-      "TKD Akut Koroner Sendrom Kılavuzu 2022",
+      "ESC 2023 ACS Yönetim Kılavuzu (Byrne et al., Eur Heart J 2023;44(38):3720)",
+      "2025 ACC/AHA ACS Guideline",
+      "TKD Akut Koroner Sendrom Uzlaşı Raporu 2022",
       "AHA/ACC 2021 STEMI Guidelines",
       "PLATO (tikagrelor), TRITON-TIMI 38 (prasugrel)",
       "COMMIT, CRUSADE, AVOID çalışmaları",

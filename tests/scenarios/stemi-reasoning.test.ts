@@ -14,8 +14,12 @@ describe("STEMI reasoning_prompts", () => {
     expect(prompts.map((p) => p.id).sort()).toEqual(["rp-aspirin", "rp-oksijen", "rp-reperfuzyon"]);
   });
 
-  test("hepsi DRAFT (ACTIVE değil — Ali Bey görsel test sonrası)", () => {
-    for (const p of prompts) expect(p.status).toBe("DRAFT");
+  test("hepsi REVIEWED_PENDING_ACTIVATION (ACTIVE değil — Ali Bey görsel test sonrası)", () => {
+    // 21 Haz olgunlaştırma: ESC 2023 kaynaklı, REVIEWED. ACTIVE'i Ali Bey verir.
+    for (const p of prompts) {
+      expect(p.status).toBe("REVIEWED_PENDING_ACTIVATION");
+      expect(p.status).not.toBe("ACTIVE");
+    }
   });
 
   test("her prompt'ta tam 1 doğru şık + ≥1 çeldirici", () => {
