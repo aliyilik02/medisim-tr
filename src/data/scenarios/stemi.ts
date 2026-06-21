@@ -51,13 +51,16 @@ export const scenario_stemi = defineScenario({
     },
   },
 
+  // Başlangıç vitalleri — ESC 2023 ACS, anterior STEMI (Claude.ai kaynak-doğrulama
+  // + ürün-sahibi onayı). SpO2 96: KRİTİK — normoksemik (≥90), rutin oksijen
+  // tuzağı için normal kalmalı (rp-oksijen muhakeme prompt'u ile tutarlı).
   initial_vitals: {
-    hr: 104,
+    hr: 98,
     bp_systolic: 148,
     bp_diastolic: 92,
-    spo2: 94,
-    temp: 36.7,
-    rr: 22,
+    spo2: 96,
+    temp: 36.8,
+    rr: 20,
     pain: 8,
     glucose: 186,
     gcs: 15,
@@ -514,7 +517,7 @@ export const scenario_stemi = defineScenario({
           reference_range: "80-100",
           flag: "L",
           interpretation:
-            "Hafif hipoksemi oda havasında — SpO2 %94 ile uyumlu. Destekleyici O2 tartışmalı.",
+            "pO2 88 — normal alt sınır, SpO2 %96 ile uyumlu. Normoksemik; rutin destek O2 endike değil (ESC 2023, hipoksi <%90 yok).",
         },
         {
           parameter: "HCO3",
@@ -695,7 +698,7 @@ export const scenario_stemi = defineScenario({
           action: { type: "use_equipment", target_id: "oksijen_maske" },
           points: 0,
           feedback:
-            "SpO₂ %94 — rutin O₂ endike değil (AVOID trial, ESC 2023). Hipoksi (<90%) yoksa gereksiz, hatta zararlı olabilir.",
+            "SpO₂ %96 — rutin O₂ endike değil (AVOID trial, ESC 2023). Hipoksi (<%90) yoksa gereksiz, hiperoksi koroner vazokonstriksiyonla zararlı olabilir.",
           min_difficulty: 3,
         },
         // Aort diseksiyonu ekartasyonu (S3+)
@@ -959,11 +962,11 @@ export const scenario_stemi = defineScenario({
           action: {
             type: "give_medication",
             target_id: "heparin",
-            dose: "5000 IU",
+            dose: "4000 IU",
           },
           points: 15,
           feedback:
-            "Doğru — reperfüzyon öncesi antikoagülasyon. 60 IU/kg bolus (bu hastada 84×60=5040, max 4000 IU; yaklaşık 5000 IU klinik kabul).",
+            "Doğru — reperfüzyon öncesi antikoagülasyon. UFH 60 U/kg IV bolus, MAX 4000 U (ESC 2023). Bu hastada 84×60=5040 → 4000 U tavanı uygulanır. Ardından 12 U/kg/saat infüzyon (aPTT hedefli).",
         },
         {
           action: {
@@ -980,7 +983,9 @@ export const scenario_stemi = defineScenario({
           action: { type: "give_medication", target_id: "nitrogliserin" },
           points: 5,
           feedback:
-            "Ağrı için sublingual verilebilir. Hasta normotansif (SBP 148), güvenli. Sağ ventrikül MI ekarte edilmişse daha güvenli.",
+            "Ağrı için 0.4 mg SL (veya IV infüzyon). Hasta normotansif (SBP 148), güvenli. " +
+            "⚠️ KONTRENDİKASYON: SBP <90, sağ ventrikül infarktı, son 24-48s sildenafil — " +
+            "hipotansiyonda nitrat ZARARLI (ön-yük düşüşü → şok). Motor SBP<90'da kritik uyarı verir.",
         },
         // Morfin — koşullu (nitrattan önce: -5; sonrası dirençli ağrı: +5)
         // Basit versiyon: şimdi -5 (dirençli ağrı kontrolü sonraki adımda)
@@ -1100,7 +1105,8 @@ export const scenario_stemi = defineScenario({
           correct: true,
           points: 30,
           feedback:
-            "Doğru — ilk tıbbi temastan PCI'ye <120 dk sağlanabiliyorsa primer PCI tercih edilir (ESC 2023).",
+            "Doğru — ESC 2023: ilk tıbbi temas (FMC)-balon ≤120 dk sağlanabiliyorsa primer PCI tercih edilir " +
+            "(ideal ≤90 dk; primer PCI merkezinde kapı-balon ≤60 dk). FMC-balon >120 dk öngörülüyorsa fibrinoliz.",
         },
         {
           id: "opt_pci_hesapla",
@@ -1118,7 +1124,11 @@ export const scenario_stemi = defineScenario({
           correct: false,
           points: 10,
           feedback:
-            "Geçerli bir seçenek — ancak PCI <120 dk sağlanabilirse PCI önceliklidir. PCI mümkün değilse (120+ dk) tromboliz.",
+            "Geçerli seçenek — ama PCI <120 dk sağlanabiliyorsa PCI öncelikli. PCI mümkün değilse fibrinoliz: " +
+            "kapı-iğne ≤10 dk. TENECTEPLASE tek bolus kiloya göre: <60kg=30 / 60-69=35 / 70-79=40 / 80-89=45 / ≥90=50 mg " +
+            "(bu hasta 84 kg → 45 mg); ≥75 yaş YARI doz (kanama riski). " +
+            "⚠️ Fibrinoliz ile P2Y12 = KLOPİDOGREL olmalı (300 mg <75y, 75 mg ≥75y) — tikagrelor/prasugrel fibrinolizle birlikte ÖNERİLMEZ. " +
+            "Fibrinoliz sonrası 2-24 saatte rutin PCI transferi (farmako-invaziv strateji).",
         },
         {
           id: "opt_bekle",
