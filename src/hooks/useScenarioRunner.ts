@@ -32,6 +32,8 @@ import {
   getEffectiveDelaySec,
   createSimplePhysiologyProvider,
   getPedagogy,
+  resolveEquipmentById,
+  type EquipmentEffectContext,
   type SessionState,
   type ActionRef,
   type DecisionOption,
@@ -145,6 +147,10 @@ export function useScenarioRunner({
   // görsel. Monitör, oskültasyon ve 3D görsel hepsi bunu okur. Her tick yeniden
   // hesaplanır, yalnız anlamlı değişimde state'e yazılır (phaseSignalsEqual).
   const [phaseSignal, setPhaseSignal] = useState<PhaseSignal | null>(null);
+  // Ekipman mapper'ı (Blok 2) defib ritim koşulu için aktif EKG paternini
+  // okur. Ref ile stale-closure ve handleAction dep-churn'ü önlenir.
+  const phaseSignalRef = useRef<PhaseSignal | null>(null);
+  phaseSignalRef.current = phaseSignal;
 
   const { feedback, show, clear } = useFeedback();
 
@@ -378,6 +384,38 @@ export function useScenarioRunner({
                       ...(s.active_medication_ids ?? []),
                       newActive.medication_id,
                     ],
+                  }
+                : s
+            );
+          }
+        }
+      }
+
+      // Merkezi ekipman-etki mapper'ı (Blok 2) — OPT-IN.
+      // Senaryo use_central_equipment_effects:true derse, use_equipment aksiyonu
+      // merkezi fizyolojiden geçer (entübasyon SpO2, O2 hipoksemide, defib ritimde).
+      // Flag yoksa bu blok atlanır → eski elle vitals_change çalışır (çakışma yok).
+      // ⚠️ Etki değerleri DRAFT (equipment/catalog.ts).
+      if (
+        rs.use_central_equipment_effects &&
+        action.type === "use_equipment"
+      ) {
+        const ctx: EquipmentEffectContext = {
+          vitals: session.vitals,
+          patient: rs.patient,
+          ekg: phaseSignalRef.current?.ekg,
+        };
+        const resolution = resolveEquipmentById(action.target_id, ctx);
+        if (resolution && resolution.applied) {
+          const delta = resolution.delta;
+          const hasDelta = Object.keys(delta).length > 0;
+          if (hasDelta) {
+            setSession((s) =>
+              s
+                ? {
+                    ...s,
+                    baseline_vitals: applyVitalsChange(s.baseline_vitals, delta),
+                    vitals: applyVitalsChange(s.vitals, delta),
                   }
                 : s
             );

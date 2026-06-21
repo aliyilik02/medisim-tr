@@ -1,6 +1,20 @@
 export * from "./types";
 export * from "./engine";
 export * as Pharmacology from "./pharmacology/types";
+export {
+  EQUIPMENT_EFFECTS,
+  getEquipmentEffect,
+  evaluateEquipmentCondition,
+  computeVitalActionDelta,
+  resolveEquipmentEffect,
+  resolveEquipmentById,
+  type EquipmentEffect,
+  type EquipmentCondition,
+  type EquipmentVitalAction,
+  type EquipmentTargetVital,
+  type EquipmentEffectContext,
+  type EquipmentResolution,
+} from "./equipment";
 export { resolveScenarioVariant, findVariant, applyPatientVariant, applyVitalsVariant } from "./variant";
 export { resolveLabPanel, getLabHistory, getResultDelaySec, getEffectiveDelaySec } from "./lab-resolver";
 export {

@@ -642,6 +642,13 @@ export interface Scenario {
   // 3D (opsiyonel)
   scene?: SceneConfig;
 
+  // Blok 2 — Merkezi ekipman-etki mapper'ı (opt-in; eski senaryolar etkilenmez)
+  // true → use_equipment aksiyonları src/engine/equipment merkezi fizyolojisinden
+  // geçer (entübasyon SpO2, O2 maskesi hipoksemide, defib ritim vb.).
+  // false/yok → ESKİ davranış: senaryo elle vitals_change yazar. Çakışma yok.
+  // ⚠️ Etki DEĞERLERİ klinik içerik: DRAFT (TODO_KLINIK). Bkz equipment/catalog.ts
+  use_central_equipment_effects?: boolean;
+
   // Faz 1 — Gerçek zamanlı kötüleşme (opsiyonel; eski senaryolar etkilenmez)
   // ⚠️ Klinik içerik: DRAFT bayrağı + klinik review zorunlu (PLAN-SANAL-HASTA-V1 §4.2)
   deterioration?: DeteriorationPhase[];
