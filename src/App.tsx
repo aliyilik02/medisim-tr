@@ -15,6 +15,7 @@ import { SessionHistoryPage } from "@/pages/SessionHistoryPage";
 import { ClinicalReviewPage } from "@/pages/ClinicalReviewPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { InstructorPage } from "@/pages/InstructorPage";
+import { StudentProgressPage } from "@/pages/StudentProgressPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { EducationalDisclaimer } from "@/components/EducationalDisclaimer";
 import { useAuthStore } from "@/stores/authStore";
@@ -123,6 +124,15 @@ export function App() {
               </ProtectedRoute>
             }
           />
+          {/* Öğrenci kendi ilerlemesi (sunucu kayıtlı; her oturum açan erişir) */}
+          <Route
+            path="/ilerleme"
+            element={
+              <ProtectedRoute>
+                <StudentProgressPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Pahalı katman canonical akış — gerçek senaryo seansı */}
           <Route
@@ -183,6 +193,7 @@ export function App() {
 function Header() {
   const role = useAuthStore((s) => s.user?.role);
   const isInstructor = role === "instructor" || role === "admin";
+  const isStudent = role === "student";
   return (
     <header className="border-b border-ink-700/50 bg-ink-950/90 backdrop-blur-md sticky top-0 z-40 h-14">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
@@ -231,6 +242,26 @@ function Header() {
               )}
             </NavLink>
           ))}
+          {isStudent && (
+            <NavLink
+              to="/ilerleme"
+              className={({ isActive }) =>
+                cn(
+                  "relative px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.08em] transition",
+                  isActive ? "text-ink-50" : "text-ink-400 hover:text-ink-200 hover:bg-ink-800"
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  İlerlemem
+                  {isActive && (
+                    <span className="absolute bottom-0 left-3 right-3 h-px bg-brand rounded-full" />
+                  )}
+                </>
+              )}
+            </NavLink>
+          )}
           {isInstructor && (
             <NavLink
               to="/egitmen"
