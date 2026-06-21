@@ -779,6 +779,10 @@ export interface SessionState {
   total_score: number;
   // max(score_floor, total_score) — finalizeSession tarafından set edilir, display/grade için kullanılır
   floored_score?: number;
+  // Seçilen zorlukta GERÇEKTEN ulaşılabilir tavan (getAchievableMaxPoints).
+  // Yüzde + grade bunun üstünden hesaplanır (sabit max_points difficulty-kör).
+  // finalizeSession set eder; display fallback: scenario.scoring.max_points.
+  effective_max_points?: number;
   finished: boolean;
   grade?: "A" | "B" | "C" | "D" | "F";
 

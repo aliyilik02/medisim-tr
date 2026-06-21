@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import type { Scenario, SessionState, ReasoningPrompt } from "@/engine";
 import {
+  getAchievableMaxPoints,
+  getEffectivePassingScoreForDifficulty,
+} from "@/engine";
+import {
   BookOpen,
   AlertTriangle,
   RotateCcw,
@@ -264,13 +268,21 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
   const score = session.floored_score ?? Math.max(0, session.total_score);
   const rawScore = session.total_score;
   const floorApplied = rawScore < 0 && score >= 0;
-  const max = scenario.scoring.max_points;
-  const percent = max > 0 ? Math.round((score / max) * 100) : 0;
+  // Zorluk-duyarlı ulaşılabilir tavan (finalizeSession set eder); eski/canlı
+  // session fallback: o zorluk için hesapla, son çare statik max_points.
+  const max =
+    session.effective_max_points ??
+    getAchievableMaxPoints(scenario, session.selected_difficulty);
+  const percent = max > 0 ? Math.min(100, Math.round((score / max) * 100)) : 0;
+  const passingScore = getEffectivePassingScoreForDifficulty(
+    scenario,
+    session.selected_difficulty
+  );
   const isPartial = session.completion_status === "partial";
   const isAbandoned = session.completion_status === "abandoned";
   const isIncomplete = isPartial || isAbandoned;
   const grade = isIncomplete ? "—" : (session.grade ?? "F");
-  const passed = !isIncomplete && score >= scenario.scoring.passing_score;
+  const passed = !isIncomplete && score >= passingScore;
   const totalTime = Math.floor((Date.now() - session.started_at) / 1000);
   const totalErrors = session.results.reduce((a, r) => a + r.critical_errors, 0);
   const protocol = protocolId(session);
@@ -502,7 +514,7 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
             <ScoreBar
               score={score}
               max={max}
-              passing={scenario.scoring.passing_score}
+              passing={passingScore}
               passed={passed}
             />
             {floorApplied && (

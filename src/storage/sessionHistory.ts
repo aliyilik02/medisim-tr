@@ -11,6 +11,10 @@ import type {
   Debrief,
   Specialty,
 } from "@/engine/types";
+import {
+  getAchievableMaxPoints,
+  calculateGradeForDifficulty,
+} from "@/engine";
 
 const STORAGE_KEY = "medisim.session_history";
 const MAX_SESSIONS = 100;
@@ -65,13 +69,12 @@ export interface SavedSession {
 
 function computeGrade(session: SessionState, scenario: Scenario): "A" | "B" | "C" | "D" | "F" {
   if (session.grade) return session.grade;
-  const { grade_bands } = scenario.scoring;
-  const s = session.total_score;
-  if (s >= grade_bands.A) return "A";
-  if (s >= grade_bands.B) return "B";
-  if (s >= grade_bands.C) return "C";
-  if (s >= grade_bands.D) return "D";
-  return "F";
+  // Fallback: zorluk-duyarlı grade (sabit grade_bands difficulty-kör + auto/manual karışık).
+  return calculateGradeForDifficulty(
+    session.floored_score ?? session.total_score,
+    scenario,
+    session.selected_difficulty
+  );
 }
 
 function computeDuration(session: SessionState): number {
@@ -143,7 +146,9 @@ export function saveSession(
     difficulty:         session.selected_difficulty,
     duration_seconds:   duration,
     total_score:        session.total_score,
-    max_points:         scenario.scoring.max_points,
+    // Zorluk-duyarlı ulaşılabilir tavan (geçmiş % tutarlı olsun); fallback statik.
+    max_points:         session.effective_max_points
+                          ?? getAchievableMaxPoints(scenario, session.selected_difficulty),
     grade,
     critical_errors:    critical,
     session_snapshot:   slimSession(session),

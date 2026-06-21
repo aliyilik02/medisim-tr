@@ -19,7 +19,7 @@ import type {
   DecisionMultiEvaluation,
 } from "./types";
 import { resolveScenarioVariant } from "./variant";
-import { getEffectiveGradeBands } from "./grading";
+import { getEffectiveGradeBands, deriveGradeBands, STANDARD_GRADE_THRESHOLDS } from "./grading";
 
 // ------------------------------------------------------------
 // Yardımcı: Aksiyon eşleştirme
@@ -311,6 +311,104 @@ export function calculateGrade(
   return "F";
 }
 
+/**
+ * Seçilen zorlukta GERÇEKTEN ulaşılabilir en iyi puan (best-path toplamı).
+ *
+ * SORUN: scoring.max_points TEK sabit sayı ve difficulty-kör. Ama adımlar/
+ * outcome'lar/option'lar min_difficulty/max_difficulty ile gated → ulaşılabilir
+ * puan zorlukla DEĞİŞİR (örn. STEMI d1≈293, d5≈550). Yüzde + grade bantlarını
+ * sabit max_points üzerinden hesaplamak yüksek zorlukta %>100 + bedava A üretir.
+ * Bu fonksiyon seçilen zorlukta best-path'i yürüyüp ulaşılabilir tavanı verir.
+ *
+ * Saf: girdi senaryo+zorluk, çıktı sayı. autoPlayBestPath ile aynı strateji
+ * (her adımda en yüksek pozitif outcome'lar, decision'da en iyi correct).
+ */
+export function getAchievableMaxPoints(
+  scenario: Scenario,
+  difficulty: Difficulty
+): number {
+  let stepId: string | null = scenario.start_step_id;
+  let total = 0;
+  const seen = new Set<string>();
+
+  for (let i = 0; i < 100 && stepId; i++) {
+    if (seen.has(stepId)) break;
+    seen.add(stepId);
+    const step = getStep(scenario, stepId);
+    if (!step) break;
+
+    let unlock: string | null = null;
+
+    if (step.kind === "action") {
+      const positives = step.expected_outcomes
+        .filter((o) =>
+          isVisibleAtDifficulty(o.min_difficulty, o.max_difficulty, difficulty)
+        )
+        .filter((o) => (o.points ?? 0) > 0)
+        .sort((a, b) => b.points - a.points);
+      const cap = step.max_actions ?? positives.length;
+      for (const o of positives.slice(0, cap)) {
+        total += o.points;
+        if (!unlock && o.unlocks && o.unlocks.length > 0) unlock = o.unlocks[0];
+      }
+    } else if (step.kind === "decision") {
+      const correct = step.options
+        .filter((o) =>
+          isVisibleAtDifficulty(o.min_difficulty, o.max_difficulty, difficulty)
+        )
+        .filter((o) => o.correct)
+        .sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+      if (step.allow_multiple) {
+        // Çoklu seçim: tüm doğru option'lar puana eklenir.
+        for (const o of correct) total += o.points ?? 0;
+      } else if (correct.length > 0) {
+        total += correct[0].points ?? 0;
+      }
+    }
+
+    stepId = pickNextStep(scenario, step.id, unlock ? [unlock] : [], difficulty);
+  }
+
+  // time_bonus ulaşılabilir tavana dahil (mükemmel oyun zaman bonusunu da alabilir).
+  if (scenario.scoring.time_bonus) total += scenario.scoring.time_bonus.bonus_points;
+
+  return Math.max(total, 1); // 0'a bölme guard
+}
+
+/**
+ * Zorluk-duyarlı grade. grading_mode "manual" → yazılı bantlar (sabit).
+ * Aksi halde bantlar SEÇİLEN ZORLUKTA ulaşılabilir tavandan türetilir
+ * (A=%85 ulaşılabilir, vb.) — her zorlukta tutarlı.
+ */
+export function calculateGradeForDifficulty(
+  score: number,
+  scenario: Scenario,
+  difficulty: Difficulty
+): "A" | "B" | "C" | "D" | "F" {
+  if (scenario.scoring.grading_mode === "manual") {
+    return calculateGrade(score, scenario.scoring);
+  }
+  const bands = deriveGradeBands(getAchievableMaxPoints(scenario, difficulty));
+  if (score >= bands.A) return "A";
+  if (score >= bands.B) return "B";
+  if (score >= bands.C) return "C";
+  if (score >= bands.D) return "D";
+  return "F";
+}
+
+/** Zorluk-duyarlı geçme eşiği (ulaşılabilir tavanın %40'ı; manual'de yazılı). */
+export function getEffectivePassingScoreForDifficulty(
+  scenario: Scenario,
+  difficulty: Difficulty
+): number {
+  if (scenario.scoring.grading_mode === "manual") {
+    return scenario.scoring.passing_score;
+  }
+  return Math.round(
+    getAchievableMaxPoints(scenario, difficulty) * STANDARD_GRADE_THRESHOLDS.D
+  );
+}
+
 export function finalizeSession(
   session: SessionState,
   scenario: Scenario,
@@ -319,11 +417,22 @@ export function finalizeSession(
   // total_score ham kalır; floored_score display/grade için
   const floor = scenario.scoring.score_floor ?? 0;
   const flooredScore = Math.max(floor, session.total_score);
+  // Zorluk-duyarlı ulaşılabilir tavan → yüzde + grade tutarlı (sabit max_points
+  // difficulty-kör olduğu için %>100 / bedava A sorununu çözer).
+  const achievableMax = getAchievableMaxPoints(
+    scenario,
+    session.selected_difficulty
+  );
   return {
     ...session,
     finished: true,
     floored_score: flooredScore,
-    grade: calculateGrade(flooredScore, scenario.scoring),
+    effective_max_points: achievableMax,
+    grade: calculateGradeForDifficulty(
+      flooredScore,
+      scenario,
+      session.selected_difficulty
+    ),
     completion_status: reason,
   };
 }

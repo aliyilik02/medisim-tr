@@ -28,9 +28,11 @@ interface AIFeedback {
 const SYSTEM = `Sen MediSim TR tıp simülasyon platformunun klinik eğitim asistanısın. Tıp öğrencilerine ve sağlık profesyonellerine senaryo sonrası yapıcı, klinik olarak doğru geri bildirim veriyorsun. Türkçe, kısa ve profesyonel yaz. ESC/AHA/TKD kılavuzlarına sadık kal. Yalnızca istenen JSON formatında yanıt ver, başka metin ekleme.`;
 
 function buildPrompt(scenario: Scenario, session: SessionState): string {
-  const percent = Math.round(
-    (session.total_score / scenario.scoring.max_points) * 100
-  );
+  // Zorluk-duyarlı ulaşılabilir tavan (sabit max_points difficulty-kör).
+  const maxPts = session.effective_max_points ?? scenario.scoring.max_points;
+  const percent = maxPts > 0
+    ? Math.min(100, Math.round((session.total_score / maxPts) * 100))
+    : 0;
   const totalTime = Math.floor((Date.now() - session.started_at) / 1000);
   const totalErrors = session.results.reduce((a, r) => a + r.critical_errors, 0);
 
@@ -52,7 +54,7 @@ Hasta: ${scenario.patient.age} yaş, ${scenario.patient.sex === "M" ? "Erkek" : 
 ADIM SONUÇLARI:
 ${stepLines || "Adım verisi yok."}
 
-SONUÇ: ${session.total_score}/${scenario.scoring.max_points} (%${percent}), Not: ${session.grade ?? "F"}
+SONUÇ: ${session.total_score}/${maxPts} (%${percent}), Not: ${session.grade ?? "F"}
 Kritik hatalar: ${totalErrors} | Süre: ${Math.floor(totalTime / 60)} dk ${totalTime % 60} sn
 
 Yalnızca JSON üret:
