@@ -25,6 +25,7 @@ import { DialogChat } from "@/components/dialog/DialogChat";
 import { StepDisplay } from "@/components/StepDisplay";
 import { InventoryPanel } from "@/components/InventoryPanel";
 import { DebriefScreen } from "@/components/DebriefScreen";
+import { ReasoningPromptModal } from "@/components/ReasoningPromptModal";
 import { FeedbackToast } from "@/components/FeedbackToast";
 import { CriticalContraindicationModal } from "@/components/CriticalContraindicationModal";
 import { LabResultsModal } from "@/components/LabResultsModal";
@@ -38,7 +39,7 @@ import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, tea
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
 import { cn } from "@/lib/cn";
-import type { ActionRef, PlayMode } from "@/engine";
+import type { ActionRef, PlayMode, ReasoningPrompt } from "@/engine";
 
 // ?mod= query → pedagojik mod (egitim=öğretici, klinik=uygulama, sinav=sınav).
 // Geçersiz/yoksa varsayılan "klinik" (interaktif — e2e auto-start davranışı korunur,
@@ -133,14 +134,52 @@ export function ScenarioBedPlayPage() {
   // Faz geçişi narration — son gösterilen faz sinyali anahtarı (phaseId:ekg).
   const prevPhaseKeyRef = useRef<string | null>(null);
 
-  // Aksiyonu motora ilet + ekipmansa hastada göster
+  // ── Klinik muhakeme (egitim modu, CEZASIZ) ──
+  // Kritik aksiyon/karardan sonra "neden?" sorusu. SADECE egitim; her prompt
+  // bir kez; seçim puanı ETKİLEMEZ (yalnız reasoning_answers'a yazılır).
+  const [reasoningQueue, setReasoningQueue] = useState<ReasoningPrompt[]>([]);
+  const reasoningShownRef = useRef<Set<string>>(new Set());
+
+  const triggerReasoning = (triggerId: string) => {
+    if (playMode !== "egitim") return; // klinik/sinav modunda HİÇ çıkmaz
+    const prompts = rs.reasoning_prompts;
+    if (!prompts) return;
+    const p = prompts.find((rp) => rp.triggerIds.includes(triggerId));
+    if (!p) return;
+    if (reasoningShownRef.current.has(p.id)) return; // her prompt 1 kez
+    reasoningShownRef.current.add(p.id);
+    setReasoningQueue((q) => (q.some((x) => x.id === p.id) ? q : [...q, p]));
+  };
+
+  // Aksiyonu motora ilet + ekipmansa hastada göster + (egitim) muhakeme sor
   const onAction = (action: ActionRef) => {
     if (action.type === "use_equipment" || action.type === "procedure") {
       const kind = EQUIPMENT_ID_MAP[action.target_id];
       if (kind) setEquipment((e) => (e.includes(kind) ? e : [...e, kind]));
     }
     runner.handleAction(action);
+    triggerReasoning(action.target_id); // aksiyon SONRASI (akışı bozmaz)
   };
+
+  // Modal cevabı → CEZASIZ kayıt (functional setSession; skor/grade DEĞİŞMEZ)
+  const handleReasoningAnswer = (selectedIndex: number) => {
+    const p = reasoningQueue[0];
+    if (!p) return;
+    const correct = !!p.options[selectedIndex]?.correct;
+    runner.setSession((s) =>
+      s
+        ? {
+            ...s,
+            reasoning_answers: [
+              ...(s.reasoning_answers ?? []),
+              { prompt_id: p.id, selected_index: selectedIndex, correct, answered_at: Date.now() },
+            ],
+          }
+        : s,
+    );
+    setReasoningQueue((q) => q.slice(1));
+  };
+  const handleReasoningSkip = () => setReasoningQueue((q) => q.slice(1));
 
   const onRestart = () => {
     setEquipment([]);
@@ -161,8 +200,8 @@ export function ScenarioBedPlayPage() {
   // Yalnız pedagogy.autoPlay modunda: önce adım açıklamasını göster, sonra
   // doğru aksiyonu sistem uygular. Handler'lar ref'ten okunur (stale-closure
   // önleme); effect currentStep.id değişince yeniden çalışır.
-  const teachingApi = useRef({ runner, onAction, rs });
-  teachingApi.current = { runner, onAction, rs };
+  const teachingApi = useRef({ runner, onAction, rs, triggerReasoning });
+  teachingApi.current = { runner, onAction, rs, triggerReasoning };
   useEffect(() => {
     if (!pedagogy.autoPlay) {
       setNarration(null);
@@ -197,7 +236,10 @@ export function ScenarioBedPlayPage() {
       timers.push(
         setTimeout(() => {
           const opt = step.options.find((o) => o.id === plan.optionId);
-          if (opt) teachingApi.current.runner.handleDecision(opt);
+          if (opt) {
+            teachingApi.current.runner.handleDecision(opt);
+            teachingApi.current.triggerReasoning(opt.id); // egitim autoPlay reperfüzyon
+          }
         }, READ_MS),
       );
     } else if (plan.kind === "decision_multi" && step.kind === "decision") {
@@ -464,7 +506,10 @@ export function ScenarioBedPlayPage() {
                   step={currentStep}
                   mode={session?.mode ?? "egitim"}
                   actionsThisStep={runner.scoredActionsThisStep}
-                  onDecisionSelect={runner.handleDecision}
+                  onDecisionSelect={(opt) => {
+                    runner.handleDecision(opt);
+                    triggerReasoning(opt.id); // egitim manuel reperfüzyon kararı
+                  }}
                   onDecisionMultiConfirm={runner.handleDecisionMulti}
                   onInfoContinue={runner.handleInfoContinue}
                   onActionStepContinue={runner.handleActionStepContinue}
@@ -508,6 +553,15 @@ export function ScenarioBedPlayPage() {
       </div>
 
       {/* Overlay'ler */}
+      {/* Klinik muhakeme (egitim, CEZASIZ) — kuyrukta prompt varsa ilkini göster */}
+      {reasoningQueue.length > 0 && (
+        <ReasoningPromptModal
+          prompt={reasoningQueue[0]}
+          onAnswer={handleReasoningAnswer}
+          onSkip={handleReasoningSkip}
+        />
+      )}
+
       <FeedbackToast feedback={runner.feedback} mode={session?.mode ?? "egitim"} onClose={runner.clearFeedback} />
 
       <CriticalContraindicationModal
