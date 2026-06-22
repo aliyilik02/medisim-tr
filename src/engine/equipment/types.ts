@@ -4,8 +4,9 @@
 // İlaç motoruna SİMETRİK merkezi ekipman→fizyoloji sistemi.
 // pharmacology/types.ts deseni: katalog + koşul + etki + timing.
 //
-// ⚠️ KLİNİK İÇERİK: bu tiplerin DEĞER örnekleri (catalog.ts) DRAFT.
-// Gerçek klinik miktarlar TODO_KLINIK etiketiyle Claude.ai turunda doldurulur.
+// ⚠️ KLİNİK İÇERİK: değer örnekleri (catalog.ts) öncelik ekipmanlarda
+// REVIEWED_PENDING_ACTIVATION — endikasyon kılavuz-kaynaklı, etki miktarı
+// simülasyon kalibrasyonu (kılavuz literal Δ vermez). ACTIVE'i Ali Bey verir.
 // ============================================================
 
 import type { PatientVitals, Patient, TrendableVital, EkgPattern } from "../types";

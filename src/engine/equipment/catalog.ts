@@ -4,11 +4,14 @@
 // ÖNCELİK ekipmanlar: havayolu / solunum / dolaşım / izlem.
 // Kalan ~50 ekipman (cerrahi, lab, görüntüleme, termoregülasyon) sonraki tur.
 //
-// ⚠️⚠️ KLİNİK İÇERİK — TÜM DEĞERLER DRAFT ⚠️⚠️
-// amount / toward / onset_sec değerleri MAKUL başlangıçtır, klinik DEĞİL.
-// Her değer TODO_KLINIK ile işaretli. Gerçek değerler (entübasyon SpO2'yi
-// kaç sn'de kaç artırır, defib sonrası HR vb.) Claude.ai kaynaklı doğrulanacak,
-// sonra Ali Bey ACTIVE'e alacak. status: "DRAFT" — ASLA ACTIVE değil.
+// ⚠️⚠️ KLİNİK İÇERİK — REVIEWED_PENDING_ACTIVATION / ACTIVE değil ⚠️⚠️
+// Klinik tur (22 Haz): öncelik ekipmanlar (havayolu/solunum/dolaşım/izlem)
+// kaynaklı doğrulandı — her birinin ENDİKASYONU/eşiği bir kılavuza dayanır
+// (AHA ACLS 2020, ERC 2021, ESC 2023, BTS Oksijen, ERS/ATS HFNC, ARDSNet).
+// ÖNEMLİ: kılavuzlar "entübasyon SpO2'yi kaç sn'de kaç artırır" gibi DELTA
+// vermez; effects.amount / onset_sec değerleri SİMÜLASYON KALİBRASYONUDUR
+// (göreli sıralama fizyolojik: ETT>ventilatör>BVM>LMA>HFNC>NRB>nazal>NPA).
+// status: "REVIEWED_PENDING_ACTIVATION" — ACTIVE'i SADECE Ali Bey verir.
 //
 // equipment_id'ler src/data/equipment.ts kataloğundan (geçerli id zorunlu).
 // ============================================================
@@ -24,14 +27,14 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     // Havayolu güvenliği + oksijenasyon — hipoksemi varsa belirgin düzelme.
     condition: { kind: "vital", vital: "spo2", op: "lt", value: 92 },
     effects: [
-      { vital: "spo2", amount: 12, toward: 98 }, // TODO_KLINIK: definitif havayolu sonrası oksijenasyon kazanımı — kaynak: zorunlu (AHA ACLS / TARD havayolu)
+      { vital: "spo2", amount: 12, toward: 98 }, // definitif havayolu + kontrollü ventilasyon → hipoksemi düzelir (miktar simülasyon kalibrasyonu)
     ],
-    onset_sec: 30, // TODO_KLINIK: entübasyon→efektif ventilasyon süresi
+    onset_sec: 30, // laringoskopi→tüp doğrulama→efektif ventilasyon ~20-40 sn
     airway_secured: true,
     opens_iv_route: false,
     note: "Definitif havayolu sağlandı, kontrollü ventilasyon başladı.",
-    source: "TODO_KLINIK: AHA ACLS 2020 / TARD Zor Havayolu Kılavuzu",
-    status: "DRAFT",
+    source: "AHA ACLS 2020 + TARD Zor Havayolu Kılavuzu (definitif havayolu endikasyonu; etki miktarı simülasyon kalibrasyonu)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   lma: {
     equipment_id: "lma",
@@ -39,14 +42,14 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     system: "havayolu",
     condition: { kind: "vital", vital: "spo2", op: "lt", value: 92 },
     effects: [
-      { vital: "spo2", amount: 8, toward: 96 }, // TODO_KLINIK: supraglottik havayolu oksijenasyon kazanımı (entübasyondan düşük)
+      { vital: "spo2", amount: 8, toward: 96 }, // supraglottik oksijenasyon, entübasyondan düşük (miktar simülasyon kalibrasyonu)
     ],
-    onset_sec: 20, // TODO_KLINIK
+    onset_sec: 20, // hızlı yerleştirme — kurtarma havayolu
     airway_secured: true,
     opens_iv_route: false,
     note: "Supraglottik havayolu yerleştirildi (geçici/kurtarma havayolu).",
-    source: "TODO_KLINIK: ERC 2021 Havayolu",
-    status: "DRAFT",
+    source: "ERC 2021 Havayolu + TARD Zor Havayolu (supraglottik kurtarma havayolu endikasyonu; etki miktarı simülasyon kalibrasyonu)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   ambu: {
     equipment_id: "ambu",
@@ -54,14 +57,14 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     system: "havayolu",
     condition: { kind: "vital", vital: "spo2", op: "lt", value: 92 },
     effects: [
-      { vital: "spo2", amount: 9, toward: 96 }, // TODO_KLINIK: BVM ile pozitif basınçlı ventilasyon kazanımı
+      { vital: "spo2", amount: 9, toward: 96 }, // pozitif basınçlı ventilasyon — hipoventilasyonda oksijenasyon köprüsü (miktar simülasyon kalibrasyonu)
     ],
-    onset_sec: 15, // TODO_KLINIK
+    onset_sec: 15, // maske kavrama + ilk etkin soluklar
     airway_secured: false, // geçici — aspirasyon riski sürer
     opens_iv_route: false,
     note: "Balon-valf-maske ile ventilasyon — geçici, havayolu güvende değil.",
-    source: "TODO_KLINIK: AHA ACLS 2020",
-    status: "DRAFT",
+    source: "AHA BLS/ACLS 2020 (balon-valf-maske pozitif basınçlı ventilasyon — solunum depresyonunda temel destek; etki miktarı simülasyon kalibrasyonu)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   nazofaringeal: {
     equipment_id: "nazofaringeal",
@@ -69,14 +72,14 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     system: "havayolu",
     condition: { kind: "vital", vital: "spo2", op: "lt", value: 94 },
     effects: [
-      { vital: "spo2", amount: 3, toward: 95 }, // TODO_KLINIK: adjunkt havayolu marjinal kazanım
+      { vital: "spo2", amount: 3, toward: 95 }, // havayolu açıklığı sağlar, oksijenasyon kazancı marjinal (miktar simülasyon kalibrasyonu)
     ],
-    onset_sec: 10, // TODO_KLINIK
+    onset_sec: 10, // hızlı yerleştirme
     airway_secured: false,
     opens_iv_route: false,
     note: "Nazofaringeal airway — havayolu açıklığı adjunktı.",
-    source: "TODO_KLINIK: UÇEP-2020 Havayolu",
-    status: "DRAFT",
+    source: "UÇEP-2020 + AHA 2020 Havayolu adjunktı (açıklık sağlar; oksijenasyon etkisi marjinal — simülasyon kalibrasyonu)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
 
   // ========== SOLUNUM / OKSİJENASYON ==========
@@ -116,14 +119,14 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     system: "solunum",
     condition: { kind: "vital", vital: "spo2", op: "lt", value: 93 },
     effects: [
-      { vital: "spo2", amount: 8, toward: 97 }, // TODO_KLINIK: HFNC oksijenasyon + hafif PEEP etkisi
-      { vital: "rr", amount: -3, toward: 18 }, // TODO_KLINIK: solunum işi azalması
+      { vital: "spo2", amount: 8, toward: 97 }, // yüksek akım oksijenasyon + hafif PEEP (miktar simülasyon kalibrasyonu)
+      { vital: "rr", amount: -3, toward: 18 }, // solunum işi azalması (miktar simülasyon kalibrasyonu)
     ],
-    onset_sec: 60, // TODO_KLINIK
+    onset_sec: 60, // akım/ısıtma dengeye ulaşma
     opens_iv_route: false,
     note: "HFNC başlandı — yüksek akım oksijenasyon + solunum işi desteği.",
-    source: "TODO_KLINIK: ERS/ATS HFNC kılavuzu",
-    status: "DRAFT",
+    source: "ERS/ATS HFNC Klinik Uygulama Kılavuzu 2022 + Frat NEJM 2015 (akut hipoksemik solunum yetmezliğinde HFNC; etki miktarı simülasyon kalibrasyonu)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
   ventilator_mekanik: {
     equipment_id: "ventilator_mekanik",
@@ -131,14 +134,14 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     system: "solunum",
     condition: { kind: "vital", vital: "spo2", op: "lt", value: 92 },
     effects: [
-      { vital: "spo2", amount: 14, toward: 98 }, // TODO_KLINIK: kontrollü ventilasyon + PEEP oksijenasyon
-      { vital: "etco2", amount: -8, toward: 40 }, // TODO_KLINIK: dakika ventilasyonu ile CO2 normalleşme
+      { vital: "spo2", amount: 14, toward: 98 }, // kontrollü ventilasyon + PEEP ile oksijenasyon (miktar simülasyon kalibrasyonu)
+      { vital: "etco2", amount: -8, toward: 40 }, // dakika ventilasyonu ile CO2 normalleşme (miktar simülasyon kalibrasyonu)
     ],
-    onset_sec: 45, // TODO_KLINIK
+    onset_sec: 45, // ventilatör ayarı + akciğer dengeye ulaşma
     opens_iv_route: false,
     note: "Mekanik ventilasyon başladı (entübasyon gerektirir).",
-    source: "TODO_KLINIK: ARDSnet / TARD Mekanik Ventilasyon",
-    status: "DRAFT",
+    source: "ARDSNet akciğer-koruyucu ventilasyon + TARD Mekanik Ventilasyon (kontrollü ventilasyon oksijenasyon/CO2 düzeltir; etki miktarı simülasyon kalibrasyonu)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
 
   // ========== DOLAŞIM ==========
@@ -191,8 +194,8 @@ export const EQUIPMENT_EFFECTS: Record<string, EquipmentEffect> = {
     onset_sec: 0,
     opens_iv_route: true,
     note: "IO yol açıldı — IV başarısızsa hızlı erişim (ilaç/sıvı yolu).",
-    source: "TODO_KLINIK: AHA ACLS 2020 (IV/IO erişim)",
-    status: "DRAFT",
+    source: "AHA ACLS 2020 (IV başarısız/gecikmeli ise IO erişim — vital etkisi yok, yol açar)",
+    status: "REVIEWED_PENDING_ACTIVATION",
   },
 
   // ========== İZLEM (vital etkisi yok — ölçüm/görünürlük) ==========

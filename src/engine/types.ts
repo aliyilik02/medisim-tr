@@ -646,7 +646,8 @@ export interface Scenario {
   // true → use_equipment aksiyonları src/engine/equipment merkezi fizyolojisinden
   // geçer (entübasyon SpO2, O2 maskesi hipoksemide, defib ritim vb.).
   // false/yok → ESKİ davranış: senaryo elle vitals_change yazar. Çakışma yok.
-  // ⚠️ Etki DEĞERLERİ klinik içerik: DRAFT (TODO_KLINIK). Bkz equipment/catalog.ts
+  // ⚠️ Etki DEĞERLERİ klinik içerik: öncelik ekipmanlar REVIEWED_PENDING_ACTIVATION
+  // (endikasyon kılavuz-kaynaklı, miktar simülasyon kalibrasyonu). Bkz equipment/catalog.ts
   use_central_equipment_effects?: boolean;
 
   // Faz 1 — Gerçek zamanlı kötüleşme (opsiyonel; eski senaryolar etkilenmez)

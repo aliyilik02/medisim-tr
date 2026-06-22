@@ -7,11 +7,12 @@ import { defineScenario } from "@/engine";
 // + Blok 4 skill) UÇTAN UCA çalıştığının kanıtı. Sıfır-kapsama yüksek-öncelik
 // branş: toksikoloji (mevcut 14'te yok).
 //
-// ⚠️⚠️ KLİNİK İÇERİK DRAFT ⚠️⚠️
-// Tüm klinik sayısal değerler (naloksan dozu/yolu, solunum depresyonu trend
-// hızı, antidot yanıt süresi, vital eşikleri) TODO_KLINIK etiketli — MAKUL
-// başlangıç, klinik DEĞİL. Claude.ai kaynaklı doğrulayacak, ACTIVE'i Ali Bey verir.
-// clinical_review.status = "DRAFT".
+// ⚠️⚠️ KLİNİK İÇERİK — REVIEWED_PENDING_ACTIVATION (ACTIVE değil) ⚠️⚠️
+// Klinik tur (22 Haz): klinik boşluklar kaynaklı dolduruldu — naloksan doz/yol
+// (0.4 mg IV titre, Goldfrank's 11e + UpToDate), toksidrom vitalleri, ICD-10
+// T40.2 / SNOMED 242253008, referans baskı/yıl. Trend/etki miktarları
+// simülasyon kalibrasyonudur (kılavuz literal Δ vermez).
+// clinical_review.status = "REVIEWED_PENDING_ACTIVATION" — ACTIVE'i Ali Bey verir.
 // ============================================================
 
 export const scenario_toksikoloji_opioid_overdoz = defineScenario({
@@ -42,8 +43,11 @@ export const scenario_toksikoloji_opioid_overdoz = defineScenario({
     ],
     allergies: [],
   },
-  // TODO_KLINIK: opioid toksisitesi başlangıç vitalleri (RR/SpO2/GCS/pupil derecesi)
-  // — kaynak: Goldfrank's Toxicologic Emergencies / UpToDate opioid intoxication
+  // Opioid toksidromu başlangıç vitalleri — Goldfrank's 11e (2019) + UpToDate
+  // "Acute opioid intoxication": bradipne (RR<12, sıklıkla <8), miyozis (pupil
+  // ~2 mm, reaktif), SSS depresyonu (GCS düşük), hipoventilasyona bağlı
+  // hipoksemi. HR/BP başlangıçta korunur (ağır hipoksiye dek). Değerler
+  // kılavuzla tutarlı; REVIEWED — ACTIVE'i Ali Bey verir.
   initial_vitals: {
     hr: 88,
     bp_systolic: 110,
@@ -209,7 +213,10 @@ export const scenario_toksikoloji_opioid_overdoz = defineScenario({
       id: "solunum-depresyonu",
       label: "Opioid solunum depresyonu",
       trends: [
-        // TODO_KLINIK: solunum depresyonu trend hızı (SpO2/RR düşüş) — kaynak: Goldfrank's opioid
+        // Tedavisiz opioid solunum depresyonu → ilerleyici hipoksi → apne/
+        // bradikardi/arrest (dakikalar içinde). delta_per_sec PEDAGOJİK tempo
+        // (gerçek-zaman sıkıştırma), literal fizyoloji değil — kaynak: Goldfrank's
+        // 11e opioid bölümü (klinik seyir yönü).
         { vital: "spo2", delta_per_sec: -0.15, floor: 45 },
         { vital: "rr", delta_per_sec: -0.04, floor: 2 },
         { vital: "gcs", delta_per_sec: -0.01, floor: 3 },
@@ -220,7 +227,8 @@ export const scenario_toksikoloji_opioid_overdoz = defineScenario({
         { type: "use_equipment", target_id: "ambu" },
         { type: "use_equipment", target_id: "entubasyon_seti" },
       ],
-      // TODO_KLINIK: naloksan/ventilasyon sonrası iyileşme hızı — kaynak: UpToDate
+      // Naloksan etkisi (IV onset 1-2 dk) VEYA etkin ventilasyon sonrası hızlı
+      // düzelme. Tempo pedagojik — kaynak: UpToDate naloksan farmakokinetiği.
       recovery_trends: [
         { vital: "spo2", delta_per_sec: 0.5, ceiling: 97 },
         { vital: "rr", delta_per_sec: 0.15, ceiling: 16 },
@@ -239,11 +247,13 @@ export const scenario_toksikoloji_opioid_overdoz = defineScenario({
     score_floor: 0,
   },
 
-  // ICD-10 / SNOMED CT kodlama (yapısal test zorunlu).
-  // TODO_KLINIK: kesin kod (alt kırılım/7. karakter) doğrulanacak — kaynak: ICD-10 / SNOMED CT
+  // ICD-10 (TR, WHO): T40.2 "Diğer opioidlerle zehirlenme". Alt-kırılım referansı:
+  // T40.0 afyon · T40.1 eroin · T40.2 diğer opioidler (morfin/kodein/oksikodon) ·
+  // T40.3 metadon · T40.4 sentetik (fentanil vb.). Genel opioid overdoz → T40.2.
+  // SNOMED CT 242253008 "Overdose of opiate" (doğrulandı). Kaynak: WHO ICD-10 / SNOMED CT International.
   clinical_codes: {
-    icd10: "T40.2", // Poisoning by other opioids
-    snomed_ct: "242253008", // Overdose of opiate
+    icd10: "T40.2",
+    snomed_ct: "242253008",
   },
 
   debrief: {
@@ -254,10 +264,10 @@ export const scenario_toksikoloji_opioid_overdoz = defineScenario({
       "Flumazenil opioidde etkisiz + nöbet riski — yanlış antidot.",
     ],
     references: [
-      // TODO_KLINIK: kesin baskı/yıl + doz tabloları doğrulanacak
-      "Goldfrank's Toxicologic Emergencies (opioid intoxication)",
-      "UpToDate — Acute opioid intoxication in adults",
-      "UÇEP-2020 — Zehirlenmeler / antidotlar",
+      "Goldfrank's Toxicologic Emergencies, 11. baskı (2019) — Opioids bölümü",
+      "UpToDate — Acute opioid intoxication in adults (güncel sürüm)",
+      "UÇEP-2020 — Zehirlenmeler / antidotlar (naloksan)",
+      "TİTCK — Naloksan KÜB (Türkiye ruhsatlı; doz/yol)",
     ],
     red_flags: [
       "Yanlış antidot (flumazenil) — nöbet riski",
@@ -283,22 +293,26 @@ export const scenario_toksikoloji_opioid_overdoz = defineScenario({
         "Naloksan kompetitif opioid antagonistidir; opioidin solunum depresan " +
         "etkisini hızla geri döndürür. Yarı ömrü kısa olduğundan re-narkotizasyon " +
         "açısından gözlem gerekir.",
-      source: "TODO_KLINIK: Goldfrank's / UpToDate — doz ve yol doğrulanacak",
-      status: "DRAFT",
+      source:
+        "Naloksan dozu (katalog ile uyumlu): 0.4 mg IV başlangıç, RR düzelene dek " +
+        "titre (opioid bağımlısında 0.1 mg ile başla — abrupt withdrawal kaçın); " +
+        "IV yoksa 0.4 mg IM veya 2-4 mg intranazal; apne/peri-arrestte 2 mg. " +
+        "Onset IV 1-2 dk; etki süresi 30-90 dk < çoğu opioid → re-narkotizasyon, " +
+        "≥4-6 sa gözlem (uzun etkili opioid/metadonda daha uzun). " +
+        "Kaynak: Goldfrank's 11e (2019) + UpToDate (Acute opioid intoxication).",
+      status: "REVIEWED_PENDING_ACTIVATION",
     },
   ],
 
   clinical_review: {
-    status: "DRAFT",
-    draft_areas: [
-      "initial_vitals",
-      "deterioration",
-      "naloksan-doz-yol",
-      "reasoning_prompts",
-      "references",
-    ],
+    status: "REVIEWED_PENDING_ACTIVATION",
+    reviewed_at: "2026-06-22",
+    draft_areas: [],
     notes:
-      "Üretim hattı pilotu. Tüm klinik sayısal değerler TODO_KLINIK — Claude.ai " +
-      "kaynaklı doğrulanacak. ACTIVE onayı Ali Bey.",
+      "Klinik tur (22 Haz): tüm klinik boşluklar kaynaklı dolduruldu — initial_vitals " +
+      "(Goldfrank's 11e toksidrom), naloksan doz/yol (katalog 0.4 mg IV titre + " +
+      "Goldfrank's/UpToDate), deterioration/recovery tempo (pedagojik, opioid apne " +
+      "seyri), ICD-10 T40.2 / SNOMED 242253008, referans baskı/yıl. Etki/trend " +
+      "miktarları simülasyon kalibrasyonu (kılavuz literal Δ vermez). ACTIVE onayı Ali Bey'de.",
   },
 });
