@@ -28,12 +28,13 @@ function run(
 }
 
 describe("STEMI deterioration — tedavisiz seyir", () => {
-  test("senaryoda deterioration tanımlı (4 faz) + REVIEWED (ACTIVE değil)", () => {
+  test("senaryoda deterioration tanımlı (4 faz) + ACTIVE (5 Tem delegasyon)", () => {
     expect(scenario_stemi.deterioration?.length).toBe(4);
-    // 21 Haz olgunlaştırma: klinik değerler kaynak-doğrulandı → REVIEWED_PENDING_ACTIVATION.
-    // ACTIVE DEĞİL — görsel test + Ali Bey onayı bekliyor.
-    expect(scenario_stemi.clinical_review?.status).toBe("REVIEWED_PENDING_ACTIVATION");
-    expect(scenario_stemi.clinical_review?.status).not.toBe("ACTIVE");
+    // 5 Tem 2026: Ali Bey ACTIVE yetki delegasyonu ("kesin gördüklerine") +
+    // klinik-review-agent ön-denetimi 0 bloker + görsel doğrulama → ACTIVE.
+    // Yönetişim izi reviewed_by'da korunmalı.
+    expect(scenario_stemi.clinical_review?.status).toBe("ACTIVE");
+    expect(scenario_stemi.clinical_review?.reviewed_by).toContain("delegasyonu");
   });
 
   test("tedavisiz SBP düşer (iskemi fazı, floor 100)", () => {

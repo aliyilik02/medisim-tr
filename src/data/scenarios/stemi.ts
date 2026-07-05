@@ -304,15 +304,19 @@ export const scenario_stemi = defineScenario({
     },
   ],
 
-  // Klinik review — REVIEWED_PENDING_ACTIVATION (21 Haz 2026 olgunlaştırma).
-  // Klinik değerler kaynak-doğrulandı; ACTIVE'e geçişi görsel test sonrası Ali Bey verir.
+  // Klinik review — ACTIVE (5 Tem 2026). Ali Bey ACTIVE yetki delegasyonu
+  // ("kesin gördüklerine") + klinik-review-agent ön-denetimi 0 BLOKER +
+  // görsel doğrulama (Playwright screenshot turu) tamamlandı.
+  // İSTİSNA: symptom_events kusma pilotu DRAFT kalır (sıklık pedagojik
+  // seçim + anterior/vagal nüans — Ali Bey değerlendirmesi bekliyor).
   clinical_review: {
-    status: "REVIEWED_PENDING_ACTIVATION",
+    status: "ACTIVE",
     reviewed_by:
       "Kaynak-doğrulama: ESC 2023 ACS Guidelines (Eur Heart J 2023;44(38):3720) + " +
       "AHA/ACC 2025 ACS; Claude.ai klinik araştırma; ürün-sahibi onayı. " +
-      "Bağımsız klinik uzman review önerilir.",
-    reviewed_at: "2026-06-21",
+      "Klinik ön-denetim: klinik-review-agent 0 bloker (5 Tem 2026). " +
+      "ACTIVE: Ali Bey delegasyonu ile (5 Tem 2026). Bağımsız klinik uzman review önerilir.",
+    reviewed_at: "2026-07-05",
     // Görsel/3D test sonrası Ali Bey ACTIVE verir; o ana dek bekleyen alan.
     draft_areas: ["gorsel-3d-test-onayi"],
     notes:
@@ -348,7 +352,7 @@ export const scenario_stemi = defineScenario({
         "PCI <2 saatte yapılabiliyorsa tercih edilir. Hedef kapı-balon <90 dk. Ağrı/ritim " +
         "tedavisi ayrı konulardır.",
       source: "ESC 2023 ACS Guidelines",
-      status: "REVIEWED_PENDING_ACTIVATION",
+      status: "ACTIVE", // 5 Tem 2026 — Ali Bey delegasyonu + ön-denetim 0 bloker
     },
     {
       id: "rp-aspirin",
@@ -367,7 +371,7 @@ export const scenario_stemi = defineScenario({
         "eritmez, sadece büyümesini durdurur. Pıhtıyı eriten fibrinolitiktir (ör. tenecteplase). " +
         "Aspirin trombosit agregasyonunu geri dönüşsüz engeller. ISIS-2: STEMI mortalitesini azaltır.",
       source: "ESC 2023 ACS Guidelines / ISIS-2",
-      status: "REVIEWED_PENDING_ACTIVATION",
+      status: "ACTIVE", // 5 Tem 2026 — Ali Bey delegasyonu + ön-denetim 0 bloker
     },
     {
       id: "rp-oksijen",
@@ -387,7 +391,7 @@ export const scenario_stemi = defineScenario({
         "rutin oksijen sonuçları iyileştirmez ve hiperoksemi komplike olmayan MI'da zararlı " +
         "olabilir (koroner vazokonstriksiyon). Oksijen yalnız SpO₂ düşükse verilir.",
       source: "ESC 2023 ACS Guidelines",
-      status: "REVIEWED_PENDING_ACTIVATION",
+      status: "ACTIVE", // 5 Tem 2026 — Ali Bey delegasyonu + ön-denetim 0 bloker
     },
   ],
 

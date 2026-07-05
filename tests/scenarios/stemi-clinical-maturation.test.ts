@@ -129,10 +129,14 @@ describe("STEMI — heparin doz tavanı (max 4000 U, çelişki giderildi)", () =
   });
 });
 
-describe("STEMI — clinical_review REVIEWED (ACTIVE değil) + dürüstlük", () => {
-  it("status REVIEWED_PENDING_ACTIVATION, ACTIVE değil", () => {
-    expect(scenario_stemi.clinical_review?.status).toBe("REVIEWED_PENDING_ACTIVATION");
-    expect(scenario_stemi.clinical_review?.status).not.toBe("ACTIVE");
+describe("STEMI — clinical_review ACTIVE (5 Tem delegasyon) + dürüstlük", () => {
+  it("status ACTIVE + delegasyon/ön-denetim izi reviewed_by'da", () => {
+    // 5 Tem 2026: Ali Bey ACTIVE yetkisini delege etti ("kesin gördüklerine");
+    // klinik-review-agent 0 bloker + görsel doğrulama şartları sağlandı.
+    expect(scenario_stemi.clinical_review?.status).toBe("ACTIVE");
+    const rb = scenario_stemi.clinical_review?.reviewed_by ?? "";
+    expect(rb).toContain("delegasyonu");
+    expect(rb).toContain("0 bloker");
   });
 
   it("reviewed_by'da sahte klinik uzman/doktor imzası YOK (dürüstlük)", () => {

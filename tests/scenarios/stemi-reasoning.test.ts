@@ -14,11 +14,10 @@ describe("STEMI reasoning_prompts", () => {
     expect(prompts.map((p) => p.id).sort()).toEqual(["rp-aspirin", "rp-oksijen", "rp-reperfuzyon"]);
   });
 
-  test("hepsi REVIEWED_PENDING_ACTIVATION (ACTIVE değil — Ali Bey görsel test sonrası)", () => {
-    // 21 Haz olgunlaştırma: ESC 2023 kaynaklı, REVIEWED. ACTIVE'i Ali Bey verir.
+  test("hepsi ACTIVE (5 Tem delegasyon — ESC 2023 kaynaklı + ön-denetim 0 bloker)", () => {
+    // 21 Haz'da kaynak-doğrulanmıştı; 5 Tem Ali Bey delegasyonu ile ACTIVE.
     for (const p of prompts) {
-      expect(p.status).toBe("REVIEWED_PENDING_ACTIVATION");
-      expect(p.status).not.toBe("ACTIVE");
+      expect(p.status).toBe("ACTIVE");
     }
   });
 
