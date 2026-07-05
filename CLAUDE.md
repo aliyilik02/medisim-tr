@@ -63,7 +63,7 @@ Türkçe conventional commit (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`). 
 
 `/durum`, `/senaryo-ekle`, `/ilac-ekle`, `/test-calis`, `/build-kontrol`, `/ilac-dozaj-dogrulayici`, `/klinik-review-agent`, `/kvkk-pii-scanner`, `/senaryo-sema-dogrulayici`.
 
-Domain skill'leri (otomatik trigger): `patient-anatomy`, `calgary-cambridge`, `kvkk-compliance`, `r3f-medical`, `medical-terminology`.
+Domain skill'leri (otomatik trigger): `patient-anatomy`, `calgary-cambridge`, `kvkk-compliance`, `r3f-medical`, `medical-terminology`, `uc-sapkali-review` (hekim+yazılımcı+oyun tasarımcısı üçlü senaryo denetimi — klinik-review-agent'ın tamamlayıcısı).
 
 ## Takılırsan
 

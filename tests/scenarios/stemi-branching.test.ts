@@ -77,6 +77,19 @@ describe("STEMI dallanma — hedef bütünlüğü", () => {
   });
 });
 
+describe("STEMI dallanma — istismar avı (oyun tasarımı lensi)", () => {
+  test("yanlış karar + en iyi kurtarma NET puanı, doğrudan doğru karardan HEP düşük", () => {
+    // Puan çiftleme istismarı: dal üzerinden dolaşmak kestirmeden kârlı olmamalı.
+    const bestDirect = Math.max(
+      ...s4.options.filter((o) => o.correct).map((o) => o.points),
+    );
+    const bestRescue = Math.max(...s4b.options.map((o) => o.points));
+    for (const wrong of s4.options.filter((o) => o.next_step_id === "s4b_reperfuzyonsuz_kotulesme")) {
+      expect(wrong.points + bestRescue, wrong.id).toBeLessThan(bestDirect);
+    }
+  });
+});
+
 describe("STEMI semptom olayı pilotu — sinyal taşıma", () => {
   test("iskemi fazı aktifken PhaseSignal vomiting semptomunu taşır; halt sonrası taşımaz", () => {
     const provider = createSimplePhysiologyProvider(scenario_stemi);

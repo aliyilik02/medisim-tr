@@ -176,7 +176,9 @@ export const scenario_stemi = defineScenario({
           "İskemik faz: V1-V4'te ST elevasyonu sürüyor. Tedavisiz HR yükseliyor, " +
           "kan basıncı düşmeye başlıyor — reperfüzyon (PCI/tromboliz) penceresi açık.",
         // SEMPTOM OLAYI PİLOTU (DRAFT — sunum katmanı, klinik veri değil):
-        // AMI'ye eşlik eden bulantı-kusma (vagal uyarı) — iskemi fazı
+        // AMI'ye eşlik eden bulantı-kusma (ağrı/sempatik aktivasyon; vagal
+        // komponent klasik olarak İNFERİOR MI'da belirgindir — klinik
+        // ön-denetim notu, 5 Tem) — iskemi fazı
         // aktifken hasta ara ara öğürür/kusar (3D vomiting klibi), faz
         // reperfüzyon kararıyla durunca kesilir. Süreler GERÇEK saniye
         // (yönetmen saati); klinik modda (3×) iskemi fazı ~60 gerçek sn
