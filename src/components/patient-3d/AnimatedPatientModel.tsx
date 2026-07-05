@@ -16,6 +16,14 @@ import type { VisualState } from "@/clinical/clinicalVisualMapping";
 // bed sahnesi MeshStandardMaterial; GLSL derleme riski yok).
 const CYANOSIS_FACTOR: [number, number, number] = [0.6, 0.7, 0.96];
 import { buildEquipment, EQUIPMENT_BONE, type EquipmentKind } from "./equipmentMeshes";
+import { buildHair, HAIR_BONE } from "./hairMeshes";
+import {
+  buildVisemeTimeline,
+  sampleViseme,
+  visemeToArkit,
+  LIPSYNC_ARKIT_KEYS,
+  type VisemeTimeline,
+} from "@/engine";
 
 // ============================================================
 // Animasyonlu hasta modeli — Faz 2/3 (iskelet animasyon + mimik)
@@ -143,6 +151,10 @@ interface Props {
   skinTint?: SkinTint;
   /** Hasta konuşuyor mu? true iken ağız morph'u (jawOpen) lipsync osilasyonu yapar. */
   speaking?: boolean;
+  /** Konuşulan metin (TTS ile senkron). Verilirse fonetik viseme lipsync
+      (TR grafem→viseme, engine/lipsync) devreye girer — 9 ARKit ağız morph'u
+      metne göre şekillenir. Verilmezse speaking=true eski jawOpen osilasyonu. */
+  speechText?: string | null;
   /** Hastaya takılı ekipman (kemik-bağlı, animasyonu takip eder). */
   equipment?: EquipmentKind[];
   /** Wrapper scale (varsayılan canonical eşitleme). */
@@ -163,6 +175,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       skinTone = DEFAULT_SKIN_TONE,
       skinTint = "normal",
       speaking = false,
+      speechText = null,
       equipment,
       scale = MODEL_SCALE,
       position = [0, -0.243, 0],
@@ -249,6 +262,17 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       }
     };
 
+    // Fonetik viseme lipsync — speechText değişince timeline kurulur;
+    // t0 ilk frame'de clock'tan alınır (TTS başlangıcıyla ~senkron).
+    const speechRef = useRef<{ tl: VisemeTimeline; t0: number | null } | null>(null);
+    useEffect(() => {
+      if (speechText && speechText.trim().length > 0) {
+        speechRef.current = { tl: buildVisemeTimeline(speechText), t0: null };
+      } else {
+        speechRef.current = null;
+      }
+    }, [speechText]);
+
     const mouthRef = useRef(0);
     useFrame((state, delta) => {
       // ── Sürekli klinik görsel — cilt rengi harmanı (visualState varsa) ──
@@ -296,15 +320,47 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       setMorph("eyeBlinkLeft", blink);
       setMorph("eyeBlinkRight", blink);
 
-      // Lipsync — konuşurken ağız (jawOpen) organik osilasyon
-      let target = 0;
-      if (speaking) {
-        target = Math.sin(t * 14) * 0.3 + Math.sin(t * 6) * 0.3 + 0.25;
-        target = Math.max(0, Math.min(0.7, target));
+      // Lipsync — öncelik: fonetik viseme (speechText verildiyse), yoksa
+      // eski jawOpen osilasyonu (speaking=true), yoksa ağız kapalı.
+      const sp = speechRef.current;
+      let visemeApplied = false;
+      if (sp) {
+        if (sp.t0 === null) sp.t0 = t * 1000;
+        const tMs = t * 1000 - sp.t0;
+        if (tMs <= sp.tl.totalMs + 150) {
+          const w = visemeToArkit(sampleViseme(sp.tl, tMs));
+          for (const key of LIPSYNC_ARKIT_KEYS) setMorph(key, w[key] ?? 0);
+          visemeApplied = true;
+        } else {
+          speechRef.current = null; // timeline bitti — ağız kapanışa geçer
+        }
       }
-      mouthRef.current += (target - mouthRef.current) * 0.2;
-      setMorph("jawOpen", mouthRef.current);
+      if (!visemeApplied) {
+        // Viseme kanalları sıfırlanmalı (kalıntı morph donması önlenir)
+        for (const key of LIPSYNC_ARKIT_KEYS) {
+          if (key !== "jawOpen") setMorph(key, 0);
+        }
+        let target = 0;
+        if (speaking) {
+          target = Math.sin(t * 14) * 0.3 + Math.sin(t * 6) * 0.3 + 0.25;
+          target = Math.max(0, Math.min(0.7, target));
+        }
+        mouthRef.current += (target - mouthRef.current) * 0.2;
+        setMorph("jawOpen", mouthRef.current);
+      }
     });
+
+    // Saç — Head kemiğine kalıcı ekle (hasta kel görünmesin; animasyonu takip eder)
+    useEffect(() => {
+      const bone = clone.getObjectByName(HAIR_BONE.bone);
+      if (!bone) return;
+      const hairObj = buildHair(variant);
+      if (!hairObj) return;
+      bone.add(hairObj);
+      return () => {
+        bone.remove(hairObj);
+      };
+    }, [clone, variant]);
 
     // Ekipman — kemiğe ekle (animasyonu otomatik takip eder)
     useEffect(() => {

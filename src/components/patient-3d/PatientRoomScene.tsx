@@ -18,6 +18,13 @@ import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patient
 import type { SkinTint } from "./AnatomicPatientModel";
 import type { EquipmentKind } from "./equipmentMeshes";
 import { VentilatorDevice } from "./VentilatorDevice";
+import { CrashCart } from "./props/CrashCart";
+import { SupplyCabinet } from "./props/SupplyCabinet";
+import { WallGasPanel } from "./props/WallGasPanel";
+import { IVBagSet } from "./props/IVBagSet";
+import { PrivacyCurtain } from "./props/PrivacyCurtain";
+import { StaffStool } from "./props/StaffStool";
+import { WasteBin } from "./props/WasteBin";
 
 // ── Yatak yerleşim ölçüm probu (dev-only, GÖZ yerine SAYI) ──────────────
 // window.__measureBed=true iken hastanın POZLANMIŞ (skinned) dünya bbox'unu
@@ -233,16 +240,9 @@ function IVPole() {
         <boxGeometry args={[0.16, 0.02, 0.02]} />
         <meshStandardMaterial color={metal} roughness={0.35} metalness={0.7} />
       </mesh>
-      {/* sıvı torbası (asılı, yarı saydam) */}
-      <mesh position={[0.13, 0.53, 0]} castShadow>
-        <boxGeometry args={[0.09, 0.16, 0.03]} />
-        <meshStandardMaterial color="#dbe9e0" roughness={0.3} metalness={0} transparent opacity={0.78} />
-      </mesh>
-      {/* damla seti hattı (torbadan aşağı) */}
-      <mesh position={[0.13, 0.34, 0]}>
-        <cylinderGeometry args={[0.003, 0.003, 0.24, 6]} />
-        <meshStandardMaterial color="#cfd6da" roughness={0.5} />
-      </mesh>
+      {/* serum seti — torba + damla haznesi + hat (props/IVBagSet, eski
+          tek-mesh torba/hattın yükseltilmiş hali; askı koluna asılı) */}
+      <IVBagSet position={[0.13, 0.66, 0]} />
     </group>
   );
 }
@@ -269,6 +269,8 @@ interface Props {
   clip?: PatientClip;
   /** Hasta konuşuyor mu (lipsync jawOpen). */
   speaking?: boolean;
+  /** Seslendirilen metin — fonetik viseme lipsync (AnimatedPatientModel). */
+  speechText?: string | null;
   /** Takılı ekipman (kemik-bağlı). */
   equipment?: EquipmentKind[];
   /** Kamera preset (genel/baş-ucu/monitör). */
@@ -291,6 +293,7 @@ export function PatientRoomScene({
   visualState,
   clip = "laying_idle",
   speaking = false,
+  speechText = null,
   equipment,
   cameraPreset = DEFAULT_CAMERA_PRESET,
   cameraDebug = false,
@@ -342,8 +345,25 @@ export function PatientRoomScene({
           <BedStretcher />
           {/* IV direği + sıvı torbası — sedye başı-sol yanı */}
           <IVPole />
+          {/* ── Acil odası prop seti (props/, prosedürel — GLB yok) ──
+              Yerleşim yatağa (x=0, z=BED_Z) ve oda duvarlarına göre:
+              duvarlar x=±1.6, z=±1.28, tavan y≈1.39 (er-room 5×4×2.6m
+              × ROOM_SCALE). Kamera preset hatları boş bırakıldı. */}
+          {/* Arrest arabası — sol duvar dibi, ayak ucu tarafı; önü yatağa dönük */}
+          <CrashCart position={[-1.15, ROOM_FLOOR_Y, 0.55]} rotation={[0, Math.PI / 2, 0]} />
+          {/* Malzeme dolabı — ayak ucu duvarı, cam yüzü odaya bakar */}
+          <SupplyCabinet position={[-0.55, ROOM_FLOOR_Y, 1.13]} rotation={[0, Math.PI, 0]} />
+          {/* Duvar gaz paneli — baş ucu duvarında (O2 beyaz + vakum sarı) */}
+          <WallGasPanel position={[0, 0.62, -1.25]} />
+          {/* Paravan/perde — sağ (+X) tarafta, kumaş ayak ucuna toplanmış
+              (yan/önden kamera hattını kapatmaz) */}
+          <PrivacyCurtain position={[1.25, 0, 0.35]} />
+          {/* Personel taburesi — sağ ayak ucu köşesine doğru */}
+          <StaffStool position={[0.85, 0, 0.8]} />
+          {/* Tıbbi atık kovası — sol baş ucu köşesi (ventilatörün gerisi) */}
+          <WasteBin position={[-1.05, 0, -0.85]} />
           {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
-          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} visualState={visualState} speaking={speaking} equipment={equipment} />
+          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} visualState={visualState} speaking={speaking} speechText={speechText} equipment={equipment} />
           {/* Yatak başı 3D ventilatör cihazı — tıklanınca panel açar */}
           {showVentilator && (
             <VentilatorDevice onActivate={onVentilatorActivate} active={ventilatorActive} />
@@ -419,11 +439,12 @@ interface BedPatientProps {
   skinTint: SkinTint;
   visualState?: VisualState;
   speaking: boolean;
+  speechText?: string | null;
   equipment?: EquipmentKind[];
 }
 
 // Varyant + klip metadata'sından yatak yerleşimini hesaplar.
-function BedPatient({ variant, clip, skinTone, skinTint, visualState, speaking, equipment }: BedPatientProps) {
+function BedPatient({ variant, clip, skinTone, skinTint, visualState, speaking, speechText, equipment }: BedPatientProps) {
   const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
   const s = meta.bedScale;
   const groupRef = useRef<Group>(null);
@@ -439,6 +460,7 @@ function BedPatient({ variant, clip, skinTone, skinTint, visualState, speaking, 
         skinTint={skinTint}
         visualState={visualState}
         speaking={speaking}
+        speechText={speechText}
         equipment={equipment}
         scale={1}
         position={[0, 0, 0]}

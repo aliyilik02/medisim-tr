@@ -40,6 +40,9 @@ interface Props {
   /** Sprint B.2 entegrasyon: hasta yanıt üretirken (thinking + son yanıtın
    *  ilk 3-4 saniyesi) true. 3D model ağız animasyonu için kullanılır. */
   onSpeakingChange?: (speaking: boolean) => void;
+  /** Hasta yanıtı seslendirilmeye başlarken söylenen METİN — fonetik viseme
+   *  lipsync (AnimatedPatientModel.speechText) TTS ile senkron ağız şekli üretir. */
+  onSpeechStart?: (text: string) => void;
 }
 
 const STAGES: CalgaryStage[] = [
@@ -52,7 +55,7 @@ const STAGES: CalgaryStage[] = [
 
 type BackendMode = "checking" | "gemini" | "mock";
 
-export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
+export function DialogChat({ scenario, onClose, onSpeakingChange, onSpeechStart }: Props) {
   const [turns, setTurns] = useState<DialogTurn[]>([]);
   const [currentStage, setCurrentStage] = useState<CalgaryStage>("initiating");
   const [input, setInput] = useState("");
@@ -119,6 +122,7 @@ export function DialogChat({ scenario, onClose, onSpeakingChange }: Props) {
   // estimateSpeakingMs ile kısa bir fallback timer çalıştırılır.
   const speakReply = (text: string) => {
     if (!text.trim()) return;
+    onSpeechStart?.(text); // viseme lipsync timeline'ı bu metinle kurulur
     if (ttsSupported && !muted) {
       speak(text);
     } else {

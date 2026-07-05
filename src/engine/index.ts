@@ -57,6 +57,32 @@ export {
 } from "./teaching";
 export { matchReasoningPrompt, isReasoningCorrect } from "./reasoning";
 export {
+  decideAnimation,
+  resolveDirectorClip,
+  describeAnimationDecision,
+  DEFAULT_MIN_HOLD_SEC,
+  type AnimationDecision,
+  type AnimationOverlay,
+  type DirectorInput,
+  type DirectorEvent,
+  type DirectorEventType,
+  type DirectorClip,
+  type DirectorLayer,
+} from "./animation-director";
+export {
+  buildVisemeTimeline,
+  sampleViseme,
+  visemeToArkit,
+  visemeToJawAmplitude,
+  classifyChar,
+  LIPSYNC_ARKIT_KEYS,
+  type Viseme,
+  type VisemeEvent,
+  type VisemeTimeline,
+  type VisemeFrame,
+  type BuildVisemeTimelineOptions,
+} from "./lipsync";
+export {
   getClinicalStatus,
   isScenarioActive,
   buildReviewChecklist,

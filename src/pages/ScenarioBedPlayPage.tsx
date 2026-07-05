@@ -97,6 +97,9 @@ export function ScenarioBedPlayPage() {
   }, [routeId]);
   const [rightTab, setRightTab] = useState<RightTab>("vaka");
   const [speaking, setSpeaking] = useState(false);
+  // Seslendirilen hasta yanıtı metni — fonetik viseme lipsync (TTS senkron).
+  // Konuşma bitince temizlenir ki aynı metin tekrar tetiklenebilsin.
+  const [speechText, setSpeechText] = useState<string | null>(null);
   // Hastaya takılı ekipman — verilen ekipman aksiyonlarından lokal izlenir
   const [equipment, setEquipment] = useState<EquipmentKind[]>([]);
 
@@ -403,6 +406,7 @@ export function ScenarioBedPlayPage() {
             visualState={visualState}
             skinTone={skinTone}
             speaking={speaking}
+            speechText={speechText}
             equipment={equipment}
             cameraPreset="onden"
             showVentilator={ventEligible}
@@ -549,7 +553,15 @@ export function ScenarioBedPlayPage() {
           </div>
 
           <div className={cn("flex-1 min-h-0 flex flex-col", rightTab !== "diyalog" && "hidden")}>
-            <DialogChat key={scenarioId} scenario={scenario} onSpeakingChange={setSpeaking} />
+            <DialogChat
+              key={scenarioId}
+              scenario={scenario}
+              onSpeakingChange={(s) => {
+                setSpeaking(s);
+                if (!s) setSpeechText(null); // konuşma bitti — timeline sıfırla
+              }}
+              onSpeechStart={setSpeechText}
+            />
           </div>
         </div>
       </div>
