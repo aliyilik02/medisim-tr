@@ -30,7 +30,7 @@ import {
   patientFragmentCommon,
   patientFragmentColor,
 } from "./shaders/patientShader";
-import type { Box3 } from "three";
+import { Matrix4, type Box3 } from "three";
 
 // ============================================================
 // Animasyonlu hasta modeli — Faz 2/3 (iskelet animasyon + mimik)
@@ -49,6 +49,40 @@ import type { Box3 } from "three";
 
 const MODEL_SCALE = 0.642; // tüm varyantlar aynı faktör → mesh'in gerçek boy oranı korunur
 const SKIN_MATERIAL_NAMES = ["Skin_Head", "Skin_Body", "Skin_Arm", "Skin_Leg"];
+
+// ── Zonal kalibrasyon: kemik bind pozisyonlarından iki-nokta doğrusal harita ──
+// Mixamo oranları 8-head canon'dan farklı (kafa payı büyük) → bbox min/max
+// haritası yaka/etek bandlarını kaydırıyordu (çenede önlük sızıntısı).
+// Çözüm: bind iskeletinden omuz (glenohumeral ≈ canon 0.83) ve uyluk ortası
+// (kalça-diz ortası ≈ canon 0.375, landmark tablosu: 0.50/0.25) LOKAL Y'leri
+// ölçülür; yN haritası bu iki noktadan geçirilir. Kafa oranı farklı kalsa da
+// önlük yaka/etek bandları anatomik yerine oturur. Kemik yoksa bbox fallback.
+const CANON_SHOULDER_RATIO = 0.83;
+const CANON_MIDTHIGH_RATIO = 0.375;
+const _bindM = new Matrix4();
+export function measureZoneFromBones(mesh: SkinnedMesh): { yMin: number; height: number } | null {
+  const skel = mesh.skeleton;
+  if (!skel?.bones?.length || skel.bones.length !== skel.boneInverses.length) return null;
+  // boneInverse: mesh-local → kemik bind uzayı; tersi = kemiğin bind konumu
+  // mesh-LOKAL uzayda (position attribute ile aynı uzay — shader zSrc).
+  const bindY = (name: string): number | null => {
+    const i = skel.bones.findIndex((b) => b.name === name);
+    if (i < 0) return null;
+    _bindM.copy(skel.boneInverses[i]).invert();
+    return _bindM.elements[13];
+  };
+  const pick = (names: string[]) => names.map(bindY).filter((v): v is number => v !== null);
+  const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+  const arms = pick(["mixamorigLeftArm", "mixamorigRightArm"]);
+  const hips = pick(["mixamorigLeftUpLeg", "mixamorigRightUpLeg"]);
+  const knees = pick(["mixamorigLeftLeg", "mixamorigRightLeg"]);
+  if (!arms.length || !hips.length || !knees.length) return null;
+  const yShoulder = avg(arms);
+  const yMidThigh = (avg(hips) + avg(knees)) / 2;
+  const height = (yShoulder - yMidThigh) / (CANON_SHOULDER_RATIO - CANON_MIDTHIGH_RATIO);
+  if (!(height > 0.01)) return null;
+  return { yMin: yShoulder - CANON_SHOULDER_RATIO * height, height };
+}
 
 const SKIN_TINT_PRESETS: Record<SkinTint, [number, number, number]> = {
   normal: [1.0, 1.0, 1.0],
@@ -247,11 +281,17 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
           const mesh = obj as any;
           const mat = mesh.material as MeshStandardMaterial;
           if (mat && SKIN_MATERIAL_NAMES.includes(mat.name)) {
-            if (!zoneBoxRef.current && mesh.geometry?.attributes?.position) {
-              mesh.geometry.computeBoundingBox();
-              const bb = mesh.geometry.boundingBox as Box3 | null;
-              const h = bb ? bb.max.y - bb.min.y : 0;
-              if (bb && h > 0.01) zoneBoxRef.current = { yMin: bb.min.y, height: h };
+            if (!zoneBoxRef.current) {
+              // Önce kemik kalibrasyonu (anatomik doğru), yoksa bbox fallback.
+              if ((mesh as any).isSkinnedMesh) {
+                zoneBoxRef.current = measureZoneFromBones(mesh as SkinnedMesh);
+              }
+              if (!zoneBoxRef.current && mesh.geometry?.attributes?.position) {
+                mesh.geometry.computeBoundingBox();
+                const bb = mesh.geometry.boundingBox as Box3 | null;
+                const h = bb ? bb.max.y - bb.min.y : 0;
+                if (bb && h > 0.01) zoneBoxRef.current = { yMin: bb.min.y, height: h };
+              }
             }
             // SkeletonUtils.clone materyali REFERANSLA paylaşır (drei useGLTF
             // global cache). Per-frame mat.color/roughness mutasyonu cache'i

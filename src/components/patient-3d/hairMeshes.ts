@@ -90,7 +90,10 @@ export function buildHair(variant: string): Group | null {
   // Ana kapak: küre dilimi — tepe + arka + yanları örter, yüzü açık bırakır.
   // phiStart/phiLength yerine thetaLength ile üst yarıyı al, sonra öne doğru
   // hairlinePhi kadar kes (rotasyonla alın hattı ayarlanır).
-  const capTheta = Math.PI * (spec.thinning ? 0.52 : 0.58);
+  // thetaLength ≤ 0.5π: kapak kenarı ekvatorda (kulak üstü hattı) biter —
+  // 0.58π kenarı çene/boyun hizasına indirip yanlarda siyah dilim
+  // (favori-yaması) çıkarıyordu (paket 3 screenshot bulgusu).
+  const capTheta = Math.PI * (spec.thinning ? 0.44 : 0.5);
   const cap = new Mesh(
     new SphereGeometry(r, 20, 12, 0, Math.PI * 2, 0, capTheta),
     mat
