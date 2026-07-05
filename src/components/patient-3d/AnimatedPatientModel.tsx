@@ -155,6 +155,9 @@ export interface AnimatedModelMeta {
    * (Per-klip min-Z denendi: uzuv sarkan kliplerde gövdeyi havalandırdı → terk edildi.)
    */
   bedPosY: number;
+  /** true → GLB gerçek varlık taşıyor (MPFB göz/saç/kaş/önlük mesh + cilt
+      dokusu, v2 hattı) — prosedürel saç/yüz ve shader önlüğü KAPATILIR. */
+  realAssets?: boolean;
 }
 
 export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>> = {
@@ -166,11 +169,15 @@ export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>>
     bedPosY: -0.337, // objektif ölçüm + ayak yükseltme nudge (scripts/measure-bed-place.mjs)
   },
   "male-adult": {
-    url: "/3d/patient-animated-male.glb",
+    // v2 (6 Tem): MPFB CC0 varlık-ekleme turu — gerçek cilt dokusu (UV
+    // DataTransfer ile kurtarıldı), göz/kaş/kirpik/saç mesh, tunik→önlük.
+    // 10 klip + 52 morph korunarak Blender'dan yeniden export (2.2MB meshopt).
+    url: "/3d/patient-v2-male.glb",
     label: "Erkek",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
     bedScale: 0.62,
-    bedPosY: -0.505, // objektif ölçüm + ayak yükseltme nudge
+    bedPosY: -0.505, // gövde mesh değişmedi → aynı kalibrasyon
+    realAssets: true,
   },
   child: {
     url: "/3d/patient-animated-child.glb",
@@ -313,13 +320,13 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
               shader.uniforms.uPallor = { value: 0 };
               shader.uniforms.uDiaphoresis = { value: 0 };
               shader.uniforms.uMottled = { value: 0 };
-              shader.uniforms.uGownEnable = { value: 1 };
+              shader.uniforms.uGownEnable = { value: model.realAssets ? 0 : 1 }; // v2: gerçek önlük mesh
               shader.uniforms.uGownColor = { value: [0, 0, 0] }; // 0 → dahili teal
               shader.uniforms.uZoneYMin = { value: zone?.yMin ?? 0 };
               shader.uniforms.uZoneHeight = { value: zone?.height ?? 0 }; // 0 → canonical fallback
-              shader.uniforms.uSss = { value: 0.32 }; // rim-translucency (görsel üçlü)
+              shader.uniforms.uSss = { value: model.realAssets ? 0.18 : 0.32 }; // dokulu ciltte daha hafif
               shader.uniforms.uSssColor = { value: [0, 0, 0] }; // 0 → dahili sıcak ten kızılı
-              shader.uniforms.uGownPuff = { value: 0.028 }; // kumaş kabartması (LOKAL birim ≈ 2cm)
+              shader.uniforms.uGownPuff = { value: model.realAssets ? 0 : 0.028 }; // v2'de mesh önlük
               shader.vertexShader = shader.vertexShader
                 .replace("#include <common>", patientVertexCommon)
                 .replace("#include <begin_vertex>", patientVertexDisplacement);
@@ -335,7 +342,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
         }
       });
       skinMatsRef.current = mats;
-    }, [clone, skinTone, skinTint]);
+    }, [clone, skinTone, skinTint, model.realAssets]);
 
     // Sürekli klinik görsel — render'da ref'e aynala (stale-closure önleme),
     // useFrame içinde yumuşatılmış değerle cilt rengini sür.
@@ -568,7 +575,9 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     });
 
     // Saç — Head kemiğine kalıcı ekle (hasta kel görünmesin; animasyonu takip eder)
+    // v2 (realAssets): GLB gerçek saç mesh'i taşıyor → prosedürel kapak KAPALI.
     useEffect(() => {
+      if (model.realAssets) return;
       const bone = clone.getObjectByName(HAIR_BONE.bone);
       if (!bone) return;
       const hairObj = buildHair(variant);
@@ -582,6 +591,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     // Yüz — göz küreleri + kaşlar (dokusuz modelde çukurlar boştu; blink
     // morph'lu kapaklar prosedürel küreleri örter). Head kemiğine bağlı.
     useEffect(() => {
+      if (model.realAssets) return; // v2: gerçek göz/kaş mesh'leri GLB'de
       const bone = clone.getObjectByName(FACE_BONE);
       if (!bone) return;
       const faceObj = buildFace(variant);
