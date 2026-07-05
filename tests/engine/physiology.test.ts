@@ -452,10 +452,10 @@ describe("eskalasyon FSM — when_vital (vital eşik tetikli)", () => {
     expect(provider.getState().activated).toContain("arrest");
   });
 
-  test("ŞÜPHELİ DAVRANIŞ: hedef faz adımla ZATEN aktifse eskalasyon atlanır → halt_self çalışmaz, iki faz süperpoze", () => {
-    // physiology.ts:188 guard'ı (trigger && !activated.has(to_phase_id)) yüzünden
-    // hedef önceden aktifleşmişse halt_self hiç işlemez: kaynak faz durmaz,
-    // iki fazın trendi TOPLANIR. Handoff tasarımıyla çelişebilir — belgeleniyor.
+  test("hedef faz adımla ZATEN aktifse bile halt_self devri gerçekleşir — süperpozisyon yok", () => {
+    // Eski bug: (trigger && !activated.has(to_phase_id)) guard'ı hedef önceden
+    // aktifse halt_self'i atlıyordu → iki fazın trendi toplanıyordu. Düzeltme:
+    // devir hedef aktifken de işler; hedefin yaşı korunur (sıfırlanmaz).
     const a: DeteriorationPhase = {
       id: "faz-a",
       trends: [{ vital: "bp_systolic", delta_per_sec: -1 }],
@@ -472,10 +472,10 @@ describe("eskalasyon FSM — when_vital (vital eşik tetikli)", () => {
     provider.notifyStepChange("s2"); // faz-b adımla aktifleşti
     let v = BASE_VITALS;
     for (let i = 0; i < 15; i++) v = provider.tick(v, 1); // after_sec 10 aşıldı
-    // faz-a DURMADI (halt_self atlandı) — mevcut gerçek davranış:
-    expect(provider.getState().stopped).not.toContain("faz-a");
-    // iki faz süperpoze: 15sn × (1+2) = 45 mmHg düşüş (tek fazda 30 olurdu)
-    expect(v.bp_systolic).toBe(BASE_VITALS.bp_systolic - 45);
+    // faz-a DURDU (halt_self hedef aktifken de işledi):
+    expect(provider.getState().stopped).toContain("faz-a");
+    // tick 1-10 süperpoze (10×3=30), tick 11-15 sadece faz-b (5×2=10) → 40
+    expect(v.bp_systolic).toBe(BASE_VITALS.bp_systolic - 40);
   });
 });
 
@@ -536,11 +536,11 @@ describe("halt_self faz devri (handoff)", () => {
     expect(provider.getState().stopped).toContain("z-b");
   });
 
-  test("ŞÜPHELİ DAVRANIŞ: stopped faza müdahale isPhaseHalted=true yapar ama recovery ÇALIŞMAZ", () => {
-    // applyIntervention 'stopped' kontrolü yapmaz (physiology.ts:201-206) →
-    // devredilmiş faz 'halted'a da girer; tick'te stopped önceliği (157-158)
-    // recovery'yi engeller (doğru), ama isPhaseHalted true döner — oskültasyon
-    // resolved_sound geçişi terminal fazda yanlışlıkla tetiklenebilir.
+  test("stopped (devredilmiş) faza müdahale işlemez — isPhaseHalted false kalır, recovery yok", () => {
+    // Eski bug: applyIntervention stopped kontrolü yapmıyordu → terminal faz
+    // 'halted'a giriyor, isPhaseHalted true dönüyordu (oskültasyon
+    // resolved_sound terminal fazda yanlış tetiklenebilirdi). Düzeltme:
+    // stopped faz müdahaleyle halted olamaz.
     const provider = createSimplePhysiologyProvider(
       makeScenario([{ ...ESC_PHASE_A, recovery_trends: [{ vital: "bp_systolic", delta_per_sec: 4, ceiling: 112 }] }, ESC_PHASE_B])
     );
@@ -549,11 +549,11 @@ describe("halt_self faz devri (handoff)", () => {
     expect(provider.getState().stopped).toContain("faz-a");
 
     provider.applyIntervention(v, { type: "give_medication", target_id: "adrenalin" });
-    expect(provider.isPhaseHalted("faz-a")).toBe(true); // mevcut gerçek davranış
+    expect(provider.isPhaseHalted("faz-a")).toBe(false); // terminal faz halted OLMAZ
 
     const bpBefore = v.bp_systolic;
     v = provider.tick(v, 10);
-    expect(v.bp_systolic).toBe(bpBefore); // recovery UYGULANMADI — stopped kazanır
+    expect(v.bp_systolic).toBe(bpBefore); // recovery uygulanmaz — stopped terminal
   });
 });
 
@@ -704,12 +704,11 @@ describe("getActivePhaseSignal — recovering (reperfüzyon) kolu", () => {
     expect(provider.getActivePhaseSignal!(yuksekHr)!.ekg).toBe("st_elevation");
   });
 
-  test("BELGELENEN DAVRANIŞ: halted yüksek-index faz, hâlâ kötüleşen düşük-index faza rağmen 'recovering' sinyali verir", () => {
-    // getActivePhaseSignal dominant seçiminde halted fazı DIŞLAMAZ
-    // (physiology.ts:232-239 sadece inaktif+stopped eler) → yüksek-index faz
-    // durdurulunca sinyal 'recovering' olur; düşük-index faz kötüleşmeye devam
-    // etse bile monitör iyileşme gösterir. Tasarım niyeti "sonraki faz daha
-    // şiddetli" varsayımı — bağımsız fazlarda yanıltıcı olabilir.
+  test("halted yüksek-index faza rağmen kötüleşen düşük-index faz sinyali kazanır — yanıltıcı 'recovering' yok", () => {
+    // Eski bug: dominant seçim halted fazı dışlamıyordu → yüksek-index faz
+    // durdurulunca düşük-index faz hâlâ kötüleşirken monitör 'recovering'
+    // gösteriyordu. Düzeltme: en kötü AKTİF (halted olmayan) süreç kazanır;
+    // recovering koluna ancak kötüleşen sinyal fazı kalmayınca girilir.
     const provider = createSimplePhysiologyProvider(
       makeScenario([SIG_LOW, SIG_HIGH])
     );
@@ -718,7 +717,18 @@ describe("getActivePhaseSignal — recovering (reperfüzyon) kolu", () => {
       target_id: "defibrillator",
     }); // sadece sig-yuksek halted; sig-dusuk hâlâ aktif kötüleşiyor
     const sig = provider.getActivePhaseSignal!(BASE_VITALS)!;
-    expect(sig.phaseId).toBe("recovering"); // mevcut gerçek davranış
+    expect(sig.phaseId).toBe("sig-dusuk"); // kötüleşen süreç monitörü belirler
+    expect(sig.ekg).toBe("st_elevation");
+    expect(sig.recovering).toBe(false);
     expect(provider.isPhaseHalted("sig-dusuk")).toBe(false);
+
+    // İkinci müdahale sig-dusuk'u da durdurunca artık recovering'e geçilir:
+    provider.applyIntervention(BASE_VITALS, {
+      type: "give_medication",
+      target_id: "adrenalin",
+    });
+    const sig2 = provider.getActivePhaseSignal!(BASE_VITALS)!;
+    expect(sig2.phaseId).toBe("recovering");
+    expect(sig2.recovering).toBe(true);
   });
 });

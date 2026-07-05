@@ -185,11 +185,16 @@ export function createSimplePhysiologyProvider(
               heldSec.set(key, 0);
             }
           }
-          if (trigger && !activated.has(esc.to_phase_id)) {
-            activated.add(esc.to_phase_id);
-            phaseAge.set(esc.to_phase_id, 0);
+          if (trigger) {
+            if (!activated.has(esc.to_phase_id)) {
+              activated.add(esc.to_phase_id);
+              phaseAge.set(esc.to_phase_id, 0);
+            }
             // halt_self: önceki fazı DURDUR (handoff) — 'stopped'a koy, 'halted'a
             // DEĞİL: recovery_trends'li faz escalation'da yanlışlıkla iyileşmesin.
+            // Hedef faz (örn. adımla) ZATEN aktif olsa bile devir gerçekleşir;
+            // aksi halde kaynak+hedef trendleri süperpoze olur. Hedefin yaşı
+            // korunur — koşan faz sıfırlanmaz.
             if (esc.halt_self) stopped.add(phase.id);
           }
         });
@@ -199,7 +204,10 @@ export function createSimplePhysiologyProvider(
 
     applyIntervention(vitals, action) {
       for (const phase of phases) {
-        if (halted.has(phase.id)) continue;
+        // stopped (devredilmiş/terminal) faz müdahaleyle 'halted'a giremez —
+        // isPhaseHalted yanlış true dönerdi (oskültasyon resolved_sound
+        // terminal fazda yanlış tetiklenirdi). Recovery zaten çalışmıyordu.
+        if (halted.has(phase.id) || stopped.has(phase.id)) continue;
         if (phase.halted_by.some((m) => matchesAction(m, action))) {
           halted.add(phase.id);
         }
@@ -227,24 +235,28 @@ export function createSimplePhysiologyProvider(
     getActivePhaseSignal(vitals): PhaseSignal | null {
       // Dominant faz = sinyal tanımlı, aktif & durdurulmamış, en YÜKSEK index'li
       // (escalation zinciri sonra gelen fazı daha ileri = daha şiddetli yapar).
+      // Halted (müdahale edilmiş) faz AYRI izlenir: kötüleşen bir faz varken
+      // monitör 'recovering' göstermesin — en kötü AKTİF süreç kazanır.
+      // Kötüleşen sinyal fazı kalmadıysa halted faz reperfüzyon kolunu sürer.
       let dominant: DeteriorationPhase | null = null;
       let dominantIdx = -1;
+      let haltedDom: DeteriorationPhase | null = null;
       phases.forEach((p, i) => {
         if (!p.signal) return;
         if (!activated.has(p.id) || stopped.has(p.id)) return;
-        if (i > dominantIdx) {
+        if (halted.has(p.id)) {
+          if (!haltedDom) haltedDom = p;
+        } else if (i > dominantIdx) {
           dominant = p;
           dominantIdx = i;
         }
       });
-      if (!dominant) return null;
-      const dom: DeteriorationPhase = dominant;
-      const spec = dom.signal!;
 
-      // Müdahale ile durduruldu → reperfüzyon/iyileşme kolu: ST rezolüsyonu.
-      // Vitaller toparlandıysa sinüse döner; değilse ST elevasyonu sürer (yavaş
-      // rezolüsyon proxy'si). Kalp sesi normalleşir, dramatik görsel kalkar.
-      if (halted.has(dom.id)) {
+      // Kötüleşen sinyal fazı yok + müdahale edilmiş faz var → iyileşme kolu.
+      // ST rezolüsyonu: vitaller toparlandıysa sinüse döner; değilse ST
+      // elevasyonu sürer (yavaş rezolüsyon proxy'si). Kalp sesi normalleşir.
+      if (!dominant) {
+        if (!haltedDom) return null;
         const recovered =
           (vitals.bp_systolic ?? 0) >= 115 && (vitals.hr ?? 999) <= 95;
         return {
@@ -256,6 +268,8 @@ export function createSimplePhysiologyProvider(
           recovering: true,
         };
       }
+      const dom: DeteriorationPhase = dominant;
+      const spec = dom.signal!;
 
       // Tedavisiz seyir: faz içi geç evrim (örn. VF→asistoli) faz yaşına bağlı.
       const age = phaseAge.get(dom.id) ?? 0;
