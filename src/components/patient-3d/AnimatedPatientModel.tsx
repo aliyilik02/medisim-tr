@@ -30,7 +30,7 @@ import {
   patientFragmentCommon,
   patientFragmentColor,
 } from "./shaders/patientShader";
-import { Box3, Vector3 } from "three";
+import type { Box3 } from "three";
 
 // ============================================================
 // Animasyonlu hasta modeli — Faz 2/3 (iskelet animasyon + mimik)
@@ -222,7 +222,10 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     // rengi + cilt materyallerini ref'e topla (per-frame sürekli görsel için).
     const skinMatsRef = useRef<MeshStandardMaterial[]>([]);
     const baseSkinRef = useRef<[number, number, number]>([1, 1, 1]);
-    // Önlük shader'ları — uZoneYMin/uZoneHeight ilk frame'de bind-kutusundan.
+    // Önlük shader'ları — uZoneYMin/uZoneHeight LOKAL geometri bbox'ından.
+    // DİKKAT: world uzayı KULLANILMAZ — Mixamo cm-rig'de (armature scale 0.01
+    // + -90°X) bind-poz world kutusu ~5mm'lik dilime çöker ve boy ekseni
+    // Y olmaktan çıkar; lokal geometri uzayında boy ekseni Y ve ölçek sağlam.
     const gownShadersRef = useRef<{ uniforms: Record<string, { value: unknown }> }[]>([]);
     const zoneBoxRef = useRef<{ yMin: number; height: number } | null>(null);
     useMemo(() => {
@@ -231,11 +234,20 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       const base: [number, number, number] = [sr * tr, sg * tg, sb * tb];
       baseSkinRef.current = base;
       const mats: MeshStandardMaterial[] = [];
+      // Yeniden koşumda (ton değişimi) eski clone materyal shader'ları bayat — sıfırla.
+      gownShadersRef.current = [];
+      zoneBoxRef.current = null;
       clone.traverse((obj) => {
         if ("isMesh" in obj && (obj as any).isMesh) {
           const mesh = obj as any;
           const mat = mesh.material as MeshStandardMaterial;
           if (mat && SKIN_MATERIAL_NAMES.includes(mat.name)) {
+            if (!zoneBoxRef.current && mesh.geometry?.attributes?.position) {
+              mesh.geometry.computeBoundingBox();
+              const bb = mesh.geometry.boundingBox as Box3 | null;
+              const h = bb ? bb.max.y - bb.min.y : 0;
+              if (bb && h > 0.01) zoneBoxRef.current = { yMin: bb.min.y, height: h };
+            }
             // SkeletonUtils.clone materyali REFERANSLA paylaşır (drei useGLTF
             // global cache). Per-frame mat.color/roughness mutasyonu cache'i
             // kalıcı bozar (başka sayfada siyanotik/terli hasta sızar) → klonla.
@@ -245,7 +257,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
             // Hasta önlüğü — shader bölge maskesi (giysi mesh'i değil).
             // Zonal/klinik uniform'lar NÖTR (0): cilt rengi per-frame JS
             // yolundan sürülmeye devam eder; shader sadece önlüğü çizer.
-            // uZoneYMin/uZoneHeight bind-kutusundan ilk frame'de set edilir.
+            const zone = zoneBoxRef.current;
             local.onBeforeCompile = (shader) => {
               shader.uniforms.uTime = { value: 0 };
               shader.uniforms.uBreathAmplitude = { value: 0 }; // solunum iskelet animasyonundan
@@ -257,8 +269,8 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
               shader.uniforms.uMottled = { value: 0 };
               shader.uniforms.uGownEnable = { value: 1 };
               shader.uniforms.uGownColor = { value: [0, 0, 0] }; // 0 → dahili teal
-              shader.uniforms.uZoneYMin = { value: 0 };
-              shader.uniforms.uZoneHeight = { value: 0 }; // ilk frame'de bbox'tan
+              shader.uniforms.uZoneYMin = { value: zone?.yMin ?? 0 };
+              shader.uniforms.uZoneHeight = { value: zone?.height ?? 0 }; // 0 → canonical fallback
               shader.vertexShader = shader.vertexShader
                 .replace("#include <common>", patientVertexCommon)
                 .replace("#include <begin_vertex>", patientVertexDisplacement);
@@ -386,37 +398,6 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
           if (!want && next <= 0.001) {
             a.stop();
             overlayActiveRef.current = null;
-          }
-        }
-      }
-      // Önlük zonal ölçeği — bind-poz dünya kutusu bir kez ölçülür (skinning
-      // ÖNCESİ geometri bbox × matrixWorld ≈ bind kutusu; ayakta-poz boy ekseni).
-      if (gownShadersRef.current.length) {
-        if (!zoneBoxRef.current) {
-          let found: { yMin: number; height: number } | null = null;
-          clone.traverse((obj) => {
-            if (found) return;
-            if ("isSkinnedMesh" in obj && (obj as any).isSkinnedMesh) {
-              const mesh = obj as SkinnedMesh;
-              mesh.geometry.computeBoundingBox();
-              const bb = mesh.geometry.boundingBox;
-              if (!bb) return;
-              mesh.updateWorldMatrix(true, false);
-              const wb = new Box3(
-                new Vector3().copy(bb.min),
-                new Vector3().copy(bb.max)
-              ).applyMatrix4(mesh.matrixWorld);
-              const h = wb.max.y - wb.min.y;
-              if (h > 0.01) found = { yMin: wb.min.y, height: h };
-            }
-          });
-          if (found) zoneBoxRef.current = found;
-        }
-        const zb = zoneBoxRef.current;
-        if (zb) {
-          for (const sh of gownShadersRef.current) {
-            if (sh.uniforms.uZoneYMin) sh.uniforms.uZoneYMin.value = zb.yMin;
-            if (sh.uniforms.uZoneHeight) sh.uniforms.uZoneHeight.value = zb.height;
           }
         }
       }

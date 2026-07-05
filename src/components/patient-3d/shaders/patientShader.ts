@@ -34,6 +34,9 @@ uniform float uTime;
 uniform float uBreathAmplitude;
 uniform float uBreathSpeed; // Vital RR değerine bağlı dinamik nefes alma hızı
 varying vec3 vClinicalWorldPos; // mottled (livedo) deseni için world konum
+varying vec3 vClinicalLocalPos; // pre-skin LOKAL konum — zonal koordinat
+                                // (Mixamo cm-rig'de world bind kutusu ~5mm'e
+                                // çöker; lokal uzayda boy ekseni Y sağlam)
 `;
 
 export const patientVertexDisplacement = `
@@ -42,6 +45,7 @@ export const patientVertexDisplacement = `
 // Chest + abdomen aynı fazda, aynı yön (AP expansion).
 vec4 bWorldPos = modelMatrix * vec4(transformed, 1.0);
 vClinicalWorldPos = bWorldPos.xyz;
+vClinicalLocalPos = transformed;
 
 // Chest (4. ICS) — birincil göğüs kafesi genişlemesi
 vec3 bChestCenter = vec3(0.0, 0.523, 0.085);
@@ -71,9 +75,10 @@ uniform vec3 uGownColor;    // önlük rengi (sRGB); (0,0,0) ise dahili #6fa8a0 
 // Zonal koordinat yeniden-ölçekleme: farklı dünya ölçeğindeki modeller
 // (yatak sahnesi bedScale'li Mixamo rig) bölge sabitlerini canonical ölçeğe
 // çevirir. uZoneHeight set edilmezse (0) → canonical varsayılan (geriye uyumlu).
-uniform float uZoneYMin;    // bind-poz dünya taban y
-uniform float uZoneHeight;  // bind-poz boy (dünya birimi)
+uniform float uZoneYMin;    // bind-poz LOKAL taban y (geometri bbox)
+uniform float uZoneHeight;  // bind-poz LOKAL boy (geometri bbox)
 varying vec3 vClinicalWorldPos;
+varying vec3 vClinicalLocalPos;
 
 // ═══ Anatomik bölge (zonal) fonksiyonları ═══
 // TS aynası: patientZones.ts — formüller birebir, sabitler oradan interpolasyonlu.
@@ -124,14 +129,18 @@ float msZoneGown(float xA, float yN, float zF) {
 export const patientFragmentColor = `
 #include <dithering_fragment>
 // ── Zonal koordinatlar: canonical ayakta-poz world (pre-skinning) ──
-// uZoneHeight>0 ise model-özel bind kutusundan normalize edilir ve x/z
-// canonical ölçeğe çevrilir; değilse canonical sabitler (geriye uyumlu).
+// uZoneHeight>0 ise model-özel LOKAL bind kutusundan normalize edilir ve
+// x/z canonical ölçeğe çevrilir (Mixamo cm-rig: world bind uzayı çöker,
+// lokal uzay sağlam); değilse canonical world sabitleri (geriye uyumlu).
 float zsH   = uZoneHeight > 0.001 ? uZoneHeight : ${f(CANON_HEIGHT)};
 float zsMin = uZoneHeight > 0.001 ? uZoneYMin   : (${f(CANON_Y_MIN)});
 float zsK   = ${f(CANON_HEIGHT)} / zsH;
-float zYN = (vClinicalWorldPos.y - zsMin) / zsH;
-float zXA = abs(vClinicalWorldPos.x) * zsK;
-float zZF = vClinicalWorldPos.z * zsK;
+vec3 zSrc   = uZoneHeight > 0.001 ? vClinicalLocalPos : vClinicalWorldPos;
+float zYN = (zSrc.y - zsMin) / zsH;
+float zXA = abs(zSrc.x) * zsK;
+float zZF = zSrc.z * zsK;
+// Desen (noise/weave) koordinatı — canonical ölçeğe getirilmiş konum
+vec3 zPat = zSrc * zsK;
 
 // Işık faktörü — önlüğü kendi rengiyle "yeniden aydınlatmak" için, klinik
 // tint uygulanmadan ÖNCE yakalanır (lit renk / albedo ≈ gelen ışık).
@@ -150,9 +159,9 @@ vec3 paleColor = mix(gl_FragColor.rgb, vec3(pLum) * 1.06, 0.6);
 gl_FragColor.rgb = mix(gl_FragColor.rgb, paleColor, uPallor);
 
 // ── Mottled (livedo): ekstremite-ağırlıklı benekli koyu-mor desen ──
-float mNoise = sin(vClinicalWorldPos.x * 55.0)
-             * sin(vClinicalWorldPos.y * 47.0)
-             * sin(vClinicalWorldPos.z * 61.0);
+float mNoise = sin(zPat.x * 55.0)
+             * sin(zPat.y * 47.0)
+             * sin(zPat.z * 61.0);
 float mMask = smoothstep(0.05, 0.55, mNoise) * uMottled * msZoneMottle(zXA, zYN);
 gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vec3(0.72, 0.58, 0.66), mMask);
 
@@ -169,8 +178,8 @@ if (gMask > 0.001) {
     ? vec3(${f(GOWN_DEFAULT_COLOR[0])}, ${f(GOWN_DEFAULT_COLOR[1])}, ${f(GOWN_DEFAULT_COLOR[2])})
     : uGownColor;
   // Kumaş dokusu: mevcut sin-çarpım noise deseninin yüksek frekanslısı
-  float gWeave = 1.0 + 0.035 * sin(vClinicalWorldPos.x * 240.0)
-                     * sin(vClinicalWorldPos.y * 260.0);
+  float gWeave = 1.0 + 0.035 * sin(zPat.x * 240.0)
+                     * sin(zPat.y * 260.0);
   // Dikiş çizgileri: etek ucu + yan dikiş (hafif koyulaştırma)
   float gHemSeam = 1.0 - smoothstep(0.004, 0.010, abs(zYN - ${f(ZONE.gownHemSeamY)}));
   float gSideSeam = 1.0 - smoothstep(0.003, 0.008, abs(zXA - ${f(ZONE.gownSideSeamX)}));

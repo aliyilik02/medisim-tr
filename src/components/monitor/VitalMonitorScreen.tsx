@@ -73,7 +73,8 @@ function TrendSparkline({
   height?: number;
   critical?: boolean;
 }) {
-  if (!data || data.length < 2) return <svg width={width} height={height} aria-hidden="true" />;
+  if (!data || data.length < 2)
+    return <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" />;
   let lo = Infinity;
   let hi = -Infinity;
   for (const d of data) {
@@ -98,7 +99,16 @@ function TrendSparkline({
     .join(" ");
   const last = pts[pts.length - 1];
   return (
-    <svg width={width} height={height} aria-hidden="true" className="block">
+    // width=100% + viewBox: dar kutuda (3'lü alt sıra ~86px) kırpılmak yerine
+    // yatay küçülür — sabit piksel genişliği kutu overflow'unun kaynağıydı.
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      className="block max-w-full"
+    >
       <path
         d={path}
         fill="none"
@@ -136,6 +146,7 @@ function VitalBox({
   icon,
   big = false,
   k = 1,
+  slim = false,
 }: {
   label: string;
   unit: string;
@@ -150,6 +161,8 @@ function VitalBox({
   big?: boolean;
   /** numerik ölçek faktörü (dense=0.62, normal=1) */
   k?: number;
+  /** Dar kutu (3'lü alt sıra ~86px): alarm limit sütunu sığmaz → gizle. */
+  slim?: boolean;
 }) {
   const crit = level === "crit";
   const numColor = crit ? "#ff6b6b" : color;
@@ -163,14 +176,14 @@ function VitalBox({
       role={crit ? "alert" : undefined}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
           <span style={{ color }}>{icon}</span>
           <span className="text-[12px] font-semibold tracking-wide" style={{ color }}>
             {label}
           </span>
-          <span className="text-[10px] text-white/35">{unit}</span>
+          <span className="text-[10px] text-white/35 truncate">{unit}</span>
         </div>
-        {low != null && (
+        {low != null && !slim && (
           <div
             className="text-[10px] leading-tight text-white/30 text-right tabular-nums"
             style={{ fontFamily: MONO }}
@@ -184,7 +197,12 @@ function VitalBox({
       <div className="flex items-end gap-2">
         <span
           className="font-bold leading-none tracking-tight tabular-nums"
-          style={{ color: numColor, fontSize: `${(big ? 4.6 : 3.4) * k}rem`, fontFamily: MONO }}
+          style={{
+            // slim: 3'lü dar sırada 4 karakterlik değer (36.8) kutuya sığmalı
+            color: numColor,
+            fontSize: `${(big ? 4.6 : slim ? 2.0 : 3.4) * k}rem`,
+            fontFamily: MONO,
+          }}
         >
           {value}
         </span>
@@ -728,6 +746,7 @@ export function VitalMonitorScreen({
                 trend={trendArr("rr")}
                 icon={<Wind size={15} color={PARAM.rr.color} />}
                 k={k}
+                slim
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -742,6 +761,7 @@ export function VitalMonitorScreen({
                 trend={trendArr("etco2")}
                 icon={<Activity size={15} color={PARAM.etco2.color} />}
                 k={k}
+                slim
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -756,6 +776,7 @@ export function VitalMonitorScreen({
                 trend={[]}
                 icon={<Thermometer size={15} color={PARAM.temp.color} />}
                 k={k}
+                slim
               />
             </div>
           </div>
