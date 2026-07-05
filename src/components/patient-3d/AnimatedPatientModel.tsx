@@ -190,6 +190,10 @@ interface Props {
       per-frame siyanoz/solgunluk ile harmanlanır, terleme parlaklık katar —
       ayrık skinTint'in ÜSTÜNE. Verilmezse ayrık skinTint davranışı korunur. */
   visualState?: VisualState;
+  /** Prosedürel hareket katmanı (agitation-mapping) — mixer pozunun ÜSTÜNE
+      additive kemik ofsetleri: tremor (rigor titremesi), restlessness
+      (ağrı kıpırdanması). Verilmezse katman kapalı. */
+  agitation?: { tremor: number; restlessness: number };
 }
 
 export const AnimatedPatientModel = forwardRef<Group, Props>(
@@ -206,6 +210,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       scale = MODEL_SCALE,
       position = [0, -0.243, 0],
       visualState,
+      agitation,
     },
     ref,
   ) => {
@@ -473,6 +478,48 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
         }
         mouthRef.current += (target - mouthRef.current) * 0.2;
         setMorph("jawOpen", mouthRef.current);
+      }
+    });
+
+    // ── Prosedürel hareket katmanı — mixer SONRASI additive kemik ofseti ──
+    // useAnimations mixer'ı kendi useFrame'inde (önce kayıtlı → önce koşar)
+    // günceller; bu useFrame mixer pozunun üstüne ekler. Mixamo kliplerinde
+    // tüm iskelet keyli → mixer her frame mutlak değer yazar, += birikmez.
+    const agitationRef = useRef(agitation);
+    agitationRef.current = agitation;
+    const agitBones = useMemo(() => {
+      const get = (n: string) => clone.getObjectByName(n) ?? null;
+      return {
+        head: get("mixamorigHead"),
+        spine: get("mixamorigSpine1"),
+        armL: get("mixamorigLeftArm"),
+        armR: get("mixamorigRightArm"),
+        handL: get("mixamorigLeftHand"),
+        handR: get("mixamorigRightHand"),
+      };
+    }, [clone]);
+    useFrame((state) => {
+      const ag = agitationRef.current;
+      if (!ag || (ag.tremor <= 0.01 && ag.restlessness <= 0.01)) return;
+      const t = state.clock.getElapsedTime();
+      const b = agitBones;
+      // Tremor — yüksek frekans (≈9 Hz), faz kaydırmalı ince sarsıntı
+      if (ag.tremor > 0.01) {
+        const a = ag.tremor * 0.028;
+        if (b.armL) b.armL.rotation.x += a * Math.sin(t * 56);
+        if (b.armR) b.armR.rotation.x += a * Math.sin(t * 56 + 2.1);
+        if (b.handL) b.handL.rotation.z += a * 1.4 * Math.sin(t * 62 + 0.7);
+        if (b.handR) b.handR.rotation.z += a * 1.4 * Math.sin(t * 62 + 3.4);
+        if (b.head) b.head.rotation.z += a * 0.5 * Math.sin(t * 48 + 1.3);
+      }
+      // Restlessness — yavaş (≈0.3 Hz) baş çevirme + gövde kıpırdanması
+      if (ag.restlessness > 0.01) {
+        const r = ag.restlessness;
+        if (b.head) {
+          b.head.rotation.y += r * 0.14 * Math.sin(t * 1.7);
+          b.head.rotation.x += r * 0.05 * Math.sin(t * 1.1 + 0.8);
+        }
+        if (b.spine) b.spine.rotation.z += r * 0.035 * Math.sin(t * 1.3 + 2.0);
       }
     });
 

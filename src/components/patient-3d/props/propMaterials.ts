@@ -84,3 +84,23 @@ export const MAT_SEAT = new MeshStandardMaterial({
 export const MAT_BOX_TEAL = new MeshStandardMaterial({ color: "#0d9488", roughness: 0.7 });
 export const MAT_BOX_BLUE = new MeshStandardMaterial({ color: "#38637a", roughness: 0.7 });
 export const MAT_BOX_AMBER = new MeshStandardMaterial({ color: "#d9a514", roughness: 0.7 });
+
+/** Tavan aydınlatma paneli — soğuk beyaz yayıcı (klinik floresan hissi). */
+export const MAT_LIGHT_PANEL = new MeshStandardMaterial({
+  color: "#eef4f6", emissive: "#dfeaf2", emissiveIntensity: 1.6, roughness: 0.4,
+});
+
+/** Seramik/porselen — lavabo gövdesi. */
+export const MAT_CERAMIC = new MeshStandardMaterial({
+  color: "#e3e8ea", roughness: 0.25, metalness: 0.05,
+});
+
+/** Kapı yüzeyi — açık gri laminat. */
+export const MAT_DOOR = new MeshStandardMaterial({
+  color: "#aeb6bb", roughness: 0.7,
+});
+
+/** Saat kadranı — mat beyaz. */
+export const MAT_CLOCK_FACE = new MeshStandardMaterial({
+  color: "#f2f5f6", roughness: 0.5,
+});

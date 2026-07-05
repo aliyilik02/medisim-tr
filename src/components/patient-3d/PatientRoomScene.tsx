@@ -26,6 +26,14 @@ import { PrivacyCurtain } from "./props/PrivacyCurtain";
 import { StaffStool } from "./props/StaffStool";
 import { WasteBin } from "./props/WasteBin";
 import { TubingLayer } from "./props/TubingLayer";
+import {
+  CeilingLightPanel,
+  WallClock,
+  SinkUnit,
+  RoomDoor,
+  SharpsContainer,
+  GloveDispenser,
+} from "./props/RoomFixtures";
 
 // ── Yatak yerleşim ölçüm probu (dev-only, GÖZ yerine SAYI) ──────────────
 // window.__measureBed=true iken hastanın POZLANMIŞ (skinned) dünya bbox'unu
@@ -266,6 +274,8 @@ interface Props {
   skinTint?: SkinTint;
   /** Sürekli klinik görsel (siyanoz/solgun/terleme/benekli) — vital→shader/renk. */
   visualState?: VisualState;
+  /** Prosedürel hareket katmanı (tremor/huzursuzluk) — agitation-mapping. */
+  agitation?: { tremor: number; restlessness: number };
   /** Oynatılacak klip (senaryo durumundan: laying_idle, talk, cough, pain). */
   clip?: PatientClip;
   /** Animasyon yönetmeni kararı — verilirse clip'i ezer (crossfade/hız/loop/overlay). */
@@ -294,6 +304,7 @@ export function PatientRoomScene({
   skinTone = DEFAULT_SKIN_TONE,
   skinTint = "normal",
   visualState,
+  agitation,
   clip = "laying_idle",
   decision = null,
   speaking = false,
@@ -366,8 +377,23 @@ export function PatientRoomScene({
           <StaffStool position={[0.85, 0, 0.8]} />
           {/* Tıbbi atık kovası — sol baş ucu köşesi (ventilatörün gerisi) */}
           <WasteBin position={[-1.05, 0, -0.85]} />
+          {/* ── Oda demirbaşları (RoomFixtures — Hat B oda tamamlama) ──
+              Tavan ≈ y 1.39; kamera preset ışın hatları boş bırakıldı
+              ("önden" tepeden iner: x≈0, z 0.2-0.31 — paneller z=-0.55/0.75). */}
+          <CeilingLightPanel position={[0, 1.38, -0.55]} />
+          <CeilingLightPanel position={[0, 1.38, 0.75]} />
+          {/* Duvar saati — ayak ucu duvarı, kadran odaya (-Z) bakar */}
+          <WallClock position={[0.35, 1.0, 1.26]} rotation={[-Math.PI / 2, 0, 0]} />
+          {/* Lavabo — sol (-X) duvar, crash cart ile atık kovası arası */}
+          <SinkUnit position={[-1.41, 0, 0.05]} rotation={[0, Math.PI / 2, 0]} />
+          {/* Kapı — ayak ucu duvarı sağ yarısı, kanat odaya bakar */}
+          <RoomDoor position={[0.75, 0, 1.26]} rotation={[0, Math.PI, 0]} />
+          {/* Kesici-delici atık (sarı) + eldiven dispanseri — baş ucu duvarı,
+              gaz panelinin iki yanı */}
+          <SharpsContainer position={[0.45, 0.45, -1.22]} />
+          <GloveDispenser position={[-0.45, 0.6, -1.22]} />
           {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
-          <BedPatient variant={variant} clip={clip} decision={decision} skinTone={skinTone} skinTint={skinTint} visualState={visualState} speaking={speaking} speechText={speechText} equipment={equipment} />
+          <BedPatient variant={variant} clip={clip} decision={decision} skinTone={skinTone} skinTint={skinTint} visualState={visualState} agitation={agitation} speaking={speaking} speechText={speechText} equipment={equipment} />
           {/* Hortumlar — IV hattı (askı→ön kol) + O₂ (duvar paneli→maske/kanül),
               catenary sarkma + yumuşatılmış uç takibi (hasta hareketinde doğal) */}
           <TubingLayer equipment={equipment} />
@@ -446,13 +472,14 @@ interface BedPatientProps {
   skinTone: SkinTone;
   skinTint: SkinTint;
   visualState?: VisualState;
+  agitation?: { tremor: number; restlessness: number };
   speaking: boolean;
   speechText?: string | null;
   equipment?: EquipmentKind[];
 }
 
 // Varyant + klip metadata'sından yatak yerleşimini hesaplar.
-function BedPatient({ variant, clip, decision, skinTone, skinTint, visualState, speaking, speechText, equipment }: BedPatientProps) {
+function BedPatient({ variant, clip, decision, skinTone, skinTint, visualState, agitation, speaking, speechText, equipment }: BedPatientProps) {
   const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
   const s = meta.bedScale;
   const groupRef = useRef<Group>(null);
@@ -468,6 +495,7 @@ function BedPatient({ variant, clip, decision, skinTone, skinTint, visualState, 
         skinTone={skinTone}
         skinTint={skinTint}
         visualState={visualState}
+        agitation={agitation}
         speaking={speaking}
         speechText={speechText}
         equipment={equipment}

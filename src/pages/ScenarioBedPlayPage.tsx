@@ -32,6 +32,7 @@ import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
 import { useAnimationDirector } from "@/hooks/useAnimationDirector";
+import { vitalsToAgitation } from "@/clinical/agitation-mapping";
 import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration, matchReasoningPrompt, isReasoningCorrect } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
@@ -301,6 +302,9 @@ export function ScenarioBedPlayPage() {
     () => applyPhaseVisual(mapVitalsToVisuals(liveVitals), runner.phaseSignal?.visual),
     [liveVitals, runner.phaseSignal],
   );
+  // Prosedürel hareket katmanı — rigor titremesi (ateş/hipoksi) + ağrı
+  // huzursuzluğu. Mixer pozunun üstüne additive; yeni klip gerektirmez.
+  const agitation = useMemo(() => vitalsToAgitation(liveVitals), [liveVitals]);
 
   // Oskültasyon — faz-senkron kalp/akciğer sesi yatak-başına taşındı (Yol-3'ten).
   // buildScenarioRegions dominant fazın kalp sesini kardiyak noktalara yazar
@@ -405,6 +409,7 @@ export function ScenarioBedPlayPage() {
             decision={animDecision}
             skinTint={skinTint}
             visualState={visualState}
+            agitation={agitation}
             skinTone={skinTone}
             speaking={speaking}
             speechText={speechText}
