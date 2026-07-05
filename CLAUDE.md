@@ -24,7 +24,7 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 **Canonical oyun yolu:** `/hasta/:id` (ScenarioBedPlayPage, yatak-başı 3D). Eski demo route'lar emekli/redirect — yeni 3D/monitör işi SADECE orada yapılır.
 **Bitti:** oynanabilir döngü · 3D yatak-başı sahne (4 varyant + 12 ekipman + monitör) · faz-senkron mimari (`getActivePhaseSignal`) · tek motor (`src/engine/`) · senaryo üretim sistemi (ProductionScenario kontratı, 16→400 hattı) · STEMI olgunlaştırma (REVIEWED) · klinik muhakeme katmanı · Tier-2 sınıf altyapısı (D1+JWT, `/egitmen`, `/ilerleme`, backend lokal 12/12). Sağlık: tsc 0, 889 vitest pass.
 **⚠️ Klinik ACTIVE bekleyen (sadece Ali Bey):** anaflaksi, STEMI paketi, opioid pilot, ekipman kataloğu, muhakeme promptları.
-**⚠️ Push YOK:** ~50 lokal commit `feat/backend-cf-worker`'da ("en nihai halde pushlarız"). `patient-mimikli.glb` Daz lisansı netleşmeden commit edilmez (MPFB2 CC0 kalıcı hat).
+**✅ Push AÇIK (6 Tem 2026):** `feat/backend-cf-worker` GitHub'da senkron (aliyilik02/medisim-tr); her anlamlı commit sonrası push edilebilir. `patient-mimikli.glb` gitignore'lu — Daz lisansı netleşmeden ASLA commit edilmez (MPFB2 CC0 kalıcı hat).
 **Sıradaki iş:** `docs/YOL-HARITASI.md` Hat A–E (öneri: A motor testleri + B 3D derinleşme paralel).
 **Araç/kurulum notları:** Blender 5.1 + MPFB2 + Lab MCP çalışıyor; caveman + graphify aktif; ultracode sadece Ali Bey açık isteğiyle.
 

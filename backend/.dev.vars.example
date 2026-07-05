@@ -11,3 +11,8 @@ JWT_SECRET=REPLACE_uzun_rastgele_deger
 SIGNUP_INVITE_CODE=REPLACE_davet_kodu
 #
 # D1 local: `npx wrangler d1 migrations apply DB --local` (şema 0001_init.sql)
+
+# Opsiyonel: Gemini Flash TTS (HD ses). "1" yapmadan ÖNCE anahtarın
+# free-tier olduğunu doğrula — varsayılan kapalı, frontend tarayıcı
+# sesine düşer (ücretsiz yol). Free tier limitleri sıkı (429 → otomatik düşüş).
+# GEMINI_TTS_ENABLED=1

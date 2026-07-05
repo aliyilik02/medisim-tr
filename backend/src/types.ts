@@ -6,6 +6,8 @@ import type { Role } from "./auth/jwt";
 
 export interface Env {
   GEMINI_API_KEY: string;
+  /** "1" → /api/tts Gemini Flash TTS aktif (varsayılan kapalı — ücretsiz tarayıcı sesi). */
+  GEMINI_TTS_ENABLED?: string;
   RATE_LIMIT: KVNamespace;
   // Tier-2 auth/persistence:
   DB: D1Database;

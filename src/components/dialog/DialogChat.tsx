@@ -65,7 +65,7 @@ export function DialogChat({ scenario, onClose, onSpeakingChange, onSpeechStart 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // --- Ses (TTS) — hasta yanıtını gerçek sesle oku ---
-  const { speak, cancel: cancelSpeech, speaking, supported: ttsSupported } =
+  const { speak, cancel: cancelSpeech, speaking, supported: ttsSupported, hdEnabled, setHdEnabled } =
     useTextToSpeech();
   // Sustur tercihi localStorage'da saklanır.
   const [muted, setMuted] = useState<boolean>(() => {
@@ -277,6 +277,24 @@ export function DialogChat({ scenario, onClose, onSpeakingChange, onSpeechStart 
             {scenario.title}
           </h1>
         </div>
+        {/* HD ses (Gemini TTS) — opsiyonel; backend bayrağı kapalıysa/limitte
+            otomatik tarayıcı sesine düşer. Varsayılan KAPALI (ücretsiz yol). */}
+        {ttsSupported && !muted && (
+          <button
+            type="button"
+            onClick={() => setHdEnabled(!hdEnabled)}
+            title={hdEnabled ? "HD ses açık (Gemini) — kapat" : "HD ses dene (deneysel; sunucu bayrağı kapalıysa tarayıcı sesi sürer)"}
+            aria-pressed={hdEnabled}
+            className={`px-2 py-1.5 rounded border bg-ink-900 font-mono text-[10px] uppercase tracking-[0.08em] transition ${
+              hdEnabled
+                ? "border-brand/40 text-brand-light hover:bg-brand/15"
+                : "border-ink-700 text-ink-500 hover:text-ink-300 hover:border-ink-500"
+            }`}
+            data-testid="dialog-tts-hd"
+          >
+            HD
+          </button>
+        )}
         {ttsSupported && (
           <button
             type="button"

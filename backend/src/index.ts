@@ -8,6 +8,7 @@
 // ============================================================
 
 import { handleChat } from "./handlers/chat";
+import { handleTts } from "./handlers/tts";
 import { handleLogin, handleMe, handleLogout, handleConsent, handleRegister } from "./handlers/auth";
 import {
   handleCreateClass,
@@ -125,6 +126,18 @@ export default {
         statusText: response.statusText,
         headers,
       });
+    }
+
+    // TTS — opsiyonel Gemini Flash TTS (bayrak-korumalı; kapalıysa 501 →
+    // frontend tarayıcı speechSynthesis'e düşer). Chat rate-limit'ini paylaşır.
+    if (url.pathname === "/api/tts" && request.method === "POST") {
+      if (env.RATE_LIMIT) {
+        const rl = await checkRateLimit(request, env);
+        if (!rl.allowed) {
+          return withCors(rateLimitResponse(rl), request);
+        }
+      }
+      return withCors(await handleTts(request, env), request);
     }
 
     return withCors(notFoundResponse(), request);
