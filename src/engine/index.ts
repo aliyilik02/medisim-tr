@@ -8,12 +8,15 @@ export {
   computeVitalActionDelta,
   resolveEquipmentEffect,
   resolveEquipmentById,
+  startTimedEquipmentDelta,
+  tickTimedEquipmentDeltas,
   type EquipmentEffect,
   type EquipmentCondition,
   type EquipmentVitalAction,
   type EquipmentTargetVital,
   type EquipmentEffectContext,
   type EquipmentResolution,
+  type TimedEquipmentDelta,
 } from "./equipment";
 export { resolveScenarioVariant, findVariant, applyPatientVariant, applyVitalsVariant } from "./variant";
 export { resolveLabPanel, getLabHistory, getResultDelaySec, getEffectiveDelaySec } from "./lab-resolver";

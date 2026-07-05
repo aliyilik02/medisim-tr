@@ -33,6 +33,7 @@ import {
   createSimplePhysiologyProvider,
   getPedagogy,
   resolveEquipmentById,
+  startTimedEquipmentDelta,
   type EquipmentEffectContext,
   type SessionState,
   type ActionRef,
@@ -407,9 +408,23 @@ export function useScenarioRunner({
         };
         const resolution = resolveEquipmentById(action.target_id, ctx);
         if (resolution && resolution.applied) {
-          const delta = resolution.delta;
-          const hasDelta = Object.keys(delta).length > 0;
-          if (hasDelta) {
+          // onset_sec>0 → ramp'e al (useVitalsTick her tick lineer uygular);
+          // onset_sec=0 veya delta boş → eski anlık davranış.
+          const timed = startTimedEquipmentDelta(resolution);
+          if (timed) {
+            setSession((s) =>
+              s
+                ? {
+                    ...s,
+                    pending_equipment_deltas: [
+                      ...(s.pending_equipment_deltas ?? []),
+                      timed,
+                    ],
+                  }
+                : s
+            );
+          } else if (Object.keys(resolution.delta).length > 0) {
+            const delta = resolution.delta;
             setSession((s) =>
               s
                 ? {

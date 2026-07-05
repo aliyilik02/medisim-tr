@@ -47,8 +47,9 @@ export interface EquipmentEffect {
   condition?: EquipmentCondition;
   /** Koşul sağlanınca uygulanacak vital etkileri. İzlem ekipmanı için boş olabilir. */
   effects: EquipmentVitalAction[];
-  /** DRAFT — etki başlangıç gecikmesi (sn). Şimdilik anlık uygulanır; tick-tabanlı
-      onset eğrisi sonraki tur (TODO). Katalogda klinik metadata olarak tutulur. */
+  /** Etki başlangıç süresi (sn). 0 → anlık; >0 → delta onset_sec boyunca
+      lineer ramp ile uygulanır (tickTimedEquipmentDeltas). Değer klinik
+      metadata (katalog review kapsamında). */
   onset_sec: number;
   /** true → havayolu güvenli (entübasyon/LMA). İleride aspirasyon riskini keser. */
   airway_secured?: boolean;
@@ -77,8 +78,23 @@ export interface EquipmentResolution {
   applied: boolean;
   /** baseline/vitals'a eklenecek delta (functional setSession ile uygulanır). */
   delta: Partial<PatientVitals>;
+  /** Etki başlangıç süresi (sn) — katalogdan. 0 → anlık uygula;
+      >0 → startTimedEquipmentDelta ile ramp'e al. */
+  onset_sec: number;
   airway_secured: boolean;
   opens_iv_route: boolean;
   /** Uygulandıysa note; uygulanmadıysa koşul-sağlanmadı açıklaması. */
   note: string;
+}
+
+/** onset_sec>0 ekipman etkisinin tick-tabanlı uygulanma durumu.
+    SessionState.pending_equipment_deltas içinde yaşar (serileştirilebilir). */
+export interface TimedEquipmentDelta {
+  equipment_id: string;
+  /** Çözüm anında hesaplanan TOPLAM delta (vital başına). */
+  total: Partial<PatientVitals>;
+  /** Toplam onset süresi (sim-sn, >0). */
+  onset_sec: number;
+  /** Şimdiye dek uygulanmış süre (sim-sn). onset_sec'e ulaşınca biter. */
+  applied_sec: number;
 }

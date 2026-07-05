@@ -753,6 +753,11 @@ export interface SessionState {
   // birlikte yavaşlatır. Provider'sız (quiz) oturumda kullanılmaz.
   sim_time_ms?: number;
 
+  // Ekipman onset ramp'leri — onset_sec>0 ekipman etkisi anlık değil,
+  // onset boyunca lineer uygulanır. useVitalsTick her tick tüketir
+  // (tickTimedEquipmentDeltas). Boş/tanımsız → eski anlık davranış.
+  pending_equipment_deltas?: import("./equipment/types").TimedEquipmentDelta[];
+
   // Farmakoloji motoru — şu an hastanın sisteminde olan ilaçlar.
   // Tick fonksiyonu bu tam objeler üzerinde çalışır (instance_id, administered_at,
   // effective_vitals, timing, expires_at). Tipe Pharmacology namespace'inden erişilir:

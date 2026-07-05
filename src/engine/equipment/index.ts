@@ -5,6 +5,8 @@ export {
   computeVitalActionDelta,
   resolveEquipmentEffect,
   resolveEquipmentById,
+  startTimedEquipmentDelta,
+  tickTimedEquipmentDeltas,
 } from "./engine";
 export type {
   EquipmentEffect,
@@ -13,4 +15,5 @@ export type {
   EquipmentTargetVital,
   EquipmentEffectContext,
   EquipmentResolution,
+  TimedEquipmentDelta,
 } from "./types";

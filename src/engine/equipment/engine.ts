@@ -20,6 +20,7 @@ import type {
   EquipmentVitalAction,
   EquipmentEffectContext,
   EquipmentResolution,
+  TimedEquipmentDelta,
 } from "./types";
 import { getEquipmentEffect } from "./catalog";
 
@@ -105,6 +106,7 @@ export function resolveEquipmentEffect(
       equipment_id: effect.equipment_id,
       applied: false,
       delta: {},
+      onset_sec: effect.onset_sec,
       // Yol açma/havayolu güvenliği koşula bağlı değil — her zaman uygulanır.
       airway_secured: effect.airway_secured ?? false,
       opens_iv_route: effect.opens_iv_route ?? false,
@@ -129,10 +131,64 @@ export function resolveEquipmentEffect(
     equipment_id: effect.equipment_id,
     applied: true,
     delta,
+    onset_sec: effect.onset_sec,
     airway_secured: effect.airway_secured ?? false,
     opens_iv_route: effect.opens_iv_route ?? false,
     note: effect.note,
   };
+}
+
+// ------------------------------------------------------------
+// 4. Onset eğrisi — tick-tabanlı ramp (Hat A #7)
+// ------------------------------------------------------------
+// onset_sec>0 ekipman etkisi anlık uygulanmaz: toplam delta onset_sec
+// boyunca LİNEER ramp ile tick'lere bölünür (entübasyon SpO2'yi bir tıkta
+// değil ~onset boyunca yükseltir). onset_sec=0 → eski anlık davranış
+// (çağıran startTimedEquipmentDelta yerine delta'yı doğrudan uygular).
+
+/** Çözümü ramp'e al. Uygulanacak delta yoksa veya onset<=0 ise null —
+    çağıran anlık uygulama yoluna düşer. */
+export function startTimedEquipmentDelta(
+  resolution: EquipmentResolution
+): TimedEquipmentDelta | null {
+  if (!resolution.applied) return null;
+  if (resolution.onset_sec <= 0) return null;
+  if (Object.keys(resolution.delta).length === 0) return null;
+  return {
+    equipment_id: resolution.equipment_id,
+    total: resolution.delta,
+    onset_sec: resolution.onset_sec,
+    applied_sec: 0,
+  };
+}
+
+/** Bekleyen ramp'leri dtSec ilerlet. Bu tick'te uygulanacak birleşik delta
+    + hâlâ süren ramp listesi döner. Oran adımlarının toplamı tam 1 →
+    toplam delta kayıpsız uygulanır (kesirli vitaller motor genelinde normal). */
+export function tickTimedEquipmentDeltas(
+  pending: TimedEquipmentDelta[],
+  dtSec: number
+): { delta: Partial<PatientVitals>; remaining: TimedEquipmentDelta[] } {
+  const delta: Partial<PatientVitals> = {};
+  const remaining: TimedEquipmentDelta[] = [];
+
+  for (const p of pending) {
+    const stepSec = Math.min(dtSec, p.onset_sec - p.applied_sec);
+    if (stepSec <= 0) continue; // bitmiş kayıt — düş
+    const ratio = stepSec / p.onset_sec;
+    for (const [vital, total] of Object.entries(p.total)) {
+      if (typeof total !== "number") continue;
+      const key = vital as keyof PatientVitals;
+      (delta as Record<string, number>)[key] =
+        ((delta[key] as number | undefined) ?? 0) + total * ratio;
+    }
+    const appliedSec = p.applied_sec + stepSec;
+    if (appliedSec < p.onset_sec) {
+      remaining.push({ ...p, applied_sec: appliedSec });
+    }
+  }
+
+  return { delta, remaining };
 }
 
 /** Katalog id'sinden çöz — kolaylık sarmalayıcısı. Ekipman katalogda yoksa null. */

@@ -19,14 +19,9 @@
 
 import { useEffect } from "react";
 import type { SessionState, Scenario, PhysiologyProvider } from "@/engine";
-import {
-  tick,
-  computeLiveVitals,
-  getTickIntervalMs,
-} from "@/engine/pharmacology/engine";
-
-// Base interval — 1 saniye (sınav modunda 1s, eğitim modunda ~333ms)
-const BASE_TICK_MS = 1000;
+import { tickTimedEquipmentDeltas, applyVitalsChange } from "@/engine";
+import { tick, computeLiveVitals } from "@/engine/pharmacology/engine";
+import { getTickTiming, advanceSimClock } from "@/engine/time";
 
 interface UseVitalsTickParams {
   scenario: Scenario | undefined;
@@ -49,24 +44,18 @@ export function useVitalsTick({
   useEffect(() => {
     if (!scenario || paused) return;
 
-    const intervalMs = getTickIntervalMs(
-      BASE_TICK_MS,
-      session?.mode ?? "klinik",
-      scenario.time_scale_override
-    );
+    // TEK SAAT kuralının tek tanım yeri: engine/time.ts. Mod/override yalnız
+    // duvar-saati aralığını değiştirir; her tick SABİT 1 simüle sn'dir.
+    const timing = getTickTiming(session?.mode ?? "klinik", scenario.time_scale_override);
 
     const intervalId = setInterval(() => {
       setSession((s) => {
         if (!s || s.finished) return s;
         const actives = s.active_medications ?? [];
         // Faz 1 — TEK SAAT kuralı: provider'lı oturumda farmakoloji de
-        // simüle eksende akar (her tick = 1 simüle sn). Böylece ilaç
-        // onset/duration ile deterioration aynı hızda ölçeklenir ve tab
-        // throttling ikisini birlikte yavaşlatır. Provider'sız (quiz)
-        // oturumda eski wall-clock davranışı korunur.
-        const now = provider
-          ? (s.sim_time_ms ?? s.started_at) + BASE_TICK_MS
-          : Date.now();
+        // simüle eksende akar. Provider'sız (quiz) oturumda eski
+        // wall-clock davranışı korunur.
+        const now = provider ? advanceSimClock(s) : Date.now();
         const result = tick({ activeMedications: actives, now });
 
         const stillActive = result.expired_instance_ids.length > 0
@@ -75,9 +64,21 @@ export function useVitalsTick({
 
         // Faz 1 — deterioration: her tick 1 simüle saniyedir (interval mode
         // hızına göre kısalır, böylece eğitim modunda 8× hızlı kötüleşir).
-        const newBaseline = provider
-          ? provider.tick(s.baseline_vitals, BASE_TICK_MS / 1000)
+        let newBaseline = provider
+          ? provider.tick(s.baseline_vitals, timing.dtSec)
           : s.baseline_vitals;
+
+        // Ekipman onset ramp'leri (Hat A #7): onset_sec>0 ekipman etkisi
+        // onset boyunca lineer uygulanır — entübasyon SpO2'yi tek tıkta değil
+        // kademeli yükseltir. Simüle eksende akar (mod hızı eşit uygulanır).
+        let pendingEq = s.pending_equipment_deltas;
+        if (pendingEq?.length) {
+          const eq = tickTimedEquipmentDeltas(pendingEq, timing.dtSec);
+          if (Object.keys(eq.delta).length > 0) {
+            newBaseline = applyVitalsChange(newBaseline, eq.delta);
+          }
+          pendingEq = eq.remaining;
+        }
 
         const liveVitals = computeLiveVitals(newBaseline, result.vitals_delta);
 
@@ -86,6 +87,7 @@ export function useVitalsTick({
           baseline_vitals: newBaseline,
           vitals: liveVitals,
           sim_time_ms: provider ? now : s.sim_time_ms,
+          pending_equipment_deltas: pendingEq,
           active_medications: stillActive,
           current_ecg_params: Object.keys(result.ecg_delta).length > 0
             ? result.ecg_delta
@@ -94,7 +96,7 @@ export function useVitalsTick({
               : undefined,
         };
       });
-    }, intervalMs);
+    }, timing.intervalMs);
 
     return () => clearInterval(intervalId);
   }, [scenario, session?.mode, session?.finished, paused, setSession, provider]);
