@@ -45,6 +45,26 @@ describe("matchReasoningPrompt — KRİTİK: sadece egitim modu", () => {
     expect(matchReasoningPrompt(undefined, "aspirin", "egitim")).toBeNull();
     expect(matchReasoningPrompt([], "aspirin", "egitim")).toBeNull();
   });
+
+  test("çoklu prompt listesi taranır — ilki eşleşmese de sonraki bulunur", () => {
+    const second: ReasoningPrompt = {
+      ...PROMPTS[0],
+      id: "rp-y",
+      triggerIds: ["heparin"],
+    };
+    const list = [...PROMPTS, second];
+    expect(matchReasoningPrompt(list, "heparin", "egitim")?.id).toBe("rp-y");
+  });
+
+  test("aynı trigger'ı paylaşan iki prompt'ta listede İLK olan kazanır (deterministik)", () => {
+    const dup: ReasoningPrompt = {
+      ...PROMPTS[0],
+      id: "rp-dup",
+      triggerIds: ["aspirin"],
+    };
+    expect(matchReasoningPrompt([...PROMPTS, dup], "aspirin", "egitim")?.id).toBe("rp-x");
+    expect(matchReasoningPrompt([dup, ...PROMPTS], "aspirin", "egitim")?.id).toBe("rp-dup");
+  });
 });
 
 describe("isReasoningCorrect", () => {

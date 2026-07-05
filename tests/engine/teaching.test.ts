@@ -3,8 +3,8 @@
 // ============================================================
 
 import { describe, expect, test } from "vitest";
-import { pickTeachingAction, teachingNarration } from "@/engine";
-import type { Step } from "@/engine";
+import { pickTeachingAction, teachingNarration, phaseTransitionNarration } from "@/engine";
+import type { Step, PhaseSignal } from "@/engine";
 
 const actionStep: Step = {
   id: "s1",
@@ -153,6 +153,64 @@ describe("pickTeachingAction", () => {
     };
     expect(pickTeachingAction(onlyCritical).kind).toBe("skip");
   });
+
+  test("decision — zorluk filtresi: min_difficulty 4 seçenek diff 3'te görünmez, diff 4'te seçilir", () => {
+    const diffDecision: Step = {
+      id: "s-diffdec",
+      title: "Zorluk kararı",
+      prompt: "?",
+      kind: "decision",
+      options: [
+        { id: "opt_temel", text: "Temel", correct: true, points: 10, feedback: "temel" },
+        { id: "opt_ileri", text: "İleri", correct: true, points: 25, feedback: "ileri", min_difficulty: 4 },
+      ],
+    };
+    // diff verilmezse varsayılan 3 → S4+ seçenek görünmez
+    const p3 = pickTeachingAction(diffDecision);
+    expect(p3.kind).toBe("decision");
+    if (p3.kind === "decision") expect(p3.optionId).toBe("opt_temel");
+    // diff 4 → daha yüksek puanlı ileri seçenek kazanır
+    const p4 = pickTeachingAction(diffDecision, 4);
+    if (p4.kind === "decision") expect(p4.optionId).toBe("opt_ileri");
+  });
+
+  test("decision — zorluk filtresi tüm seçenekleri elerse → skip", () => {
+    const allHidden: Step = {
+      id: "s-hidden",
+      title: "Hepsi gizli",
+      prompt: "?",
+      kind: "decision",
+      options: [
+        { id: "opt_s5", text: "S5", correct: true, points: 10, feedback: "s5", min_difficulty: 5 },
+      ],
+    };
+    expect(pickTeachingAction(allHidden, 2).kind).toBe("skip");
+  });
+
+  test("decision_multi — tüm doğrular kritikse → skip", () => {
+    const allCriticalMulti: Step = {
+      id: "s-crit-multi",
+      title: "Tuzaklı çoklu",
+      prompt: "?",
+      kind: "decision",
+      allow_multiple: true,
+      options: [
+        { id: "opt_a", text: "A", correct: true, points: 10, feedback: "a", critical: true },
+        { id: "opt_b", text: "B", correct: false, points: -5, feedback: "b" },
+      ],
+    };
+    expect(pickTeachingAction(allCriticalMulti).kind).toBe("skip");
+  });
+
+  test("action — zorluk filtresi TÜM outcome'ları elerse → skip (yanlış ceza yerine bekle)", () => {
+    const allS4: Step = {
+      ...actionStep,
+      expected_outcomes: [
+        { action: { type: "give_medication", target_id: "ileri" }, points: 10, feedback: "S4+", min_difficulty: 4 },
+      ],
+    };
+    expect(pickTeachingAction(allS4, 3).kind).toBe("skip");
+  });
 });
 
 describe("teachingNarration", () => {
@@ -166,5 +224,65 @@ describe("teachingNarration", () => {
   });
   test("boş override jenerik'e düşer", () => {
     expect(teachingNarration(infoStep, "   ")).toContain("Brifing");
+  });
+
+  test("info adımı — başlık + içerik birleşir", () => {
+    expect(teachingNarration(infoStep)).toBe("Brifing. STEMI yönetimi.");
+  });
+
+  test("skip planlı adım (net doğru yok) → sadece başlık", () => {
+    const skipStep: Step = {
+      id: "s-skip",
+      title: "Gözlem",
+      prompt: "?",
+      kind: "action",
+      expected_outcomes: [
+        { action: { type: "give_medication", target_id: "x" }, points: -5, feedback: "hata", critical: true },
+      ],
+    };
+    expect(teachingNarration(skipStep)).toBe("Gözlem");
+  });
+});
+
+// ── phaseTransitionNarration — faz-senkron geçiş anlatımı ──
+
+function makeSignal(overrides: Partial<PhaseSignal> = {}): PhaseSignal {
+  return {
+    phaseId: "faz-1",
+    phaseIndex: 0,
+    ekg: "sinus",
+    heartSound: "normal",
+    visual: {},
+    recovering: false,
+    ...overrides,
+  };
+}
+
+describe("phaseTransitionNarration", () => {
+  test("authored narration her şeyden önce gelir (ekg paternine bakılmaz)", () => {
+    const s = makeSignal({ ekg: "vfib", narration: "Yazar anlatımı." });
+    expect(phaseTransitionNarration(s)).toBe("Yazar anlatımı.");
+  });
+
+  test("boşluk-sadece narration şablona düşer", () => {
+    const s = makeSignal({ ekg: "vfib", narration: "   " });
+    expect(phaseTransitionNarration(s)).toContain("fibrilasyon");
+  });
+
+  test("recovering → reperfüzyon anlatımı (ekg ne olursa olsun)", () => {
+    const s = makeSignal({ recovering: true, ekg: "vfib" });
+    expect(phaseTransitionNarration(s)).toContain("Reperfüzyon");
+  });
+
+  test("EKG paternine göre jenerik şablonlar", () => {
+    expect(phaseTransitionNarration(makeSignal({ ekg: "st_elev_pvc" }))).toContain("VES");
+    expect(phaseTransitionNarration(makeSignal({ ekg: "vt_salvo" }))).toContain("VT salvoları");
+    expect(phaseTransitionNarration(makeSignal({ ekg: "vfib" }))).toContain("ventriküler fibrilasyon");
+    expect(phaseTransitionNarration(makeSignal({ ekg: "asystole" }))).toContain("Asistoli");
+  });
+
+  test("baseline/sinüs paternleri → null (anlatım yok)", () => {
+    expect(phaseTransitionNarration(makeSignal({ ekg: "sinus" }))).toBeNull();
+    expect(phaseTransitionNarration(makeSignal({ ekg: "st_elevation" }))).toBeNull();
   });
 });
