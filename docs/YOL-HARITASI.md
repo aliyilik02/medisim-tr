@@ -48,12 +48,13 @@ Denetim bulgusu: motor mimarisi sağlam ama **fizyoloji + farmakoloji test kapsa
 ### Hat B — 3D sanal hasta derinleşmesi (görünür değer)
 Denetim bulgusu: 3D katman olgun (ref-tabanlı state, memoization, shader guard'lar doğru) — sıradaki sıçrama gerçekçilik.
 
-- [ ] **Fonetik lipsync:** ARKit 52 morph hazır ama sadece jawOpen sinüs osilasyonu kullanılıyor. Hedef: konuşma metni → fonem → morph blend (jawOpen+mouthWide+tongue), SSE chat akışıyla senkron
-- [ ] **Animasyon blend tree:** Mixamo klipler statik; crossFade tabanlı durum makinesi (konuşurken öksürme, ağrı + huzursuzluk), vital → blend ağırlığı
-- [ ] **Zonal siyanoz/mottling:** mevcut sin-sin-sin deseni jenerik; bölge maskeli (perioral/akral siyanoz, livedo ekstremite) shader
-- [ ] **Ekipman fiziği:** IV hattı/O2 hortumu için catenary eğrisi veya hafif rope constraint (hasta hareketinde doğal sarkma)
-- [ ] **Ölü kod temizliği:** `CompactVitalsHUD.tsx` sil, `patient-v1.glb` referanslı kırık e2e düzelt, `InternalOrgans` (asset silinmiş, sessiz kapanıyor) kararı: kaldır ya da yeni asset
-- [ ] Monitör köşe kutusu overflow denetimi (520px HR kırpılma riski)
+- [x] **Fonetik lipsync:** TR grafem→viseme→9 ARKit morph, TTS senkron (paket 1, commit 0db41a7)
+- [x] **Animasyon blend tree:** `engine/animation-director` (katman önceliği + çift-eşik histerezis + minHold) + `useAnimationDirector` UI bağı; arrest hareketsizliği, iskemik ağrı overlay'i (18f039e)
+- [x] **Zonal siyanoz/mottling:** bölge maskeli shader (perioral/akral, livedo) + hasta önlüğü; yatak sahnesinde LOKAL-uzay koordinat (Mixamo cm-rig world çöküyor — bcdd5aa)
+- [x] **Ekipman fiziği:** TubingLayer — IV hattı + O₂ hortumu catenary sarkma, yumuşatılmış uç takibi
+- [x] **Ölü kod temizliği:** CompactVitalsHUD silindi; patient-v1.glb/InternalOrgans referansları zaten temizmiş (doğrulandı)
+- [x] Monitör köşe kutusu overflow: sparkline responsive + alt sıra slim kutu (36.8 kırpılmıyor; Playwright scrollWidth denetimi 0)
+- [ ] **Görsel kalibrasyon (paket 3):** önlük yaka/etek ince ayarı (Mixamo oranları ≠ 8-head canon — çenede teal sızıntı), saç yerleşimi (ense siyah yama), hortum uç hizalama
 
 ### Hat C — İçerik ölçeği (16→400)
 - [ ] TODO_KLINIK doldurma turu (Claude.ai; `DURUM-BRIEF.md` listesi)

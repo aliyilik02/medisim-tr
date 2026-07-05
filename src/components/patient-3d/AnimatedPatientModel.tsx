@@ -497,6 +497,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
         const bone = clone.getObjectByName(spec.bone);
         if (!bone) continue;
         const obj = buildEquipment(kind);
+        obj.name = `equip_${kind}`; // TubingLayer hortum ucunu adla bulur
         obj.position.set(spec.offset[0], spec.offset[1], spec.offset[2]);
         if (spec.rotation) obj.rotation.set(spec.rotation[0], spec.rotation[1], spec.rotation[2]);
         obj.scale.setScalar(spec.scale ?? 1);

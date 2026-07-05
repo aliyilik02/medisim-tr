@@ -25,6 +25,7 @@ import { IVBagSet } from "./props/IVBagSet";
 import { PrivacyCurtain } from "./props/PrivacyCurtain";
 import { StaffStool } from "./props/StaffStool";
 import { WasteBin } from "./props/WasteBin";
+import { TubingLayer } from "./props/TubingLayer";
 
 // ── Yatak yerleşim ölçüm probu (dev-only, GÖZ yerine SAYI) ──────────────
 // window.__measureBed=true iken hastanın POZLANMIŞ (skinned) dünya bbox'unu
@@ -367,6 +368,9 @@ export function PatientRoomScene({
           <WasteBin position={[-1.05, 0, -0.85]} />
           {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
           <BedPatient variant={variant} clip={clip} decision={decision} skinTone={skinTone} skinTint={skinTint} visualState={visualState} speaking={speaking} speechText={speechText} equipment={equipment} />
+          {/* Hortumlar — IV hattı (askı→ön kol) + O₂ (duvar paneli→maske/kanül),
+              catenary sarkma + yumuşatılmış uç takibi (hasta hareketinde doğal) */}
+          <TubingLayer equipment={equipment} />
           {/* Yatak başı 3D ventilatör cihazı — tıklanınca panel açar */}
           {showVentilator && (
             <VentilatorDevice onActivate={onVentilatorActivate} active={ventilatorActive} />
