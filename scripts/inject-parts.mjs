@@ -132,7 +132,7 @@ for (const partName of PARTS) {
       if (sem === "POSITION") {
         // Tunik: subsurf export edilmedi (morph koruması) → low-poly dar
         // kesim gövdeyi deliyor; normal boyunca şişir (1.4cm).
-        const puff = partName === "PatientGown" ? 0.014 : 0;
+        const puff = partName === "PatientGown" ? 0.02 : 0; // v2.1: kalça aşırı-büküm clipping
         const nrmAcc = prim.getAttribute("NORMAL");
         const nrmArr = nrmAcc ? nrmAcc.getArray() : null;
         for (let i = 0; i < arr.length; i += 3) {

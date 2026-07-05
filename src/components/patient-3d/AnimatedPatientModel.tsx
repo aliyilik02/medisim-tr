@@ -162,11 +162,12 @@ export interface AnimatedModelMeta {
 
 export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>> = {
   "female-adult": {
-    url: "/3d/patient-animated.glb",
+    url: "/3d/patient-v2-female-adult.glb", // v2 varlık hattı (6 Tem)
     label: "Kadın",
     clips: ["laying_idle", "idle", "talk_gesture", "talk_shrug", "pain", "cough_mild", "cough_severe"],
     bedScale: 0.62,
     bedPosY: -0.337, // objektif ölçüm + ayak yükseltme nudge (scripts/measure-bed-place.mjs)
+    realAssets: true,
   },
   "male-adult": {
     // v2 (6 Tem): MPFB CC0 varlık-ekleme turu — gerçek cilt dokusu (UV
@@ -180,18 +181,19 @@ export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>>
     realAssets: true,
   },
   child: {
-    url: "/3d/patient-animated-child.glb",
+    url: "/3d/patient-animated-child.glb", // v2.2 bekliyor: MPFB çocuk kafa oranı — saç kafa içinde kalıyor
     label: "Çocuk",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "take_pill", "use_inhaler"],
     bedScale: 0.5, // çocuk küçük (kullanıcı: fazla uzundu)
     bedPosY: -0.113, // objektif ölçüm + çocuk yatak-içi yükseltme (+0.035)
   },
   elderly: {
-    url: "/3d/patient-animated-elderly.glb",
+    url: "/3d/patient-v2-elderly.glb", // v2 varlık hattı
     label: "Yaşlı",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
     bedScale: 0.62,
     bedPosY: -0.446, // objektif ölçüm + ayak yükseltme nudge
+    realAssets: true,
   },
 };
 export const ANIMATED_VARIANTS = Object.keys(ANIMATED_MODELS) as PatientVariant[];
