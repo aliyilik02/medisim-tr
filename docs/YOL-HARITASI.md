@@ -54,7 +54,7 @@ Denetim bulgusu: 3D katman olgun (ref-tabanlı state, memoization, shader guard'
 - [x] **Ekipman fiziği:** TubingLayer — IV hattı + O₂ hortumu catenary sarkma, yumuşatılmış uç takibi
 - [x] **Ölü kod temizliği:** CompactVitalsHUD silindi; patient-v1.glb/InternalOrgans referansları zaten temizmiş (doğrulandı)
 - [x] Monitör köşe kutusu overflow: sparkline responsive + alt sıra slim kutu (36.8 kırpılmıyor; Playwright scrollWidth denetimi 0)
-- [ ] **Görsel kalibrasyon (paket 3):** önlük yaka/etek ince ayarı (Mixamo oranları ≠ 8-head canon — çenede teal sızıntı), saç yerleşimi (ense siyah yama), hortum uç hizalama
+- [x] **Görsel kalibrasyon (paket 3):** kemik-bind iki-nokta zonal harita (omuz 0.83 + uyluk ortası 0.375 → çene sızıntısı kökten çözüldü, b282f43) + saç kapağı ekvator kesimi (favori yaması yok) + hortum uç doğrulaması. Oda demirbaşları (RoomFixtures ×6) + prosedürel hareket katmanı (agitation: tremor/huzursuzluk) da eklendi (6809344)
 
 ### Hat C — İçerik ölçeği (16→400)
 - [ ] TODO_KLINIK doldurma turu (Claude.ai; `DURUM-BRIEF.md` listesi)
