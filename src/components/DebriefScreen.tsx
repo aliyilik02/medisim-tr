@@ -3,6 +3,7 @@ import type { Scenario, SessionState, ReasoningPrompt } from "@/engine";
 import {
   getAchievableMaxPoints,
   getEffectivePassingScoreForDifficulty,
+  buildGuidelineComparison,
 } from "@/engine";
 import {
   BookOpen,
@@ -66,6 +67,107 @@ function protocolId(session: SessionState): string {
   const dd = d.getDate().toString().padStart(2, "0");
   const hhmm = d.getHours().toString().padStart(2, "0") + d.getMinutes().toString().padStart(2, "0");
   return `MST-${yy}${mm}${dd}-${hhmm}`;
+}
+
+// ── Kılavuz karşılaştırma tablosu (Hat B2 — 6 Tem) ───────────
+// "Senin aksiyonun / beklenen / kılavuz" yan yana — Body Interact'ın en
+// övülen debrief özelliğinin karşılığı. Veri buildGuidelineComparison'dan
+// (saf motor); kılavuz etiketleri onaylı feedback metinlerinden çekilir.
+
+function GuidelineComparisonTable({
+  scenario,
+  session,
+}: {
+  scenario: Scenario;
+  session: SessionState;
+}) {
+  const rows = buildGuidelineComparison(scenario, session);
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="panel overflow-hidden">
+      <div className="px-5 py-3 border-b border-ink-700/50 flex items-center gap-2">
+        <BookOpen className="w-3.5 h-3.5 text-brand-light" />
+        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
+          Kılavuz Karşılaştırması
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-ink-700/50">
+              <th className="px-4 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500">Adım</th>
+              <th className="px-4 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500">Senin aksiyonun</th>
+              <th className="px-4 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500">Beklenen</th>
+              <th className="px-4 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.15em] text-ink-500 w-32">Kılavuz</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.step_id} className="border-b border-ink-800 align-top hover:bg-ink-800/40 transition">
+                <td className="px-4 py-3 text-ink-100 leading-snug min-w-[10rem]">{row.step_title}</td>
+                <td className="px-4 py-3">
+                  {row.taken.length === 0 ? (
+                    <span className="text-ink-600 font-mono text-[11px]">— kayıt yok —</span>
+                  ) : (
+                    <ul className="space-y-1">
+                      {row.taken.map((t, i) => (
+                        <li key={i} className="text-ink-300 text-[13px] leading-snug">{t}</li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <ul className="space-y-1">
+                    {row.expected.map((e, i) => {
+                      const wasMissed = row.missed.includes(e);
+                      return (
+                        <li
+                          key={i}
+                          className={cn(
+                            "text-[13px] leading-snug flex items-start gap-1.5",
+                            wasMissed ? "text-clinical-warning" : "text-clinical-stable",
+                          )}
+                        >
+                          {wasMissed ? (
+                            <MinusCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                          )}
+                          <span>
+                            {e}
+                            {wasMissed && (
+                              <span className="font-mono text-[10px] text-clinical-warning/80"> · atlandı</span>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {row.guidelines.length === 0 ? (
+                      <span className="text-ink-600 font-mono text-[11px]">—</span>
+                    ) : (
+                      row.guidelines.map((g) => (
+                        <span
+                          key={g}
+                          className="font-mono text-[10px] px-1.5 py-0.5 rounded border border-brand/30 text-brand-light bg-brand/10 whitespace-nowrap"
+                        >
+                          {g}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 // ── Adım tablosu ──────────────────────────────────────────────
@@ -527,6 +629,9 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
 
         {/* ── Adım tablosu ── */}
         <StepTable scenario={scenario} session={session} />
+
+        {/* Kılavuz karşılaştırması — aksiyonun / beklenen / kılavuz yan yana */}
+        <GuidelineComparisonTable scenario={scenario} session={session} />
 
         {/* ── Klinik Muhakeme (egitim modu, öğretici/cezasız) ── */}
         <ReasoningDebrief scenario={scenario} session={session} />

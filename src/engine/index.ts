@@ -57,6 +57,12 @@ export {
 } from "./teaching";
 export { matchReasoningPrompt, isReasoningCorrect } from "./reasoning";
 export {
+  buildGuidelineComparison,
+  extractGuidelineTags,
+  describeActionRef,
+  type GuidelineComparisonRow,
+} from "./debrief-comparison";
+export {
   decideAnimation,
   resolveDirectorClip,
   describeAnimationDecision,

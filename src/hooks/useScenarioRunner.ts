@@ -262,11 +262,14 @@ export function useScenarioRunner({
 
   // ----- Adım sonlandırma
   const finishStep = useCallback(
-    (unlockId: string | null, overridePoints?: number) => {
+    (unlockId: string | null, overridePoints?: number, overrideActions?: ActionRef[]) => {
       if (!currentStep || !rs) return;
 
       const pts = overridePoints !== undefined ? overridePoints : pointsThisStep;
-      const actions = actionsThisStep;
+      // overrideActions: karar handler'ları setTimeout ile ESKİ closure'ı
+      // çağırır — state'e yazılan sentetik decision aksiyonu bu yolla taşınır
+      // (debrief kılavuz-karşılaştırması "ne seçtin"i görebilsin).
+      const actions = overrideActions ?? actionsThisStep;
       const critErrors = criticalErrorsThisStep;
       const stepId = currentStep.id;
 
@@ -569,6 +572,10 @@ export function useScenarioRunner({
         type: evaluation.points > 0 ? "positive" : "negative",
       });
       setPointsThisStep(evaluation.points);
+      // Kararı sonuç kaydına yaz — debrief "ne seçtin"i gösterebilsin
+      // (sentetik ActionRef; deterioration halted_by ile aynı sözleşme).
+      const decisionAction: ActionRef = { type: "decision", target_id: option.id };
+      setActionsThisStep((prev) => [...prev, decisionAction]);
       // Dallanan karar: seçeneğin next_step_id'si akışı yönlendirir
       // (finishStep zorluk kapısını uygular). Öğretici modda otomatik geçme
       // yok — dal hedefi bekletilir, öğrenci "Sonraki Adıma Geç" ile ilerler.
@@ -576,7 +583,8 @@ export function useScenarioRunner({
         pendingUnlockRef.current = evaluation.next_step_id;
       } else {
         setTimeout(
-          () => finishStep(evaluation.next_step_id, evaluation.points),
+          () =>
+            finishStep(evaluation.next_step_id, evaluation.points, [decisionAction]),
           1800
         );
       }
@@ -608,11 +616,18 @@ export function useScenarioRunner({
         type: evaluation.points > 0 ? "positive" : "negative",
       });
       setPointsThisStep(evaluation.points);
+      // Çoklu karar seçimlerini de sonuç kaydına yaz (debrief görünürlüğü).
+      const decisionActions: ActionRef[] = optionIds.map((id) => ({
+        type: "decision",
+        target_id: id,
+      }));
+      setActionsThisStep((prev) => [...prev, ...decisionActions]);
       if (session.mode === "egitim") {
         pendingUnlockRef.current = evaluation.next_step_id;
       } else {
         setTimeout(
-          () => finishStep(evaluation.next_step_id, evaluation.points),
+          () =>
+            finishStep(evaluation.next_step_id, evaluation.points, decisionActions),
           2200
         );
       }
