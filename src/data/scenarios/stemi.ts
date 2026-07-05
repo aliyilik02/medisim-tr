@@ -195,9 +195,11 @@ export const scenario_stemi = defineScenario({
         heart_sound: "tachy",
         visual: { diaphoresis_boost: 0.3, pallor_boost: 0.15 },
         narration:
-          "Kardiyojenik şok (SBP <90): EKG'de ST elevasyonu sürerken ara sıra " +
-          "ventriküler erken vurular (VES) çıkıyor — iritabl miyokard. Taşikardi, " +
-          "soğuk terleme ve solgunluk belirginleşiyor.",
+          // Sayı iddiası YOK: faz anlatımı geçişte (after_sec) tetiklenir,
+          // SBP<90'a trend içinde İNER — anlık monitör değeriyle çelişmesin.
+          "Kardiyojenik şoka gidiş: kan basıncı düşmeye devam ediyor. EKG'de ST " +
+          "elevasyonu sürerken ara sıra ventriküler erken vurular (VES) çıkıyor — " +
+          "iritabl miyokard. Taşikardi, soğuk terleme ve solgunluk belirginleşiyor.",
       },
     },
     {
