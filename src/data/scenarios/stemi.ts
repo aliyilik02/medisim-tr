@@ -12,7 +12,7 @@ import { defineScenario } from "@/engine";
 
 export const scenario_stemi = defineScenario({
   id: "kardiyoloji-stemi-001",
-  version: "0.3.0",
+  version: "0.4.0", // 0.4: dallanan karar pilotu (s4b komplikasyon kolu, DRAFT) + opt_pci_hesapla halted_by fix
   title: "62 Yaş Erkek — Akut Göğüs Ağrısı (STEMI)",
   description:
     "2 saattir süren retrosternal göğüs ağrısı, sol kola yayılan. STEMI yönetimi ve reperfüzyon kararı. Lab paralel akış, troponin kinetik, yatak başı EKO ve kardiyojenik şok yönetimi.",
@@ -27,7 +27,7 @@ export const scenario_stemi = defineScenario({
   reviewed_by:
     "Kaynak-doğrulama: ESC 2023 ACS + AHA/ACC 2025 + TKD 2022 (Claude.ai + ürün-sahibi). " +
     "Bağımsız klinik uzman review önerilir. ACTIVE değil — REVIEWED_PENDING_ACTIVATION.",
-  last_updated: "2026-06-21",
+  last_updated: "2026-07-05",
 
   // ICD-10 + SNOMED CT (REVIEWED_PENDING_ACTIVATION — kullanıcı onayı 2026-05-04)
   clinical_codes: { icd10: "I21.0", snomed_ct: "401303003" },
@@ -151,6 +151,13 @@ export const scenario_stemi = defineScenario({
       halted_by: [
         { type: "give_medication", target_id: "tenecteplase" },
         { type: "decision", target_id: "opt_pci_transfer" },
+        // FIX: opt_pci_hesapla (d3+ daha iyi cevap) fazı durdurmuyordu —
+        // reperfüzyon kararı proxy'si her doğru varyantı kapsamalı.
+        { type: "decision", target_id: "opt_pci_hesapla" },
+        // Dallanma pilotu (s4b kurtarma kolu): geç de olsa reperfüzyon
+        // kararı deterioration'ı durdurur (opt_pci_transfer ile aynı proxy).
+        { type: "decision", target_id: "opt_kurtarma_pci" },
+        { type: "decision", target_id: "opt_kurtarma_tromboliz" },
       ],
       // Reperfüzyon sonrası iyileşme (her aktif fazda aynı tek-oran hedef).
       recovery_trends: [
@@ -181,6 +188,13 @@ export const scenario_stemi = defineScenario({
       halted_by: [
         { type: "give_medication", target_id: "tenecteplase" },
         { type: "decision", target_id: "opt_pci_transfer" },
+        // FIX: opt_pci_hesapla (d3+ daha iyi cevap) fazı durdurmuyordu —
+        // reperfüzyon kararı proxy'si her doğru varyantı kapsamalı.
+        { type: "decision", target_id: "opt_pci_hesapla" },
+        // Dallanma pilotu (s4b kurtarma kolu): geç de olsa reperfüzyon
+        // kararı deterioration'ı durdurur (opt_pci_transfer ile aynı proxy).
+        { type: "decision", target_id: "opt_kurtarma_pci" },
+        { type: "decision", target_id: "opt_kurtarma_tromboliz" },
       ],
       recovery_trends: [
         { vital: "bp_systolic", delta_per_sec: 0.1, ceiling: 120 },
@@ -214,6 +228,13 @@ export const scenario_stemi = defineScenario({
       halted_by: [
         { type: "give_medication", target_id: "tenecteplase" },
         { type: "decision", target_id: "opt_pci_transfer" },
+        // FIX: opt_pci_hesapla (d3+ daha iyi cevap) fazı durdurmuyordu —
+        // reperfüzyon kararı proxy'si her doğru varyantı kapsamalı.
+        { type: "decision", target_id: "opt_pci_hesapla" },
+        // Dallanma pilotu (s4b kurtarma kolu): geç de olsa reperfüzyon
+        // kararı deterioration'ı durdurur (opt_pci_transfer ile aynı proxy).
+        { type: "decision", target_id: "opt_kurtarma_pci" },
+        { type: "decision", target_id: "opt_kurtarma_tromboliz" },
       ],
       recovery_trends: [
         { vital: "bp_systolic", delta_per_sec: 0.1, ceiling: 120 },
@@ -1117,6 +1138,9 @@ export const scenario_stemi = defineScenario({
       prompt:
         "Hastaneniz PCI merkezine 45 dakika uzakta. Ağrı başlangıcından 2 saat geçti. Ne yaparsınız?",
       options: [
+        // DALLANAN KARAR PİLOTU (DRAFT): doğru/uygulanabilir seçenekler AÇIKÇA
+        // s5'e dallanır — lineer akış artık s4b komplikasyon adımına düştüğü
+        // için zorunlu. Yanlış kararlar (bekle/ertele) s4b'ye gider.
         {
           id: "opt_pci_transfer",
           text:
@@ -1126,6 +1150,7 @@ export const scenario_stemi = defineScenario({
           feedback:
             "Doğru — ESC 2023: ilk tıbbi temas (FMC)-balon ≤120 dk sağlanabiliyorsa primer PCI tercih edilir " +
             "(ideal ≤90 dk; primer PCI merkezinde kapı-balon ≤60 dk). FMC-balon >120 dk öngörülüyorsa fibrinoliz.",
+          next_step_id: "s5_transfer_oncesi",
         },
         {
           id: "opt_pci_hesapla",
@@ -1136,6 +1161,7 @@ export const scenario_stemi = defineScenario({
           feedback:
             "Mükemmel — klinik muhakeme doğru. İlk tıbbi temas-balon süresi hedef <120 dk (primer PCI), <180 dk (tromboliz sonrası kurtarma PCI).",
           min_difficulty: 3,
+          next_step_id: "s5_transfer_oncesi",
         },
         {
           id: "opt_tromboliz",
@@ -1148,6 +1174,7 @@ export const scenario_stemi = defineScenario({
             "(bu hasta 84 kg → 45 mg); ≥75 yaş YARI doz (kanama riski). " +
             "⚠️ Fibrinoliz ile P2Y12 = KLOPİDOGREL olmalı (300 mg <75y, 75 mg ≥75y) — tikagrelor/prasugrel fibrinolizle birlikte ÖNERİLMEZ. " +
             "Fibrinoliz sonrası 2-24 saatte rutin PCI transferi (farmako-invaziv strateji).",
+          next_step_id: "s5_transfer_oncesi",
         },
         {
           id: "opt_bekle",
@@ -1156,6 +1183,7 @@ export const scenario_stemi = defineScenario({
           points: -40,
           feedback:
             "KRİTİK HATA — STEMI'de reperfüzyon yapılmadan hasta izlenemez. Mortalite riski çok yüksek.",
+          next_step_id: "s4b_reperfuzyonsuz_kotulesme",
         },
         {
           id: "opt_koroner_yogun",
@@ -1165,6 +1193,63 @@ export const scenario_stemi = defineScenario({
           points: -35,
           feedback:
             "Hatalı — STEMI zaman kritik. 'Time is muscle.' Sabaha ertelenemez.",
+          next_step_id: "s4b_reperfuzyonsuz_kotulesme",
+        },
+      ],
+    },
+
+    // ========================================================
+    // ADIM 4b — KOMPLİKASYON KOLU (dallanan karar pilotu, DRAFT)
+    // ========================================================
+    // SADECE yanlış reperfüzyon kararından (opt_bekle / opt_koroner_yogun)
+    // ulaşılır — lineer akışta doğru kararlar next_step_id ile s5'e atlar.
+    // Pedagojik amaç: yanlış kararın SONUCUNU gösterip kurtarma şansı vermek
+    // (cezasız değil — puan kaybı yaşandı; ama akıl yürütme devam eder).
+    // ⚠️ KLİNİK İÇERİK DRAFT — Ali Bey review bekliyor. Sayısal vital/doz
+    // iddiası bilinçli olarak YOK (anlatım niteliksel).
+    {
+      id: "s4b_reperfuzyonsuz_kotulesme",
+      kind: "decision",
+      title: "Komplikasyon: Reperfüzyonsuz İzlem",
+      prompt:
+        "Reperfüzyon kararı ertelendi. Yaklaşık 30 dakika sonra: göğüs ağrısı yeniden şiddetlendi, " +
+        "hasta soğuk ve terli, monitörde sıklaşan VES'ler görülüyor. Hemşire hastanın kötüleştiğini bildiriyor. Şimdi ne yapıyorsunuz?",
+      narrative:
+        "Devam eden iskemi — reperfüzyonsuz geçen her dakika infarkt alanını büyütür ('time is muscle', ESC 2023).",
+      options: [
+        {
+          id: "opt_kurtarma_pci",
+          text:
+            "Kararı düzelt — acil primer PCI transferini ŞİMDİ başlat, PCI merkezini önceden bilgilendir",
+          correct: true,
+          points: 20,
+          feedback:
+            "Doğru — gecikilmiş olsa da devam eden iskemide reperfüzyon hâlâ endikedir; FMC-balon süresi yeniden " +
+            "değerlendirilir ve PCI merkezi ön-bildirimle hazırlanır. (İlk adımda doğru karar verilseydi puan kaybı yaşanmazdı.)",
+          next_step_id: "s5_transfer_oncesi",
+        },
+        {
+          id: "opt_kurtarma_tromboliz",
+          text:
+            "PCI artık gecikecek — şimdi tenekteplaz ver, ardından farmako-invaziv strateji ile transfer et",
+          correct: false,
+          points: 8,
+          feedback:
+            "Kabul edilebilir alternatif — FMC-balon >120 dk öngörülüyorsa fibrinoliz uygundur (kapı-iğne ≤10 dk) " +
+            "ve sonrasında 2-24 saatte PCI transferi (farmako-invaziv) yine gereklidir. Bu vakada PCI 75 dk'da " +
+            "ulaşılabilir olduğundan birincil tercih hâlâ PCI transferidir.",
+          next_step_id: "s5_transfer_oncesi",
+        },
+        {
+          id: "opt_izleme_devam",
+          text: "Antiiskemik medikal tedaviyi yoğunlaştır, izlemeye devam et",
+          correct: false,
+          points: -30,
+          critical: true,
+          feedback:
+            "KRİTİK HATA — devam eden iskemide reperfüzyonsuz izlem sürdürülemez; malign ventriküler aritmi ve " +
+            "kardiyojenik şok riski artarak devam eder. Hasta ventriküler fibrilasyona gidiyor.",
+          next_step_id: "s7_vt_vf_komplikasyonu",
         },
       ],
     },

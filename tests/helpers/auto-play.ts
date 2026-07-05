@@ -127,7 +127,9 @@ function playDecisionStep(
   const evaluation = evaluateDecision(step, best.id, difficulty, scenario);
   return {
     points: evaluation?.points ?? 0,
-    unlockId: null,
+    // Dallanan karar: runtime (finishStep) dal hedefini izler — walker da
+    // izlemeli, yoksa best-path lineer akıp komplikasyon koluna girer.
+    unlockId: evaluation?.next_step_id ?? null,
   };
 }
 
