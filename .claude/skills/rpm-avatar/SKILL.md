@@ -1,9 +1,18 @@
 ---
 name: rpm-avatar
-description: Ready Player Me .glb avatar entegrasyonu — ARKit 52 blendshape ile mouthOpen lipsync, eyeBlinkLeft/Right, pupil scale, brow raise. Sprint D.2 göz/ağız/pupil animasyonu için. Mevcut chuma6oy modeli (sadece geometri) yerine RPM avatar kullanıldığında bu skill aktive olur.
+description: "[ARŞİV — 6 Tem 2026] Ready Player Me 31 Ocak 2026'da KAPANDI (Netflix satın alması). Bu skill ölü referanstır — RPM API/avatar creator çalışmıyor. ARKit 52 blendshape animasyon DESENİ (mouthOpen lipsync, eyeBlink, pupil, brow) hâlâ geçerli ama kaynak MPFB2/CC0 hattından gelir. Yeni iş için: r3f-medical + AnimatedPatientModel (lipsync zaten canlı). Çekirdek hastayı dış avatar SaaS'ına BAĞLAMA (RPM kapanışı bağımlılık riskini kanıtladı)."
 ---
 
 # RPM Avatar — Blendshape Animasyon Pattern
+
+> ⚠️ **ARŞİV (6 Tem 2026):** Ready Player Me 31 Ocak 2026'da kapandı (Netflix
+> satın alması sonrası API + avatar creator devre dışı). Aşağıdaki RPM-özel
+> URL/entegrasyon adımları ÇALIŞMAZ. **ARKit 52 blendshape animasyon deseni**
+> geçerliliğini korur — kaynak artık MPFB2/CC0 hattı (patient-mimikli.glb,
+> 159 morph). Lipsync + göz kırpma zaten `AnimatedPatientModel` içinde canlı
+> (engine/lipsync). Foto-gerçekçi drop-in gerekirse Avatar SDK (MetaPerson) /
+> Avaturn araştır — fakat çekirdek hastayı dış SaaS'a BAĞLAMA; CC0/MPFB2 hattı
+> stratejik doğru.
 
 ## Ne zaman kullan
 

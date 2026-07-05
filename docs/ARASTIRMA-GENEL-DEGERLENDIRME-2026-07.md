@@ -44,6 +44,67 @@ muhakeme katmanı.
 ### 🩺 Hekim
 - **Güçlü:** kılavuz-atıf disiplini, DRAFT→ACTIVE yönetişimi (bu gece ilk ACTIVE: STEMI),
   farmakoloji kontrendikasyon motoru, yaş-spesifik vital kapısı testte.
-- **Eksik:** ① senaryo çeşitliliği dar (kardiyoloji ağır; nöroloji/psikiyatri/toksikoloji
-  1'er) ② fizik muayene derinliği sınırlı (inspeksiyon/oskültasyon var; palpasyon-perküsyon
-  bulgu motoru yok) ③ at
+- **Eksik:**
+  1. Senaryo çeşitliliği dar — kardiyoloji ağır; nöroloji/psikiyatri/toksikoloji 1'er vaka.
+     Atipik prezentasyon kuralı (Master Rapor 9.D Kural 7) çoğu senaryoda uygulanmamış.
+  2. Fizik muayene derinliği sınırlı — inspeksiyon/oskültasyon var; **palpasyon, perküsyon,
+     nörolojik muayene (GKS bileşenleri, pupil, refleks), 12-derivasyon EKG yorumlatma
+     akışı** yüzeysel ya da y  2. Fizik muayene derinliği sınırlı — inspeksiyon/oskültasyon var; palpasyon-perküsyon yok.
+  3. Ventilasyon → vital klinik etki bağlı değil, ABG üretimi yok (E2).
+- **Karar:** çeşitlilik + muayene derinliği Hat C (içerik) işi; ABG Hat E (Pulse) işi.
+
+### 💻 Yazılımcı
+- **Güçlü:** saf-fonksiyonel motor (React import 0), 1220 vitest, engine kapsam %96,
+  faz-senkron tek kaynak, dallanan karar + semptom olayı yeni. tsc 0, build temiz.
+- **Eksik:**
+  1. Push YOK — ~65 lokal commit tek makinede (risk; Ali Bey "en nihai halde").
+  2. Bundle 930KB+ tek chunk (kod-bölme yok; ilk yük yavaş).
+  3. CI lint kırık (eslint devDep yok — bilinen).
+  4. Backend hata durumu UI'da bugün düzeldi (Failed to fetch → TR mesaj).
+- **Karar:** kod-bölme (route lazy) düşük emek-orta etki; push kararı Ali Bey'de.
+
+### 🎮 Oyun geliştirici
+- **Güçlü:** 3 pedagojik mod, gerçek-zaman baskısı (deterioration), dallanma yeni,
+  istismar-avı testi kilitli, 4 kamera preset + prosedürel canlı sahne.
+- **Eksik:**
+  1. Gamification yok — leaderboard/rozet/turnuva (E5; BI Student Challenge muadili).
+  2. Ses döngüde değil — TTS/STT hazır ama bağlı değil (E7).
+  3. Görsel "ucuz demo" hissi — SSS cilt + HDRI + post-proc ile kırılır (aşağıda).
+  4. Onboarding/tutorial yok — ilk kez giren öğrenci elle keşfeder.
+- **Karar:** ses döngüsü + leaderboard orta emek-yüksek daldırma; görsel 3 hamle net.
+
+## 4. TEKNOLOJİ/GÖRSEL YOL (emek × etki, ajan raporu sentezi)
+
+**Görsel — en yüksek getirili 3 hamle (prosedürel+Mixamo uyumlu, geometri bozmaz):**
+1. Ekran-uzayı SSS/translucency cilt shader'ı (`patientShader.ts`, WebGL2) — O emek, 5 etki.
+2. HDRI environment + ACES tonemapping (prosedürel odaya) — D-O emek, 4 etki.
+3. Hafif post-processing (bloom+vignette+grain) — D emek, 3 etki.
+
+**Motor/sistem — 12 ayda uygulanabilir:**
+- Gemini Flash TTS (mevcut SSE hattı, $10/M) — D emek, 4 etki. Sesli hasta.
+- WebAudio faz-tabanlı ortam/monitör ses katmanı (getActivePhaseSignal→ses) — D, 4.
+- Rubrik-tabanlı LLM debrief (Calgary-Cambridge 71 beceri, grounded) — O, 5.
+- Sanal hasta grounding sertleştirme (senaryo JSON tek gerçek, uydurma guard) — D, 4.
+- Yetkinlik-haritası dashboard (/ilerleme+/egitmen radar/ısı) — O, 4.
+- WCAG 2.2 AA (renk+ikon alarm, 3:1 kontrast, altyazı, renk-körü mod) — O, 3.
+
+**KAÇIN (hype, düşük getiri):** Pulse tarayıcı-içi WASM · BioGears · şimdi WebGPU-only ·
+avatar SaaS'a çekirdek bağlama (RPM kapanışı dersi) · FMOD/Wwise · LLM'e serbest tanı.
+
+## 5. YOL HARİTASINA ÖNERİLEN YENİ MADDELER (öncelik sırası)
+
+| Öncelik | Madde | Hat | Emek | Neden |
+|---|---|---|---|---|
+| 1 | SSS cilt + HDRI + post-proc (görsel 3 hamle) | B | O | En yüksek "gerçek ürün" hissi; demo→ürün |
+| 2 | Kılavuz-karşılaştırmalı debrief tablosu | C/A | D | BI'ın en övülen özelliği, veri zaten var |
+| 3 | Sesli diyalog döngüye bağlama (Gemini TTS + Whisper STT) | B/A | D-O | OMS/BI sesli deneyim, altyapı hazır |
+| 4 | Vaka hacmi doldurma (16→40 ilk hedef) | C | O-Y | E1 — ilk kurumsal soru |
+| 5 | Yarışma/leaderboard modu | D | O | E5 — öğrenci topluluğu büyüme |
+| 6 | Eğitmen vaka-yazma sihirbazı | D | O-Y | E3 — kurumsal kanca |
+| 7 | rpm-avatar skill arşivle (RPM kapandı) | — | D | Ölü referans temizliği |
+| 8 | Route kod-bölme (bundle 930KB) | — | D | İlk yük hızı |
+
+## 6. KAYNAKLAR
+Rakip analizi + teknoloji trendleri: iki paralel `general-purpose` ajan (WebSearch+WebFetch,
+6 Tem 2026). Tam matris + URL'ler ajan transkriptlerinde. Klinik ön-denetim: klinik-review-agent.
+İç değerlendirme: canlı Playwright UI turu (home/liste/egitmen/ilerleme/gecmis) + kod okuma.
