@@ -37,9 +37,11 @@ Son güncelleme: **5 Temmuz 2026** (Fable 5 tam-proje denetimi sonrası: motor +
 ### Hat A — Motor derinleşmesi (güven altyapısı) ⭐ önerilen ilk iş
 Denetim bulgusu: motor mimarisi sağlam ama **fizyoloji + farmakoloji test kapsamı ~%50** — Pulse swap'i ve senaryo ölçeklemesi bu motorlara binecek, önce güvence şart.
 
-- [ ] `physiology.ts` test paketi: tick, eskalasyon FSM (after_sec + when_vital), halt/recovery, faz devri — hedef %80+ kapsam
-- [ ] `pharmacology/engine.ts` test paketi: modifier çarpan zinciri, kontrendikasyon tetikleyicileri, EcgEffect
-- [ ] `teaching.ts`, `variant.ts`, `lab-resolver.ts`, `reasoning.ts` birim testleri
+- [x] `physiology.ts` test paketi: tick, eskalasyon FSM (after_sec + when_vital), halt/recovery, faz devri — %100 stmt
+- [x] `pharmacology/engine.ts` test paketi: modifier çarpan zinciri, kontrendikasyon tetikleyicileri, EcgEffect — %96 stmt
+- [x] `teaching.ts`, `variant.ts`, `lab-resolver.ts`, `reasoning.ts` birim testleri — hepsi %100 stmt
+- [x] **Motor çekirdeği kapsamı** (5 Tem gece, 08d3f7f): evaluateDecisionMulti + küçük dallar — engine toplam %96 stmt / %91 branch (eşik %80 geçildi)
+- [x] **Motor genişletmesi** (eda8feb): dallanan karar (DecisionOption.next_step_id — komplikasyon kolu/hızlı yol, zorluk-güvenli) + faz semptom olayları (symptom_events → yönetmen olayı). Senaryo yazarları için hazır; mevcut senaryolara dokunulmadı
 - [ ] `PhaseStateMachine` çıkarımı: physiology.ts'teki dağınık state (halted/stopped/heldSec) tek saf FSM nesnesine — Pulse adaptasyonunu kolaylaştırır
 - [ ] `TimeController` soyutlaması: time_scale_override + UI tick → tek etkili dt; ilaç onset'i modlar arası tutarlılık testi
 - [ ] Ekipman onset eğrisi (`equipment/types.ts:51` TODO): etki anında değil tick-tabanlı başlasın
