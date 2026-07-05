@@ -59,10 +59,10 @@ Denetim bulgusu: 3D katman olgun (ref-tabanlı state, memoization, shader guard'
 - [x] **Görsel kalibrasyon (paket 3):** kemik-bind iki-nokta zonal harita (omuz 0.83 + uyluk ortası 0.375 → çene sızıntısı kökten çözüldü, b282f43) + saç kapağı ekvator kesimi (favori yaması yok) + hortum uç doğrulaması. Oda demirbaşları (RoomFixtures ×6) + prosedürel hareket katmanı (agitation: tremor/huzursuzluk) da eklendi (6809344)
 
 ### Hat B2 — Görsel/deneyim sıçraması (6 Tem araştırma çıktısı — `docs/ARASTIRMA-GENEL-DEGERLENDIRME-2026-07.md`)
-- [ ] **SSS cilt shader'ı** (ekran-uzayı translucency, `patientShader.ts`, WebGL2) — en yüksek görsel getiri
-- [ ] **HDRI environment + ACES tonemapping** (prosedürel odaya) + hafif post-proc (bloom/vignette/grain)
-- [ ] **Sesli diyalog döngüye** — Gemini Flash TTS ($10/M, mevcut SSE hattı) + Whisper STT (repoda hazır); WebAudio faz-tabanlı monitör/ortam ses katmanı
-- [ ] **Kılavuz-karşılaştırmalı debrief tablosu** (aksiyonun / beklenen / kılavuz referansı / zamanlama — Body Interact'ın en övülen özelliği; veri zaten senaryolarda)
+- [x] **SSS cilt shader'ı** — rim-translucency v1 (f4cdecf; ekran-uzayı tam SSS ileriye)
+- [x] **IBL + post-proc** — RoomEnvironment PMREM (0.22) + Bloom/Vignette/Noise, ?fx kapılı (f4cdecf)
+- [x] **Sesli diyalog** — zaten bağlıymış (speechSynthesis+Whisper+lipsync); HD Gemini TTS opsiyonel çift-kilitli eklendi (3af2311). KALAN: WebAudio faz-tabanlı ortam ses katmanı
+- [x] **Kılavuz-karşılaştırmalı debrief tablosu** — engine/debrief-comparison + DebriefScreen 4 sütun (dbb1e9e); karar seçimleri artık results kaydında
 - [ ] **Rubrik-tabanlı LLM debrief** (Calgary-Cambridge 71 beceri, grounded LLM-as-judge)
 - [ ] Yarışma/leaderboard modu (BI Student Challenge TR muadili) + yetkinlik-haritası dashboard
 - [ ] WCAG 2.2 AA: alarm renk+ikon, 3:1 kontrast, renk-körü modu
