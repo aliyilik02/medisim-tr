@@ -33,6 +33,8 @@ import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
 import { useAnimationDirector } from "@/hooks/useAnimationDirector";
 import { vitalsToAgitation } from "@/clinical/agitation-mapping";
+import { medicationRouteGesture } from "@/engine/animation-director";
+import { getExtendedMedication } from "@/data/medications-extended";
 import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration, matchReasoningPrompt, isReasoningCorrect } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
@@ -150,11 +152,18 @@ export function ScenarioBedPlayPage() {
     setReasoningQueue((q) => (q.some((x) => x.id === p.id) ? q : [...q, p]));
   };
 
-  // Aksiyonu motora ilet + ekipmansa hastada göster + (egitim) muhakeme sor
+  // Aksiyonu motora ilet + ekipmansa hastada göster + (egitim) muhakeme sor.
+  // Oral/SL/nebul ilaçta hasta jesti (hap yutma/inhaler) animasyon
+  // yönetmenine olay olarak düşer — bilinç kapalıysa motor bastırır.
   const onAction = (action: ActionRef) => {
     if (action.type === "use_equipment" || action.type === "procedure") {
       const kind = EQUIPMENT_ID_MAP[action.target_id];
       if (kind) setEquipment((e) => (e.includes(kind) ? e : [...e, kind]));
+    }
+    if (action.type === "give_medication") {
+      const route = getExtendedMedication(action.target_id)?.dose_band.dose_route;
+      const gesture = route ? medicationRouteGesture(route) : null;
+      if (gesture) pushAnimEvent(gesture);
     }
     runner.handleAction(action);
     triggerReasoning(action.target_id); // aksiyon SONRASI (akışı bozmaz)
@@ -288,7 +297,7 @@ export function ScenarioBedPlayPage() {
   // Vital → animasyon kararı — yönetmen motoru (histerezis + minHold +
   // katman önceliği + arrest bastırması + iskemik ağrı overlay'i).
   // vitalsToClip'in anlık eşlemesinin yerine geçti; eşik titremesi yok.
-  const { decision: animDecision } = useAnimationDirector({
+  const { decision: animDecision, pushEvent: pushAnimEvent } = useAnimationDirector({
     vitals: liveVitals,
     phaseSignal: runner.phaseSignal,
     speaking,

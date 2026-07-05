@@ -449,6 +449,18 @@ export function decideAnimation(input: DirectorInput): AnimationDecision {
   return decision;
 }
 
+/**
+ * İlaç veriliş yolu → hasta jesti. PO/SL → hap yutma, nebul → inhaler;
+ * parenteral yollar (IV/IM/SC) hastadan jest gerektirmez → null.
+ * UI, give_medication aksiyonunda bunu pushEvent'e besler — bilinç kapalıysa
+ * jest zaten motorda bastırılır (pickCandidate, GCS≤8).
+ */
+export function medicationRouteGesture(route: string): DirectorEventType | null {
+  if (route === "PO" || route === "SL") return "take_pill";
+  if (route === "nebul") return "use_inhaler";
+  return null;
+}
+
 /** Test/debug açıklaması. */
 export function describeAnimationDecision(d: AnimationDecision): string {
   const parts = [

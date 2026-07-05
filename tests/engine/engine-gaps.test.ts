@@ -111,6 +111,19 @@ describe("equipment/engine.ts — koşul dalları", () => {
   });
 });
 
+describe("animation-director — ilaç yolu jesti", () => {
+  test("PO/SL → take_pill, nebul → use_inhaler, parenteral → null", async () => {
+    const { medicationRouteGesture } = await import("@/engine/animation-director");
+    expect(medicationRouteGesture("PO")).toBe("take_pill");
+    expect(medicationRouteGesture("SL")).toBe("take_pill");
+    expect(medicationRouteGesture("nebul")).toBe("use_inhaler");
+    expect(medicationRouteGesture("IV_push")).toBeNull();
+    expect(medicationRouteGesture("IV_infusion")).toBeNull();
+    expect(medicationRouteGesture("IM")).toBeNull();
+    expect(medicationRouteGesture("SC")).toBeNull();
+  });
+});
+
 describe("pharmacology/presets.ts — erişim yardımcıları", () => {
   test("getPreset: bilinen id → preset, bilinmeyen → undefined", () => {
     const all = listPresets();
