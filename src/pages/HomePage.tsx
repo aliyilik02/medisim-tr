@@ -119,7 +119,7 @@ export function HomePage() {
 
           {/* Mini stats */}
           <div className="flex flex-wrap gap-8 mt-10 pt-8 border-t border-ink-700/40">
-            <StatPill value={SCENARIOS.length.toString()} label="Aktif Senaryo" />
+            <StatPill value={SCENARIOS.length.toString()} label="Klinik Senaryo" />
             <StatPill value={`${specialtyCount}`} label="Uzmanlık Alanı" />
             <StatPill value="ESC · AHA · TKD" label="Klinik Referans" />
             {stats && stats.total_sessions > 0 && (

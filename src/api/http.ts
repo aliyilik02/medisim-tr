@@ -15,16 +15,28 @@ export function backendBase(): string {
   return BACKEND_URL;
 }
 
-/** credentials:'include' + JSON header sabitleyen fetch sarmalayıcı. */
-export function authFetch(path: string, init?: RequestInit): Promise<Response> {
-  return fetch(`${backendBase()}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
+/** credentials:'include' + JSON header sabitleyen fetch sarmalayıcı.
+    Ağ-katmanı hatası ("Failed to fetch" — backend kapalı/ulaşılamaz) ham
+    İngilizce mesajla UI'a sızıyordu (UI turu bulgusu, 5 Tem) → Türkçe
+    yönlendirici mesaja çevrilir. */
+export async function authFetch(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${backendBase()}${path}`, {
+      ...init,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch (e) {
+    if (e instanceof TypeError) {
+      throw new Error(
+        "Sunucuya ulaşılamıyor — backend çalışmıyor olabilir. (Geliştirmede: `cd backend && npm run dev`)"
+      );
+    }
+    throw e;
+  }
 }
 
 interface ErrorBody {
