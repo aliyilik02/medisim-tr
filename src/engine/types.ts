@@ -439,7 +439,10 @@ export interface PhaseVisualHint {
     kendiliğinden öksürür/kusar; faz durdurulunca (recovering) kesilir. */
 export interface SymptomEventSpec {
   type: "cough" | "vomiting";
-  /** Tekrar aralığı (simüle sn). */
+  /** Tekrar aralığı — GERÇEK (prezentasyon) saniyesi. Yönetmen saati
+      duvar saatidir; faz yaşı ise simüle eksende akar (time_scale ile
+      hızlanır) — değer seçerken fazın GERÇEK görünür süresini düşün
+      (örn. klinik modda 3×: 180 simüle sn'lik faz ≈ 60 gerçek sn). */
   every_sec: number;
   /** Faz başladıktan sonra ilk olaya kadar süre (verilmezse every_sec). */
   start_after_sec?: number;

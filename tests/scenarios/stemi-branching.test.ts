@@ -77,6 +77,25 @@ describe("STEMI dallanma — hedef bütünlüğü", () => {
   });
 });
 
+describe("STEMI semptom olayı pilotu — sinyal taşıma", () => {
+  test("iskemi fazı aktifken PhaseSignal vomiting semptomunu taşır; halt sonrası taşımaz", () => {
+    const provider = createSimplePhysiologyProvider(scenario_stemi);
+    const sig = provider.getActivePhaseSignal?.(scenario_stemi.initial_vitals);
+    expect(sig?.phaseId).toBe("stemi-iskemi");
+    expect(sig?.symptomEvents).toEqual([
+      { type: "vomiting", every_sec: 90, start_after_sec: 20 },
+    ]);
+    // Reperfüzyon kararı → faz durur → recovering sinyalinde semptom YOK
+    provider.applyIntervention(scenario_stemi.initial_vitals, {
+      type: "decision",
+      target_id: "opt_pci_transfer",
+    });
+    const after = provider.getActivePhaseSignal?.(scenario_stemi.initial_vitals);
+    expect(after?.recovering).toBe(true);
+    expect(after?.symptomEvents).toBeUndefined();
+  });
+});
+
 describe("STEMI dallanma — fizyoloji köprüsü", () => {
   test("kurtarma kararları + opt_pci_hesapla deterioration fazlarını durdurur", () => {
     for (const optId of ["opt_pci_hesapla", "opt_kurtarma_pci", "opt_kurtarma_tromboliz"]) {
