@@ -24,6 +24,7 @@ export {
   type PhysiologyProvider,
   type PhysiologyProviderState,
 } from "./physiology";
+export { PhaseStateMachine } from "./phase-state-machine";
 export {
   createPulsePhysiologyProvider,
   mapPulseStateToVitals,
