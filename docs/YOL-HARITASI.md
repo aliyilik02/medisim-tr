@@ -1,247 +1,101 @@
-# Yol Haritası
+# Yol Haritası — MediSim TR
 
-**Nerede olduğumuz ve nereye gittiğimiz.** Her şey değişebilir; bu bir
-rehber, anayasa değil.
+> **Tek kaynak.** "Sıradaki iş ne?" sorusunun cevabı SADECE burada.
+> Diğer durum dosyaları (`DURUM-BRIEF.md`, arşivdekiler) anlık fotoğraftır, harita değildir.
+> Eski v1 harita: `docs/arsiv/YOL-HARITASI-v1-2026-05.md` (20 Mayıs, tamamı aşıldı).
 
----
-
-## ✅ Şu an (v0.1 · alpha)
-
-Tamamlanmış olanlar:
-
-- [x] Proje iskeleti (React + TS + Vite + Tailwind)
-- [x] Senaryo motoru — tip sistemi, değerlendirme, puanlama
-- [x] Eğitim ve sınav modları
-- [x] Hasta kartı + klinik vital monitör
-- [x] İlaç (20) ve ekipman (30) kataloğu
-- [x] 2 tam senaryo (STEMI + Anaflaksi)
-- [x] Debrief ekranı — harf notu, öğrenim noktaları, kaynaklar
-- [x] Ana sayfa + senaryo listesi + arama/filtre
-- [x] Responsive (mobil çalışır)
-- [x] Türkçe dokümantasyon
-
-**Test amaçlı her şey çalışıyor ama şunlar YOK:**
-- Kullanıcı hesabı / giriş
-- Gerçek veritabanı / ilerleme kaydı
-- 3D modül
-- Görsel EKG / lab
-- Ödeme
+Son güncelleme: **5 Temmuz 2026** (Fable 5 tam-proje denetimi sonrası: motor + 3D + dokümantasyon, 3 paralel derin tarama)
 
 ---
 
-## 🎯 Faz 1 — Tam Quiz Platformu (1-2 ay)
+## ✅ Bitti (5 Temmuz itibarıyla)
 
-Amaç: Quiz modülünü "çalışır ürün" seviyesine çıkarmak.
+| Alan | Durum |
+|------|-------|
+| Oynanabilir döngü (eski Faz 1) | `/hasta/:id` canonical — aksiyon UI, gerçek-zamanlı kötüleşme, tetkik, oskültasyon, debrief. Yol-3 (`/dialog-3d-demo`) emekli → redirect |
+| 3D yatak-başı sahne | Oda (er-room 3MB) + 4 hasta varyantı (kadın/erkek/çocuk/yaşlı, 10 anim klip) + 12 ekipman prosedürü + Philips-tarzı monitör + 4 kamera preset |
+| Faz-senkron mimari | `getActivePhaseSignal` tek kaynak → EKG + kalp sesi + görsel + anlatım |
+| Motor birleşmesi | Tek engine (`src/engine/`, 19 dosya ~4.2k satır, saf fonksiyonel, React import 0) |
+| Senaryo üretim sistemi | ProductionScenario kontratı + merkezi ekipman mapper + validate v2 + yazar skill v2 + opioid pilot (16→400 hattı hazır) |
+| STEMI olgunlaştırma | 6 aşama, ESC 2023 değerleri, REVIEWED_PENDING_ACTIVATION |
+| Klinik muhakeme katmanı | Eğitim modunda "neden?" sorusu, cezasız, debrief öğretici (`engine/reasoning.ts`) |
+| Tier-2 sınıf altyapısı | D1+JWT auth, öğrenci/sınıf, attempt persistence, eğitmen paneli `/egitmen`, öğrenci ilerleme `/ilerleme`. Backend lokal 12/12 doğrulandı |
+| Yan sistemler | Ventilatör demo, TTS (tr-TR) + STT (Whisper tarayıcı-içi, KVKK), FHIR R4 tipleri, NeuroKit EKG |
+| Sağlık | tsc 0 hata · **889 vitest pass (60 dosya)** · GLB optimize (168MB→16.7MB) |
 
-- [ ] **5-10 senaryo daha** (hedef: her uzmanlıkta en az 2)
-  - Kardiyoloji: Kardiyojenik şok, aritmi
-  - Dahiliye: DKA, sepsis, akut pankreatit
-  - Pediatri: Sepsis, ateşli havale, bronşiyolit
-  - Acil: İnme, GİS kanama, pnömotoraks
-  - Hemşirelik: IV kateter, hasta güvenliği
-- [ ] **Görsel EKG entegrasyonu** — gerçek EKG görüntüleri
-- [ ] **Lab/görüntüleme** — tetkik sonucunu gösteren componentler
-- [ ] **Hasta hikayesi derinleşmesi** — anamnez alma alt adımları
-- [ ] **Engine testleri** (Vitest ile unit test)
-- [ ] **Senaryo doğrulama scripti** — her senaryo şemaya uyuyor mu
-- [ ] **PWA** — "ana ekrana ekle" → mobilde app gibi görünür
+## ⏳ Ali Bey'de bekleyen kararlar
 
-**Başarı ölçüsü:** 1-2 tıp fakültesi hocasına göster, "bunu öğrencilerime
-kullandırırım" desin.
-
----
-
-## 🏗️ Faz 2 — Backend & Hesap (2-3 ay)
-
-Amaç: "Tek kişilik demo" olmaktan çıkıp "çok kullanıcılı platform" olmak.
-
-- [ ] **Backend kurulumu** (Node.js + Fastify + PostgreSQL)
-- [ ] **Kimlik doğrulama** (email/şifre + e-posta doğrulama)
-- [ ] **İlerleme kaydı** — hangi senaryo oynandı, puan geçmişi
-- [ ] **Kurumsal hesaplar** — hocalar sınıfını görür
-- [ ] **Basit analitik** — hoca için: "öğrenciler en çok nerede takılıyor"
-- [ ] **Lisans modelleri**
-  - Bireysel (aylık / yıllık)
-  - Kurumsal (tıp fakültesi — öğrenci başı)
-  - Askeri (TSK özel paket)
-- [ ] **iyzico ödeme entegrasyonu**
-- [ ] **Deploy pipeline** — Vercel (FE) + Railway (BE)
-
-**Başarı ölçüsü:** 1 tıp fakültesi ile pilot anlaşma, 100+ aktif öğrenci.
+1. **Klinik ACTIVE onayları:** anaflaksi deterioration/auscultation, STEMI paketi, opioid pilot, ekipman kataloğu, muhakeme promptları — hepsi DRAFT/REVIEWED, ACTIVE'e sadece Ali Bey geçirir.
+2. **Model lisansı:** `patient-mimikli.glb` Daz kökenli — lisans netleşmeden commit yok; kalıcı çözüm MPFB2 (CC0) yeniden üretim.
+3. **Push kararı:** ~50 lokal commit `feat/backend-cf-worker`'da ("en nihai halde pushlarız").
+4. **Öncelik seçimi:** aşağıdaki A–E hatlarından hangisi önce (öneri: A+B paralel, bkz. gerekçe).
 
 ---
 
-## 🎮 Faz 3 — 3D İnteraktif Modül (3-5 ay)
+## 🎯 Sırada — öncelikli hatlar (Fable 5 denetim çıktısı)
 
-Amaç: Body Interact tarzı etkileşim, ama uygun fiyatla.
+### Hat A — Motor derinleşmesi (güven altyapısı) ⭐ önerilen ilk iş
+Denetim bulgusu: motor mimarisi sağlam ama **fizyoloji + farmakoloji test kapsamı ~%50** — Pulse swap'i ve senaryo ölçeklemesi bu motorlara binecek, önce güvence şart.
 
-- [ ] **Three.js kurulumu** — React Three Fiber wrapper
-- [ ] **Hazır insan modeli** (Ready Player Me veya benzeri)
-- [ ] **Hotspot sistemi** — vücutta tıklanabilir noktalar
-- [ ] **Temel prosedürler:**
-  - Oskültasyon (stetoskopla vücut bölgesine dokunma → ses)
-  - EKG kablosu bağlama (10 lead'i doğru yere yerleştir)
-  - IV kateter (damar seçimi + yerleştirme animasyonu)
-  - Oksijen maskesi / entübasyon
-- [ ] **Envanter drag-and-drop** — ekipmanı hastanın üzerine sürükle
-- [ ] **Animasyonlar** — ilaç verince iğne animasyonu, defib için
-      şok dalgası
-- [ ] **Mevcut senaryoları 3D'ye port etme** — aynı veri, yeni UI
+- [ ] `physiology.ts` test paketi: tick, eskalasyon FSM (after_sec + when_vital), halt/recovery, faz devri — hedef %80+ kapsam
+- [ ] `pharmacology/engine.ts` test paketi: modifier çarpan zinciri, kontrendikasyon tetikleyicileri, EcgEffect
+- [ ] `teaching.ts`, `variant.ts`, `lab-resolver.ts`, `reasoning.ts` birim testleri
+- [ ] `PhaseStateMachine` çıkarımı: physiology.ts'teki dağınık state (halted/stopped/heldSec) tek saf FSM nesnesine — Pulse adaptasyonunu kolaylaştırır
+- [ ] `TimeController` soyutlaması: time_scale_override + UI tick → tek etkili dt; ilaç onset'i modlar arası tutarlılık testi
+- [ ] Ekipman onset eğrisi (`equipment/types.ts:51` TODO): etki anında değil tick-tabanlı başlasın
+- [ ] Ortak `filterByDifficulty` + `clampTowardTarget` helper'ları (3 yerde tekrar eden mantık)
 
-**Başarı ölçüsü:** Demoyu yatırımcıya / üniversite dekanına göster,
-"bu Türkiye'ye lazım" desin.
+### Hat B — 3D sanal hasta derinleşmesi (görünür değer)
+Denetim bulgusu: 3D katman olgun (ref-tabanlı state, memoization, shader guard'lar doğru) — sıradaki sıçrama gerçekçilik.
 
----
+- [ ] **Fonetik lipsync:** ARKit 52 morph hazır ama sadece jawOpen sinüs osilasyonu kullanılıyor. Hedef: konuşma metni → fonem → morph blend (jawOpen+mouthWide+tongue), SSE chat akışıyla senkron
+- [ ] **Animasyon blend tree:** Mixamo klipler statik; crossFade tabanlı durum makinesi (konuşurken öksürme, ağrı + huzursuzluk), vital → blend ağırlığı
+- [ ] **Zonal siyanoz/mottling:** mevcut sin-sin-sin deseni jenerik; bölge maskeli (perioral/akral siyanoz, livedo ekstremite) shader
+- [ ] **Ekipman fiziği:** IV hattı/O2 hortumu için catenary eğrisi veya hafif rope constraint (hasta hareketinde doğal sarkma)
+- [ ] **Ölü kod temizliği:** `CompactVitalsHUD.tsx` sil, `patient-v1.glb` referanslı kırık e2e düzelt, `InternalOrgans` (asset silinmiş, sessiz kapanıyor) kararı: kaldır ya da yeni asset
+- [ ] Monitör köşe kutusu overflow denetimi (520px HR kırpılma riski)
 
-## ⚔️ Faz 4 — Askeri / TCCC Modülü (3-4 ay, Faz 3 paralel)
+### Hat C — İçerik ölçeği (16→400)
+- [ ] TODO_KLINIK doldurma turu (Claude.ai; `DURUM-BRIEF.md` listesi)
+- [ ] 5-10 yeni senaryo (üretim kontratıyla; toksikoloji/nöroloji/pediatri öncelik)
+- [ ] Legacy senaryoların katalog-id'ye taşınması
 
-Amaç: Bertaş kanalıyla TSK / askeri sağlık birlikleri için ayrı ürün
-konumu.
+### Hat D — Tier-2 kalan parçalar
+- [ ] Sınıfa self-join (davet kodu ile öğrenci kaydı)
+- [ ] Attempt detay görünümü (eğitmen: öğrencinin adım-adım kararları)
+- [ ] Geçici şifre akışı (#7 Ali Bey kararı verildi, uygulama bekliyor)
+- [ ] Ödev/atama (assignment) sistemi
+- [ ] Uzak deploy (Cloudflare prod — **geri dönülmez, Ali Bey onayıyla**)
 
-- [ ] **TCCC protokol senaryoları** (10-15 adet)
-  - MARCH algoritması (Massive bleeding, Airway, Respiration, Circulation, Hypothermia)
-  - Turnike uygulaması
-  - Hemostatik gazlı bez
-  - İğne torakostomi
-  - Nazofaringeal havayolu
-  - Taktik saha triyajı
-- [ ] **Askeri sahne tasarımı** — hastane değil, saha/zemin
-- [ ] **Gürültü, stres faktörleri** — zaman baskısı artmış
-- [ ] **Tematik UI varyantı** — koyu yeşil / olive drab, askeri font
-- [ ] **Ayrı lisans katmanı** — askeri modül kurumsal lisansla aktif
-
----
-
-## 🧠 Faz 5 — İçerik ve Topluluk (sürekli)
-
-- [ ] **Senaryo editörü** — tarayıcıdan form doldurarak senaryo ekleme
-      (kod bilmeyen hekimler için)
-- [ ] **Senaryo paylaşımı** — kullanıcılar kendi senaryolarını topluluğa açabilir
-- [ ] **Adaptif zorluk** — öğrencinin geçmişine göre senaryo öner
-- [ ] **Çoklu dil** (İngilizce versiyonu — uluslararası pazara)
-- [ ] **VR desteği (WebXR)** — Meta Quest tarayıcıdan 3D sahne
+### Hat E — Faz 3 derinlik (uzun vade)
+- [ ] Pulse Engine sidecar (iskelet `pulse-physiology.ts` hazır; WebSocket mock e2e önce)
+- [ ] MPFB2 hasta yeniden üretimi (lisans temiz CC0 hat, `blender-medical-modeling` skill)
+- [ ] Plan: `docs/PLAN-FAZ-3-DERINLIK.md`
 
 ---
 
-## 🚀 Faz 6 — Alışılmışın Dışında Motorlar (vizyon havuzu)
+## 🧠 Vizyon havuzu (v1 haritadan taşındı, hâlâ geçerli)
 
-Bu, "Türkiye'de hatta dünyada başka kimse yapmıyor" katmanı. Mevcut faz sırasını bozmaz — Faz 1+2+3+4+5 yine sırayla. Bu havuzdan en az biri Faz 2'den sonra paralel başlayabilir; AI Hasta + Zaman Makinesi en yüksek WOW × düşük risk kombinasyonu.
+| Modül | Not |
+|-------|-----|
+| ⏪ Zaman Makinesi | Debrief'te adıma geri dön, alternatif kararı oyna. SessionState snapshot — motor buna uygun. Düşük risk, yüksek pedagojik değer |
+| 🤖 AI Hasta anamnez derinliği | Saklı bilgi havuzu + soru kalitesi puanlama (Gemini hattı canlı, üstüne kurulur) |
+| 🧠 Klinik akıl yürütme şeması | **Kısmen yapıldı** (STEMI muhakeme katmanı) — karar ağacı görselleştirmesi kaldı |
+| 🇹🇷 TR-özel katman | TİTCK adları, SUT uyarısı, yerel hastalıklar (KKKA, Behçet, talasemi) |
+| 🎮 Çok oyunculu ekip simülasyonu | Backend hazır olunca (Tier-2 üstüne DO ile) |
+| 📊 Yetkinlik RPG haritası | Attempt persistence artık var — önü açıldı |
+| 🧬 Patofizyoloji canlı animasyon | SVG tabanlı, sanat varlığı bağımlı |
 
-### 🤖 6.1 — AI Hasta (anamnez gerçek diyalogla)
-Hastanın NPC'si Anthropic API üzerinden konuşur. Senaryoda "saklı bilgi havuzu" tanımlanır; doğru soru sorulmazsa bilgi gizli kalır. Anamnez becerisi puanlanır. Hiçbir Türkçe platformda yok.
-- Tahmini süre: 1 hafta
-- Risk: API maliyeti (per-request limit + caching)
-- Bağımlılık: Mevcut motor + ek `anamnesis` step kind
+## 🔴 Riskler + tuzaklar
 
-### ⏪ 6.2 — Zaman Makinesi (alternative timeline)
-Vaka biter, debrief'te herhangi bir adıma geri dön, farklı karar ver, "ya o anda heparin verseydim" görsele bak. SessionState snapshot'lanır, paralel oynatılır.
-- Tahmini süre: 3-4 gün
-- Risk: Düşük (state snapshot mimarisi)
-- Pedagojik değeri devasa: gerçek hayat hatadan dönüşe izin vermez, simülasyon vermeli
-
-### 🧬 6.3 — Patofizyoloji Canlı Animasyon
-Sol tarafta hasta vücudu — DKA'da pankreas/böbrek/glukoz pompası canlı çalışır, STEMI'de tıkalı damar görünür ve tPA verince damar açılır. SVG animasyon (3D değil, daha az iş, daha hafif).
-- Tahmini süre: 2-3 hafta
-- Risk: İllüstrasyon işi (sanat varlığı bağımlılığı)
-
-### 🇹🇷 6.4 — Türkiye-Özel Motor Katmanı
-- TİTCK ilaç ad otomatik (Aspirin → "Coraspin/Asabir")
-- SGK SUT geri ödeme uyarısı ("bu ilaç ödenmez, alternatif?")
-- **Yerel hastalıklar:** Akdeniz ateşi, KKKA, Brusella, talasemi, Behçet — Türkiye'de bol görülen ama global platformlarda olmayan
-- Türkiye epidemiyoloji istatistikleri tanı diferansiyelinde
-- Tahmini süre: 1-2 hafta (veri toplama yorucu)
-- Pazarda kimsenin yapmadığı diferansiyasyon
-
-### 🧠 6.5 — Klinik Akıl Yürütme Şeması
-Her karar otomatik bir karar ağacına ekleniyor: semptom → diferansiyel → test → tanı → tedavi. Vaka sonu kullanıcı kendi düşünce zincirini görsel görür. Tıp eğitiminin kutsal kasesi.
-- Tahmini süre: 1 hafta
-- Risk: UX tasarım zor (graph layout)
-
-### 🎮 6.6 — Çok-Oyunculu Ekip Simülasyonu
-2-4 öğrenci aynı vaka: lider, yardımcı hekim, hemşire, anestezi. Real-time. CPR ekip dinamiği. Backend gerekir (Faz 2 işi).
-- Tahmini süre: 1-2 ay
-- Bağımlılık: Backend (Faz 2 ile birleşik)
-- WOW: rakip yok
-
-### 📊 6.7 — Yetkinlik RPG Haritası
-Her vaka oyladıkça branş × beceri matrisinde XP toplar. "Kardiyolojide Lv 7, Endokrinde Lv 3". Heatmap "şu konularda zayıfsın → şu vakaları öner".
-- Tahmini süre: 4-5 gün (frontend) + Faz 2 backend ile entegre
-- Risk: Backend olmadan zayıf
-
-### Önerilen sıra
-
-| Sıra | Modül | Faza yerleştirme |
-|------|-------|------------------|
-| 1 | 6.2 Zaman Makinesi | Faz 1 sonrası, mevcut motor üstüne |
-| 2 | 6.1 AI Hasta | Faz 2 ile paralel (hesap sistemi rate limit için lazım) |
-| 3 | 6.5 Akıl Yürütme | Faz 2 sonrası |
-| 4 | 6.4 TR Motoru | Faz 2 sonrası, sürekli devam eden veri katmanı |
-| 5 | 6.3 Patofizyoloji | Faz 3 ile paralel (3D yerine SVG fallback) |
-| 6 | 6.7 RPG | Faz 2 backend hazır olunca |
-| 7 | 6.6 Çok oyunculu | Faz 4 sonrası, en uzun iş |
+1. **Test boşluğu motorun kalbinde** (fizyoloji/farmakoloji) — Hat A bunun için önce.
+2. **Klinik DRAFT birikimi:** ACTIVE bekleyen içerik çoğalıyor; review hattı tıkanırsa içerik ölçeklemesi (Hat C) anlamsızlaşır.
+3. **Push edilmemiş ~50 commit** — tek makine riski. Lisans sorunu sadece `patient-mimikli.glb`'de; o dosya gitignore'lanıp gerisi push edilebilir (Ali Bey kararı).
+4. **CI lint kırık** (eslint devDep yok) — bilinen, düşük öncelik.
+5. Eski tuzaklar geçerli: her şeyi birden yapma · sayı değil kalite (20 mükemmel senaryo) · Unity'ye kaçma yok · fiyat baştan net.
 
 ---
 
-## 📊 Başarı göstergeleri (KPI)
+## 📊 Başarı göstergeleri
 
-Her fazın sonunda kontrol:
-
-- Aktif kullanıcı sayısı
-- Senaryo tamamlama oranı
-- Ortalama not (çok yüksekse zorluk az, çok düşükse yanlış tasarlanmış)
-- NPS (kullanıcı tavsiye eder mi?)
-- Kurumsal lisans sayısı
-- MRR (aylık tekrarlayan gelir)
-
----
-
-## 🔴 Dikkat edilecek tuzaklar
-
-Eski sohbetlerde çok zaman kaybettik, bu tuzaklara tekrar düşmeyelim:
-
-1. **"Her şeyi birden yap" tuzağı** — Her faz sırayla. Faz 3 bitmeden
-   Faz 4'e girme.
-2. **"100 senaryo" tuzağı** — Önce 20 mükemmel senaryo. Sayı değil
-   kalite.
-3. **"Unity / Unreal" tuzağı** — Şu an için Three.js yeterli. AAA
-   grafik gerekmez.
-4. **"Ücretsiz verelim, sonra ücret alırız" tuzağı** — Baştan fiyat
-   koy. Üniversitelerle pilot olarak ücretsiz ama ticari model baştan
-   net olmalı.
-5. **"Önce ekip kuralım" tuzağı** — Sen + Claude Code ile Faz 1'i bitir.
-   Ekip, trafiğin geldiği noktada gerekir.
-
----
-
-## Claude Code'a verilecek öncelikli görevler
-
-Bu listeyi kopyalayıp Claude Code'a ver, sırayla yapsın:
-
-### Haftalık plan (örnek — ilk hafta)
-
-```
-1. "Proje çalışıyor mu kontrol et — npm install ve npm run dev."
-2. "STEMI senaryosuna bir '6. adım' ekle: taburculuk planlaması."
-3. "3. senaryo olarak DKA ekle (Diyabetik Ketoasidoz). 
-    5 adımlı, dahiliye, zorluk 3."
-4. "src/data/scenarios/index.ts'i güncelle, DKA'yı listeye ekle."
-5. "engine/ için ilk unit testleri yaz (Vitest)."
-```
-
-### Faz 1'in ilk 10 görevi
-
-```
-1. GitHub repo oluştur, ilk commit yap
-2. Vercel'e deploy et — canlıya çık (free tier)
-3. 3. senaryo ekle: DKA
-4. 4. senaryo ekle: Pediatrik sepsis
-5. 5. senaryo ekle: Akut inme
-6. Engine unit testleri
-7. Senaryo şema doğrulayıcı script
-8. Görsel EKG componenti (placeholder yerine gerçek)
-9. Dark mode toggle (şu an zorla dark, isteğe bağlı yap)
-10. 404 sayfası + error boundary
-```
-
-Her görevi Claude Code'a tek tek ver. Acele etme. Her biri yapıldıktan
-sonra test et, sonra commit. "Hepsini aynı anda yap" deme.
+Aktif kullanıcı · senaryo tamamlama oranı · ortalama not dağılımı · NPS · kurumsal lisans · MRR. İlk somut hedef: **1-2 tıp fakültesi hocası pilotu** (Tier-2 sınıf sistemi buna hazır).

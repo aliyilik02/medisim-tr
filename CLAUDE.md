@@ -1,10 +1,11 @@
 # Claude Code İçin Talimatlar — MediSim TR
 
-> **Ana referans:** [`docs/MASTER-REPORT-v3.md`](docs/MASTER-REPORT-v3.md) (stack, sprint, klinik, KVKK).
-> **Memory vault:** [`docs/memory/README.md`](docs/memory/README.md) (Obsidian-uyumlu, görev tipine göre lazy read).
-> Detaylı içerik orada — bu dosya 70 satır, sadece kritik kurallar.
+> **Yol haritası (TEK kaynak):** [`docs/YOL-HARITASI.md`](docs/YOL-HARITASI.md) — "sıradaki iş ne?" cevabı SADECE orada.
+> **Klinik/KVKK referans:** [`docs/MASTER-REPORT-v3.md`](docs/MASTER-REPORT-v3.md) Bölüm 9 (klinik standartlar güncel; Bölüm 11 sprint tablosu bayat, ona bakma).
+> **Memory vault:** [`docs/memory/README.md`](docs/memory/README.md) (görev tipine göre lazy read).
+> Detaylı içerik orada — bu dosya kısa, sadece kritik kurallar.
 
-Son güncelleme: 12 Haziran 2026
+Son güncelleme: 5 Temmuz 2026
 
 ## Ajanın görevi
 
@@ -18,38 +19,18 @@ Kullanıcı (Ali Bey) sahada çalışan sağlık profesyoneli + ürün sahibi. A
 4. Her iş sonunda 2-3 cümle Türkçe rapor. Teknik monolog yok.
 5. Token disiplini: küçük sprintte plan modu/agent açma. Direkt Read+Edit. Memory dosyalarını **sadece görev için gerekirse** Read et (her seansta otomatik yükleme yok).
 
-## Mevcut Durum (12 Haziran 2026)
+## Mevcut Durum (5 Temmuz 2026)
 
-**Sanal Hasta Planı:** `docs/PLAN-SANAL-HASTA-V1.md` (DRAFT, Ali Bey sözlü onayladı, 3 faz).
-**✅ Faz 1 — oynanabilir döngü TAMAMLANDI (13 Haz gece):** `/dialog-3d-demo` uçtan uca oynanıyor — action UI (sağ panel "Vaka Akışı" sekmesi: StepDisplay+InventoryPanel), gerçek zamanlı kötüleşme (`src/engine/physiology.ts` — `PhysiologyProvider` arayüzü + `SimplePhysiologyProvider`, Faz 3 Pulse swap'ine hazır), tetkik (lab countdown+sonuç modalları), oskültasyon senaryo override (`scenarioRegions.ts`, wheeze→adrenalin sonrası normal), debrief (DebriefScreen). Orkestrasyon `src/hooks/useScenarioRunner.ts` (ScenarioPlayPage'e bilinçli DOKUNULMADI — sonraki sprintte o da bu hook'a geçebilir).
-**⚠️ Klinik review bekliyor:** anaflaksi `deterioration`+`auscultation` alanları DRAFT (commit mesajında gerekçe + WAO 2020). Ali Bey onayı olmadan ACTIVE sayılmaz.
-**⚠️ Yarım model migrasyonu (Ali Bey'in işi, dokunulmadı):** worktree'de `patient-mimikli.glb` (161MB!) + shader refactor uncommitted. `InternalOrgans` silinen `anatomy-internal.glb`'ye bakıyordu → graceful error boundary eklendi (organ katmanı sessiz kapanır). `e2e/patient-3d-demo.spec.ts` 2 testi bu migrasyon yüzünden lokal kırık (patient-v1.glb silinmiş + 161MB yavaş yük). 161MB GLB GitHub 100MB limitini aşar — push öncesi draco/gltf-transform şart.
-**Araç kararları:** Blender MCP çekirdek (sahne üretimi Faz 2), Higgsfield yan rol (intro videoları), Unity park.
-**Yeni kurulumlar (12 Haz):** caveman plugin (restart sonrası aktif), graphify (`/graphify .`), `defaultMode: bypassPermissions` + CLAUDE.md kural 2 gevşetildi (soru sormadan devam). Ultracode: Ali Bey `/effort ultracode` veya `ultracode:` prefix ile açar.
-
-### Önceki sprint durumu (20 Mayıs gece sonu)
-
-**Test:** 429 vitest + 8 Playwright E2E pass. Build temiz.
-**Sprint:** Master rapor Bölüm 11 —
-- ✅ A/A.1/B.1/B.1.1 — manken + marker + breathing
-- ✅ B.2 — AI hasta diyaloğu (Gemini 2.5 Flash backend `/api/chat` SSE canlı; mock fallback otomatik)
-- ✅ B.3 — Vital HUD (PALS yaş alarm) + 12-Lead EKG modal
-- ✅ B.4 — Anatomik atlas kesim (anterior z-plane) + Splanchnology mesh **filter çalışıyor ama Splanchnology asset ham** (Default.001/Organ.001 generic, organ ayırma net değil — yarın Sketchfab tek tek CC BY model)
-- ✅ D.1 hafif — `vitalsToVisual` (SpO2<88→siyanoz, SBP<90→solgun) + `useVitalsTick` session entegrasyonu; tam Pulse Engine sidecar D.1 ileride
-- ✅ Skill paketi — 5 yeni domain skill (vital-signs-hud, z-anatomy-binding, pulse-engine-binding, rpm-avatar, tccc-scenarios)
-- ✅ Cloudflare MCP (docs+bindings) + Obsidian MCP semantic search
-- ✅ Playwright e2e smoke + `.claude/agents/3d-vision-tester.md` custom agent + `test:visual` script
-- 🔄 B.5 — oskültasyon ses dosyaları **indi** (4 ogg `public/sounds/auscultation/`) — UI bağlama Faz 1.4'te
-- 🔄 D.2 RPM avatar — kullanıcı GLB indirmeye başlamıştı, devamı bekliyor (göz/ağız blendshape)
-- ⏸ Senaryo motor TAM entegrasyon — action UI (`/dialog-3d-demo` step engine + action submit) bekliyor
-
-**Demo route'lar:** `/3d-demo`, `/dialog-demo`, `/dialog-3d-demo` (tam paket).
-
-**Sıradaki seans:** Faz 1 — oynanabilir döngü (plan: `docs/PLAN-SANAL-HASTA-V1.md` Bölüm 4). RPM avatar (D.2) ve Sketchfab organ modelleri Faz 2-3'e kaydı.
+**Canonical oyun yolu:** `/hasta/:id` (ScenarioBedPlayPage, yatak-başı 3D). Eski demo route'lar emekli/redirect — yeni 3D/monitör işi SADECE orada yapılır.
+**Bitti:** oynanabilir döngü · 3D yatak-başı sahne (4 varyant + 12 ekipman + monitör) · faz-senkron mimari (`getActivePhaseSignal`) · tek motor (`src/engine/`) · senaryo üretim sistemi (ProductionScenario kontratı, 16→400 hattı) · STEMI olgunlaştırma (REVIEWED) · klinik muhakeme katmanı · Tier-2 sınıf altyapısı (D1+JWT, `/egitmen`, `/ilerleme`, backend lokal 12/12). Sağlık: tsc 0, 889 vitest pass.
+**⚠️ Klinik ACTIVE bekleyen (sadece Ali Bey):** anaflaksi, STEMI paketi, opioid pilot, ekipman kataloğu, muhakeme promptları.
+**⚠️ Push YOK:** ~50 lokal commit `feat/backend-cf-worker`'da ("en nihai halde pushlarız"). `patient-mimikli.glb` Daz lisansı netleşmeden commit edilmez (MPFB2 CC0 kalıcı hat).
+**Sıradaki iş:** `docs/YOL-HARITASI.md` Hat A–E (öneri: A motor testleri + B 3D derinleşme paralel).
+**Araç/kurulum notları:** Blender 5.1 + MPFB2 + Lab MCP çalışıyor; caveman + graphify aktif; ultracode sadece Ali Bey açık isteğiyle.
 
 ## Stack (Master Rapor onaylı)
 
-R3F + Three.js r171 + drei | Cloudflare Workers + DO (planlı B.0) | Gemini 2.5 Flash (planlı B.2) | Azure tr-TR Neural TTS | Tailwind v3→v4 + shadcn/ui | react-hook-form + zod + @rjsf/core | vitest + Playwright | Sketchfab CC BY + RPM (planlı) + Pulse Engine (planlı D.1).
+R3F + Three.js r171 + drei | Cloudflare Workers + D1 + JWT (canlı, lokal doğrulandı) | Gemini 2.5 Flash `/api/chat` SSE (canlı) | tarayıcı-içi TTS/STT (Azure TTS anahtar bekliyor) | Tailwind + shadcn/ui | react-hook-form + zod | vitest + Playwright | MPFB2 CC0 (hasta) + Pulse Engine (planlı, iskelet hazır).
 
 ## Mimari Kuralları — İhlal etme
 
