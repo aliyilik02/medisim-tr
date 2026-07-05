@@ -50,6 +50,11 @@ const RHYTHM_MAP: Record<string, Rhythm> = {
 // Belirgin ST elevasyonu (~4.5mm → 0.18 normalize) gerektiren paternler.
 const ST_ELEVATION_PATTERNS = new Set(["stemi", "st_elevation", "st_elev_pvc"]);
 
+// Dolaşımı çökmüş (nabızsız) ritimler — senaryodan bağımsız fizyolojik kural:
+// arrestte solunum durur (apne → RR 0) ve perfüzyon kaybıyla EtCO₂ çöker.
+// Monitör RR<2'yi "--" gösterir; EtCO₂ 0'a iner. Senaryo trendi gerektirmez.
+const ARREST_RHYTHMS = new Set<Rhythm>(["vfib", "asystole", "pea"]);
+
 export function patientVitalsToMonitor(v: PatientVitals, ekgPattern?: string): VitalState {
   const key = (ekgPattern ?? "normal").toLowerCase();
   const rhythm = RHYTHM_MAP[key] ?? "sinus";
@@ -59,13 +64,18 @@ export function patientVitalsToMonitor(v: PatientVitals, ekgPattern?: string): V
   if (ST_ELEVATION_PATTERNS.has(key)) st = 0.18;
   else if (v.st_elevation_mm != null) st = v.st_elevation_mm * 0.04;
 
+  const arrest = ARREST_RHYTHMS.has(rhythm);
+
   return {
     hr: v.hr,
     spo2: v.spo2,
     sbp: v.bp_systolic,
-    dbp: v.bp_diastolic,
-    rr: v.rr,
-    etco2: v.etco2 ?? 35,
+    // Fizyolojik invaryant: diastolik sistoliği aşamaz. Senaryo yalnız
+    // sistolike trend yazdıysa diastolik bayat kalmasın (arrestte SBP 0'a
+    // inerken DBP 92'de donuyordu) — sistolikle birlikte aşağı çekilir.
+    dbp: Math.min(v.bp_diastolic, v.bp_systolic),
+    rr: arrest ? 0 : v.rr,
+    etco2: arrest ? 0 : v.etco2 ?? 35,
     temp: v.temp,
     rhythm,
     st: st !== 0 ? st : undefined,
