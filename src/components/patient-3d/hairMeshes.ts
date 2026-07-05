@@ -66,9 +66,13 @@ export const HAIR_BY_VARIANT: Record<string, HairSpec> = {
 /** Saç kemiği + bone-local yerleşim (equipmentMeshes kalibrasyon ekseni). */
 export const HAIR_BONE = {
   bone: "mixamorigHead",
-  /** Kafatası merkezi yaklaşığı — maske z≈9 (yüz düzlemi) referansıyla. */
-  offset: [0, 4.2, 1.2] as [number, number, number],
-  baseRadius: 7.6,
+  /** SAYISAL kalibrasyon (6 Tem __faceCalib probu — göz kararı değil):
+      Head-local kafa bbox X ±9.18 / Y tepe 22.84 / Z -9.11..14.12.
+      Eski r=7.6 tamamen kafa İÇİNDEYDİ ("saçlar olmamış" bulgusu).
+      Merkez (0,12,1.5) + r=10.6 → tepe 22.6 scalp'e oturur, yanlar ±9.2'yi
+      1.4 birim aşar (saç hacmi). */
+  offset: [0, 11.6, 2.6] as [number, number, number], // hafif öne — alın hattı doğallaşır
+  baseRadius: 10.6,
 };
 
 /** Varyant için saç grubu üret. Bilinmeyen varyant → null (saçsız degrade). */

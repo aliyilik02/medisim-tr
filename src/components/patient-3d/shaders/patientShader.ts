@@ -33,10 +33,28 @@ export const patientVertexCommon = `
 uniform float uTime;
 uniform float uBreathAmplitude;
 uniform float uBreathSpeed; // Vital RR değerine bağlı dinamik nefes alma hızı
+// Önlük kabartması (kumaş hissi): maske vertex'te de hesaplanır, mesh
+// normal boyunca dışa itilir → önlük "boyalı cilt" değil cildin ÜSTÜNDE
+// duran kumaş siluetine kavuşur. uGownPuff=0 → kapalı (geriye uyumlu).
+uniform float uGownEnable;
+uniform float uGownPuff;    // dışa itme (LOKAL birim; bed ~0.03)
+uniform float uZoneYMin;
+uniform float uZoneHeight;
 varying vec3 vClinicalWorldPos; // mottled (livedo) deseni için world konum
 varying vec3 vClinicalLocalPos; // pre-skin LOKAL konum — zonal koordinat
                                 // (Mixamo cm-rig'de world bind kutusu ~5mm'e
                                 // çöker; lokal uzayda boy ekseni Y sağlam)
+
+// Önlük maskesinin vertex kopyası — fragment'taki msZoneGown ile AYNI
+// sabitler (parite testi fragment'ı kilitliyor; buradaki f() aynı kaynaktan).
+float msVertGown(float xA, float yN, float zF) {
+  float hem = smoothstep(${f(ZONE.gownHem0)}, ${f(ZONE.gownHem1)}, yN);
+  float front = smoothstep(${f(ZONE.gownZ0)}, ${f(ZONE.gownZ1)}, zF);
+  float neckTop = ${f(ZONE.gownNeckBack)} - ${f(ZONE.gownNeckDrop)} * front;
+  float top = 1.0 - smoothstep(neckTop, neckTop + ${f(ZONE.gownNeckFeather)}, yN);
+  float lateral = 1.0 - smoothstep(${f(ZONE.gownX0)}, ${f(ZONE.gownX1)}, xA);
+  return hem * top * lateral;
+}
 `;
 
 export const patientVertexDisplacement = `
@@ -61,6 +79,17 @@ float bAbdomenWeight = (1.0 - smoothstep(0.04, 0.10, bAbdomenDist)) * 0.60;
 float bPhase = sin(uTime * uBreathSpeed);
 float bTotalWeight = bChestWeight + bAbdomenWeight;
 transformed += normal * bTotalWeight * bPhase * uBreathAmplitude;
+
+// ── Önlük kabartması: kumaş cildin ÜSTÜNDE dursun (boyalı görünüm kırıcı) ──
+// LOKAL bind uzayında maske (fragment ile aynı normalize) → normal boyunca it.
+if (uGownPuff > 0.0001 && uGownEnable > 0.5 && uZoneHeight > 0.001) {
+  float gvYN = (position.y - uZoneYMin) / uZoneHeight;
+  float gvK  = ${f(CANON_HEIGHT)} / uZoneHeight;
+  float gvMask = msVertGown(abs(position.x) * gvK, gvYN, position.z * gvK);
+  // Kenarda sıfıra iner (feather zaten maskede) + hafif kırışık dalgası
+  float gvWrinkle = 1.0 + 0.25 * sin(position.y * 18.0) * sin(position.x * 22.0);
+  transformed += normal * gvMask * uGownPuff * gvWrinkle;
+}
 `;
 
 export const patientFragmentCommon = `

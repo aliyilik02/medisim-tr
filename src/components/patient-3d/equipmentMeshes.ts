@@ -52,10 +52,13 @@ export const EQUIPMENT_BONE: Record<
   EquipmentKind,
   { bone: string; offset: [number, number, number]; rotation?: [number, number, number]; scale?: number }
 > = {
-  // Yüze otur (burun+ağız üzeri), tüp aşağı; +Z float azaltıldı (10→9).
-  oxygen_mask: { bone: "mixamorigHead", offset: [0, 3, 9], rotation: [0.55, 0, 0], scale: 1.0 },
-  // Burun altı; eski ring havada uçuyordu → +Z 11→9.7 indirildi, scale 0.85 küçültüldü.
-  nasal_cannula: { bone: "mixamorigHead", offset: [0, 1.2, 9.7], scale: 0.85 },
+  // Yüze otur (burun+ağız üzeri). 6 Tem SAYISAL kalibrasyon (__faceCalib
+  // probu): kafa head-local Z -9.1..14.1 (burun ucu 14), göz y 12.5 →
+  // burun tabanı y≈9.5, ağız y≈7. Eski z=9 yüzün İÇİNDEYDİ ("ekipman
+  // hastaya entegre değil" bulgusu, Ali Bey 6 Tem).
+  oxygen_mask: { bone: "mixamorigHead", offset: [0, 8.2, 12.4], rotation: [0.55, 0, 0], scale: 1.2 },
+  // Burun altı — aynı kalibrasyon.
+  nasal_cannula: { bone: "mixamorigHead", offset: [0, 9.4, 13.0], scale: 1.0 },
   // Göğüste duran elin parmak ucuna klips (LED parmağa bakar).
   pulse_ox: { bone: "mixamorigLeftHand", offset: [0, 9, 0], scale: 1 },
   // Ön kolun dorsal (üst) yüzeyine; eski +Z 2.5 kolun altına gömüyordu → -0.5'e çekildi.

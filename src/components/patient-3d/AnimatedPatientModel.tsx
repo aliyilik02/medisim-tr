@@ -17,6 +17,7 @@ import type { VisualState } from "@/clinical/clinicalVisualMapping";
 const CYANOSIS_FACTOR: [number, number, number] = [0.6, 0.7, 0.96];
 import { buildEquipment, EQUIPMENT_BONE, type EquipmentKind } from "./equipmentMeshes";
 import { buildHair, HAIR_BONE } from "./hairMeshes";
+import { buildFace, FACE_BONE } from "./faceMeshes";
 import {
   buildVisemeTimeline,
   sampleViseme,
@@ -318,6 +319,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
               shader.uniforms.uZoneHeight = { value: zone?.height ?? 0 }; // 0 → canonical fallback
               shader.uniforms.uSss = { value: 0.32 }; // rim-translucency (görsel üçlü)
               shader.uniforms.uSssColor = { value: [0, 0, 0] }; // 0 → dahili sıcak ten kızılı
+              shader.uniforms.uGownPuff = { value: 0.028 }; // kumaş kabartması (LOKAL birim ≈ 2cm)
               shader.vertexShader = shader.vertexShader
                 .replace("#include <common>", patientVertexCommon)
                 .replace("#include <begin_vertex>", patientVertexDisplacement);
@@ -574,6 +576,19 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       bone.add(hairObj);
       return () => {
         bone.remove(hairObj);
+      };
+    }, [clone, variant]);
+
+    // Yüz — göz küreleri + kaşlar (dokusuz modelde çukurlar boştu; blink
+    // morph'lu kapaklar prosedürel küreleri örter). Head kemiğine bağlı.
+    useEffect(() => {
+      const bone = clone.getObjectByName(FACE_BONE);
+      if (!bone) return;
+      const faceObj = buildFace(variant);
+      if (!faceObj) return;
+      bone.add(faceObj);
+      return () => {
+        bone.remove(faceObj);
       };
     }, [clone, variant]);
 
