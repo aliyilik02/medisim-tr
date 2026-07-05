@@ -155,6 +155,11 @@ export interface DecisionOption {
   critical?: boolean;           // true: kritik hata — debrief'te kırmızı uyarı
   min_difficulty?: Difficulty;
   max_difficulty?: Difficulty;
+  /** Dallanan karar: bu seçenek seçilince akış bu adıma gider (zorluk
+      kapısına uymuyorsa linear akışa düşülür — pickNextStep). Verilmezse
+      eski davranış: karar sonrası linear sıradaki adım. Yanlış kararı
+      komplikasyon koluna göndermek için de kullanılır. */
+  next_step_id?: string;
 }
 
 export interface StepBase {
@@ -195,6 +200,9 @@ export interface DecisionMultiEvaluation {
   points: number;
   feedback: string;
   all_correct: boolean;
+  /** Dallanma hedefi: seçilenler arasında (adım sırasıyla) önce doğru,
+      yoksa herhangi bir next_step_id'li seçeneğin hedefi; yoksa null. */
+  next_step_id: string | null;
 }
 
 export interface InfoStep extends StepBase {
@@ -426,6 +434,17 @@ export interface PhaseVisualHint {
   breath_stopped?: boolean;
 }
 
+/** Faz aktifken tekrarlayan görünür semptom (SUNUM katmanı — klinik veri
+    değil). Animasyon yönetmenine olay olarak düşer: hasta kötüleşirken
+    kendiliğinden öksürür/kusar; faz durdurulunca (recovering) kesilir. */
+export interface SymptomEventSpec {
+  type: "cough" | "vomiting";
+  /** Tekrar aralığı (simüle sn). */
+  every_sec: number;
+  /** Faz başladıktan sonra ilk olaya kadar süre (verilmezse every_sec). */
+  start_after_sec?: number;
+}
+
 /** Faz başına senkron sinyal — senaryo yazarı tanımlar (klinik DRAFT). */
 export interface PhaseSignalSpec {
   ekg: EkgPattern;
@@ -437,6 +456,8 @@ export interface PhaseSignalSpec {
   visual?: PhaseVisualHint;
   /** Faz aktifleşince öğretici modda gösterilecek anlatım (klinik DRAFT). */
   narration?: string;
+  /** Tekrarlayan görünür semptomlar (öksürük/kusma) — sunum katmanı. */
+  symptom_events?: SymptomEventSpec[];
 }
 
 /** physiology.getActivePhaseSignal() çıktısı — dağıtım için çözülmüş sinyal. */
@@ -451,6 +472,8 @@ export interface PhaseSignal {
   /** Bu faz müdahale ile durduruldu mu (recovery kolu). */
   recovering: boolean;
   narration?: string;
+  /** Dominant fazın tekrarlayan semptomları (recovering'de yok — kesilir). */
+  symptomEvents?: SymptomEventSpec[];
 }
 
 export interface DeteriorationPhase {

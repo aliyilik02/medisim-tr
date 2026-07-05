@@ -213,6 +213,8 @@ export interface DecisionEvaluation {
   option: DecisionOption;
   points: number;
   feedback: string;
+  /** Dallanma hedefi (option.next_step_id) — yoksa null → linear akış. */
+  next_step_id: string | null;
 }
 
 export function evaluateDecision(
@@ -246,6 +248,7 @@ export function evaluateDecision(
     option,
     points: option.points,
     feedback: option.feedback,
+    next_step_id: option.next_step_id ?? null,
   };
 }
 
@@ -364,6 +367,10 @@ export function getAchievableMaxPoints(
       } else if (correct.length > 0) {
         total += correct[0].points ?? 0;
       }
+      // Dallanan karar: best-path seçilen doğrunun dalını izler
+      // (runtime finishStep davranışıyla tutarlı ulaşılabilir tavan).
+      const branched = correct.find((o) => o.next_step_id);
+      if (branched?.next_step_id) unlock = branched.next_step_id;
     }
 
     stepId = pickNextStep(scenario, step.id, unlock ? [unlock] : [], difficulty);
@@ -497,12 +504,19 @@ export function evaluateDecisionMulti(
     correctVisible.every((o) => selectedIdSet.has(o.id)) &&
     selected.every((o) => o.correct);
 
+  // Dallanma hedefi: seçilenler arasında (adım sırası) önce DOĞRU olanların
+  // next_step_id'si, yoksa herhangi birininki. Deterministik.
+  const branch =
+    selected.find((o) => o.correct && o.next_step_id) ??
+    selected.find((o) => o.next_step_id);
+
   return {
     selected_options: selected,
     missed_correct_options: missed,
     points: totalPoints,
     feedback: lines.join("\n") || "Seçim değerlendirildi.",
     all_correct: allCorrect,
+    next_step_id: branch?.next_step_id ?? null,
   };
 }
 

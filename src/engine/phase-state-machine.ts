@@ -267,6 +267,7 @@ export class PhaseStateMachine {
       visual: spec.visual ?? {},
       recovering: false,
       narration: spec.narration,
+      symptomEvents: spec.symptom_events,
     };
   }
 

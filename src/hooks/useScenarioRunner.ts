@@ -274,8 +274,14 @@ export function useScenarioRunner({
         // finished guard: "Bitir" sonrası bekleyen karar/unlock timer'ı
         // (setTimeout(finishStep)) ateşlenirse oturuma tekrar yazmasın.
         if (!s || s.finished) return s;
-        const nextStepId =
-          unlockId ?? pickNextStep(rs, stepId, [], s.selected_difficulty);
+        // unlock/dal hedefi pickNextStep'ten geçer: zorluk kapısına uymayan
+        // hedef linear akışa düşer (ham unlockId ataması kapı atlatıyordu).
+        const nextStepId = pickNextStep(
+          rs,
+          stepId,
+          unlockId ? [unlockId] : [],
+          s.selected_difficulty
+        );
 
         let newSession = completeStep(
           s,
@@ -563,9 +569,16 @@ export function useScenarioRunner({
         type: evaluation.points > 0 ? "positive" : "negative",
       });
       setPointsThisStep(evaluation.points);
-      // Öğretici modda otomatik geçme — öğrenci "Sonraki Adıma Geç" ile ilerler.
-      if (session.mode !== "egitim") {
-        setTimeout(() => finishStep(null, evaluation.points), 1800);
+      // Dallanan karar: seçeneğin next_step_id'si akışı yönlendirir
+      // (finishStep zorluk kapısını uygular). Öğretici modda otomatik geçme
+      // yok — dal hedefi bekletilir, öğrenci "Sonraki Adıma Geç" ile ilerler.
+      if (session.mode === "egitim") {
+        pendingUnlockRef.current = evaluation.next_step_id;
+      } else {
+        setTimeout(
+          () => finishStep(evaluation.next_step_id, evaluation.points),
+          1800
+        );
       }
     },
     [rs, session, currentStep, decisionAnswered, show, finishStep, provider]
@@ -595,8 +608,13 @@ export function useScenarioRunner({
         type: evaluation.points > 0 ? "positive" : "negative",
       });
       setPointsThisStep(evaluation.points);
-      if (session.mode !== "egitim") {
-        setTimeout(() => finishStep(null, evaluation.points), 2200);
+      if (session.mode === "egitim") {
+        pendingUnlockRef.current = evaluation.next_step_id;
+      } else {
+        setTimeout(
+          () => finishStep(evaluation.next_step_id, evaluation.points),
+          2200
+        );
       }
     },
     [rs, session, currentStep, decisionMultiAnswered, show, finishStep]

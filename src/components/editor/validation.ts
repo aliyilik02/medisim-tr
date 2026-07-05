@@ -176,6 +176,15 @@ export function validateScenario(draft: ScenarioDraft): ValidationResult {
             message: `"${step.title || step.id}": en az 1 doğru seçenek işaretlenmeli.`,
             jumpToStep: 3,
           });
+        // Dallanan karar: next_step_id hedefi var olmalı (kırık dal = kayıp akış)
+        for (const o of s.options) {
+          if (o.next_step_id && !stepIds.has(o.next_step_id))
+            errors.push({
+              code: "REF_BRANCH",
+              message: `"${step.title || step.id}": "${o.text}" seçeneğinin dal hedefi "${o.next_step_id}" bulunamadı.`,
+              jumpToStep: 3,
+            });
+        }
       }
 
       if (step.kind === "info") {
@@ -253,6 +262,11 @@ export function validateScenario(draft: ScenarioDraft): ValidationResult {
       if (step.kind === "action") {
         for (const o of (step as ActionStep).expected_outcomes) {
           for (const id of o.unlocks ?? []) reachable.add(id);
+        }
+      }
+      if (step.kind === "decision") {
+        for (const o of (step as DecisionStep).options) {
+          if (o.next_step_id) reachable.add(o.next_step_id);
         }
       }
     }

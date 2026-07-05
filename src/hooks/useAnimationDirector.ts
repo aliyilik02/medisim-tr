@@ -45,6 +45,47 @@ export function pruneEvents(events: DirectorEvent[], nowSec: number, maxAgeSec =
   return events.filter((e) => nowSec - e.atSec < maxAgeSec);
 }
 
+// ── Faz semptom zamanlayıcısı (senaryo-tetikli öksürük/kusma) ──
+// PhaseSignal.symptomEvents (deterioration fazının symptom_events spec'i)
+// tekrarlayan görünür semptomlara çevrilir. Faz değişince takvim sıfırlanır;
+// faz durdurulunca (recovering/null → symptomEvents yok) semptom kesilir.
+
+export interface SymptomScheduleState {
+  phaseId: string | null;
+  /** semptom tipi → sıradaki tetik zamanı (sn). */
+  nextDue: Record<string, number>;
+}
+
+export function advanceSymptomSchedule(
+  signal: PhaseSignal | null | undefined,
+  state: SymptomScheduleState,
+  nowSec: number,
+): { state: SymptomScheduleState; fired: DirectorEventType[] } {
+  const specs = signal?.symptomEvents;
+  if (!signal || !specs?.length) {
+    return { state: { phaseId: null, nextDue: {} }, fired: [] };
+  }
+  let next = state;
+  if (state.phaseId !== signal.phaseId) {
+    next = {
+      phaseId: signal.phaseId,
+      nextDue: Object.fromEntries(
+        specs.map((s) => [s.type, nowSec + (s.start_after_sec ?? s.every_sec)]),
+      ),
+    };
+  }
+  const fired: DirectorEventType[] = [];
+  const nextDue = { ...next.nextDue };
+  for (const s of specs) {
+    const due = nextDue[s.type] ?? nowSec + s.every_sec;
+    if (nowSec >= due) {
+      fired.push(s.type);
+      nextDue[s.type] = nowSec + s.every_sec;
+    }
+  }
+  return { state: { phaseId: next.phaseId, nextDue }, fired };
+}
+
 export interface UseAnimationDirectorOpts {
   vitals: PatientVitals;
   /** runner.phaseSignal — faz-senkron arrest/overlay için. */
@@ -87,6 +128,7 @@ export function useAnimationDirector(opts: UseAnimationDirectorOpts): AnimationD
   const eventsRef = useRef<DirectorEvent[]>([]);
   const speechCountRef = useRef(0);
   const wasSpeakingRef = useRef(false);
+  const symptomRef = useRef<SymptomScheduleState>({ phaseId: null, nextDue: {} });
 
   const [decision, setDecision] = useState<AnimationDecision>(INITIAL_DECISION);
 
@@ -100,6 +142,12 @@ export function useAnimationDirector(opts: UseAnimationDirectorOpts): AnimationD
       if (t0Ref.current === null) t0Ref.current = performance.now();
       const nowSec = (performance.now() - t0Ref.current) / 1000;
       eventsRef.current = pruneEvents(eventsRef.current, nowSec);
+      // Senaryo-tetikli semptomlar: aktif fazın symptom_events takvimi
+      const symptom = advanceSymptomSchedule(o.phaseSignal, symptomRef.current, nowSec);
+      symptomRef.current = symptom.state;
+      for (const type of symptom.fired) {
+        eventsRef.current = [...eventsRef.current, { type, atSec: nowSec }];
+      }
       const next = decideAnimation({
         vitals: o.vitals,
         phaseSignal: o.phaseSignal,
