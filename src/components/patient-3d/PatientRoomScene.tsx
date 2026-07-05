@@ -12,7 +12,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, ContactShadows } from "@react-three/drei";
 import { Box3, Vector3, type Group, type Object3D, type SkinnedMesh, type Mesh } from "three";
-import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip } from "./AnimatedPatientModel";
+import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip, type ClipDecision } from "./AnimatedPatientModel";
 import type { VisualState } from "@/clinical/clinicalVisualMapping";
 import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
 import type { SkinTint } from "./AnatomicPatientModel";
@@ -267,6 +267,8 @@ interface Props {
   visualState?: VisualState;
   /** Oynatılacak klip (senaryo durumundan: laying_idle, talk, cough, pain). */
   clip?: PatientClip;
+  /** Animasyon yönetmeni kararı — verilirse clip'i ezer (crossfade/hız/loop/overlay). */
+  decision?: ClipDecision | null;
   /** Hasta konuşuyor mu (lipsync jawOpen). */
   speaking?: boolean;
   /** Seslendirilen metin — fonetik viseme lipsync (AnimatedPatientModel). */
@@ -292,6 +294,7 @@ export function PatientRoomScene({
   skinTint = "normal",
   visualState,
   clip = "laying_idle",
+  decision = null,
   speaking = false,
   speechText = null,
   equipment,
@@ -363,7 +366,7 @@ export function PatientRoomScene({
           {/* Tıbbi atık kovası — sol baş ucu köşesi (ventilatörün gerisi) */}
           <WasteBin position={[-1.05, 0, -0.85]} />
           {/* Supine hasta — varyant/klip başına yatak hizalama (gömülmeyi önler) */}
-          <BedPatient variant={variant} clip={clip} skinTone={skinTone} skinTint={skinTint} visualState={visualState} speaking={speaking} speechText={speechText} equipment={equipment} />
+          <BedPatient variant={variant} clip={clip} decision={decision} skinTone={skinTone} skinTint={skinTint} visualState={visualState} speaking={speaking} speechText={speechText} equipment={equipment} />
           {/* Yatak başı 3D ventilatör cihazı — tıklanınca panel açar */}
           {showVentilator && (
             <VentilatorDevice onActivate={onVentilatorActivate} active={ventilatorActive} />
@@ -435,6 +438,7 @@ export function PatientRoomScene({
 interface BedPatientProps {
   variant: PatientVariant;
   clip: PatientClip;
+  decision?: ClipDecision | null;
   skinTone: SkinTone;
   skinTint: SkinTint;
   visualState?: VisualState;
@@ -444,7 +448,7 @@ interface BedPatientProps {
 }
 
 // Varyant + klip metadata'sından yatak yerleşimini hesaplar.
-function BedPatient({ variant, clip, skinTone, skinTint, visualState, speaking, speechText, equipment }: BedPatientProps) {
+function BedPatient({ variant, clip, decision, skinTone, skinTint, visualState, speaking, speechText, equipment }: BedPatientProps) {
   const meta = ANIMATED_MODELS[variant] ?? ANIMATED_MODELS["female-adult"]!;
   const s = meta.bedScale;
   const groupRef = useRef<Group>(null);
@@ -456,6 +460,7 @@ function BedPatient({ variant, clip, skinTone, skinTint, visualState, speaking, 
         key={variant}
         variant={variant}
         clip={clip}
+        decision={decision}
         skinTone={skinTone}
         skinTint={skinTint}
         visualState={visualState}

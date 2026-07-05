@@ -3,10 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X, AlertTriangle } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
-import {
-  ANIMATED_MODELS,
-  type PatientClip,
-} from "@/components/patient-3d/AnimatedPatientModel";
+import { ANIMATED_MODELS } from "@/components/patient-3d/AnimatedPatientModel";
 import type { EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
 import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
 import { patientVitalsToMonitor } from "@/components/monitor/adapter";
@@ -34,7 +31,7 @@ import { ImagingResultsModal } from "@/components/ImagingResultsModal";
 import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
-import { vitalsToClip, resolveClipForVariant } from "@/clinical/clip-mapping";
+import { useAnimationDirector } from "@/hooks/useAnimationDirector";
 import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration, matchReasoningPrompt, isReasoningCorrect } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
@@ -287,11 +284,15 @@ export function ScenarioBedPlayPage() {
   const skinTone = useMemo(() => patientToSkinTone(rs.patient), [rs.patient]);
   const liveVitals = session?.vitals ?? scenario.initial_vitals;
 
-  // Vital → klip + ten tonu (varyant fallback ile)
-  const clip: PatientClip = useMemo(() => {
-    const ideal = vitalsToClip(liveVitals, { speaking });
-    return resolveClipForVariant(ideal, ANIMATED_MODELS[variant]?.clips ?? []);
-  }, [liveVitals, speaking, variant]);
+  // Vital → animasyon kararı — yönetmen motoru (histerezis + minHold +
+  // katman önceliği + arrest bastırması + iskemik ağrı overlay'i).
+  // vitalsToClip'in anlık eşlemesinin yerine geçti; eşik titremesi yok.
+  const { decision: animDecision } = useAnimationDirector({
+    vitals: liveVitals,
+    phaseSignal: runner.phaseSignal,
+    speaking,
+    availableClips: ANIMATED_MODELS[variant]?.clips ?? [],
+  });
   const skinTint = vitalsToVisual(liveVitals).skinTint;
   // Sürekli klinik görsel (siyanoz/solgun/terleme/benekli) — deterioration
   // tick'i sonrası canlı vital'den. Ayrık skinTint'in üstüne biner.
@@ -401,7 +402,7 @@ export function ScenarioBedPlayPage() {
         <div className="flex-1 relative min-w-0 border-r border-ink-700/50">
           <PatientRoomScene
             variant={variant}
-            clip={clip}
+            decision={animDecision}
             skinTint={skinTint}
             visualState={visualState}
             skinTone={skinTone}

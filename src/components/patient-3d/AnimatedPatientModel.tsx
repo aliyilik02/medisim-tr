@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useMemo, useRef } from "react";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { SkeletonUtils } from "three-stdlib";
-import { MeshStandardMaterial, SkinnedMesh, type Group, type Object3D, type AnimationClip } from "three";
+import { LoopOnce, LoopRepeat, MeshStandardMaterial, SkinnedMesh, type Group, type Object3D, type AnimationClip } from "three";
 import {
   SKIN_TONE_PRESETS,
   DEFAULT_SKIN_TONE,
@@ -91,6 +91,21 @@ export const CLIP_LABELS: Record<PatientClip, string> = {
 /** Yatakta (supine) anlamsız olan klipler — bed sahnesinde gizlenir. */
 export const NON_SUPINE_CLIPS: PatientClip[] = ["idle", "pain"];
 
+/** Animasyon yönetmeni kararı (engine/animation-director.AnimationDecision
+    ile yapısal uyumlu alt küme) — verilirse `clip` prop'unu ezer ve
+    crossfade/hız/loop/overlay motor kararından sürülür. */
+export interface ClipDecision {
+  clip: PatientClip;
+  /** Önceki klipten geçiş süresi (sn). */
+  crossfadeSec?: number;
+  /** Oynatma hızı çarpanı (arrest 0.15, bilinç kapalı 0.4 …). */
+  speed?: number;
+  /** false → tek oynat + son karede kal (kusma/öksürük olayı). */
+  loop?: boolean;
+  /** Taban klibin üstüne kısmi ağırlıklı ek katman (iskemik ağrı %35). */
+  overlay?: { clip: PatientClip; weight: number };
+}
+
 /** Animasyonlu modeli olan varyantlar — url + klipler + yatak hizalama metadata. */
 export interface AnimatedModelMeta {
   url: string;
@@ -152,6 +167,9 @@ interface Props {
   variant?: PatientVariant;
   /** Oynatılacak animasyon klibi. Değişince crossfade ile geçer. Varyantta yoksa no-op. */
   clip?: PatientClip;
+  /** Animasyon yönetmeni kararı — verilirse `clip`i ezer; crossfade/hız/
+      loop/overlay motor kararından gelir (useAnimationDirector). */
+  decision?: ClipDecision | null;
   /** Etnik ten tonu (Skin_Body baseColor). */
   skinTone?: SkinTone;
   /** Vital tabanlı cilt tonu (siyanoz/sarılık/solgunluk) — baseColor üstüne çarpımsal. */
@@ -179,6 +197,7 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     {
       variant = DEFAULT_ANIMATED_VARIANT,
       clip = "laying_idle",
+      decision = null,
       skinTone = DEFAULT_SKIN_TONE,
       skinTint = "normal",
       speaking = false,
@@ -263,21 +282,48 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     visualStateRef.current = visualState;
     const clinicalRef = useRef({ cyanosis: 0, pallor: 0, diaphoresis: 0, mottled: 0 });
 
-    // Klip geçişi — crossfade
+    // Klip geçişi — crossfade. decision verilirse süre/hız/loop motordan;
+    // verilmezse eski sabit 0.35s davranışı (geriye uyumlu).
+    const activeClip: PatientClip = decision?.clip ?? clip;
+    const clipParamsRef = useRef({ fade: 0.35, speed: 1, loop: true });
+    clipParamsRef.current = {
+      fade: decision?.crossfadeSec ?? 0.35,
+      speed: decision?.speed ?? 1,
+      loop: decision?.loop ?? true,
+    };
     const prevClip = useRef<PatientClip | null>(null);
     useEffect(() => {
-      const next = actions[clip];
+      const next = actions[activeClip];
       if (!next) return;
-      next.reset().fadeIn(0.35).play();
+      const { fade, speed, loop } = clipParamsRef.current;
+      next.reset();
+      next.setLoop(loop ? LoopRepeat : LoopOnce, loop ? Infinity : 1);
+      next.clampWhenFinished = !loop; // olay klibi son karede kalır (T-poz sıçraması yok)
+      next.setEffectiveTimeScale(speed);
+      next.fadeIn(fade).play();
       const prev = prevClip.current;
-      if (prev && prev !== clip && actions[prev]) {
-        actions[prev]!.fadeOut(0.35);
+      if (prev && prev !== activeClip && actions[prev]) {
+        actions[prev]!.fadeOut(fade);
       }
-      prevClip.current = clip;
+      prevClip.current = activeClip;
       return () => {
-        next.fadeOut(0.35);
+        next.fadeOut(fade);
       };
-    }, [clip, actions]);
+    }, [activeClip, actions]);
+
+    // Hız değişimi — klip aynı kalırken karar hızı değişebilir (örn. bilinç
+    // kapanınca laying_idle 1 → 0.4; arrest'te 0.15 donuklaşma).
+    const decisionSpeed = decision?.speed ?? 1;
+    useEffect(() => {
+      actions[activeClip]?.setEffectiveTimeScale(decisionSpeed);
+    }, [decisionSpeed, activeClip, actions]);
+
+    // Overlay katmanı — taban klibin üstüne kısmi ağırlık (iskemik ağrı).
+    // Ağırlık useFrame'de yumuşak rampalanır (fadeIn hedefi hep 1 olduğundan
+    // kısmi ağırlık için elle sürülür).
+    const overlayTargetRef = useRef<ClipDecision["overlay"] | null>(null);
+    overlayTargetRef.current = decision?.overlay ?? null;
+    const overlayActiveRef = useRef<PatientClip | null>(null);
 
     // Morph-capable mesh'leri bir kez topla (göz kırpma + lipsync için)
     const morphMeshes = useMemo(() => {
@@ -311,6 +357,38 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
 
     const mouthRef = useRef(0);
     useFrame((state, delta) => {
+      // ── Overlay katmanı — kısmi ağırlık rampası (0.5s'de hedefe) ──
+      {
+        const want = overlayTargetRef.current;
+        let active = overlayActiveRef.current;
+        if (active && want && want.clip !== active) {
+          // farklı overlay klibi — eskisini anında kapat (tek overlay desteklenir)
+          actions[active]?.stop();
+          overlayActiveRef.current = active = null;
+        }
+        if (want && !active) {
+          const a = actions[want.clip];
+          if (a) {
+            a.reset();
+            a.setLoop(LoopRepeat, Infinity);
+            a.setEffectiveWeight(0);
+            a.play();
+            overlayActiveRef.current = active = want.clip;
+          }
+        }
+        if (active) {
+          const a = actions[active]!;
+          const target = want ? want.weight : 0;
+          const w = a.getEffectiveWeight();
+          const step = Math.min(Math.abs(target - w), delta / 0.5);
+          const next = w + Math.sign(target - w) * step;
+          a.setEffectiveWeight(next);
+          if (!want && next <= 0.001) {
+            a.stop();
+            overlayActiveRef.current = null;
+          }
+        }
+      }
       // Önlük zonal ölçeği — bind-poz dünya kutusu bir kez ölçülür (skinning
       // ÖNCESİ geometri bbox × matrixWorld ≈ bind kutusu; ayakta-poz boy ekseni).
       if (gownShadersRef.current.length) {
