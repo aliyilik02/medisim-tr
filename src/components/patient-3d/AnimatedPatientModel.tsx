@@ -24,6 +24,13 @@ import {
   LIPSYNC_ARKIT_KEYS,
   type VisemeTimeline,
 } from "@/engine";
+import {
+  patientVertexCommon,
+  patientVertexDisplacement,
+  patientFragmentCommon,
+  patientFragmentColor,
+} from "./shaders/patientShader";
+import { Box3, Vector3 } from "three";
 
 // ============================================================
 // Animasyonlu hasta modeli — Faz 2/3 (iskelet animasyon + mimik)
@@ -196,6 +203,9 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     // rengi + cilt materyallerini ref'e topla (per-frame sürekli görsel için).
     const skinMatsRef = useRef<MeshStandardMaterial[]>([]);
     const baseSkinRef = useRef<[number, number, number]>([1, 1, 1]);
+    // Önlük shader'ları — uZoneYMin/uZoneHeight ilk frame'de bind-kutusundan.
+    const gownShadersRef = useRef<{ uniforms: Record<string, { value: unknown }> }[]>([]);
+    const zoneBoxRef = useRef<{ yMin: number; height: number } | null>(null);
     useMemo(() => {
       const [sr, sg, sb] = SKIN_TONE_PRESETS[skinTone];
       const [tr, tg, tb] = SKIN_TINT_PRESETS[skinTint];
@@ -213,6 +223,32 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
             const local = mat.clone();
             mesh.material = local;
             local.color.setRGB(base[0], base[1], base[2]);
+            // Hasta önlüğü — shader bölge maskesi (giysi mesh'i değil).
+            // Zonal/klinik uniform'lar NÖTR (0): cilt rengi per-frame JS
+            // yolundan sürülmeye devam eder; shader sadece önlüğü çizer.
+            // uZoneYMin/uZoneHeight bind-kutusundan ilk frame'de set edilir.
+            local.onBeforeCompile = (shader) => {
+              shader.uniforms.uTime = { value: 0 };
+              shader.uniforms.uBreathAmplitude = { value: 0 }; // solunum iskelet animasyonundan
+              shader.uniforms.uBreathSpeed = { value: 0 };
+              shader.uniforms.uSkinTint = { value: [1, 1, 1] };
+              shader.uniforms.uCyanosis = { value: 0 };
+              shader.uniforms.uPallor = { value: 0 };
+              shader.uniforms.uDiaphoresis = { value: 0 };
+              shader.uniforms.uMottled = { value: 0 };
+              shader.uniforms.uGownEnable = { value: 1 };
+              shader.uniforms.uGownColor = { value: [0, 0, 0] }; // 0 → dahili teal
+              shader.uniforms.uZoneYMin = { value: 0 };
+              shader.uniforms.uZoneHeight = { value: 0 }; // ilk frame'de bbox'tan
+              shader.vertexShader = shader.vertexShader
+                .replace("#include <common>", patientVertexCommon)
+                .replace("#include <begin_vertex>", patientVertexDisplacement);
+              shader.fragmentShader = shader.fragmentShader
+                .replace("#include <common>", patientFragmentCommon)
+                .replace("#include <dithering_fragment>", patientFragmentColor);
+              gownShadersRef.current.push(shader as unknown as { uniforms: Record<string, { value: unknown }> });
+            };
+            local.customProgramCacheKey = () => "medisim-bed-gown";
             local.needsUpdate = true;
             mats.push(local);
           }
@@ -275,6 +311,37 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
 
     const mouthRef = useRef(0);
     useFrame((state, delta) => {
+      // Önlük zonal ölçeği — bind-poz dünya kutusu bir kez ölçülür (skinning
+      // ÖNCESİ geometri bbox × matrixWorld ≈ bind kutusu; ayakta-poz boy ekseni).
+      if (gownShadersRef.current.length) {
+        if (!zoneBoxRef.current) {
+          let found: { yMin: number; height: number } | null = null;
+          clone.traverse((obj) => {
+            if (found) return;
+            if ("isSkinnedMesh" in obj && (obj as any).isSkinnedMesh) {
+              const mesh = obj as SkinnedMesh;
+              mesh.geometry.computeBoundingBox();
+              const bb = mesh.geometry.boundingBox;
+              if (!bb) return;
+              mesh.updateWorldMatrix(true, false);
+              const wb = new Box3(
+                new Vector3().copy(bb.min),
+                new Vector3().copy(bb.max)
+              ).applyMatrix4(mesh.matrixWorld);
+              const h = wb.max.y - wb.min.y;
+              if (h > 0.01) found = { yMin: wb.min.y, height: h };
+            }
+          });
+          if (found) zoneBoxRef.current = found;
+        }
+        const zb = zoneBoxRef.current;
+        if (zb) {
+          for (const sh of gownShadersRef.current) {
+            if (sh.uniforms.uZoneYMin) sh.uniforms.uZoneYMin.value = zb.yMin;
+            if (sh.uniforms.uZoneHeight) sh.uniforms.uZoneHeight.value = zb.height;
+          }
+        }
+      }
       // ── Sürekli klinik görsel — cilt rengi harmanı (visualState varsa) ──
       const vs = visualStateRef.current;
       const mats = skinMatsRef.current;

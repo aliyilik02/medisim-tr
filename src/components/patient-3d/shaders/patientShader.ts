@@ -68,6 +68,11 @@ uniform float uDiaphoresis; // 0-1 terleme parlaklığı
 uniform float uMottled;     // 0-1 benekli/livedo (şok cildi)
 uniform float uGownEnable;  // 0 = önlük kapalı (set edilmezse varsayılan 0 — geriye uyumlu), 1 = açık
 uniform vec3 uGownColor;    // önlük rengi (sRGB); (0,0,0) ise dahili #6fa8a0 kullanılır
+// Zonal koordinat yeniden-ölçekleme: farklı dünya ölçeğindeki modeller
+// (yatak sahnesi bedScale'li Mixamo rig) bölge sabitlerini canonical ölçeğe
+// çevirir. uZoneHeight set edilmezse (0) → canonical varsayılan (geriye uyumlu).
+uniform float uZoneYMin;    // bind-poz dünya taban y
+uniform float uZoneHeight;  // bind-poz boy (dünya birimi)
 varying vec3 vClinicalWorldPos;
 
 // ═══ Anatomik bölge (zonal) fonksiyonları ═══
@@ -119,9 +124,14 @@ float msZoneGown(float xA, float yN, float zF) {
 export const patientFragmentColor = `
 #include <dithering_fragment>
 // ── Zonal koordinatlar: canonical ayakta-poz world (pre-skinning) ──
-float zYN = (vClinicalWorldPos.y - (${f(CANON_Y_MIN)})) / ${f(CANON_HEIGHT)};
-float zXA = abs(vClinicalWorldPos.x);
-float zZF = vClinicalWorldPos.z;
+// uZoneHeight>0 ise model-özel bind kutusundan normalize edilir ve x/z
+// canonical ölçeğe çevrilir; değilse canonical sabitler (geriye uyumlu).
+float zsH   = uZoneHeight > 0.001 ? uZoneHeight : ${f(CANON_HEIGHT)};
+float zsMin = uZoneHeight > 0.001 ? uZoneYMin   : (${f(CANON_Y_MIN)});
+float zsK   = ${f(CANON_HEIGHT)} / zsH;
+float zYN = (vClinicalWorldPos.y - zsMin) / zsH;
+float zXA = abs(vClinicalWorldPos.x) * zsK;
+float zZF = vClinicalWorldPos.z * zsK;
 
 // Işık faktörü — önlüğü kendi rengiyle "yeniden aydınlatmak" için, klinik
 // tint uygulanmadan ÖNCE yakalanır (lit renk / albedo ≈ gelen ışık).
