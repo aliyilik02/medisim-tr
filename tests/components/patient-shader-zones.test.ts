@@ -180,6 +180,15 @@ describe("patientShader — GLSL zonal parite ve geriye uyumluluk", () => {
     expect(patientFragmentColor).toContain(GOWN_DEFAULT_COLOR[0].toFixed(4));
   });
 
+  test("SSS rim-translucency: uniform bildirimi + cilt-maskeli uygulama (görsel üçlü)", () => {
+    expect(patientFragmentCommon).toContain("uniform float uSss;");
+    expect(patientFragmentCommon).toContain("uniform vec3 uSssColor;");
+    // yalnız açık cilde uygulanır (önlük maskesinin tersi) + görüş açısı terimi
+    expect(patientFragmentColor).toContain("uSss > 0.001");
+    expect(patientFragmentColor).toContain("(1.0 - gMask)");
+    expect(patientFragmentColor).toContain("vViewPosition");
+  });
+
   test("fragment color zonal çarpanları ve önlük harmanını uygular", () => {
     expect(patientFragmentColor).toContain("msZoneCyanosis(zXA, zYN, zZF)");
     expect(patientFragmentColor).toContain("uMottled * msZoneMottle(zXA, zYN)");

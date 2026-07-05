@@ -316,6 +316,8 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
               shader.uniforms.uGownColor = { value: [0, 0, 0] }; // 0 → dahili teal
               shader.uniforms.uZoneYMin = { value: zone?.yMin ?? 0 };
               shader.uniforms.uZoneHeight = { value: zone?.height ?? 0 }; // 0 → canonical fallback
+              shader.uniforms.uSss = { value: 0.32 }; // rim-translucency (görsel üçlü)
+              shader.uniforms.uSssColor = { value: [0, 0, 0] }; // 0 → dahili sıcak ten kızılı
               shader.vertexShader = shader.vertexShader
                 .replace("#include <common>", patientVertexCommon)
                 .replace("#include <begin_vertex>", patientVertexDisplacement);

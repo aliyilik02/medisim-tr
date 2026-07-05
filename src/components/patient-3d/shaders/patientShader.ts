@@ -77,6 +77,12 @@ uniform vec3 uGownColor;    // önlük rengi (sRGB); (0,0,0) ise dahili #6fa8a0 
 // çevirir. uZoneHeight set edilmezse (0) → canonical varsayılan (geriye uyumlu).
 uniform float uZoneYMin;    // bind-poz LOKAL taban y (geometri bbox)
 uniform float uZoneHeight;  // bind-poz LOKAL boy (geometri bbox)
+// SSS yaklaşımı (Hat B2 görsel üçlü): kenarlarda cilt-altı ışık geçirgenliği
+// hissi — rim-translucency terimi. Tam ekran-uzayı SSS değil (post pass
+// gerektirir); NdotV tabanlı ucuz yaklaşım. 0 = kapalı (geriye uyumlu —
+// standing model uniform'u set etmez → GLSL varsayılanı 0).
+uniform float uSss;         // 0-1 şiddet
+uniform vec3 uSssColor;     // geçirgenlik rengi; (0,0,0) → dahili sıcak ten kızılı
 varying vec3 vClinicalWorldPos;
 varying vec3 vClinicalLocalPos;
 
@@ -168,10 +174,26 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vec3(0.72, 0.58, 0.6
 // ── Diaforez: terli parlama (hafif additive sheen) ──
 gl_FragColor.rgb += vec3(0.035, 0.035, 0.045) * uDiaphoresis;
 
+// Önlük maskesi ERKEN hesaplanır — SSS yalnız açık cilde uygulanır.
+float gMask = msZoneGown(zXA, zYN, zZF) * clamp(uGownEnable, 0.0, 1.0);
+
+// ── SSS yaklaşımı: rim-translucency (kenar aydınlanması, cilt-altı his) ──
+// NdotV view-uzayında (vViewPosition + normal MeshStandardMaterial'da hazır).
+// Yalnız cilt (1-gMask); mevcut lit renkle çarpılır → gölgede parlamaz.
+if (uSss > 0.001) {
+  vec3 sssViewDir = normalize(vViewPosition);
+  float sssNdotV = clamp(dot(normal, sssViewDir), 0.0, 1.0);
+  float sssRim = pow(1.0 - sssNdotV, 2.4);
+  vec3 sssTint = (uSssColor.r + uSssColor.g + uSssColor.b) < 0.01
+    ? vec3(0.92, 0.38, 0.28)
+    : uSssColor;
+  gl_FragColor.rgb += sssTint * sssRim * uSss * (1.0 - gMask)
+    * clamp(gl_FragColor.rgb * 2.0, 0.0, 1.0);
+}
+
 // ── Hasta önlüğü: shader bölge maskesi (giysi mesh'i yok → clipping yok) ──
 // Klinik cilt bulgularından SONRA harmanlanır → önlük altındaki cilt
 // bulguları kumaşla örtülür (klinik olarak da doğru).
-float gMask = msZoneGown(zXA, zYN, zZF) * clamp(uGownEnable, 0.0, 1.0);
 if (gMask > 0.001) {
   // uGownColor set edilmemişse (0,0,0) → dahili hastane teali #6fa8a0
   vec3 gBase = (uGownColor.r + uGownColor.g + uGownColor.b) < 0.01

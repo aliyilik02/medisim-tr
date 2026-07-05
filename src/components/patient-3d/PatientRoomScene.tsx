@@ -11,7 +11,9 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, ContactShadows } from "@react-three/drei";
-import { Box3, Vector3, type Group, type Object3D, type SkinnedMesh, type Mesh } from "three";
+import { EffectComposer, Bloom, Vignette, Noise } from "@react-three/postprocessing";
+import { Box3, Vector3, PMREMGenerator, type Group, type Object3D, type SkinnedMesh, type Mesh } from "three";
+import { RoomEnvironment } from "three-stdlib";
 import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip, type ClipDecision } from "./AnimatedPatientModel";
 import type { VisualState } from "@/clinical/clinicalVisualMapping";
 import { type SkinTone, DEFAULT_SKIN_TONE, type PatientVariant } from "./patientModels";
@@ -119,6 +121,42 @@ const CAMERA_PRESETS: Record<CameraPreset, { pos: [number, number, number]; targ
 };
 
 useGLTF.preload(ROOM_URL);
+
+// ── Görsel üçlü (Hat B2): IBL + post-processing kapıları ──────────────
+// PMREM ön-filtreleme software-GL'de (Playwright/e2e) ~20sn stall yapar
+// (13 Haz notu) → VITE_E2E'de varsayılan KAPALI. ?fx=1 ile zorla açılır
+// (görsel doğrulama), ?fx=0 ile gerçek tarayıcıda kapatılabilir (zayıf GPU).
+function visualFxEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  const q = new URLSearchParams(window.location.search).get("fx");
+  if (q === "1") return true;
+  if (q === "0") return false;
+  return import.meta.env.VITE_E2E !== "1";
+}
+
+// Stüdyo IBL — RoomEnvironment'tan PMREM (HDRI dosyası indirmeden, prosedürel).
+// scene.environment PBR yansımaları/dolgu ışığını besler; mevcut directional
+// ışıklar korunur, environmentIntensity düşük tutulur (dark klinik estetik).
+function StudioEnvironment() {
+  const { gl, scene } = useThree();
+  useEffect(() => {
+    const pmrem = new PMREMGenerator(gl);
+    // three-stdlib RoomEnvironment: fabrika fonksiyonu (class değil) → Scene
+    const envScene = RoomEnvironment();
+    const rt = pmrem.fromScene(envScene, 0.04);
+    scene.environment = rt.texture;
+    // r163+: environmentIntensity; DÜŞÜK tutulur — 0.35 dark-klinik estetiği
+    // fazla açıyordu (fx doğrulama screenshot'ı), 0.22 dolgu + yansıma verir
+    // ama koyu atmosferi korur.
+    (scene as unknown as { environmentIntensity?: number }).environmentIntensity = 0.22;
+    return () => {
+      scene.environment = null;
+      rt.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+  return null;
+}
 
 // Kamera + OrbitControls hedefini preset'e taşır. Per-frame lerp +
 // OrbitControls çakışması kamerayı güvenilmez yapıyordu → preset değişince
@@ -319,6 +357,8 @@ export function PatientRoomScene({
 }: Props) {
   const controlsRef = useRef<{ target: Vector3; update: () => void } | null>(null);
   const [camLive, setCamLive] = useState<{ pos: [number, number, number]; target: [number, number, number] } | null>(null);
+  // Görsel üçlü kapısı — mount'ta bir kez okunur (?fx paramı + VITE_E2E)
+  const fx = useMemo(() => visualFxEnabled(), []);
   // Kullanıcı kamera açısını değiştirebilsin (varsayılan prop'tan; tepeden "onden"
   // odayı/IV/sedyeyi göstermez → "Genel"/"Yan" ile zengin sahne görünür).
   const [activePreset, setActivePreset] = useState<CameraPreset>(cameraPreset);
@@ -415,6 +455,19 @@ export function PatientRoomScene({
             color="#05070a"
           />
         </Suspense>
+
+        {/* ── Görsel üçlü: IBL + post-processing (fx kapılı) ── */}
+        {fx && <StudioEnvironment />}
+        {fx && (
+          <EffectComposer multisampling={0}>
+            {/* Monitör/ekran ışıması — yüksek eşik: yalnız parlak emissive'ler */}
+            <Bloom mipmapBlur intensity={0.35} luminanceThreshold={0.72} luminanceSmoothing={0.2} />
+            {/* Kenar karartma — sinematik odak, klinik dark estetikle uyumlu */}
+            <Vignette offset={0.28} darkness={0.42} />
+            {/* Çok hafif film greni — düz yüzeylerdeki banding'i kırar */}
+            <Noise opacity={0.03} />
+          </EffectComposer>
+        )}
 
         <OrbitControls ref={controlsRef as never} target={[0, 0.2, 0]} minDistance={0.6} maxDistance={4} enablePan />
         <CameraRig preset={activePreset} controlsRef={controlsRef} />
