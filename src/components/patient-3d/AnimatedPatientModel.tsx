@@ -123,8 +123,11 @@ export const CLIP_LABELS: Record<PatientClip, string> = {
   use_inhaler: "İnhaler",
 };
 
-/** Yatakta (supine) anlamsız olan klipler — bed sahnesinde gizlenir. */
-export const NON_SUPINE_CLIPS: PatientClip[] = ["idle", "pain"];
+/** Yatakta (supine) anlamsız olan klipler — bed sahnesinde gizlenir.
+    talk_* eklendi (6 Tem bug: Mixamo talk klipleri AYAKTA çekilmiş —
+    diyalog sırasında hastayı yataktan kaldırıyordu; supine konuşma
+    lipsync + yönetmen laying_idle ile temsil edilir). */
+export const NON_SUPINE_CLIPS: PatientClip[] = ["idle", "pain", "talk_gesture", "talk_shrug"];
 
 /** Animasyon yönetmeni kararı (engine/animation-director.AnimationDecision
     ile yapısal uyumlu alt küme) — verilirse `clip` prop'unu ezer ve
@@ -181,7 +184,7 @@ export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>>
     realAssets: true,
   },
   child: {
-    url: "/3d/patient-animated-child.glb", // v2.2 bekliyor: MPFB çocuk kafa oranı — saç kafa içinde kalıyor
+    url: "/3d/patient-animated-child.glb", // v2.2 DENendi (yetişkin-oran) — saç yine görünmedi + önlük kırpık; çocuk mesh özel analiz istiyor (v2.3)
     label: "Çocuk",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "take_pill", "use_inhaler"],
     bedScale: 0.5, // çocuk küçük (kullanıcı: fazla uzundu)

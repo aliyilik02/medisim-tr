@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X, AlertTriangle } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
-import { ANIMATED_MODELS } from "@/components/patient-3d/AnimatedPatientModel";
+import { ANIMATED_MODELS, NON_SUPINE_CLIPS } from "@/components/patient-3d/AnimatedPatientModel";
 import type { EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
 import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
 import { patientVitalsToMonitor } from "@/components/monitor/adapter";
@@ -301,7 +301,11 @@ export function ScenarioBedPlayPage() {
     vitals: liveVitals,
     phaseSignal: runner.phaseSignal,
     speaking,
-    availableClips: ANIMATED_MODELS[variant]?.clips ?? [],
+    // Supine sahne: ayakta çekilmiş klipler (talk_* dahil) yönetmene
+    // VERİLMEZ — konuşma lipsync ile, gövde laying_idle'da kalır.
+    availableClips: (ANIMATED_MODELS[variant]?.clips ?? []).filter(
+      (c) => !NON_SUPINE_CLIPS.includes(c),
+    ),
   });
   const skinTint = vitalsToVisual(liveVitals).skinTint;
   // Sürekli klinik görsel (siyanoz/solgun/terleme/benekli) — deterioration
