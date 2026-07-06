@@ -41,6 +41,16 @@ const ScenarioBedPlayPage = lazy(() =>
   }))
 );
 
+// Dev-only: Sketchfab prop ölçek/yön kalibrasyon sayfası (/dev/props).
+const PropsDebugPage = lazy(() =>
+  import("@/pages/PropsDebugPage").then((m) => ({ default: m.PropsDebugPage }))
+);
+
+// Açık-kaynak atıfları (CC-BY görünür atıf şartı) — public sayfa.
+const AttributionsPage = lazy(() =>
+  import("@/pages/AttributionsPage").then((m) => ({ default: m.AttributionsPage }))
+);
+
 export function App() {
   const location = useLocation();
   // Mount'ta mevcut cookie oturumunu doğrula (getMe). Tek sefer.
@@ -65,6 +75,14 @@ export function App() {
           {/* Açık (public) — landing + giriş */}
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/atiflar"
+            element={
+              <Suspense fallback={null}>
+                <AttributionsPage />
+              </Suspense>
+            }
+          />
 
           {/* Korumalı (eğitmen oturumu + KVKK rıza gerekli) */}
           <Route
@@ -173,6 +191,17 @@ export function App() {
           {/* Emekli edilen saf özellik-vitrini demoları → senaryo listesi.
               Parçaları (3D/diyalog/monitör/animasyon/ventilatör) /hasta/:id
               dikey diliminde birleşti (sorun #3 — fragmentasyon). */}
+          {/* Dev-only prop kalibrasyonu — prod build'de route yok */}
+          {import.meta.env.DEV && (
+            <Route
+              path="/dev/props"
+              element={
+                <Suspense fallback={null}>
+                  <PropsDebugPage />
+                </Suspense>
+              }
+            />
+          )}
           <Route path="/3d-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/dialog-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/dialog-3d-demo" element={<Navigate to="/senaryolar" replace />} />
@@ -340,9 +369,17 @@ function Footer() {
         <div className="font-mono text-xs uppercase tracking-wider">
           MediSim TR · Eğitim amaçlıdır · Klinik karar yerine geçmez
         </div>
-        <div className="flex items-center gap-2">
-          <span className="pulse-dot" />
-          <span className="font-mono text-xs">sistem aktif</span>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/atiflar"
+            className="font-mono text-xs uppercase tracking-wider text-ink-500 hover:text-ink-200 transition"
+          >
+            Atıflar
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="pulse-dot" />
+            <span className="font-mono text-xs">sistem aktif</span>
+          </div>
         </div>
       </div>
     </footer>

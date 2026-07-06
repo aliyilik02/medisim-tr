@@ -9,7 +9,7 @@
 > - Oskültasyon sesleri: [`public/sounds/auscultation/SOUNDS-LICENSE.md`](../sounds/auscultation/SOUNDS-LICENSE.md)
 > - Üretim hattı: `.claude/skills/blender-medical-modeling/SKILL.md` (MPFB2 → Mixamo → glTF-Transform meshopt)
 
-Son güncelleme: 15 Haziran 2026
+Son güncelleme: 6 Temmuz 2026
 
 ---
 
@@ -27,7 +27,12 @@ Son güncelleme: 15 Haziran 2026
 | `patient-animated-elderly.glb` | MPFB2 mesh + Mixamo auto-rig/animasyon | **CC0 (mesh) + Mixamo royalty-free (rig/klip)** | ✅ Evet | Texture YOK, `Skin_Body`. 10 klip, 52 blendshape. |
 | `er-room.glb` | Prosedürel geometri (Blender) + ambientCG CC0 doku | **CC0 1.0** | ✅ Evet | Gömülü doku: `Tiles107` (zemin) + `PaintedPlaster017` (duvar), ambientCG, CC0. Detay: `scripts/tex/SOURCES.md`. |
 | `patient-mimikli.glb` | **Daz / Reallusion Character Creator kökenli** | ⚠️ **Netleşmedi** | ❌ **HAYIR** | `Std_Skin_*` materyal + `Std_Skin_Head_Diffuse` vb. doku adları = CC/Daz imzası. **UNTRACKED — ship EDİLMİYOR.** Aşağıya bakın. |
-| Oskültasyon sesleri (`public/sounds/auscultation/*.ogg`) | Wikimedia Commons | CC BY 3.0 / CC BY-SA 3.0 | ✅ Evet (atıf şartıyla) | Detay + atıf metni: `SOUNDS-LICENSE.md`. CC BY-SA gereği uygulamada atıf gösterilmeli. |
+| Oskültasyon sesleri (`public/sounds/auscultation/*.ogg`) | Wikimedia Commons | CC BY 3.0 / CC BY-SA 3.0 | ✅ Evet (atıf şartıyla) | Detay + atıf metni: `SOUNDS-LICENSE.md`. Uygulamada atıf: `/atiflar` sayfası. |
+| `props/iv-pole.glb` | Sketchfab — "IV Pole", Mountrise | **CC-BY-4.0** | ✅ Evet (atıf şartıyla) | Model İKİ direk içerir (tek mesh). Atıf: `/atiflar` + `SketchfabProps.tsx PROP_CREDITS`. |
+| `props/bedside-table.glb` | Sketchfab — "Adjustable Bedside Table", Ethan Cragun | **CC-BY-4.0** | ✅ Evet (atıf şartıyla) | Atıf: `/atiflar`. |
+| `props/hospital-chair.glb` | Sketchfab — "Hospital Chair", Ian Gibb | **CC-BY-4.0** | ✅ Evet (atıf şartıyla) | Atıf: `/atiflar`. |
+| `props/vitals-monitor.glb` | Sketchfab — "Bed Curtain and Vital Signs Monitor", Ethan Cragun | **CC-BY-4.0** | ✅ Evet (atıf şartıyla) | Kaynak setten yalnız `VitalsMonitor` node'u ayrıştırıldı (perde rayı kamera hatlarını kapatıyordu). Atıf sete yapılır: `/atiflar`. |
+| `props/wheelchair.glb` | Sketchfab — "Wheelchair", imnuts000 | **CC-BY-4.0** | ✅ Evet (atıf şartıyla) | Atıf: `/atiflar`. |
 
 ✅ = ürünle dağıtılabilir · ❌ = dağıtılamaz/lisans engeli
 
@@ -71,6 +76,18 @@ Son güncelleme: 15 Haziran 2026
 - **Dokular (CC0, ambientCG):** zemin `Tiles107`, duvar `PaintedPlaster017`.
   GLB JSON'da gömülü 6 image bunları doğrular (`*_Color`, `*_NormalGL`, `*_Roughness`).
 - **Lisans:** CC0 1.0 — ticari serbest, atıf gerekmez. Tam kaynak: `scripts/tex/SOURCES.md`.
+
+### Oda eşyaları — `props/*.glb` — Sketchfab CC-BY-4.0 (atıf şartlı)
+
+- **Kaynak:** Sketchfab (Mayıs 2026 indirmeleri, orijinal zip'ler `license.txt` içerir).
+- **Lisans:** CC-BY-4.0 — ticari serbest, **görünür atıf ZORUNLU.**
+- **Atıf mekanizması:** `src/components/patient-3d/props/SketchfabProps.tsx` içindeki
+  `PROP_CREDITS` tek kaynak; `/atiflar` sayfası bu listeyi render eder. Vitest
+  senkron testi (`SketchfabProps.test.ts`) her `props/*.glb` için kredi satırı arar.
+- **İşleme:** glTF → `gltf-transform optimize` (meshopt + webp 1024, simplify 0.001).
+  `vitals-monitor.glb` kaynak setten node-ayrıştırma (`CurtainSetup` çıkarıldı) —
+  türev eser, CC-BY-4.0 buna izin verir; atıf orijinal sete yapılır.
+- **Kalibrasyon:** `/dev/props` (dev-only route) — ölçek/ön-yüz doğrulama lineup'ı.
 
 ### Oskültasyon sesleri — CC BY / CC BY-SA (atıf şartlı)
 

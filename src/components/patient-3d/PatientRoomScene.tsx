@@ -26,6 +26,13 @@ import { WallGasPanel } from "./props/WallGasPanel";
 import { IVBagSet } from "./props/IVBagSet";
 import { PrivacyCurtain } from "./props/PrivacyCurtain";
 import { StaffStool } from "./props/StaffStool";
+import {
+  IVPoleReal,
+  BedsideTableProp,
+  HospitalChairProp,
+  WheelchairProp,
+  VitalsMonitorProp,
+} from "./props/SketchfabProps";
 import { WasteBin } from "./props/WasteBin";
 import { TubingLayer } from "./props/TubingLayer";
 import {
@@ -267,28 +274,17 @@ function BedStretcher() {
 }
 
 // IV direği + sıvı torbası — anaflakside merkezi (IV erişim/adrenalin sonrası
-// sıvı). Prosedürel, sedye başı-sol yanında. Zemin y=-0.27.
+// sıvı). Direk: gerçek Sketchfab modeli (CC-BY, SketchfabProps). IVBagSet
+// AYNI mutlak konumda kalır → TubingLayer IV kaynağı [0.65,0.52,-0.35] bozulmaz.
 function IVPole() {
-  const metal = "#8a939b";
   return (
     <group position={[0.52, 0, -0.35]}>
-      {/* taban diski */}
-      <mesh position={[0, -0.255, 0]} castShadow>
-        <cylinderGeometry args={[0.11, 0.11, 0.025, 16]} />
-        <meshStandardMaterial color={metal} roughness={0.45} metalness={0.6} />
-      </mesh>
-      {/* dikey direk (zemin -0.27 → 0.68) */}
-      <mesh position={[0, 0.205, 0]} castShadow>
-        <cylinderGeometry args={[0.013, 0.013, 0.95, 12]} />
-        <meshStandardMaterial color={metal} roughness={0.35} metalness={0.7} />
-      </mesh>
-      {/* üst askı kolu (yatağa doğru) */}
-      <mesh position={[0.07, 0.66, 0]} castShadow>
-        <boxGeometry args={[0.16, 0.02, 0.02]} />
-        <meshStandardMaterial color={metal} roughness={0.35} metalness={0.7} />
-      </mesh>
-      {/* serum seti — torba + damla haznesi + hat (props/IVBagSet, eski
-          tek-mesh torba/hattın yükseltilmiş hali; askı koluna asılı) */}
+      {/* Model İKİ direk içerir (Z ekseninde ~1.2 birim ara, tek mesh —
+          bölünemez). Ofset +0.6: direk A çapa noktasına (world z -0.35,
+          IVBagSet/tubing hizası), direk B ayak ucuna (world z ~0.85) düşer. */}
+      <IVPoleReal position={[0, ROOM_FLOOR_Y, 0.6]} />
+      {/* serum seti — torba + damla haznesi + hat (props/IVBagSet; tubing
+          çapası bu konuma kalibre, DEĞİŞTİRME) */}
       <IVBagSet position={[0.13, 0.66, 0]} />
     </group>
   );
@@ -368,10 +364,14 @@ export function PatientRoomScene({
       <Canvas
         data-testid="patient-room-canvas"
         frameloop="always"
-        dpr={[1, 2]}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        /* E2E (software-GL/SwiftShader): dpr 1 + AA kapalı + gölgesiz —
+           kare süresi düşer, rAF boğulmaz. Playwright locator çözümlemesi
+           rAF-polling kullanır; ağır yazılım-render'da TÜM locator'lar
+           timeout'a düşüyordu (6 Tem teşhisi). Gerçek tarayıcı etkilenmez. */
+        dpr={import.meta.env.VITE_E2E === "1" ? 1 : [1, 2]}
+        gl={{ antialias: import.meta.env.VITE_E2E !== "1", powerPreference: "high-performance" }}
         camera={{ position: CAMERA_PRESETS[DEFAULT_CAMERA_PRESET].pos, fov: 38 }}
-        shadows
+        shadows={import.meta.env.VITE_E2E !== "1"}
       >
         {/* Canvas default ACESFilmic tonemapping aktif (flat yok). */}
         <color attach="background" args={["#0a0a0c"]} />
@@ -413,6 +413,18 @@ export function PatientRoomScene({
           {/* Paravan/perde — sağ (+X) tarafta, kumaş ayak ucuna toplanmış
               (yan/önden kamera hattını kapatmaz) */}
           <PrivacyCurtain position={[1.25, 0, 0.35]} />
+          {/* Tekerlekli vital monitör standı (Sketchfab CC-BY, setten ayrıştırıldı)
+              — baş ucu sağ tarafı, ekran yatağa dönük */}
+          {/* Ön yüzler +Z (lineup /dev/props ile doğrulandı); rotasyonlar
+              atan2(dx,dz) ile hedefe (yatak merkezi) çevrildi. */}
+          <VitalsMonitorProp position={[-0.95, ROOM_FLOOR_Y, -0.75]} rotation={[0, 1.13, 0]} />
+          {/* Refakatçi koltuğu (Sketchfab CC-BY) — sağ ayak ucu köşesi, yatağa dönük */}
+          <HospitalChairProp position={[1.15, ROOM_FLOOR_Y, 0.95]} rotation={[0, -2.2, 0]} />
+          {/* Hasta başı ayarlanabilir masa (Sketchfab CC-BY) — sol yan; üst
+              tabla +X yönünde uzanır → rotation 0 = tabla yatağa doğru */}
+          <BedsideTableProp position={[-0.72, ROOM_FLOOR_Y, 0.55]} rotation={[0, 0, 0]} />
+          {/* Tekerlekli sandalye (Sketchfab CC-BY) — baş ucu sağ köşe, odaya dönük */}
+          <WheelchairProp position={[1.25, ROOM_FLOOR_Y, -1.0]} rotation={[0, -0.9, 0]} />
           {/* Personel taburesi — sağ ayak ucu köşesine doğru */}
           <StaffStool position={[0.85, 0, 0.8]} />
           {/* Tıbbi atık kovası — sol baş ucu köşesi (ventilatörün gerisi) */}
