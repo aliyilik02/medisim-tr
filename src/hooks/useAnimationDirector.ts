@@ -161,6 +161,13 @@ export function useAnimationDirector(opts: UseAnimationDirectorOpts): AnimationD
       });
       const changed = decisionVisuallyChanged(prevRef.current, next);
       prevRef.current = next;
+      // E2E/oynanış testi gözlem noktası: son karar window'a aynalanır
+      // (yalnız dev — production bundle'da tree-shake edilir).
+      if (import.meta.env.DEV && typeof window !== "undefined") {
+        (window as unknown as { __animDecision?: unknown }).__animDecision = {
+          clip: next.clip, layer: next.layer, reason: next.reason, speed: next.speed,
+        };
+      }
       if (changed) setDecision(next);
     };
     recompute();

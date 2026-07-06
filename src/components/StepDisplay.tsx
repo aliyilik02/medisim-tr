@@ -202,6 +202,7 @@ function DecisionSingle({
         return (
           <button
             key={opt.id}
+            data-testid={`decision-${opt.id}`}
             onClick={() => !showResult && onSelect?.(opt)}
             disabled={showResult}
             className={cn(
@@ -300,6 +301,7 @@ function DecisionMulti({
         return (
           <label
             key={opt.id}
+            data-testid={`decision-${opt.id}`}
             className={cn(
               "flex flex-col p-4 rounded-md border transition cursor-pointer",
               borderCls,
@@ -343,6 +345,7 @@ function DecisionMulti({
 
       {!isAnswered && (
         <button
+          data-testid="decision-confirm"
           onClick={onConfirm}
           disabled={multiSelected.size === 0}
           className="btn-primary w-full justify-center mt-2 disabled:opacity-40 disabled:cursor-not-allowed"
