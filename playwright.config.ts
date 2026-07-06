@@ -33,6 +33,13 @@ export default defineConfig({
     video: process.env.CI ? "retain-on-failure" : "off",
     // Deterministik viewport (snapshot diff için)
     viewport: { width: 1280, height: 800 },
+    // WebGL'i gerçek GPU'da çalıştır (ANGLE/D3D11) — varsayılan SwiftShader
+    // (yazılım raster) ağır sahnede rAF'ı boğar; Playwright locator çözümü
+    // rAF-polling olduğundan TÜM tıklamalar timeout'a düşüyordu (6 Tem).
+    // CI'da GPU yoksa Chromium SwiftShader'a kendisi geri düşer (zararsız).
+    launchOptions: {
+      args: ["--use-gl=angle", "--use-angle=d3d11", "--enable-gpu", "--ignore-gpu-blocklist"],
+    },
   },
   projects: [
     {

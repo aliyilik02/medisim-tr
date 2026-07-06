@@ -57,7 +57,9 @@ async function assertMotion(page: Page, label: string) {
 }
 
 async function getScore(page: Page): Promise<number> {
-  const t = await page.getByTestId("session-score").innerText();
+  // timeout ŞART: debrief'e geçince testid kaybolur; timeout'suz innerText
+  // SONSUZ bekler (6 Tem — 257sn asılı kalıp test timeout'u yedi).
+  const t = await page.getByTestId("session-score").innerText({ timeout: 3000 });
   const n = parseInt(t.replace(/[^\-0-9]/g, ""), 10);
   expect(Number.isFinite(n), `skor sayısal değil: "${t}"`).toBe(true);
   return n;
@@ -66,14 +68,42 @@ async function getScore(page: Page): Promise<number> {
 /** force:true SCROLL'u da atlar — viewport dışı buton boşa tıklanır.
     Güvenli desen: önce scroll, sonra kısa-timeout force click. */
 async function safeClick(loc: import("@playwright/test").Locator) {
-  await loc.scrollIntoViewIfNeeded({ timeout: 2000 }).catch(() => {});
+  await loc.scrollIntoViewIfNeeded({ timeout: 800 }).catch(() => {});
   // force KULLANMA: force, scroll'u atlayıp viewport-dışı koordinata tıklar —
   // hedefi ıskalar ama "başarılı" döner (turn-loop teşhisi, 6 Tem).
-  const ok = await loc.click({ timeout: 4000 }).then(() => true).catch(() => false);
+  // Timeout'lar KISA: rAF-aç ortamda her katman nasılsa düşer; asıl iş
+  // evaluate fallback'te biter. Sağlıklı ortamda ilk katman anında başarır.
+  const ok = await loc.click({ timeout: 1200 }).then(() => true).catch(() => false);
   if (!ok) {
     // toast overlay / actionability engeli → DOM native click (React handler'ı tetikler)
-    const h = await loc.elementHandle({ timeout: 2000 }).catch(() => null);
-    if (h) await h.evaluate((el) => (el as HTMLElement).click()).catch(() => {});
+    const h = await loc.elementHandle({ timeout: 600 }).catch(() => null);
+    if (h) {
+      await h.evaluate((el) => (el as HTMLElement).click()).catch(() => {});
+      return;
+    }
+    // SON ÇARE (rAF açlığı, 6 Tem teşhisi): Playwright locator/elementHandle
+    // çözümlemesi sayfa rAF-polling'ine dayanır; software-GL canvas rAF'ı
+    // boğunca HEPSİ timeout olur. page.evaluate rAF beklemez → buton
+    // metniyle DOM'dan bul + native click.
+    const desc = String(loc);
+    const tid = /getByTestId\('(.+?)'\)/.exec(desc)?.[1];
+    if (tid) {
+      await loc.page().evaluate((id) => {
+        (document.querySelector(`[data-testid="${id}"]`) as HTMLElement | null)?.click();
+      }, tid).catch(() => {});
+      return;
+    }
+    const m = /getByRole\('button', \{ name: (?:\/(.+?)\/i?|'(.+?)') \}\)/.exec(desc);
+    const needle = m?.[1] ?? m?.[2];
+    if (needle) {
+      await loc.page().evaluate((txt) => {
+        const re = new RegExp(txt, "i");
+        const b = Array.from(document.querySelectorAll("button")).find((el) =>
+          re.test(el.textContent ?? ""),
+        );
+        if (b) (b as HTMLElement).click();
+      }, needle).catch(() => {});
+    }
   }
 }
 
@@ -105,7 +135,7 @@ async function continueIfPossible(page: Page) {
 
 test.describe("STEMI tam oynanış — motion + skor + konsol regresyonu", () => {
   test.describe.configure({ mode: "serial" });
-  test.setTimeout(300_000);
+  test.setTimeout(420_000);
 
   test("doğru yol: 11 adım baştan sona, her etkileşimde motion temiz", async ({ page }) => {
     const guards = await setupGuards(page);
@@ -140,7 +170,16 @@ test.describe("STEMI tam oynanış — motion + skor + konsol regresyonu", () =>
     // Adımlar arasında aksiyon adımları da var — genel döngü: 14 tura kadar
     // görünen ilk bilinen-karar butonuna bas, yoksa aksiyon/continue dene.
     for (let turn = 0; turn < 18; turn++) {
-      if (await page.getByText("Debrief", { exact: false }).first().isVisible().catch(() => false)) break;
+      // Debrief ekranı başlığı "Klinik Performans Raporu" (literal "Debrief"
+      // metni YOK — 6 Tem: eski koşul hiç kırılmıyor, 18 tur boşa dönüyordu)
+      if (
+        await page
+          .getByText(/Debrief|Klinik Performans Raporu/i)
+          .first()
+          .isVisible()
+          .catch(() => false)
+      )
+        break;
       let acted = false;
       for (const [label, tid] of decisions) {
         const b = page.getByTestId(tid);
