@@ -7,7 +7,8 @@ export function fillRect(
   fill: [number, number, number], r = 0
 ) {
   doc.setFillColor(...fill);
-  r > 0 ? doc.roundedRect(x, y, w, h, r, r, "F") : doc.rect(x, y, w, h, "F");
+  if (r > 0) doc.roundedRect(x, y, w, h, r, r, "F");
+  else doc.rect(x, y, w, h, "F");
 }
 
 export function drawPageBg(doc: jsPDF, layout: Layout) {

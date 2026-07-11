@@ -363,7 +363,7 @@ describe("eskalasyon FSM — after_sec (zaman tetikli)", () => {
     for (let i = 0; i < 29; i++) v = provider.tick(v, 1);
     expect(provider.getState().activated).not.toContain("faz-b");
 
-    v = provider.tick(v, 1); // yaş = 30 ≥ after_sec
+    provider.tick(v, 1); // yaş = 30 ≥ after_sec
     expect(provider.getState().activated).toContain("faz-b");
   });
 

@@ -37,7 +37,7 @@ const RELEVANT_RXNORM_NAMES = [
   "furosemide", "dextrose 50%",
 ];
 
-interface RxNormMatch {
+interface _RxNormMatch {
   drugConcept?: { rxcui: string; name: string };
 }
 

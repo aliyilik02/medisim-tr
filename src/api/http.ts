@@ -32,7 +32,8 @@ export async function authFetch(path: string, init?: RequestInit): Promise<Respo
   } catch (e) {
     if (e instanceof TypeError) {
       throw new Error(
-        "Sunucuya ulaşılamıyor — backend çalışmıyor olabilir. (Geliştirmede: `cd backend && npm run dev`)"
+        "Sunucuya ulaşılamıyor — backend çalışmıyor olabilir. (Geliştirmede: `cd backend && npm run dev`)",
+        { cause: e }
       );
     }
     throw e;

@@ -75,7 +75,7 @@ function dzdt(theta, z) {
    Yüksek çözünürlükte (oversample) entegre edip sonra N örneğe indirgeriz. */
 function integrateCycle(oversample = 8000) {
   const dTheta = TWO_PI / oversample;
-  let theta = -Math.PI;
+  let theta;
   let z = 0;
 
   // Geçici taban etkisini söndürmek için iki tam çevrim "ısıtma" yap,

@@ -29,8 +29,8 @@ const PARTS = ["PatientEyes", "PatientEyebrows", "PatientEyelashes", "PatientHai
 const norm = (n) => (n ?? "").replace(/:/g, "");
 function nodeWorld(n) {
   // 4x4 world matris (column-major) — parent zinciri
-  let m = n.getMatrix();
-  let p = n.getParentNode?.() ?? null;
+  let m;
+  let p;
   // getParentNode yok; listParents üzerinden Node ebeveyni bul
   const parentOf = (node) => node.listParents().find((x) => x.propertyType === "Node") ?? null;
   m = n.getMatrix();
@@ -92,7 +92,6 @@ console.log("hedef skin joint:", baseJoints.length);
 // baş kısım birebir eşleşir — v0/v100 doğrulandı).
 const srcNodes = src.getRoot().listNodes();
 const srcBody = srcNodes.find((n) => n.getName() === "PatientBody");
-const srcBodyWorldInv = inv(nodeWorld(srcBody)); // (artık kullanılmıyor — iz için)
 const _sB = srcBody.getMesh().listPrimitives()[0].getAttribute("POSITION").getArray();
 const _dB = base.getRoot().listNodes().find((n) => n.getName() === "PatientBody")
   .getMesh().listPrimitives()[0].getAttribute("POSITION").getArray();

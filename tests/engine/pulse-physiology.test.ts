@@ -158,6 +158,7 @@ describe("createPulsePhysiologyProvider — sahte WS bağlı", () => {
     const Impl = class extends FakeWS {
       constructor(url: string) {
         super(url);
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         captured = this;
       }
     } as unknown as typeof WebSocket;

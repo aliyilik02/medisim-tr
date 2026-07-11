@@ -139,7 +139,7 @@ export function evaluateAction(
   const defaultPenalty = step.default_wrong_penalty ?? -5;
 
   // Alerjiye dikkat — otomatik kritik hata
-  let critical = false;
+  const critical = false;
   let extraFeedback = "";
   if (action.type === "give_medication") {
     const med = scenario.available_medications.includes(action.target_id);

@@ -6,7 +6,6 @@ import {
   resolveEquipmentById,
   getEquipmentEffect,
   EQUIPMENT_EFFECTS,
-  type EquipmentEffect,
   type EquipmentEffectContext,
 } from "@/engine";
 import { EQUIPMENT } from "@/data/equipment";

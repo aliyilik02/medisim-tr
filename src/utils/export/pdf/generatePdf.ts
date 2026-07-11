@@ -94,7 +94,7 @@ export async function generatePdfReport(savedSession: SavedSession): Promise<Blo
   y = renderPerformanceTimeline(doc, data, layout, fn, y);
   y = renderStepsSummaryTable(doc, data, layout, fn, y);
   y = renderActionsSection(doc, data, layout, fn, y);
-  y = renderDebriefSection(doc, data, layout, fn, y);
+  renderDebriefSection(doc, data, layout, fn, y);
 
   renderAllFooters(doc, layout, fn, data.specialty_accent);
 
