@@ -8,7 +8,7 @@
 // Konum sabitleri screenshot ile kalibre edildi.
 // ============================================================
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, memo, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, ContactShadows } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette, Noise } from "@react-three/postprocessing";
@@ -333,7 +333,10 @@ interface Props {
   className?: string;
 }
 
-export function PatientRoomScene({
+// R4 (11 Tem): memo — vitals tick'i (125-1000ms) sayfayı re-render eder;
+// prop'lar artık kimlik-kararlı (useStableValue + useCallback) → içerik
+// değişmedikçe R3F ağacı yeniden uzlaştırılmaz (en pahalı alt ağaç).
+function PatientRoomSceneImpl({
   variant = "female-adult",
   skinTone = DEFAULT_SKIN_TONE,
   skinTint = "normal",
@@ -529,6 +532,8 @@ export function PatientRoomScene({
     </div>
   );
 }
+
+export const PatientRoomScene = memo(PatientRoomSceneImpl);
 
 interface BedPatientProps {
   variant: PatientVariant;

@@ -17,6 +17,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { InstructorPage } from "@/pages/InstructorPage";
 import { StudentProgressPage } from "@/pages/StudentProgressPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EducationalDisclaimer } from "@/components/EducationalDisclaimer";
 import { useAuthStore } from "@/stores/authStore";
 import { Activity, LogOut } from "lucide-react";
@@ -71,6 +72,9 @@ export function App() {
     <div className="min-h-screen grid-overlay">
       {!immersive && !isLoginPage && <Header />}
       <main>
+        {/* App-level hata siperi (R1) — route içeriği çökerse beyaz ekran
+            yerine TR mesaj + yenile. Header/nav ayakta kalır. */}
+        <ErrorBoundary>
         <Routes>
           {/* Açık (public) — landing + giriş */}
           <Route path="/" element={<HomePage />} />
@@ -210,6 +214,7 @@ export function App() {
           <Route path="/monitor-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/ventilator-demo" element={<Navigate to="/senaryolar" replace />} />
         </Routes>
+        </ErrorBoundary>
       </main>
       {!immersive && !isLoginPage && <Footer />}
       {/* Disclaimer: immersive sayfalarda footer gizli → sabit köşe rozeti.

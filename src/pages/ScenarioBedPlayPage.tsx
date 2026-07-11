@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X, AlertTriangle } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
@@ -19,6 +19,7 @@ import {
   type VentPresetKey,
 } from "@/components/ventilator/ventilator-engine";
 import { DialogChat } from "@/components/dialog/DialogChat";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StepDisplay } from "@/components/StepDisplay";
 import { InventoryPanel } from "@/components/InventoryPanel";
 import { DebriefScreen } from "@/components/DebriefScreen";
@@ -32,6 +33,7 @@ import { SCENARIOS } from "@/data/scenarios";
 import { vitalsToVisual } from "@/clinical/visual-mapping";
 import { mapVitalsToVisuals, applyPhaseVisual } from "@/clinical/clinicalVisualMapping";
 import { useAnimationDirector } from "@/hooks/useAnimationDirector";
+import { useStableValue } from "@/hooks/useStableValue";
 import { vitalsToAgitation } from "@/clinical/agitation-mapping";
 import { medicationRouteGesture } from "@/engine/animation-director";
 import { getExtendedMedication } from "@/data/medications-extended";
@@ -311,13 +313,20 @@ export function ScenarioBedPlayPage() {
   // Sürekli klinik görsel (siyanoz/solgun/terleme/benekli) — deterioration
   // tick'i sonrası canlı vital'den. Ayrık skinTint'in üstüne biner.
   // Sürekli klinik görsel + faz-senkron dramatik katman (tek faz sinyali kaynağı).
-  const visualState = useMemo(
-    () => applyPhaseVisual(mapVitalsToVisuals(liveVitals), runner.phaseSignal?.visual),
-    [liveVitals, runner.phaseSignal],
+  // useStableValue (R4): liveVitals her tick yeni obje → useMemo her tick yeni
+  // kimlikli sonuç üretir, içerik çoğunlukla AYNI. Sığ-eşitlikte eski referans
+  // korunur → memo'lu sahne tick başına re-render olmaz.
+  const visualState = useStableValue(
+    useMemo(
+      () => applyPhaseVisual(mapVitalsToVisuals(liveVitals), runner.phaseSignal?.visual),
+      [liveVitals, runner.phaseSignal],
+    ),
   );
   // Prosedürel hareket katmanı — rigor titremesi (ateş/hipoksi) + ağrı
   // huzursuzluğu. Mixer pozunun üstüne additive; yeni klip gerektirmez.
-  const agitation = useMemo(() => vitalsToAgitation(liveVitals), [liveVitals]);
+  const agitation = useStableValue(
+    useMemo(() => vitalsToAgitation(liveVitals), [liveVitals]),
+  );
 
   // Oskültasyon — faz-senkron kalp/akciğer sesi yatak-başına taşındı (Yol-3'ten).
   // buildScenarioRegions dominant fazın kalp sesini kardiyak noktalara yazar
@@ -333,6 +342,24 @@ export function ScenarioBedPlayPage() {
       ),
     [rs, runner.haltedPhaseIds, runner.phaseSignal],
   );
+
+  // R4: kararlı callback — inline arrow her render'da yeni kimlik üretip
+  // memo'lu PatientRoomScene'i kırıyordu.
+  const openVentilator = useCallback(() => setVentOpen(true), []);
+
+  // Karar seçenekleri — render içinde seededShuffle her tick yeniden
+  // karıştırıyordu (aynı seed = aynı sonuç ama yeni dizi kimliği + boşa iş).
+  // Deps bilinçli İLKEL (session objesi değil): session her tick yeni kimlik
+  // alır ama difficulty/started_at oturum boyunca sabittir — memo tick'te bozulmaz.
+  const sessionDifficulty = session?.selected_difficulty;
+  const sessionStartedAt = session?.started_at;
+  const visibleDecisionOptions = useMemo(() => {
+    if (!rs || !currentStep || currentStep.kind !== "decision" || sessionStartedAt === undefined || sessionDifficulty === undefined) return undefined;
+    return seededShuffle(
+      getVisibleOptions(currentStep, sessionDifficulty),
+      `${rs.id}:${currentStep.id}:${sessionStartedAt}`,
+    );
+  }, [currentStep, sessionDifficulty, sessionStartedAt, rs]);
 
   // Debrief
   if (session?.finished) {
@@ -417,21 +444,30 @@ export function ScenarioBedPlayPage() {
       <div className="flex-1 flex min-h-0">
         {/* Sol: 3D yatak sahnesi + sol üst köşede küçük başucu monitörü (kullanıcı tasarımı) */}
         <div className="flex-1 relative min-w-0 border-r border-ink-700/50">
-          <PatientRoomScene
-            variant={variant}
-            decision={animDecision}
-            skinTint={skinTint}
-            visualState={visualState}
-            agitation={agitation}
-            skinTone={skinTone}
-            speaking={speaking}
-            speechText={speechText}
-            equipment={equipment}
-            cameraPreset="onden"
-            showVentilator={ventEligible}
-            ventilatorActive
-            onVentilatorActivate={() => setVentOpen(true)}
-          />
+          {/* Görsel katman siperi (R1): sahne (3D/2D) çökse bile oyun UI'ı
+              (monitör, aksiyonlar, debrief) ayakta kalır — beyaz ekran yok. */}
+          <ErrorBoundary
+            compact
+            retryable
+            title="Görsel sahne yüklenemedi"
+            description="Hasta sahnesi açılamadı. Yeniden deneyin — sorun sürerse oyun panelden devam eder."
+          >
+            <PatientRoomScene
+              variant={variant}
+              decision={animDecision}
+              skinTint={skinTint}
+              visualState={visualState}
+              agitation={agitation}
+              skinTone={skinTone}
+              speaking={speaking}
+              speechText={speechText}
+              equipment={equipment}
+              cameraPreset="onden"
+              showVentilator={ventEligible}
+              ventilatorActive
+              onVentilatorActivate={openVentilator}
+            />
+          </ErrorBoundary>
           {/* Küçük başucu monitörü — sol üst köşe overlay (eski CompactVitalsHUD yerine).
               Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
           <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.72)" }}>
@@ -541,14 +577,7 @@ export function ScenarioBedPlayPage() {
                   canContinue={runner.canContinue}
                   decisionAnswered={runner.decisionAnswered}
                   decisionMultiAnswered={runner.decisionMultiAnswered}
-                  visibleOptions={
-                    currentStep.kind === "decision" && session
-                      ? seededShuffle(
-                          getVisibleOptions(currentStep, session.selected_difficulty),
-                          `${rs.id}:${currentStep.id}:${session.started_at}`,
-                        )
-                      : undefined
-                  }
+                  visibleOptions={visibleDecisionOptions}
                 />
                 {currentStep.kind === "action" && (
                   <div className="h-[420px]">

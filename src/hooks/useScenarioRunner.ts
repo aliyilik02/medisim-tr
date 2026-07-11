@@ -152,6 +152,12 @@ export function useScenarioRunner({
   // okur. Ref ile stale-closure ve handleAction dep-churn'ü önlenir.
   const phaseSignalRef = useRef<PhaseSignal | null>(null);
   phaseSignalRef.current = phaseSignal;
+  // R4 (11 Tem denetimi): handleAction deps'inde session vardı — useVitalsTick
+  // 125-1000ms'de yeni session objesi yazdığı için callback HER TICK yeniden
+  // üretiliyordu → memo'lu çocuklara giden prop kimliği sürekli değişiyordu.
+  // phaseSignalRef ile aynı desen: olay anında ref'ten taze okunur.
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   const { feedback, show, clear } = useFeedback();
 
@@ -313,11 +319,13 @@ export function useScenarioRunner({
   // ----- Aksiyon handler (ilaç/ekipman/tetkik/prosedür)
   const handleAction = useCallback(
     (action: ActionRef) => {
-      if (!rs || !session || !currentStep || session.finished) return;
+      // Olay anında taze session — deps'te session YOK (R4 tick-churn önleme).
+      const sess = sessionRef.current;
+      if (!rs || !sess || !currentStep || sess.finished) return;
 
       // Fizyoloji: doğru müdahale kötüleşmeyi durdurur — adım türünden bağımsız
       if (provider) {
-        provider.applyIntervention(session.vitals, action);
+        provider.applyIntervention(sess.vitals, action);
         setHaltedPhaseIds(provider.getState().halted);
       }
 
@@ -350,13 +358,13 @@ export function useScenarioRunner({
             medication: extended,
             doseGiven,
             patient: rs.patient,
-            vitals: session.vitals,
-            activeMedicationIds: session.active_medication_ids ?? [],
+            vitals: sess.vitals,
+            activeMedicationIds: sess.active_medication_ids ?? [],
             sourceStepId: currentStep.id,
             // TEK SAAT: provider'lı (3D) oturumda administered_at/expires_at
             // simüle eksende yazılır — useVitalsTick pharma tick'i de aynı
             // eksenle okur. Provider'sız (2D quiz) oturumda wall-clock korunur.
-            now: provider ? (session.sim_time_ms ?? session.started_at) : Date.now(),
+            now: provider ? (sess.sim_time_ms ?? sess.started_at) : Date.now(),
             timingOverride: rs.medication_timing_overrides?.[extended.id],
           });
 
@@ -411,7 +419,7 @@ export function useScenarioRunner({
         action.type === "use_equipment"
       ) {
         const ctx: EquipmentEffectContext = {
-          vitals: session.vitals,
+          vitals: sess.vitals,
           patient: rs.patient,
           ekg: phaseSignalRef.current?.ekg,
         };
@@ -451,7 +459,7 @@ export function useScenarioRunner({
         currentStep,
         action,
         rs,
-        session.selected_difficulty
+        sess.selected_difficulty
       );
 
       // 3D muayene politikası: senaryoda karşılığı olmayan muayene/prosedür
@@ -517,7 +525,7 @@ export function useScenarioRunner({
       if (pharmaCritical) setCriticalInfo(pharmaCritical);
 
       if (evaluation.unlocks.length > 0 && !pharmaCritical) {
-        if (session.mode === "egitim") {
+        if (sess.mode === "egitim") {
           // Öğretici: otomatik geçme — hedef adımı beklet, öğrenci ilerletsin.
           pendingUnlockRef.current = evaluation.unlocks[0];
         } else {
@@ -528,7 +536,6 @@ export function useScenarioRunner({
     },
     [
       rs,
-      session,
       currentStep,
       provider,
       show,
