@@ -3,9 +3,10 @@
 > **Yol haritası (TEK kaynak):** [`docs/YOL-HARITASI.md`](docs/YOL-HARITASI.md) — "sıradaki iş ne?" cevabı SADECE orada.
 > **Klinik/KVKK referans:** [`docs/MASTER-REPORT-v3.md`](docs/MASTER-REPORT-v3.md) Bölüm 9 (klinik standartlar güncel; Bölüm 11 sprint tablosu bayat, ona bakma).
 > **Memory vault:** [`docs/memory/README.md`](docs/memory/README.md) (görev tipine göre lazy read).
+> **Çalışma biçimi (İLK SEANSTA OKU):** [`docs/CALISMA-BICIMI.md`](docs/CALISMA-BICIMI.md) — düşünme prosedürleri + yaşanmış tuzaklar + her cevap öncesi 5 soruluk öz-test. Bu dosya durumu tutar, o dosya zanaatı.
 > Detaylı içerik orada — bu dosya kısa, sadece kritik kurallar.
 
-Son güncelleme: 5 Temmuz 2026
+Son güncelleme: 11 Temmuz 2026
 
 ## Ajanın görevi
 
