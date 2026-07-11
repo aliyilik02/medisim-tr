@@ -14,6 +14,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "scenario:validate": "node .claude/skills/senaryo-sema-dogrulayici/scripts/validate.mjs",
+    "gen:personas": "node scripts/gen-backend-personas.mjs",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:install": "playwright install --with-deps chromium",
@@ -47,6 +48,7 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@gltf-transform/cli": "^4.3.0",
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -60,12 +62,16 @@
     "@vitest/coverage-v8": "^4.1.5",
     "@vitest/ui": "^4.1.5",
     "autoprefixer": "^10.4.19",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0",
     "happy-dom": "^20.9.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "postcss": "^8.4.40",
     "tailwindcss": "^3.4.7",
     "typescript": "^5.5.3",
+    "typescript-eslint": "^8.59.3",
     "vite": "^5.3.4",
     "vitest": "^4.1.5"
   },

@@ -25,7 +25,9 @@ export interface ChatMessage {
 
 export interface ChatRequest {
   scenario_id: string;
-  patient_persona: string;
+  /** GERİYE UYUM: eski istemciler gönderir ama sunucu YOK SAYAR — persona
+   *  scenario_id ile generated/personas.ts kataloğundan seçilir (injection kapalı). */
+  patient_persona?: string;
   messages: ChatMessage[];
 }
 

@@ -49,6 +49,9 @@ export async function streamChat(
     response = await fetch(`${BACKEND_URL}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // Oturum cookie'si (11 Tem): /api/chat artik auth kapili — cookie
+      // gitmezse her istek 401 → kalici mock'a duserdi.
+      credentials: "include",
       body: JSON.stringify(req),
       signal,
     });

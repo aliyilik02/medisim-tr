@@ -35,6 +35,7 @@ export async function streamChat(params: ChatParams): Promise<ReadableStream<Uin
   const res = await fetch(`${backendUrl()}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include", // /api/chat auth kapili (11 Tem)
     body: JSON.stringify(params),
   });
   if (!res.ok) {
