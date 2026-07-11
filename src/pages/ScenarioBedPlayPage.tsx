@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X, AlertTriangle } from "lucide-react";
 import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
+import { Patient2DVisual } from "@/components/patient-2d/Patient2DVisual";
+import { getVisualMode } from "@/components/patient-2d/visualMode";
+
+// URL/env oturum boyunca değişmez → modül seviyesinde bir kez çözülür.
+const VISUAL_MODE = getVisualMode();
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
 import { ANIMATED_MODELS, NON_SUPINE_CLIPS } from "@/components/patient-3d/AnimatedPatientModel";
 import type { EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
@@ -452,21 +457,28 @@ export function ScenarioBedPlayPage() {
             title="Görsel sahne yüklenemedi"
             description="Hasta sahnesi açılamadı. Yeniden deneyin — sorun sürerse oyun panelden devam eder."
           >
-            <PatientRoomScene
-              variant={variant}
-              decision={animDecision}
-              skinTint={skinTint}
-              visualState={visualState}
-              agitation={agitation}
-              skinTone={skinTone}
-              speaking={speaking}
-              speechText={speechText}
-              equipment={equipment}
-              cameraPreset="onden"
-              showVentilator={ventEligible}
-              ventilatorActive
-              onVentilatorActivate={openVentilator}
-            />
+            {/* 2D pivot (12 Tem 2026): görsel katman bayrakla seçilir. 3D
+                SİLİNMEDİ — dondurulmuş, ?visual=3d veya VITE_VISUAL_MODE=3d
+                ile aynen döner (geri dönüş sigortası + satış demosu). */}
+            {VISUAL_MODE === "3d" ? (
+              <PatientRoomScene
+                variant={variant}
+                decision={animDecision}
+                skinTint={skinTint}
+                visualState={visualState}
+                agitation={agitation}
+                skinTone={skinTone}
+                speaking={speaking}
+                speechText={speechText}
+                equipment={equipment}
+                cameraPreset="onden"
+                showVentilator={ventEligible}
+                ventilatorActive
+                onVentilatorActivate={openVentilator}
+              />
+            ) : (
+              <Patient2DVisual visualState={visualState} />
+            )}
           </ErrorBoundary>
           {/* Küçük başucu monitörü — sol üst köşe overlay (eski CompactVitalsHUD yerine).
               Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
