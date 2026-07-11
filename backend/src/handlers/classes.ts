@@ -186,7 +186,8 @@ export async function handleCreateStudent(
   const handle = typeof body.handle === "string" ? body.handle.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
   if (handle.length < 2) return bad("invalid_handle", "handle ≥2 karakter");
-  if (password.length < 6) return bad("weak_password", "Şifre ≥6 karakter");
+  // ≥8: brute-force denetim bulgusu (11 Tem) — 6 karakter + sınırsız deneme kırılabilirdi
+  if (password.length < 8) return bad("weak_password", "Şifre ≥8 karakter");
 
   const now = Math.floor(Date.now() / 1000);
   const userId = crypto.randomUUID();

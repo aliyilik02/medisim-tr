@@ -70,7 +70,7 @@ export async function verifyJwt(
   const [h, b, s] = parts;
   const signingInput = `${h}.${b}`;
   const key = await hmacKey(secret);
-  let valid = false;
+  let valid: boolean;
   try {
     valid = await crypto.subtle.verify("HMAC", key, b64urlToBytes(s), enc.encode(signingInput));
   } catch {

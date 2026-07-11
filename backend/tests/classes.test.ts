@@ -106,9 +106,9 @@ describe("POST /api/classes — sınıf oluştur", () => {
     const cls = (await (await call("/api/classes", "POST", { name: "Sınıf" }, insCookie)).json()) as {
       class: { id: string };
     };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ogr1", password: "ogrenci1" }, insCookie);
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ogr1", password: "ogrenci-1" }, insCookie);
     const stuCookie = cookieFrom(
-      await call("/api/auth/login", "POST", { institution: "okul", handle: "ogr1", password: "ogrenci1" }),
+      await call("/api/auth/login", "POST", { institution: "okul", handle: "ogr1", password: "ogrenci-1" }),
     );
     const res = await call("/api/classes", "POST", { name: "Hack" }, stuCookie);
     expect(res.status).toBe(403);
@@ -121,14 +121,14 @@ describe("POST /api/classes/:id/students — öğrenci hesabı", () => {
     const cls = (await (await call("/api/classes", "POST", { name: "Sınıf" }, cookie)).json()) as {
       class: { id: string };
     };
-    const cRes = await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ayse", password: "parola1" }, cookie);
+    const cRes = await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ayse", password: "parola12" }, cookie);
     expect(cRes.status).toBe(200);
     const cBody = (await cRes.json()) as { student: { id: string; handle: string; institution_slug: string } };
     expect(cBody.student.handle).toBe("ayse");
     expect(cBody.student.institution_slug).toBe("okul");
 
     // öğrenci giriş: kurum slug + handle + şifre (e-postasız)
-    const login = await call("/api/auth/login", "POST", { institution: "okul", handle: "ayse", password: "parola1" });
+    const login = await call("/api/auth/login", "POST", { institution: "okul", handle: "ayse", password: "parola12" });
     expect(login.status).toBe(200);
     const lBody = (await login.json()) as { user: { role: string; handle: string; consent: boolean } };
     expect(lBody.user.role).toBe("student");
@@ -139,10 +139,10 @@ describe("POST /api/classes/:id/students — öğrenci hesabı", () => {
     const cookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Sınıf" }, cookie)).json()) as { class: { id: string } };
     // BÜYÜK harfli handle ile oluştur
-    const cRes = await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "Veli_1", password: "parola1" }, cookie);
+    const cRes = await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "Veli_1", password: "parola12" }, cookie);
     expect(((await cRes.json()) as { student: { handle: string } }).student.handle).toBe("veli_1"); // lowercase saklandı
     // farklı case ile giriş → başarılı
-    const login = await call("/api/auth/login", "POST", { institution: "okul", handle: "VELI_1", password: "parola1" });
+    const login = await call("/api/auth/login", "POST", { institution: "okul", handle: "VELI_1", password: "parola12" });
     expect(login.status).toBe(200);
     expect(((await login.json()) as { user: { role: string } }).user.role).toBe("student");
   });
@@ -150,8 +150,8 @@ describe("POST /api/classes/:id/students — öğrenci hesabı", () => {
   it("aynı handle ikinci kez → 409", async () => {
     const cookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Sınıf S" }, cookie)).json()) as { class: { id: string } };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "dup", password: "parola1" }, cookie);
-    const res = await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "dup", password: "parola1" }, cookie);
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "dup", password: "parola12" }, cookie);
+    const res = await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "dup", password: "parola12" }, cookie);
     expect(res.status).toBe(409);
   });
 
@@ -166,7 +166,7 @@ describe("POST /api/classes/:id/students — öğrenci hesabı", () => {
     const aCookie = await registerInstructor("hocaA", "a@test.edu", "okulA");
     const clsA = (await (await call("/api/classes", "POST", { name: "Sınıf A" }, aCookie)).json()) as { class: { id: string } };
     const bCookie = await registerInstructor("hocaB", "b@test.edu", "okulB");
-    const res = await call("/api/classes/" + clsA.class.id + "/students", "POST", { handle: "z", password: "parola1" }, bCookie);
+    const res = await call("/api/classes/" + clsA.class.id + "/students", "POST", { handle: "z", password: "parola12" }, bCookie);
     expect(res.status).toBe(403);
   });
 });
@@ -175,7 +175,7 @@ describe("GET /api/classes + /:id — eğitmen paneli", () => {
   it("kendi sınıflarını listeler + öğrenci sayısı", async () => {
     const cookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Liste" }, cookie)).json()) as { class: { id: string } };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "s1", password: "parola1" }, cookie);
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "s1", password: "parola12" }, cookie);
     const res = await call("/api/classes", "GET", undefined, cookie);
     const body = (await res.json()) as { classes: { id: string; student_count: number }[] };
     expect(body.classes).toHaveLength(1);
@@ -185,7 +185,7 @@ describe("GET /api/classes + /:id — eğitmen paneli", () => {
   it("sınıf detayı roster + slug döner", async () => {
     const cookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Detay" }, cookie)).json()) as { class: { id: string } };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "bora", password: "parola1" }, cookie);
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "bora", password: "parola12" }, cookie);
     const res = await call("/api/classes/" + cls.class.id, "GET", undefined, cookie);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
@@ -216,8 +216,8 @@ describe("attempts — kayıt + öğrenci ilerlemesi", () => {
   async function setupStudent(): Promise<{ insCookie: string; stuCookie: string; classId: string }> {
     const insCookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Snf" }, insCookie)).json()) as { class: { id: string } };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ali", password: "parola1" }, insCookie);
-    const stuCookie = await loginStudentConsented("okul", "ali", "parola1");
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ali", password: "parola12" }, insCookie);
+    const stuCookie = await loginStudentConsented("okul", "ali", "parola12");
     return { insCookie, stuCookie, classId: cls.class.id };
   }
 
@@ -299,10 +299,10 @@ describe("güvenlik düzeltmeleri — consent + skor doğrulama", () => {
   it("rıza vermeyen öğrenci attempt POST → 403 consent_required (#3)", async () => {
     const insCookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Snf" }, insCookie)).json()) as { class: { id: string } };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "rizasiz", password: "parola1" }, insCookie);
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "rizasiz", password: "parola12" }, insCookie);
     // login ama consent YOK
     const stuCookie = cookieFrom(
-      await call("/api/auth/login", "POST", { institution: "okul", handle: "rizasiz", password: "parola1" }),
+      await call("/api/auth/login", "POST", { institution: "okul", handle: "rizasiz", password: "parola12" }),
     );
     const res = await call("/api/attempts", "POST", { scenario_id: "s", started_at: 1 }, stuCookie);
     expect(res.status).toBe(403);
@@ -313,8 +313,8 @@ describe("güvenlik düzeltmeleri — consent + skor doğrulama", () => {
   it("score > max_score → 400 (#2)", async () => {
     const insCookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Snf" }, insCookie)).json()) as { class: { id: string } };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ali", password: "parola1" }, insCookie);
-    const stuCookie = await loginStudentConsented("okul", "ali", "parola1");
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ali", password: "parola12" }, insCookie);
+    const stuCookie = await loginStudentConsented("okul", "ali", "parola12");
     const res = await call("/api/attempts", "POST", { scenario_id: "s", score: 999, max_score: 10, started_at: 1 }, stuCookie);
     expect(res.status).toBe(400);
     expect((await res.json() as { error: string }).error).toBe("invalid_score");
@@ -323,8 +323,8 @@ describe("güvenlik düzeltmeleri — consent + skor doğrulama", () => {
   it("finished_at < started_at → 400 (#2)", async () => {
     const insCookie = await registerInstructor();
     const cls = (await (await call("/api/classes", "POST", { name: "Snf" }, insCookie)).json()) as { class: { id: string } };
-    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ali", password: "parola1" }, insCookie);
-    const stuCookie = await loginStudentConsented("okul", "ali", "parola1");
+    await call("/api/classes/" + cls.class.id + "/students", "POST", { handle: "ali", password: "parola12" }, insCookie);
+    const stuCookie = await loginStudentConsented("okul", "ali", "parola12");
     const res = await call("/api/attempts", "POST", { scenario_id: "s", score: 5, max_score: 10, started_at: 500, finished_at: 100 }, stuCookie);
     expect(res.status).toBe(400);
     expect((await res.json() as { error: string }).error).toBe("invalid_time");

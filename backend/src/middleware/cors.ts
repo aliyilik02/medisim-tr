@@ -21,7 +21,8 @@ const ALLOWED_ORIGIN_PATTERNS = [
   /^http:\/\/127\.0\.0\.1:\d+$/i,
 ];
 
-function isOriginAllowed(origin: string | null): boolean {
+/** CSRF guard'ı da kullanır (index.ts) — origin allowlist tek kaynak. */
+export function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   return ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));

@@ -19,6 +19,14 @@ export interface RateLimitResult {
   retryAfterSec: number;
 }
 
+/** Uç-bazlı ayrı sayaç/limit — auth brute-force için chat'ten sıkı pencere. */
+export interface RateLimitOptions {
+  /** KV anahtar kapsamı (örn. "auth") — farklı uçlar sayaç paylaşmasın. */
+  scope?: string;
+  /** Pencere başına istek tavanı (varsayılan 8). */
+  max?: number;
+}
+
 function getClientIp(request: Request): string {
   return (
     request.headers.get("CF-Connecting-IP") ??
@@ -30,14 +38,16 @@ function getClientIp(request: Request): string {
 export async function checkRateLimit(
   request: Request,
   env: Env,
+  opts?: RateLimitOptions,
 ): Promise<RateLimitResult> {
   const ip = getClientIp(request);
-  const key = `rl:${ip}`;
+  const max = opts?.max ?? MAX_REQUESTS;
+  const key = opts?.scope ? `rl:${opts.scope}:${ip}` : `rl:${ip}`;
 
   const current = await env.RATE_LIMIT.get(key);
   const count = current ? parseInt(current, 10) : 0;
 
-  if (count >= MAX_REQUESTS) {
+  if (count >= max) {
     return {
       allowed: false,
       count,
@@ -56,22 +66,22 @@ export async function checkRateLimit(
   return {
     allowed: true,
     count: newCount,
-    remaining: MAX_REQUESTS - newCount,
+    remaining: max - newCount,
     retryAfterSec: 0,
   };
 }
 
-export function rateLimitResponse(result: RateLimitResult): Response {
+export function rateLimitResponse(result: RateLimitResult, max = MAX_REQUESTS): Response {
   return Response.json(
     {
       error: "rate_limited",
-      detail: `Dakikada en fazla ${MAX_REQUESTS} istek. ${result.retryAfterSec} sn sonra tekrar deneyin.`,
+      detail: `Dakikada en fazla ${max} istek. ${result.retryAfterSec} sn sonra tekrar deneyin.`,
     },
     {
       status: 429,
       headers: {
         "Retry-After": String(result.retryAfterSec),
-        "X-RateLimit-Limit": String(MAX_REQUESTS),
+        "X-RateLimit-Limit": String(max),
         "X-RateLimit-Remaining": "0",
       },
     },
