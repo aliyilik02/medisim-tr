@@ -142,4 +142,94 @@
     content: "";
     @apply absolute inset-0 rounded-full bg-clinical-stable animate-ping opacity-60;
   }
+
+  /* ── NEON UI seti (pilot: oyun ekranı, 12 Tem 2026) ────────────────
+     Tasarım: docs/DESIGN-TOKENS.md. Renk tek değişkenden akar:
+     .neon-<renk> --glow (gölge rgba) + --neon (düz renk) set eder,
+     shadow-glow-* / .neon-text / .neon-border onları tüketir.
+     KURAL: vital SAYILARINA ve monitör alarm kutularına uygulanmaz
+     (IEC 60601-1-8 — alarm ringi ile çakışır, sayı netliği bozulur). */
+
+  .neon-teal     { --glow: rgba(45, 212, 191, 0.5);  --neon: #2dd4bf; }
+  .neon-cyan     { --glow: rgba(34, 211, 238, 0.5);  --neon: #22d3ee; }
+  .neon-pink     { --glow: rgba(244, 114, 182, 0.5); --neon: #f472b6; }
+  .neon-violet   { --glow: rgba(167, 139, 250, 0.5); --neon: #a78bfa; }
+  .neon-blue     { --glow: rgba(96, 165, 250, 0.5);  --neon: #60a5fa; }
+  /* Alarm bağlamı DIŞINDA kullanma — klinik kırmızı/amber anlam taşır */
+  .neon-critical { --glow: rgba(239, 68, 68, 0.5);   --neon: #ef4444; }
+  .neon-warning  { --glow: rgba(245, 158, 11, 0.5);  --neon: #f59e0b; }
+  .neon-stable   { --glow: rgba(16, 185, 129, 0.5);  --neon: #10b981; }
+
+  /* Neon metin — başlık/etiket için; vital sayılarında YASAK */
+  .neon-text {
+    color: var(--neon, #2dd4bf);
+    text-shadow: 0 0 10px var(--glow, rgba(45, 212, 191, 0.5));
+  }
+
+  /* Işıltılı kenar — panel/kart çerçevesi */
+  .neon-border {
+    border-color: color-mix(in srgb, var(--neon, #2dd4bf) 45%, transparent);
+  }
+
+  /* Neon panel — .panel'in parlayan kardeşi (global .panel'e DOKUNULMADI) */
+  .neon-panel {
+    @apply bg-ink-800/70 backdrop-blur-sm rounded-lg border;
+    border-color: color-mix(in srgb, var(--neon, #2dd4bf) 28%, theme("colors.ink.600"));
+    box-shadow: 0 0 14px -4px var(--glow, rgba(45, 212, 191, 0.35)),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+  }
+
+  /* Envanter/karar satırı — hover'da kenar + glow uyanır */
+  .neon-row {
+    @apply border border-ink-700 rounded-md transition-all duration-200;
+  }
+  .neon-row:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--neon, #2dd4bf) 55%, transparent);
+    box-shadow: 0 0 12px -3px var(--glow, rgba(45, 212, 191, 0.45));
+    transform: translateX(2px);
+  }
+
+  /* Aktif sekme — alt çizgi + glow */
+  .neon-tab-active {
+    color: var(--neon, #2dd4bf);
+    border-bottom: 2px solid var(--neon, #2dd4bf);
+    box-shadow: 0 8px 14px -10px var(--glow, rgba(45, 212, 191, 0.7));
+  }
+
+  /* Bekleme iskeleti — kayan ışık şeridi */
+  .skeleton-shimmer {
+    @apply bg-ink-800 rounded;
+    background-image: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--neon, #2dd4bf) 14%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+
+  /* Sahne çerçevesi — çok hafif iç vinyet + neon kenar çizgisi */
+  .neon-scene-frame {
+    box-shadow: inset 0 0 60px -30px var(--glow, rgba(45, 212, 191, 0.25)),
+      inset 0 0 0 1px color-mix(in srgb, var(--neon, #2dd4bf) 18%, transparent);
+  }
+}
+
+/* Erişilebilirlik: hareket azaltma tercihi — DEKORATİF animasyonlar durur.
+   Klinik alarm flash'ları (monitor-flash-*) bilinçli olarak KAPSANMAZ:
+   alarm görünürlüğü güvenlik sinyalidir, tercihle susturulmaz. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-glow-breathe,
+  .animate-shimmer,
+  .skeleton-shimmer,
+  .animate-scanline,
+  .animate-stagger-in,
+  .animate-icon-pop,
+  .animate-float {
+    animation: none !important;
+  }
+  .neon-row:hover:not(:disabled) {
+    transform: none;
+  }
 }
