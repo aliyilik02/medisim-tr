@@ -138,6 +138,11 @@ export const scenario_stemi = defineScenario({
   //   halted_by: tenecteplase (fibrinoliz) + opt_pci_transfer (primer PCI kararı —
   //   runner decision→provider köprüsü).
   // DRAFT — Ali Bey onayı + status değişikliği bekliyor.
+  // KASITLI (12 Tem 2026, ürün-sahibi kararı — DEĞİŞTİRME): faz süreleri
+  //   (after_sec 180×3 → klinik modda ~3 dk'da asistoli) hızlı gerçek-zamanlı
+  //   ilerleme olarak KORUNUYOR — acil tıp aciliyet baskısı pedagojik hedef.
+  //   Yavaşlatma önerisi değerlendirildi ve REDDEDİLDİ. Yeniden tartışmayı
+  //   sadece Ali Bey açar. Bkz. docs/YOL-HARITASI.md "Kilitli kararlar".
   // ─────────────────────────────────────────────
   deterioration: [
     {
