@@ -47,6 +47,13 @@ const PropsDebugPage = lazy(() =>
   import("@/pages/PropsDebugPage").then((m) => ({ default: m.PropsDebugPage }))
 );
 
+// Görselli vaka akışı (PİLOT) — rol + durum/aksiyon görselleri, temiz 2D bölüm.
+const VisualCasePlayPage = lazy(() =>
+  import("@/pages/VisualCasePlayPage").then((m) => ({
+    default: m.VisualCasePlayPage,
+  }))
+);
+
 // Açık-kaynak atıfları (CC-BY görünür atıf şartı) — public sayfa.
 const AttributionsPage = lazy(() =>
   import("@/pages/AttributionsPage").then((m) => ({ default: m.AttributionsPage }))
@@ -180,6 +187,25 @@ export function App() {
                   }
                 >
                   <ScenarioBedPlayPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Görselli vaka akışı — PİLOT (STEMI). Temiz 2D bölüm; /hasta'ya
+              dokunulmadı (3D bayrak orada duruyor, ayrı emeklilik turu). */}
+          <Route
+            path="/vaka/:id"
+            element={
+              <ProtectedRoute>
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen flex items-center justify-center text-ink-400 font-mono text-xs uppercase tracking-wider">
+                      Vaka yükleniyor…
+                    </div>
+                  }
+                >
+                  <VisualCasePlayPage />
                 </Suspense>
               </ProtectedRoute>
             }

@@ -21,6 +21,14 @@ const cardGlow = (color: string): CSSProperties =>
 // 3D Sanal Hasta demo route'ları (tam ekran R3F sahneleri).
 const PATIENT_DEMOS = [
   {
+    to: "/vaka/kardiyoloji-stemi-001?mod=egitim",
+    Icon: Stethoscope,
+    title: "Görselli Vaka Akışı",
+    body: "Rol üstlen, vakayı tıklayarak yürüt: hasta görseli kötüleşmeyle değişir, her müdahale kendi sahnesini tetikler. STEMI pilotu.",
+    tag: "PİLOT",
+    color: "#f472b6",
+  },
+  {
     to: "/senaryo-yatak",
     Icon: Stethoscope,
     title: "Yatak Başı Senaryo",
