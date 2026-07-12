@@ -385,7 +385,7 @@ export function ScenarioBedPlayPage() {
           Çıkış
         </Link>
         <div className="flex-1 min-w-0">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] neon-teal neon-text">
             MediSim TR · Yatak Başı Klinik Simülasyon
           </div>
           <h1 className="font-display text-base leading-tight truncate text-ink-50">{scenario.title}</h1>
@@ -482,8 +482,11 @@ export function ScenarioBedPlayPage() {
           </ErrorBoundary>
           {/* Küçük başucu monitörü — sol üst köşe overlay (eski CompactVitalsHUD yerine).
               Tam tasarım boyutunda render edilir, CSS scale ile küçültülür → orantı korunur, net kalır. */}
+          {/* Neon sahne çerçevesi — dekoratif, tıklama yutmaz (pointer-events-none).
+              Monitör İÇİNE glow girmez (IEC alarm ringi — DESIGN-TOKENS.md sınır 2). */}
+          <div className="absolute inset-0 pointer-events-none neon-teal neon-scene-frame" aria-hidden />
           <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.72)" }}>
-            <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50">
+            <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50 neon-teal shadow-glow-sm">
               <VitalMonitorScreen
                 vitals={patientVitalsToMonitor(
                   liveVitals,
@@ -514,7 +517,7 @@ export function ScenarioBedPlayPage() {
               type="button"
               onClick={() => setVentOpen(true)}
               data-testid="ventilator-open"
-              className="absolute bottom-4 right-4 px-3 py-1.5 rounded-md bg-ink-900/80 border border-ink-600 hover:border-brand/50 hover:text-brand-light backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-200 shadow-lg transition"
+              className="absolute bottom-4 right-4 px-3 py-1.5 rounded-md bg-ink-900/80 border border-ink-600 hover:border-brand/50 hover:text-brand-light hover:shadow-glow-sm neon-teal backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-200 shadow-lg transition-all duration-200"
             >
               <Wind className="w-3.5 h-3.5" />
               Ventilatör
@@ -526,7 +529,7 @@ export function ScenarioBedPlayPage() {
           {pedagogy.narration && narration && (
             <div
               data-testid="teaching-narration"
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[78%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-xl flex items-start gap-2.5"
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[78%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-glow-sm neon-teal animate-fade-in flex items-start gap-2.5"
             >
               <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-brand/30 flex items-center justify-center font-mono text-[10px] text-brand-light">
                 ⊕
@@ -544,9 +547,9 @@ export function ScenarioBedPlayPage() {
               onClick={() => setRightTab("vaka")}
               data-testid="tab-vaka"
               className={cn(
-                "flex-1 px-3 py-2 rounded text-xs font-medium transition flex items-center justify-center gap-1.5",
+                "flex-1 px-3 py-2 rounded text-xs font-medium transition flex items-center justify-center gap-1.5 neon-teal",
                 rightTab === "vaka"
-                  ? "bg-brand/15 text-brand-light border border-brand/40"
+                  ? "bg-brand/15 text-brand-light border border-brand/40 shadow-glow-xs"
                   : "text-ink-400 hover:text-ink-200 border border-transparent",
               )}
             >
@@ -558,9 +561,9 @@ export function ScenarioBedPlayPage() {
               onClick={() => setRightTab("diyalog")}
               data-testid="tab-diyalog"
               className={cn(
-                "flex-1 px-3 py-2 rounded text-xs font-medium transition flex items-center justify-center gap-1.5",
+                "flex-1 px-3 py-2 rounded text-xs font-medium transition flex items-center justify-center gap-1.5 neon-teal",
                 rightTab === "diyalog"
-                  ? "bg-brand/15 text-brand-light border border-brand/40"
+                  ? "bg-brand/15 text-brand-light border border-brand/40 shadow-glow-xs"
                   : "text-ink-400 hover:text-ink-200 border border-transparent",
               )}
             >

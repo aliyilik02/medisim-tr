@@ -5,6 +5,12 @@ import { cn } from "@/lib/cn";
 import { Pill, Wrench, Search, FlaskConical, Loader2, CheckCircle2, Image } from "lucide-react";
 import type { ActionRef, LabPanel, ImagingResult } from "@/engine";
 import type { LabStatus } from "@/hooks/useLabResults";
+import { GlowIcon } from "@/components/ui/GlowIcon";
+import {
+  EQUIPMENT_CATEGORY_ICONS,
+  GROUP_TONES,
+  MEDICATION_CATEGORY_ICONS,
+} from "@/components/ui/category-icons";
 
 type Tab = "ilac" | "ekipman" | "tetkik";
 
@@ -25,6 +31,52 @@ const MODALITY_LABEL: Record<string, string> = {
   xray: "Röntgen", ct: "BT", mri: "MRG", us: "USG",
   echo: "EKO", ekg: "EKG", other: "Görüntü",
 };
+
+/* Neon grup kimliği: sekme + satır ikonu + rozet aynı tonu konuşur
+   (ekipman=cyan, ilaç=pink, tetkik=violet — docs/DESIGN-TOKENS.md). */
+const TAB_TONE_CLASS: Record<Tab, string> = {
+  ekipman: "neon-cyan",
+  ilac: "neon-pink",
+  tetkik: "neon-violet",
+};
+
+/** Liste girişi kademeli parlar; uzun listede gecikme 240ms'de kapanır. */
+const staggerStyle = (i: number) => ({ animationDelay: `${Math.min(i * 28, 240)}ms` });
+
+function TabButton({
+  tone,
+  active,
+  onClick,
+  icon: Icon,
+  children,
+}: {
+  tone: string;
+  active: boolean;
+  onClick: () => void;
+  icon: typeof Wrench;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex-1 px-2 py-1.5 rounded text-xs font-medium transition-all duration-200",
+        "flex items-center justify-center gap-1.5",
+        tone,
+        active
+          ? "bg-ink-700/80 shadow-glow-xs"
+          : "text-ink-400 hover:text-ink-200",
+      )}
+      style={active ? { color: "var(--neon)" } : undefined}
+    >
+      <Icon
+        className="w-3 h-3"
+        style={active ? { filter: "drop-shadow(0 0 3px var(--glow))" } : undefined}
+      />
+      {children}
+    </button>
+  );
+}
 
 export function InventoryPanel({
   availableMedications,
@@ -87,46 +139,46 @@ export function InventoryPanel({
             Envanter
           </div>
           <div className="text-xs text-ink-400 font-mono">
-            {availableMedications.length} ilaç · {availableEquipment.length} ekipman
+            <span className="neon-pink" style={{ color: "var(--neon)" }}>
+              {availableMedications.length} ilaç
+            </span>
+            {" · "}
+            <span className="neon-cyan" style={{ color: "var(--neon)" }}>
+              {availableEquipment.length} ekipman
+            </span>
           </div>
         </div>
 
         <div className="flex gap-1 p-1 bg-ink-900 rounded-md">
-          <button
+          <TabButton
+            tone={TAB_TONE_CLASS.ekipman}
+            active={tab === "ekipman"}
             onClick={() => setTab("ekipman")}
-            className={cn(
-              "flex-1 px-2 py-1.5 rounded text-xs font-medium transition flex items-center justify-center gap-1",
-              tab === "ekipman" ? "bg-ink-700 text-ink-50" : "text-ink-400 hover:text-ink-200"
-            )}
+            icon={Wrench}
           >
-            <Wrench className="w-3 h-3" />
             Ekipman
-          </button>
-          <button
+          </TabButton>
+          <TabButton
+            tone={TAB_TONE_CLASS.ilac}
+            active={tab === "ilac"}
             onClick={() => setTab("ilac")}
-            className={cn(
-              "flex-1 px-2 py-1.5 rounded text-xs font-medium transition flex items-center justify-center gap-1",
-              tab === "ilac" ? "bg-ink-700 text-ink-50" : "text-ink-400 hover:text-ink-200"
-            )}
+            icon={Pill}
           >
-            <Pill className="w-3 h-3" />
             İlaç
-          </button>
+          </TabButton>
           {hasTetkik && (
-            <button
+            <TabButton
+              tone={TAB_TONE_CLASS.tetkik}
+              active={tab === "tetkik"}
               onClick={() => setTab("tetkik")}
-              className={cn(
-                "flex-1 px-2 py-1.5 rounded text-xs font-medium transition flex items-center justify-center gap-1",
-                tab === "tetkik" ? "bg-ink-700 text-ink-50" : "text-ink-400 hover:text-ink-200"
-              )}
+              icon={FlaskConical}
             >
-              <FlaskConical className="w-3 h-3" />
               Tetkik
-            </button>
+            </TabButton>
           )}
         </div>
 
-        <div className="mt-3 relative">
+        <div className={cn("mt-3 relative transition-all duration-200", TAB_TONE_CLASS[tab])}>
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
           <input
             type="text"
@@ -137,7 +189,9 @@ export function InventoryPanel({
             }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-ink-900 border border-ink-700 rounded text-sm focus:outline-none focus:border-brand/50 text-ink-100 placeholder:text-ink-500"
+            className="w-full pl-8 pr-3 py-1.5 bg-ink-900 border border-ink-700 rounded text-sm
+                       focus:outline-none focus:border-[color:var(--neon)] focus:shadow-glow-xs
+                       text-ink-100 placeholder:text-ink-500 transition-all duration-200"
           />
         </div>
       </div>
@@ -145,39 +199,71 @@ export function InventoryPanel({
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {/* İlaç tab */}
         {tab === "ilac" &&
-          medsFiltered.map((m) => (
+          medsFiltered.map((m, i) => (
             <button
               key={m.id}
               disabled={disabled}
               onClick={() =>
                 onAction({ type: "give_medication", target_id: m.id, dose: m.default_dose })
               }
-              className="w-full text-left p-3 rounded-md bg-ink-900/50 hover:bg-ink-700 border border-ink-700/50 hover:border-brand/30 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className={cn(
+                "w-full text-left p-2.5 rounded-md bg-ink-900/50 hover:bg-ink-800",
+                "neon-row animate-stagger-in disabled:opacity-40 disabled:cursor-not-allowed",
+                TAB_TONE_CLASS.ilac,
+              )}
+              style={staggerStyle(i)}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="text-sm text-ink-100 font-medium">{m.name_tr}</div>
-                  {m.default_dose && (
-                    <div className="text-xs font-mono text-ink-400 mt-0.5">{m.default_dose}</div>
-                  )}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <GlowIcon icon={MEDICATION_CATEGORY_ICONS[m.category]} tone={GROUP_TONES.ilac} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-ink-100 font-medium truncate">{m.name_tr}</div>
+                    {m.default_dose && (
+                      <div className="text-xs font-mono text-ink-400 mt-0.5">{m.default_dose}</div>
+                    )}
+                  </div>
                 </div>
-                <span className="tag text-[9px]">{m.category}</span>
+                <span
+                  className="tag text-[9px] bg-transparent"
+                  style={{
+                    color: "var(--neon)",
+                    borderColor: "color-mix(in srgb, var(--neon) 35%, transparent)",
+                  }}
+                >
+                  {m.category}
+                </span>
               </div>
             </button>
           ))}
 
         {/* Ekipman tab */}
         {tab === "ekipman" &&
-          eqFiltered.map((e) => (
+          eqFiltered.map((e, i) => (
             <button
               key={e.id}
               disabled={disabled}
               onClick={() => onAction({ type: "use_equipment", target_id: e.id })}
-              className="w-full text-left p-3 rounded-md bg-ink-900/50 hover:bg-ink-700 border border-ink-700/50 hover:border-brand/30 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className={cn(
+                "w-full text-left p-2.5 rounded-md bg-ink-900/50 hover:bg-ink-800",
+                "neon-row animate-stagger-in disabled:opacity-40 disabled:cursor-not-allowed",
+                TAB_TONE_CLASS.ekipman,
+              )}
+              style={staggerStyle(i)}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="text-sm text-ink-100 font-medium">{e.name_tr}</div>
-                <span className="tag text-[9px]">{e.category}</span>
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <GlowIcon icon={EQUIPMENT_CATEGORY_ICONS[e.category]} tone={GROUP_TONES.ekipman} size="sm" />
+                  <div className="text-sm text-ink-100 font-medium truncate">{e.name_tr}</div>
+                </div>
+                <span
+                  className="tag text-[9px] bg-transparent"
+                  style={{
+                    color: "var(--neon)",
+                    borderColor: "color-mix(in srgb, var(--neon) 35%, transparent)",
+                  }}
+                >
+                  {e.category}
+                </span>
               </div>
             </button>
           ))}
@@ -191,7 +277,7 @@ export function InventoryPanel({
                 <div className="font-mono text-[9px] uppercase tracking-wider text-ink-500 px-1 mb-1.5">
                   Laboratuvar
                 </div>
-                {labPanelEntries.map(([id, panel]) => {
+                {labPanelEntries.map(([id, panel], i) => {
                   const status = getLabStatus ? getLabStatus(id) : "idle";
                   return (
                     <LabPanelRow
@@ -201,6 +287,7 @@ export function InventoryPanel({
                       disabled={disabled}
                       onOrder={() => onOrderLab?.(id)}
                       onView={() => onViewLab?.(id)}
+                      index={i}
                     />
                   );
                 })}
@@ -213,19 +300,30 @@ export function InventoryPanel({
                 <div className="font-mono text-[9px] uppercase tracking-wider text-ink-500 px-1 mb-1.5">
                   Görüntüleme
                 </div>
-                {imagingFiltered.map((r) => (
+                {imagingFiltered.map((r, i) => (
                   <button
                     key={r.id}
                     disabled={disabled}
                     onClick={() => onViewImaging?.(r.id)}
-                    className="w-full text-left p-3 rounded-md bg-ink-900/50 hover:bg-ink-700 border border-ink-700/50 hover:border-cyan-500/30 transition disabled:opacity-40 disabled:cursor-not-allowed mb-1"
+                    className={cn(
+                      "w-full text-left p-2.5 rounded-md bg-ink-900/50 hover:bg-ink-800 mb-1",
+                      "neon-row animate-stagger-in disabled:opacity-40 disabled:cursor-not-allowed",
+                      TAB_TONE_CLASS.tetkik,
+                    )}
+                    style={staggerStyle(labPanelEntries.length + i)}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Image className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                      <div className="flex items-center gap-2.5">
+                        <GlowIcon icon={Image} tone={GROUP_TONES.tetkik} size="sm" />
                         <div className="text-sm text-ink-100 font-medium">{r.name_tr}</div>
                       </div>
-                      <span className="tag text-[9px] text-cyan-400 border-cyan-700/40">
+                      <span
+                        className="tag text-[9px] bg-transparent"
+                        style={{
+                          color: "var(--neon)",
+                          borderColor: "color-mix(in srgb, var(--neon) 35%, transparent)",
+                        }}
+                      >
                         {MODALITY_LABEL[r.modality] ?? r.modality}
                       </span>
                     </div>
@@ -257,28 +355,32 @@ function LabPanelRow({
   disabled,
   onOrder,
   onView,
+  index = 0,
 }: {
   panel: LabPanel;
   status: LabStatus;
   disabled?: boolean;
   onOrder: () => void;
   onView: () => void;
+  index?: number;
 }) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-2 p-3 rounded-md border mb-1 transition",
+        "flex items-center justify-between gap-2 p-2.5 rounded-md border mb-1",
+        "neon-violet animate-stagger-in transition-all duration-200",
         status === "ready"
-          ? "bg-brand/5 border-brand/30"
+          ? "bg-ink-900/60 neon-border shadow-glow-xs"
           : "bg-ink-900/50 border-ink-700/50"
       )}
+      style={staggerStyle(index)}
     >
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <FlaskConical
-          className={cn(
-            "w-3.5 h-3.5 flex-shrink-0",
-            status === "ready" ? "text-brand-light" : "text-ink-400"
-          )}
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <GlowIcon
+          icon={FlaskConical}
+          tone="violet"
+          size="sm"
+          className={cn(status !== "ready" && status !== "pending" && "opacity-60")}
         />
         <span className={cn("text-sm font-medium truncate",
           status === "ready" ? "text-ink-50" : "text-ink-200"
@@ -291,16 +393,20 @@ function LabPanelRow({
         <button
           disabled={disabled}
           onClick={onOrder}
-          className="text-xs font-mono px-2.5 py-1 rounded border border-ink-600 text-ink-300 hover:border-brand/50 hover:text-brand-light transition disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+          className="text-xs font-mono px-2.5 py-1 rounded border border-ink-600 text-ink-300
+                     hover:border-[color:var(--neon)] hover:text-[color:var(--neon)] hover:shadow-glow-xs
+                     transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
         >
           İste
         </button>
       )}
 
       {status === "pending" && (
-        <span className="flex items-center gap-1 text-xs font-mono text-clinical-warning flex-shrink-0">
+        <span className="flex items-center gap-2 text-xs font-mono text-clinical-warning flex-shrink-0">
           <Loader2 className="w-3 h-3 animate-spin" />
           Bekleniyor
+          {/* Kayan ışık şeridi — sonuç yolda hissi */}
+          <span className="skeleton-shimmer h-1 w-12 rounded-full" aria-hidden />
         </span>
       )}
 
@@ -308,7 +414,10 @@ function LabPanelRow({
         <button
           disabled={disabled}
           onClick={onView}
-          className="flex items-center gap-1 text-xs font-mono px-2.5 py-1 rounded border border-brand/40 text-brand-light hover:bg-brand/10 transition disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+          className="flex items-center gap-1 text-xs font-mono px-2.5 py-1 rounded border
+                     border-[color:var(--neon)] text-[color:var(--neon)] shadow-glow-xs
+                     hover:bg-ink-800 animate-glow-breathe
+                     transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
         >
           <CheckCircle2 className="w-3 h-3" />
           Görüntüle

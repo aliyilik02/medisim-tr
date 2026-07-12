@@ -47,10 +47,10 @@ export function StepDisplay({
   };
 
   return (
-    <div className="panel p-6 md:p-7">
+    <div className="neon-panel neon-teal p-6 md:p-7 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
+        <div className="font-mono text-[10px] uppercase tracking-[0.2em] neon-text">
           /{" "}
           {step.kind === "action"
             ? "Aksiyon Adımı"
@@ -96,7 +96,7 @@ export function StepDisplay({
           {canContinue && (
             <button
               onClick={onActionStepContinue}
-              className="btn-primary w-full justify-center"
+              className="btn-primary w-full justify-center shadow-glow-sm animate-glow-breathe"
             >
               Sonraki Adıma Geç
               <ChevronRight className="w-4 h-4" />
@@ -197,7 +197,7 @@ function DecisionSingle({
 
   return (
     <div className="space-y-3">
-      {options.map((opt) => {
+      {options.map((opt, i) => {
         const isAnswered = decisionAnswered?.optionId === opt.id;
         return (
           <button
@@ -205,18 +205,21 @@ function DecisionSingle({
             data-testid={`decision-${opt.id}`}
             onClick={() => !showResult && onSelect?.(opt)}
             disabled={showResult}
+            style={{ animationDelay: `${Math.min(i * 45, 270)}ms` }}
             className={cn(
-              "w-full text-left p-4 rounded-md border transition",
+              "w-full text-left p-4 rounded-md border transition animate-stagger-in",
+              // Klinik sonuç renkleri AYNEN korunur; glow yalnız anlamı
+              // pekiştirir (doğru=yeşil ışıma, yanlış=kırmızı) — dekor değil.
               !showResult &&
-                "bg-ink-900/50 hover:bg-ink-700 border-ink-700 hover:border-brand/40",
+                "neon-teal bg-ink-900/50 hover:bg-ink-800 border-ink-700 neon-row",
               showResult &&
                 isAnswered &&
                 opt.correct &&
-                "bg-clinical-stable/10 border-clinical-stable/40",
+                "neon-stable bg-clinical-stable/10 border-clinical-stable/40 shadow-glow-xs",
               showResult &&
                 isAnswered &&
                 !opt.correct &&
-                "bg-clinical-critical/10 border-clinical-critical/40",
+                "neon-critical bg-clinical-critical/10 border-clinical-critical/40 shadow-glow-xs",
               showResult && !isAnswered && "opacity-40 border-ink-700"
             )}
           >
@@ -288,15 +291,15 @@ function DecisionMulti({
 
         const borderCls = isAnswered
           ? wasSelected && opt.correct
-            ? "border-clinical-stable/40 bg-clinical-stable/10"
+            ? "neon-stable border-clinical-stable/40 bg-clinical-stable/10 shadow-glow-xs"
             : wasSelected && !opt.correct
-            ? "border-clinical-critical/40 bg-clinical-critical/10"
+            ? "neon-critical border-clinical-critical/40 bg-clinical-critical/10 shadow-glow-xs"
             : !wasSelected && opt.correct
             ? "border-clinical-warning/30 bg-clinical-warning/5"
             : "border-ink-700 opacity-30"
           : isChecked
-          ? "border-brand/50 bg-brand/5"
-          : "border-ink-700 bg-ink-900/50 hover:border-ink-500";
+          ? "neon-teal border-brand/50 bg-brand/5 shadow-glow-xs"
+          : "neon-teal border-ink-700 bg-ink-900/50 hover:border-ink-500 neon-row";
 
         return (
           <label
@@ -348,7 +351,10 @@ function DecisionMulti({
           data-testid="decision-confirm"
           onClick={onConfirm}
           disabled={multiSelected.size === 0}
-          className="btn-primary w-full justify-center mt-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          className={cn(
+            "btn-primary w-full justify-center mt-2 disabled:opacity-40 disabled:cursor-not-allowed",
+            multiSelected.size > 0 && "shadow-glow-sm animate-glow-breathe",
+          )}
         >
           <CheckSquare className="w-4 h-4" />
           Seçimi Onayla{multiSelected.size > 0 ? ` (${multiSelected.size})` : ""}
