@@ -6,17 +6,18 @@
 // değerleri 5 durumluk merdivene indirger. Saf fonksiyon — React import YOK,
 // %100 vitest edilebilir (3D shader'da edilemiyordu).
 //
-// Eşik titremesi (SpO2 91↔92 sınırında görsel zıplaması) çift-eşikle çözülür:
+// TASARIM: tek boyutlu ağırlıklı ağırlık skoru (severity). Tek-kanal eşik
+// (örn. "pallor ≥ X → şok") STEMI'de ÇALIŞMAZ: authored floor'lar pallor'u
+// arrest'e dek 0.45'in altında tutar (SBP 148'den başlar, faz floor'ları
+// 100/85/65) — kanıt: motor-entegrasyon testi ilk kalibrasyonda
+// baseline→siyanoz→arrest verdi, sok/derin-sok hiç görünmedi. Skor tüm
+// kanalları toplar → her faz ayrışır (gerçek tedavisiz seyirde ~0.25 /
+// 0.77 / 1.2 / 1.8 / arrest).
+//
+// Eşik titremesi (sınır değerde görsel zıplaması) çift-eşikle çözülür:
 // merdivende YUKARI çıkmak enter eşiği, AŞAĞI inmek exit eşiği ister
 // (animation-director histerezis deseninin ayrık-durum karşılığı; minHold
 // süresi tüketici bileşende — bu modül zamansız/saf kalır).
-//
-// Eşik kalibrasyonu STEMI tedavisiz seyrine göre (stemi.ts deterioration):
-//   iskemi     → diaphoresis ~0.7, gerisi ~0        → baseline (görsel 01)
-//   şok        → pallor ~0.53, cyanosis ~0.33       → sok (02)
-//   kötüleşme  → cyanosis erken doyar, mottled geç  → siyanoz (03) → derin-sok (04)
-//   arrest     → breath_stopped → breathingRate 0   → arrest (05, kesin sinyal)
-// Reperfüzyon recovery_trends değerleri geri çeker → exit eşiklerinden iner.
 
 import type { VisualState } from "./clinicalVisualMapping";
 
@@ -39,18 +40,41 @@ export const STAGE_ORDER: readonly Patient2DStage[] = [
 
 export const stageRank = (s: Patient2DStage): number => STAGE_ORDER.indexOf(s);
 
-// Çift eşik: enter (yukarı geçiş) / exit (aşağı dönüş). exit < enter →
-// sınırda salınan vital görseli zıplatmaz.
-const T = {
-  sok: { pallorEnter: 0.45, pallorExit: 0.32 },
-  siyanoz: { cyanosisEnter: 0.55, cyanosisExit: 0.4 },
-  derinSok: {
-    mottledEnter: 0.75,
-    mottledExit: 0.6,
-    pallorEnter: 0.8,
-    pallorExit: 0.65,
-  },
+// Kanal ağırlıkları — hipoksi (siyanoz) baş belirleyici, perfüzyon kaybı
+// (pallor/mottled) onu izler, terleme zayıf sinyal (ağrıyla da yükselir,
+// tek başına durum değiştirmemeli), bilinç kaybı destekleyici.
+const W = {
+  cyanosis: 1.0,
+  pallor: 0.8,
+  mottled: 0.8,
+  diaphoresis: 0.35,
+  unconscious: 0.5,
 } as const;
+
+/** Toplam klinik ağırlık skoru (0 ≈ sağlıklı, ~2+ ≈ periarrest). */
+export function severityScore(v: VisualState): number {
+  return (
+    W.cyanosis * v.cyanosis +
+    W.pallor * v.pallor +
+    W.mottled * v.mottled +
+    W.diaphoresis * v.diaphoresis +
+    W.unconscious * (1 - v.consciousness)
+  );
+}
+
+// Skor bantları (enter/exit) — STEMI tedavisiz seyrine kalibre (motor-
+// entegrasyon testiyle kilitli): iskemi ~0.25 | şok fazı 0.44→0.77 |
+// kötüleşme girişte ~1.2 | geç kötüleşme ~1.8. exit < enter → sınırda
+// salınan vital görseli zıplatmaz.
+const BANDS: ReadonlyArray<{
+  stage: Patient2DStage;
+  enter: number;
+  exit: number;
+}> = [
+  { stage: "derin-sok", enter: 1.7, exit: 1.5 },
+  { stage: "siyanoz", enter: 1.1, exit: 0.9 },
+  { stage: "sok", enter: 0.6, exit: 0.45 },
+];
 
 /**
  * Sürekli VisualState → ayrık 2D durum. `current` histerezis referansı:
@@ -59,7 +83,7 @@ const T = {
  *
  * Arrest istisnası: breathingRate === 0 yalnız faz sinyalindeki
  * breath_stopped'tan gelir (applyPhaseVisual) → histerezissiz anında arrest;
- * nefes geri döndüğünde (recovery) anında çıkılır.
+ * nefes geri döndüğünde (recovery) skora göre çözülür.
  */
 export function resolveStage2D(
   v: VisualState,
@@ -67,23 +91,13 @@ export function resolveStage2D(
 ): Patient2DStage {
   if (v.breathingRate <= 0) return "arrest";
 
+  const score = severityScore(v);
   const rank = current ? stageRank(current) : -1;
-  // Bir basamağın eşiği: hâlihazırda o basamakta/üstündeysek exit (kalma
-  // koşulu gevşek), değilsek enter (giriş koşulu sıkı).
-  const th = (stage: Patient2DStage, enter: number, exit: number): number =>
-    rank >= stageRank(stage) ? exit : enter;
-
-  if (
-    v.mottled >= th("derin-sok", T.derinSok.mottledEnter, T.derinSok.mottledExit) &&
-    v.pallor >= th("derin-sok", T.derinSok.pallorEnter, T.derinSok.pallorExit)
-  ) {
-    return "derin-sok";
-  }
-  if (v.cyanosis >= th("siyanoz", T.siyanoz.cyanosisEnter, T.siyanoz.cyanosisExit)) {
-    return "siyanoz";
-  }
-  if (v.pallor >= th("sok", T.sok.pallorEnter, T.sok.pallorExit)) {
-    return "sok";
+  for (const band of BANDS) {
+    // Hâlihazırda bu basamakta/üstündeysek exit (kalma koşulu gevşek),
+    // değilsek enter (giriş koşulu sıkı).
+    const threshold = rank >= stageRank(band.stage) ? band.exit : band.enter;
+    if (score >= threshold) return band.stage;
   }
   return "baseline";
 }
