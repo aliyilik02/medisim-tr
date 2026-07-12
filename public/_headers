@@ -1,0 +1,6 @@
+# draft_gizli: noindex-aktif — GEÇİCİ (12 Tem 2026, Ali Bey kararı):
+# yarım ürün arama motorlarına kapalı. Canlı lansmanda bu dosyadaki
+# X-Robots-Tag + index.html robots meta + robots.txt ÜÇÜ BİRLİKTE kaldırılacak.
+# Bkz. docs/YOL-HARITASI.md.
+/*
+  X-Robots-Tag: noindex, nofollow

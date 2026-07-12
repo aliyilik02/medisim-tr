@@ -4,7 +4,7 @@
 > Diğer durum dosyaları (`DURUM-BRIEF.md`, arşivdekiler) anlık fotoğraftır, harita değildir.
 > Eski v1 harita: `docs/arsiv/YOL-HARITASI-v1-2026-05.md` (20 Mayıs, tamamı aşıldı).
 
-Son güncelleme: **5 Temmuz 2026** (Fable 5 tam-proje denetimi sonrası: motor + 3D + dokümantasyon, 3 paralel derin tarama)
+Son güncelleme: **12 Temmuz 2026** (2D pivot pilotu canlı + kilitli kararlar bölümü eklendi)
 
 ---
 
@@ -29,6 +29,18 @@ Son güncelleme: **5 Temmuz 2026** (Fable 5 tam-proje denetimi sonrası: motor +
 2. **Model lisansı:** `patient-mimikli.glb` Daz kökenli — lisans netleşmeden commit yok; kalıcı çözüm MPFB2 (CC0) yeniden üretim.
 3. **Push kararı:** ~50 lokal commit `feat/backend-cf-worker`'da ("en nihai halde pushlarız").
 4. **Öncelik seçimi:** aşağıdaki A–E hatlarından hangisi önce (öneri: A+B paralel, bkz. gerekçe).
+
+## 📌 Kilitli kararlar (ürün-sahibi — DEĞİŞTİRME)
+
+1. **STEMI faz süreleri kasıtlı gerçekçi/hızlı** (12 Tem 2026): klinik modda ~3 dk'da
+   asistoliye ilerleme GERÇEKÇİ BASKI olarak korunuyor (acil tıp aciliyet hissi).
+   Yavaşlatma önerisi değerlendirildi ve REDDEDİLDİ. `stemi.ts` deterioration
+   `after_sec` değerlerine dokunma; yeniden tartışmayı sadece Ali Bey açar.
+2. **`draft_gizli: noindex-aktif`** (12 Tem 2026): yarım ürün arama motorlarına
+   kapalı — 3 katman (index.html robots meta + `public/_headers` X-Robots-Tag +
+   `public/robots.txt` Disallow). GEÇİCİ: canlı lansmanda ÜÇÜ BİRLİKTE kaldırılacak
+   (lansman kontrol listesine ekle). Gerekçe: medisim.pages.dev "SimuleHasta"
+   olarak indekslenmişti, MedCase rakip gözü açık.
 
 ---
 
