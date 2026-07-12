@@ -60,6 +60,11 @@ export function App() {
     void checkAuth();
   }, [checkAuth]);
 
+  // Sayfa geçişinde başa dön — fade-in yeni sayfanın tepesinden başlasın.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   const isLoginPage = location.pathname.startsWith("/login");
   const isPlayPage = location.pathname.includes("/oyna/");
   const isEditorPage = location.pathname.startsWith("/senaryo-editor");
@@ -75,6 +80,12 @@ export function App() {
         {/* App-level hata siperi (R1) — route içeriği çökerse beyaz ekran
             yerine TR mesaj + yenile. Header/nav ayakta kalır. */}
         <ErrorBoundary>
+        {/* Sayfa geçiş animasyonu: pathname değişince sarmalayıcı remount olur,
+            .page-in fade+slide oynar (0.32s; reduced-motion'da kapalı).
+            NOT: key=pathname aynı route'ta param değişimini de remount eder
+            (/hasta/A→/hasta/B) — mevcut akışta sayfalar arası geçiş zaten
+            liste üzerinden, davranış değişmez. Query değişimi (?visual=) etkilenmez. */}
+        <div key={location.pathname} className="page-in">
         <Routes>
           {/* Açık (public) — landing + giriş */}
           <Route path="/" element={<HomePage />} />
@@ -214,6 +225,7 @@ export function App() {
           <Route path="/monitor-demo" element={<Navigate to="/senaryolar" replace />} />
           <Route path="/ventilator-demo" element={<Navigate to="/senaryolar" replace />} />
         </Routes>
+        </div>
         </ErrorBoundary>
       </main>
       {!immersive && !isLoginPage && <Footer />}
