@@ -76,3 +76,6 @@ graphify-out/
 public/3d/patient-mimikli.glb
 public/3d/patient-mimikli.tsx
 public/3d/export_glb.py
+
+# UI pilot öncesi/sonrası ekran görüntüleri (yerel değerlendirme)
+.ui-pilot/
