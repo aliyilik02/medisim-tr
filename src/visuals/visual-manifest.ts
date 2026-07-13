@@ -54,6 +54,13 @@ export interface MediaAsset {
 
 export interface VisualSet {
   durum: Record<Patient2DStage, MediaAsset>;
+  /** Maskeli durum varyantları (D kararı, 13 Tem 2026): oksijen maskesi TEK
+      görsel-kalıcı iz — takılınca durum karesi bu varyanttan seçilir, varyant
+      yoksa base'e zarif düşüş. ARREST VARYANTI ÜRETİLMEZ (klinik: arrestte
+      basit maske çıkar, BVM/entübasyona geçilir — resolveDurumAsset bastırır).
+      Diğer izler (IV/EKG/monitör) görsel değil, UI çip katmanında taşınır
+      (persistent-traces.ts). */
+  durumMaske?: Partial<Record<Patient2DStage, MediaAsset>>;
   /** Kısmi — eksik aksiyon görseli zarif düşer (yalnız banner gösterilir). */
   aksiyon: Partial<Record<AksiyonKey, MediaAsset>>;
 }
@@ -83,10 +90,34 @@ const HASTANE_ERISKIN_E: VisualSet = {
       alt: "Bilinçsiz hasta, kardiyak arrest",
     },
   },
-  // Aksiyon kareleri Higgsfield'da üretilecek (GORSEL-IHTIYAC-LISTESI.md).
-  // Üretilen her kare buraya eklenir; eksikken CaseStage yalnız aksiyon
-  // banner'ı gösterir (görsel akış kırılmaz).
-  aksiyon: {},
+  // Maske varyantları (durum-XX-maske.png) Higgsfield'da üretilecek —
+  // her durumun KENDİ karesi image-to-image girdisi olur (poz korunur).
+  // Üretilince buraya eklenir; o güne dek base karelere zarif düşüş.
+  durumMaske: {},
+  // P1 kanıt seti (5/5, 13 Tem 2026). Kalan 8 kare (P2/P3) üretildikçe
+  // eklenir; eksikken CaseStage yalnız aksiyon banner'ı gösterir.
+  aksiyon: {
+    "ekg-takma": {
+      src: "/patients/hastane-eriskin-e/aksiyon-ekg-takma.png",
+      alt: "Göğse EKG elektrotları yapıştırılıyor",
+    },
+    "iv-takma": {
+      src: "/patients/hastane-eriskin-e/aksiyon-iv-takma.png",
+      alt: "Kola IV kateter yerleştiriliyor, turnike bağlı",
+    },
+    "ilac-po": {
+      src: "/patients/hastane-eriskin-e/aksiyon-ilac-po.png",
+      alt: "Hasta tablet alıyor, su bardağı uzatılmış",
+    },
+    "ilac-iv": {
+      src: "/patients/hastane-eriskin-e/aksiyon-ilac-iv.png",
+      alt: "IV hattına enjektörle ilaç uygulanıyor",
+    },
+    "oksijen-maske": {
+      src: "/patients/hastane-eriskin-e/aksiyon-oksijen-maske.png",
+      alt: "Yüze oksijen maskesi yerleştiriliyor",
+    },
+  },
 };
 
 export const VISUAL_MANIFEST: Partial<Record<SetKey, VisualSet>> = {

@@ -26,6 +26,10 @@ describe("manifest — varlık kapısı", () => {
         expect(inPublic(asset.src), `${key}/${stage}: ${asset.src}`).toBe(true);
         if (asset.video) expect(inPublic(asset.video), asset.video).toBe(true);
       }
+      for (const [stage, asset] of Object.entries(set.durumMaske ?? {})) {
+        expect(inPublic(asset.src), `${key}/maske-${stage}: ${asset.src}`).toBe(true);
+        if (asset.video) expect(inPublic(asset.video), asset.video).toBe(true);
+      }
       for (const [ak, asset] of Object.entries(set.aksiyon)) {
         expect(inPublic(asset.src), `${key}/${ak}: ${asset.src}`).toBe(true);
         if (asset.video) expect(inPublic(asset.video), asset.video).toBe(true);
@@ -37,6 +41,19 @@ describe("manifest — varlık kapısı", () => {
     const set = VISUAL_MANIFEST["hastane-eriskin-e"];
     expect(set).toBeDefined();
     expect(Object.keys(set!.durum)).toHaveLength(5);
+  });
+
+  test("hastane-eriskin-e P1 kanıt seti (5 aksiyon karesi) manifest'te", () => {
+    const aksiyon = VISUAL_MANIFEST["hastane-eriskin-e"]!.aksiyon;
+    for (const key of ["ekg-takma", "iv-takma", "ilac-po", "ilac-iv", "oksijen-maske"] as const) {
+      expect(aksiyon[key], `P1 eksik: ${key}`).toBeDefined();
+    }
+  });
+
+  test("maskeli ARREST varyantı hiçbir sette yok (klinik: arrestte BVM)", () => {
+    for (const [key, set] of Object.entries(VISUAL_MANIFEST)) {
+      expect(set.durumMaske?.arrest, `${key}: maskeli arrest karesi klinik saçma`).toBeUndefined();
+    }
   });
 });
 

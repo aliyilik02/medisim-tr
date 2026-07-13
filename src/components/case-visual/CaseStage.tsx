@@ -1,13 +1,17 @@
 // ============================================================
 // CaseStage — görselli vaka sahnesi (durum + aksiyon ara-sahnesi)
 // ============================================================
-// İki katman:
+// Üç katman (D kararı, 13 Tem 2026):
 //   1. DURUM karesi — VisualState'ten (severity skoru, çift-eşik + minHold;
 //      Patient2DVisual ile aynı desen). 5 kare stack, crossfade.
+//      Kalıcı izlere göre varyant: maske takılıysa maskeli kare
+//      (resolveDurumAsset — varyant yoksa base'e zarif düşüş).
 //   2. AKSİYON ara-sahnesi — aksiyon yapılınca ~4sn tam kare gösterilir,
 //      sonra durum karesine dönülür. Son-kazanır (spam kuyruğu yok).
 //      Kare manifest'te yoksa yalnız banner gösterilir (zarif düşüş).
 //      ARREST İSTİSNASI: arrest karesi aksiyon karesiyle EZİLMEZ.
+//   3. TAKILI EKİPMAN çip şeridi — kalıcı izlerin semantiği (maske dahil
+//      tümü listelenir; görsel varyantı olmayan izler yalnız burada yaşar).
 // Motion-hazır: MediaAsset.video varsa <video> döngüsü, yoksa <img>.
 
 import { useEffect, useRef, useState } from "react";
@@ -19,8 +23,14 @@ import {
 } from "@/clinical/visual2d-mapper";
 import type { MediaAsset, VisualSet } from "@/visuals/visual-manifest";
 import type { ResolvedActionVisual } from "@/visuals/action-visuals";
+import {
+  resolveDurumAsset,
+  TRACE_LABELS,
+  type TraceKey,
+} from "@/visuals/persistent-traces";
 import { GlowIcon } from "@/components/ui/GlowIcon";
-import { Activity } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Activity, Gauge, HeartPulse, Syringe, Wind } from "lucide-react";
 
 const MIN_HOLD_MS = 2500; // durum eşik çırpınma siperi
 const FADE_MS = 450; // crossfade
@@ -39,10 +49,21 @@ export interface ActionCue extends ResolvedActionVisual {
   nonce: number;
 }
 
+/** Çip şeridi ikonları — TRACE_LABELS ile birebir anahtar. */
+const TRACE_ICONS: Record<TraceKey, LucideIcon> = {
+  maske: Wind,
+  iv: Syringe,
+  ekg: Activity,
+  monitor: HeartPulse,
+  tansiyon: Gauge,
+};
+
 interface CaseStageProps {
   visualState: VisualState;
   set: VisualSet;
   actionCue: ActionCue | null;
+  /** Kalıcı izler — takılış sırasıyla (persistent-traces.addTrace). */
+  traces?: readonly TraceKey[];
 }
 
 /** img/video seçici — motion turu geldiğinde video alanı otomatik devreye girer. */
@@ -71,7 +92,7 @@ function Media({ asset, visible }: { asset: MediaAsset; visible: boolean }) {
   return <img src={asset.src} alt="" draggable={false} {...common} />;
 }
 
-export function CaseStage({ visualState, set, actionCue }: CaseStageProps) {
+export function CaseStage({ visualState, set, actionCue, traces = [] }: CaseStageProps) {
   // ── Durum katmanı (Patient2DVisual deseni: mapper saf, zaman ayağı burada)
   const [stage, setStage] = useState<Patient2DStage>(() =>
     resolveStage2D(visualState),
@@ -129,7 +150,11 @@ export function CaseStage({ visualState, set, actionCue }: CaseStageProps) {
         }
       >
         {STAGE_ORDER.map((s) => (
-          <Media key={s} asset={set.durum[s]} visible={s === stage && !actionAsset} />
+          <Media
+            key={s}
+            asset={resolveDurumAsset(set, s, traces)}
+            visible={s === stage && !actionAsset}
+          />
         ))}
         {/* Aksiyon karesi — durumun üstünde tam kare crossfade */}
         {actionAsset && <Media asset={actionAsset} visible />}
@@ -138,6 +163,28 @@ export function CaseStage({ visualState, set, actionCue }: CaseStageProps) {
       {/* Vinyet — klinik monitör estetiği */}
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-ink-950/60 via-transparent to-ink-950/30" />
       <div className="absolute inset-0 pointer-events-none neon-teal neon-scene-frame" aria-hidden />
+
+      {/* Takılı ekipman çip şeridi — kalıcı izler (ekipman=cyan, tasarım dili) */}
+      {traces.length > 0 && (
+        <div
+          data-testid="trace-chips"
+          className="absolute top-3 right-3 flex flex-col items-end gap-1.5"
+          aria-label="Takılı ekipman"
+        >
+          {traces.map((t) => (
+            <span
+              key={t}
+              data-trace={t}
+              className="flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-md bg-ink-900/80 border backdrop-blur-md neon-cyan neon-border animate-fade-in"
+            >
+              <GlowIcon icon={TRACE_ICONS[t]} tone="cyan" size="sm" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-100">
+                {TRACE_LABELS[t]}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Aksiyon banner'ı — kare olsun olmasın müdahale hissi verir */}
       {activeCue && (

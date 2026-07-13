@@ -23,6 +23,7 @@ import { getPedagogy, PEDAGOGY_ORDER } from "@/engine";
 import type { ActionRef, PlayMode } from "@/engine";
 import { resolveVisualSet } from "@/visuals/visual-manifest";
 import { resolveActionVisual } from "@/visuals/action-visuals";
+import { addTrace, traceForAction, type TraceKey } from "@/visuals/persistent-traces";
 import { CaseStage, type ActionCue } from "@/components/case-visual/CaseStage";
 import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
 import { patientVitalsToMonitor } from "@/components/monitor/adapter";
@@ -107,9 +108,16 @@ function CaseRunner({
   // Aksiyon ara-sahnesi tetiği — motor çağrısından ÖNCE görsel cue düşer.
   const [actionCue, setActionCue] = useState<ActionCue | null>(null);
   const nonceRef = useRef(0);
+  // Kalıcı izler (D kararı): maske/IV/EKG… takılınca hastada KALIR —
+  // durum karesi varyantı + çip şeridi bundan beslenir. Fizik gerçeği:
+  // motor aksiyonu puanca reddetse de ekipman hastaya takılmıştır.
+  const [traces, setTraces] = useState<readonly TraceKey[]>([]);
   const cueFor = (action: ActionRef) => {
     const resolved = resolveActionVisual(action);
-    if (resolved) setActionCue({ ...resolved, nonce: ++nonceRef.current });
+    if (!resolved) return;
+    setActionCue({ ...resolved, nonce: ++nonceRef.current });
+    const trace = traceForAction(resolved.key);
+    if (trace) setTraces((prev) => addTrace(prev, trace));
   };
 
   const onAction = (action: ActionRef) => {
@@ -118,7 +126,18 @@ function CaseRunner({
   };
 
   if (session?.finished) {
-    return <DebriefScreen scenario={scenario} session={session} onRestart={runner.restart} />;
+    return (
+      <DebriefScreen
+        scenario={scenario}
+        session={session}
+        onRestart={() => {
+          // Yeni oynanış = temiz hasta: izler + açık ara-sahne sıfırlanır.
+          setTraces([]);
+          setActionCue(null);
+          runner.restart();
+        }}
+      />
+    );
   }
 
   const stepIndex = currentStep
@@ -197,7 +216,12 @@ function CaseRunner({
             description="Görsel katman açılamadı — oyun sağ panelden devam eder."
           >
             {visual ? (
-              <CaseStage visualState={visualState} set={visual.set} actionCue={actionCue} />
+              <CaseStage
+                visualState={visualState}
+                set={visual.set}
+                actionCue={actionCue}
+                traces={traces}
+              />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-center px-8">
                 <div className="text-ink-500 text-sm max-w-sm">
