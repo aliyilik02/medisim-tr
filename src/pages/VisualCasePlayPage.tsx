@@ -147,7 +147,7 @@ function CaseRunner({
   return (
     <div className="h-screen flex flex-col bg-ink-950 text-ink-50 overflow-hidden">
       {/* Header */}
-      <header className="border-b border-ink-700/50 px-6 py-3 flex items-center gap-3 shrink-0 bg-ink-950/95 backdrop-blur-md">
+      <header className="border-b border-ink-700/50 px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0 bg-ink-950/95 backdrop-blur-md">
         <Link
           to="/senaryolar"
           className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-400 hover:text-ink-100 transition flex items-center gap-1"
@@ -156,7 +156,7 @@ function CaseRunner({
           Çıkış
         </Link>
         <div className="flex-1 min-w-0">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] neon-teal neon-text">
+          <div className="hidden sm:block font-mono text-[10px] uppercase tracking-[0.2em] neon-teal neon-text truncate">
             MediSim TR · Görselli Vaka Akışı
           </div>
           <h1 className="font-display text-base leading-tight truncate text-ink-50">
@@ -205,37 +205,45 @@ function CaseRunner({
         )}
       </header>
 
-      {/* Ana içerik */}
-      <div className="flex-1 flex min-h-0">
-        {/* Sol: hasta sahnesi + köşe monitör */}
-        <div className="flex-1 relative min-w-0 border-r border-ink-700/50">
-          <ErrorBoundary
-            compact
-            retryable
-            title="Hasta görseli yüklenemedi"
-            description="Görsel katman açılamadı — oyun sağ panelden devam eder."
-          >
-            {visual ? (
-              <CaseStage
-                visualState={visualState}
-                set={visual.set}
-                actionCue={actionCue}
-                traces={traces}
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-center px-8">
-                <div className="text-ink-500 text-sm max-w-sm">
-                  Bu senaryonun görsel seti henüz üretilmedi
-                  <span className="block font-mono text-[10px] mt-1 text-ink-600">
-                    (arketip×ortam manifest'ine eklenecek — oyun panelden sürüyor)
-                  </span>
-                </div>
-              </div>
-            )}
-          </ErrorBoundary>
+      {/* Ana içerik — genişte yan yana (hasta sol ~yarı | panel sağ),
+          dar ekran/mobilde alt alta (hasta üstte kutu, panel altta, sayfa kayar) */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-y-auto lg:overflow-hidden">
+        {/* Sol/üst: hasta sahnesi — sabit oranlı 3:4 kutu, KIRPMASIZ (contain) */}
+        <div className="relative shrink-0 h-[46vh] min-h-[300px] lg:h-auto lg:min-h-0 lg:w-1/2 border-b lg:border-b-0 lg:border-r border-ink-700/50">
+          {/* Görsel kutusu — 3:4 portre tercih; sığmayan pencerede max-w kırpar,
+              içerik yine contain ile güvende (hiçbir kırılımda kırpılmaz) */}
+          <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-3 lg:p-5">
+            <div className="relative h-full max-w-full aspect-[3/4] rounded-xl overflow-hidden border border-ink-800/60 bg-ink-950 shadow-2xl">
+              <ErrorBoundary
+                compact
+                retryable
+                title="Hasta görseli yüklenemedi"
+                description="Görsel katman açılamadı — oyun sağ panelden devam eder."
+              >
+                {visual ? (
+                  <CaseStage
+                    visualState={visualState}
+                    set={visual.set}
+                    actionCue={actionCue}
+                    traces={traces}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-center px-8">
+                    <div className="text-ink-500 text-sm max-w-sm">
+                      Bu senaryonun görsel seti henüz üretilmedi
+                      <span className="block font-mono text-[10px] mt-1 text-ink-600">
+                        (arketip×ortam manifest'ine eklenecek — oyun panelden sürüyor)
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </ErrorBoundary>
+            </div>
+          </div>
 
-          {/* Köşe monitör — kullanıcı tasarımı deseni (scale + sabit iç kutu) */}
-          <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.62)" }}>
+          {/* Köşe monitör — kullanıcı tasarımı deseni (scale + sabit iç kutu);
+              dar ekranda küçülür ki hasta kutusunu boğmasın */}
+          <div className="absolute top-2 left-2 origin-top-left scale-[0.3] sm:scale-[0.48] lg:scale-[0.62]">
             <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50 neon-teal shadow-glow-sm">
               <VitalMonitorScreen
                 vitals={patientVitalsToMonitor(
@@ -249,11 +257,13 @@ function CaseRunner({
             </div>
           </div>
 
-          {/* Öğretici anlatım — faz-senkron narration (yalnız eğitim modu) */}
+          {/* Öğretici anlatım — faz-senkron narration (yalnız eğitim modu).
+              Genişte görsel üstünde overlay; mobilde hastayı örtmesin diye
+              aşağıda akış içinde (lg:hidden ikizi). */}
           {pedagogy.narration && runner.phaseSignal?.narration && (
             <div
               data-testid="case-narration"
-              className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-[70%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-glow-sm neon-teal animate-fade-in"
+              className="hidden lg:block absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[70%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-glow-sm neon-teal animate-fade-in"
             >
               <p className="text-[12px] leading-relaxed text-ink-100">
                 {runner.phaseSignal.narration}
@@ -262,9 +272,19 @@ function CaseRunner({
           )}
         </div>
 
-        {/* Sağ: adım + envanter */}
-        <div className="w-[440px] shrink-0 flex flex-col bg-ink-950/50 min-h-0">
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3" data-testid="case-panel">
+        {/* Mobil anlatım — görselin altında, akış içinde */}
+        {pedagogy.narration && runner.phaseSignal?.narration && (
+          <div className="lg:hidden shrink-0 mx-3 mt-2 px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 neon-teal">
+            <p className="text-[12px] leading-relaxed text-ink-100">
+              {runner.phaseSignal.narration}
+            </p>
+          </div>
+        )}
+
+        {/* Sağ/alt: adım + envanter */}
+        <div className="w-full lg:w-auto lg:flex-1 flex flex-col bg-ink-950/50 min-h-0">
+          {/* Mobilde doğal yükseklik (sayfa kayar); genişte panel kendi içinde kayar */}
+          <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto p-3 space-y-3" data-testid="case-panel">
             {currentStep ? (
               <>
                 <StepDisplay

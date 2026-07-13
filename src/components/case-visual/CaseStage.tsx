@@ -68,10 +68,12 @@ interface CaseStageProps {
 
 /** img/video seçici — motion turu geldiğinde video alanı otomatik devreye girer. */
 function Media({ asset, visible }: { asset: MediaAsset; visible: boolean }) {
+  // object-contain: görsel ASLA kırpılmaz (kol/gövde/saç her zaman görünür);
+  // kutuya sığmayan kenarda letterbox — arka plan nötr koyu (bg-ink-950).
+  // Farklı oranda üretilmiş kareler de güvenli (3:4 varsayımı kutuda, burada değil).
   const common = {
-    className: "absolute inset-0 w-full h-full object-cover select-none",
+    className: "absolute inset-0 w-full h-full object-contain select-none",
     style: {
-      objectPosition: "50% 22%",
       opacity: visible ? 1 : 0,
       transition: `opacity ${FADE_MS}ms ease-in-out`,
     } as const,
