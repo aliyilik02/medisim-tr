@@ -90,12 +90,28 @@ const HASTANE_ERISKIN_E: VisualSet = {
       alt: "Bilinçsiz hasta, kardiyak arrest",
     },
   },
-  // Maske varyantları (durum-XX-maske.png) Higgsfield'da üretilecek —
-  // her durumun KENDİ karesi image-to-image girdisi olur (poz korunur).
-  // Üretilince buraya eklenir; o güne dek base karelere zarif düşüş.
-  durumMaske: {},
-  // P1 kanıt seti (5/5, 13 Tem 2026). Kalan 8 kare (P2/P3) üretildikçe
-  // eklenir; eksikken CaseStage yalnız aksiyon banner'ı gösterir.
+  // Maske varyantları (4/4, 13 Tem 2026 akşam teslimi). Arrest varyantı
+  // klinik kararla ÜRETİLMEZ (resolveDurumAsset arrest'te maskeyi düşürür).
+  durumMaske: {
+    baseline: {
+      src: "/patients/hastane-eriskin-e/durum-01-maske.png",
+      alt: "Bilinçli hasta, oksijen maskesi takılı",
+    },
+    sok: {
+      src: "/patients/hastane-eriskin-e/durum-02-maske.png",
+      alt: "Solgun, terli hasta, oksijen maskesi takılı",
+    },
+    siyanoz: {
+      src: "/patients/hastane-eriskin-e/durum-03-maske.png",
+      alt: "Hipoksik hasta, oksijen maskesi takılı",
+    },
+    "derin-sok": {
+      src: "/patients/hastane-eriskin-e/durum-04-maske.png",
+      alt: "Yanıtsız hasta, oksijen maskesi takılı",
+    },
+  },
+  // 12/13 kare canlı (13 Tem 2026 akşam teslimi) — yalnız kan-alma bekliyor;
+  // eksikken CaseStage o aksiyonda yalnız banner gösterir (zarif düşüş).
   aksiyon: {
     "ekg-takma": {
       src: "/patients/hastane-eriskin-e/aksiyon-ekg-takma.png",
@@ -116,6 +132,34 @@ const HASTANE_ERISKIN_E: VisualSet = {
     "oksijen-maske": {
       src: "/patients/hastane-eriskin-e/aksiyon-oksijen-maske.png",
       alt: "Yüze oksijen maskesi yerleştiriliyor",
+    },
+    "monitor-baglama": {
+      src: "/patients/hastane-eriskin-e/aksiyon-monitor-baglama.png",
+      alt: "Parmağa pulse oksimetre takılıyor, monitör bağlanıyor",
+    },
+    "tansiyon-olcme": {
+      src: "/patients/hastane-eriskin-e/aksiyon-tansiyon-olcme.png",
+      alt: "Kola tansiyon manşonu sarılıyor",
+    },
+    dilalti: {
+      src: "/patients/hastane-eriskin-e/aksiyon-dilalti.png",
+      alt: "Dil altına sprey/tablet uygulanıyor",
+    },
+    oskultasyon: {
+      src: "/patients/hastane-eriskin-e/aksiyon-oskultasyon.png",
+      alt: "Stetoskopla göğüs dinleniyor",
+    },
+    defibrilasyon: {
+      src: "/patients/hastane-eriskin-e/aksiyon-defibrilasyon.png",
+      alt: "Göğse defibrilatör pedleri yerleştiriliyor",
+    },
+    eko: {
+      src: "/patients/hastane-eriskin-e/aksiyon-eko.png",
+      alt: "Yatak başı ekokardiyografi yapılıyor",
+    },
+    "transfer-pci": {
+      src: "/patients/hastane-eriskin-e/aksiyon-transfer-pci.png",
+      alt: "Hasta sedyeyle kateter laboratuvarına götürülüyor",
     },
   },
 };
