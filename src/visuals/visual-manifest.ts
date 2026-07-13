@@ -61,6 +61,10 @@ export interface VisualSet {
       Diğer izler (IV/EKG/monitör) görsel değil, UI çip katmanında taşınır
       (persistent-traces.ts). */
   durumMaske?: Partial<Record<Patient2DStage, MediaAsset>>;
+  /** Maske + EKG/monitör elektrotları kombo varyantı (13 Tem akşam, karakter
+      tuttuğu için kullanıldı). Öncelik: kombo > maske > base (persistent-traces).
+      Kombinatoryal patlama sınırı: BAŞKA kombo eklenmez — kalan izler çipte. */
+  durumMaskeEkg?: Partial<Record<Patient2DStage, MediaAsset>>;
   /** Kısmi — eksik aksiyon görseli zarif düşer (yalnız banner gösterilir). */
   aksiyon: Partial<Record<AksiyonKey, MediaAsset>>;
 }
@@ -110,8 +114,15 @@ const HASTANE_ERISKIN_E: VisualSet = {
       alt: "Yanıtsız hasta, oksijen maskesi takılı",
     },
   },
-  // 12/13 kare canlı (13 Tem 2026 akşam teslimi) — yalnız kan-alma bekliyor;
-  // eksikken CaseStage o aksiyonda yalnız banner gösterir (zarif düşüş).
+  // Maske+EKG kombo — yalnız baseline üretildi; diğer evreler maske
+  // varyantına zarif düşer.
+  durumMaskeEkg: {
+    baseline: {
+      src: "/patients/hastane-eriskin-e/durum-01-maske-ekg.png",
+      alt: "Bilinçli hasta, oksijen maskesi ve EKG elektrotları takılı",
+    },
+  },
+  // 13/13 kare canlı (13 Tem 2026 gece — kan-alma revizesiyle tamamlandı).
   aksiyon: {
     "ekg-takma": {
       src: "/patients/hastane-eriskin-e/aksiyon-ekg-takma.png",
@@ -160,6 +171,10 @@ const HASTANE_ERISKIN_E: VisualSet = {
     "transfer-pci": {
       src: "/patients/hastane-eriskin-e/aksiyon-transfer-pci.png",
       alt: "Hasta sedyeyle kateter laboratuvarına götürülüyor",
+    },
+    "kan-alma": {
+      src: "/patients/hastane-eriskin-e/aksiyon-kan-alma.png",
+      alt: "Koldan vakumlu tüplere kan örneği alınıyor",
     },
   },
 };

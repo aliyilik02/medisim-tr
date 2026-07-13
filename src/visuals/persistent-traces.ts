@@ -43,16 +43,23 @@ export function addTrace(traces: readonly TraceKey[], key: TraceKey): TraceKey[]
   return traces.includes(key) ? [...traces] : [...traces, key];
 }
 
-/** Durum karesi seçimi — izlere göre.
-    Maske takılıysa ve maskeli varyant üretilmişse o gösterilir.
+/** Durum karesi seçimi — izlere göre. Öncelik zinciri:
+    1. maske + (ekg|monitör elektrotları) → kombo varyant (durumMaskeEkg)
+    2. maske → maskeli varyant (durumMaske)
+    3. base kare
+    Her basamak eksikse bir altına zarif düşer.
     ARREST İSTİSNASI: arrestte basit yüz maskesi klinik olarak çıkar
-    (BVM/entübasyon) — maskeli varyant asla seçilmez, base arrest karesi döner. */
+    (BVM/entübasyon) — maske/kombo varyant asla seçilmez, base arrest döner. */
 export function resolveDurumAsset(
   set: VisualSet,
   stage: Patient2DStage,
   traces: readonly TraceKey[],
 ): MediaAsset {
   if (stage !== "arrest" && traces.includes("maske")) {
+    if (traces.includes("ekg") || traces.includes("monitor")) {
+      const kombo = set.durumMaskeEkg?.[stage];
+      if (kombo) return kombo;
+    }
     const maskeli = set.durumMaske?.[stage];
     if (maskeli) return maskeli;
   }

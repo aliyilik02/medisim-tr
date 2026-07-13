@@ -27,6 +27,10 @@ const FAKE_SET: VisualSet = {
     sok: asset("maske-sok"),
     // siyanoz/derin-sok varyantı YOK → zarif düşüş test edilir
   },
+  durumMaskeEkg: {
+    baseline: asset("kombo-baseline"),
+    // sok kombosu YOK → maske varyantına düşüş test edilir
+  },
   aksiyon: {},
 };
 
@@ -71,6 +75,19 @@ describe("resolveDurumAsset — maske varyant seçimi", () => {
   test("maske takılı + varyant var → maskeli kare", () => {
     expect(resolveDurumAsset(FAKE_SET, "baseline", ["maske"]).src).toBe("maske-baseline");
     expect(resolveDurumAsset(FAKE_SET, "sok", ["iv", "maske"]).src).toBe("maske-sok");
+  });
+
+  test("maske + EKG/monitör → kombo varyant öncelikli", () => {
+    expect(resolveDurumAsset(FAKE_SET, "baseline", ["maske", "ekg"]).src).toBe("kombo-baseline");
+    expect(resolveDurumAsset(FAKE_SET, "baseline", ["monitor", "maske"]).src).toBe("kombo-baseline");
+  });
+
+  test("kombo üretilmemiş evrede maske varyantına düşüş", () => {
+    expect(resolveDurumAsset(FAKE_SET, "sok", ["maske", "ekg"]).src).toBe("maske-sok");
+  });
+
+  test("EKG var ama maske yok → kombo SEÇİLMEZ, base kalır", () => {
+    expect(resolveDurumAsset(FAKE_SET, "baseline", ["ekg", "monitor"]).src).toBe("base-baseline");
   });
 
   test("varyant üretilmemişse base'e zarif düşüş", () => {

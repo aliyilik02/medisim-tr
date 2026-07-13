@@ -30,6 +30,10 @@ describe("manifest — varlık kapısı", () => {
         expect(inPublic(asset.src), `${key}/maske-${stage}: ${asset.src}`).toBe(true);
         if (asset.video) expect(inPublic(asset.video), asset.video).toBe(true);
       }
+      for (const [stage, asset] of Object.entries(set.durumMaskeEkg ?? {})) {
+        expect(inPublic(asset.src), `${key}/maske-ekg-${stage}: ${asset.src}`).toBe(true);
+        if (asset.video) expect(inPublic(asset.video), asset.video).toBe(true);
+      }
       for (const [ak, asset] of Object.entries(set.aksiyon)) {
         expect(inPublic(asset.src), `${key}/${ak}: ${asset.src}`).toBe(true);
         if (asset.video) expect(inPublic(asset.video), asset.video).toBe(true);
@@ -53,7 +57,13 @@ describe("manifest — varlık kapısı", () => {
   test("maskeli ARREST varyantı hiçbir sette yok (klinik: arrestte BVM)", () => {
     for (const [key, set] of Object.entries(VISUAL_MANIFEST)) {
       expect(set.durumMaske?.arrest, `${key}: maskeli arrest karesi klinik saçma`).toBeUndefined();
+      expect(set.durumMaskeEkg?.arrest, `${key}: kombo arrest karesi klinik saçma`).toBeUndefined();
     }
+  });
+
+  test("13 aksiyon karesinin TAMAMI hastane-eriskin-e'de canlı", () => {
+    const aksiyon = VISUAL_MANIFEST["hastane-eriskin-e"]!.aksiyon;
+    expect(Object.keys(aksiyon)).toHaveLength(13);
   });
 });
 
