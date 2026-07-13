@@ -14,7 +14,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Activity as ActivityIcon } from "lucide-react";
+import { ChevronLeft, Activity as ActivityIcon, MonitorX, MonitorCheck } from "lucide-react";
 import { SCENARIOS } from "@/data/scenarios";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
 import { useStableValue } from "@/hooks/useStableValue";
@@ -124,6 +124,29 @@ function CaseRunner({
     cueFor(action);
     runner.handleAction(action);
   };
+
+  // Köşe monitör aç/kapa (Ali Bey, 13 Tem: hasta görselini kapatmasın) —
+  // masaüstünde açık, mobilde kapalı başlar.
+  const [monitorOpen, setMonitorOpen] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
+  );
+
+  // Monitör kanalları takılı ekipmandan türetilir — senaryo başında hepsi
+  // "bağlı değil", ekipman takıldıkça kanal canlanır (gerçek monitör davranışı):
+  //   12 derivasyon EKG veya hasta monitörü elektrotları → EKG + HR
+  //   hasta monitörü probları → SpO₂ / RR / EtCO₂ / Temp
+  //   tansiyon manşonu (veya monitörle gelen kaf) → NIBP
+  const monitorChannels = useMemo(() => {
+    const has = (t: TraceKey) => traces.includes(t);
+    return {
+      ekg: has("ekg") || has("monitor"),
+      spo2: has("monitor"),
+      rr: has("monitor"),
+      etco2: has("monitor"),
+      temp: has("monitor"),
+      nibp: has("tansiyon") || has("monitor"),
+    };
+  }, [traces]);
 
   if (session?.finished) {
     return (
@@ -241,21 +264,43 @@ function CaseRunner({
             </div>
           </div>
 
+          {/* Monitör aç/kapa tuşu — sol üst (hasta görselini kapatmasın) */}
+          <button
+            type="button"
+            data-testid="monitor-toggle"
+            onClick={() => setMonitorOpen((o) => !o)}
+            aria-pressed={monitorOpen}
+            title={monitorOpen ? "Hasta başı monitörü gizle" : "Hasta başı monitörü göster"}
+            className={cn(
+              "absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border font-mono text-[10px] uppercase tracking-[0.12em] backdrop-blur-md transition",
+              monitorOpen
+                ? "bg-ink-900/85 neon-teal neon-border text-brand-light"
+                : "bg-ink-900/70 border-ink-700 text-ink-400 hover:text-ink-100 hover:border-ink-500",
+            )}
+          >
+            {monitorOpen ? <MonitorCheck className="w-3.5 h-3.5" /> : <MonitorX className="w-3.5 h-3.5" />}
+            Monitör
+          </button>
+
           {/* Köşe monitör — kullanıcı tasarımı deseni (scale + sabit iç kutu);
-              dar ekranda küçülür ki hasta kutusunu boğmasın */}
-          <div className="absolute top-2 left-2 origin-top-left scale-[0.3] sm:scale-[0.48] lg:scale-[0.62]">
-            <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50 neon-teal shadow-glow-sm">
-              <VitalMonitorScreen
-                vitals={patientVitalsToMonitor(
-                  liveVitals,
-                  runner.phaseSignal?.ekg ?? scenario.ekg_pattern,
-                )}
-                patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
-                bedLabel="Görselli Vaka · Pilot"
-                showArt={false}
-              />
+              dar ekranda küçülür ki hasta kutusunu boğmasın. Kanallar takılı
+              ekipmandan canlanır (monitorChannels). */}
+          {monitorOpen && (
+            <div className="absolute top-11 left-2 origin-top-left scale-[0.3] sm:scale-[0.48] lg:scale-[0.62] animate-fade-in">
+              <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50 neon-teal shadow-glow-sm">
+                <VitalMonitorScreen
+                  vitals={patientVitalsToMonitor(
+                    liveVitals,
+                    runner.phaseSignal?.ekg ?? scenario.ekg_pattern,
+                  )}
+                  patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
+                  bedLabel="Görselli Vaka · Pilot"
+                  showArt={false}
+                  channels={monitorChannels}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Öğretici anlatım — faz-senkron narration (yalnız eğitim modu).
               Genişte görsel üstünde overlay; mobilde hastayı örtmesin diye

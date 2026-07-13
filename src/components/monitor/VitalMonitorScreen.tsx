@@ -237,6 +237,7 @@ function NibpBox({
   trend,
   accent,
   k = 1,
+  active = true,
 }: {
   sbp: number;
   dbp: number;
@@ -244,6 +245,8 @@ function NibpBox({
   trend: number[];
   accent: string;
   k?: number;
+  /** false → manşon bağlı değil: kaf döngüsü/geri sayım gizli, "--/--" */
+  active?: boolean;
 }) {
   const [intervalMin, setIntervalMin] = useState(15);
   const [secondsLeft, setSecondsLeft] = useState(15 * 60);
@@ -312,6 +315,15 @@ function NibpBox({
         </span>
       </div>
 
+      {!active && (
+        <div
+          className="text-[10px] uppercase tracking-[0.18em] text-white/25"
+          style={{ fontFamily: MONO }}
+        >
+          manşon bağlı değil
+        </div>
+      )}
+      {active && (
       <div className="mt-1.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           {intervals.map((m) => (
@@ -340,6 +352,7 @@ function NibpBox({
           Sonraki: {fmtMMSS(secondsLeft)}
         </span>
       </div>
+      )}
 
       <div className="mt-1">
         <TrendSparkline data={trend} color="#f4f7f5" critical={crit} width={134} height={22} />
@@ -501,6 +514,34 @@ function WarningBand({ text }: { text: string | null }) {
 /* =========================================================================
    VitalMonitorScreen — ana kompozisyon
    ========================================================================= */
+/** Kanal aktivasyonu — hastaya takılı ekipmana göre (görselli vaka akışı).
+    undefined bırakılan kanal AÇIK sayılır → mevcut sayfalar geriye uyumlu.
+    Kapalı kanal: dalga yerine "bağlı değil", numerik "--", alarmı susturulur
+    (bağlı olmayan probdan alarm gelmez — gerçek monitör davranışı). */
+export interface MonitorChannels {
+  /** EKG lane + HR (12 derivasyon EKG veya hasta monitörü elektrotları) */
+  ekg: boolean;
+  /** SpO₂ pleth lane + SpO₂ kutusu (monitör sat probu) */
+  spo2: boolean;
+  /** NIBP kutusu (tansiyon manşonu) */
+  nibp: boolean;
+  /** Kapnografi lane + EtCO₂ kutusu */
+  etco2: boolean;
+  /** RR kutusu (monitör impedans solunumu) */
+  rr: boolean;
+  /** Temp kutusu (monitör prob) */
+  temp: boolean;
+}
+
+const ALL_CHANNELS: MonitorChannels = {
+  ekg: true,
+  spo2: true,
+  nibp: true,
+  etco2: true,
+  rr: true,
+  temp: true,
+};
+
 export interface VitalMonitorScreenProps {
   vitals: VitalState;
   patientName?: string;
@@ -510,6 +551,8 @@ export interface VitalMonitorScreenProps {
   showArt?: boolean;
   /** Gömülü/dar slot için yoğun yerleşim — numerik fontlar küçülür, üst bar incelir */
   dense?: boolean;
+  /** Kanal aktivasyonu — verilmezse hepsi açık (eski davranış). */
+  channels?: Partial<MonitorChannels>;
 }
 
 export function VitalMonitorScreen({
@@ -519,7 +562,9 @@ export function VitalMonitorScreen({
   accent = "#06b6d4",
   showArt = true,
   dense = false,
+  channels,
 }: VitalMonitorScreenProps) {
+  const ch: MonitorChannels = { ...ALL_CHANNELS, ...channels };
   // dense: gömülü başucu slotunda büyük fontlar taşmasın diye numerik ölçek
   const k = dense ? 0.6 : 1;
   // getVitals: WaveLane'ler güncel vitalleri ref üzerinden okur (re-render yok)
@@ -580,7 +625,25 @@ export function VitalMonitorScreen({
   const v = vitals;
   const d = displayVitals(v);
   const alarms = useMemo(() => evaluateAlarms(v), [v]);
-  const lv = alarms.levels;
+  // Kapalı kanalın alarmı susturulur — bağlı olmayan prob veri/alarm üretmez.
+  const lv: typeof alarms.levels = {
+    ...alarms.levels,
+    hr: ch.ekg ? alarms.levels.hr : "normal",
+    spo2: ch.spo2 ? alarms.levels.spo2 : "normal",
+    sbp: ch.nibp ? alarms.levels.sbp : "normal",
+    rr: ch.rr ? alarms.levels.rr : "normal",
+    etco2: ch.etco2 ? alarms.levels.etco2 : "normal",
+    temp: ch.temp ? alarms.levels.temp : "normal",
+  };
+  // Üst bar + ölümcül-ritim bandı da maskeli seviyelerden türetilir
+  // (ritim ancak EKG bağlıysa bilinebilir).
+  const maskedLethal = ch.ekg && alarms.lethal;
+  const maskedSeverity: AlarmLevel = maskedLethal || Object.values(lv).includes("crit")
+    ? "crit"
+    : Object.values(lv).includes("warn")
+    ? "warn"
+    : "normal";
+  const bandText = ch.ekg ? alarms.bandText : null;
   const trends = trendsRef.current!;
 
   const trendArr = (k: LimitKey): number[] => {
@@ -592,15 +655,16 @@ export function VitalMonitorScreen({
     return [];
   };
 
-  // sol taraf dalga lane'leri
+  // sol taraf dalga lane'leri — active=false: dalga çizilmez, "bağlı değil"
   const lanes = [
     {
       kind: "ecg" as const,
       color: WAVE.ecg,
       label: "EKG · II",
       sub: v.paced ? "Pace · yakalama" : RHYTHM_LABEL[v.rhythm],
-      crit: lv.hr === "crit" || alarms.lethal,
+      crit: lv.hr === "crit" || maskedLethal,
       speed: 165,
+      active: ch.ekg,
     },
     {
       kind: "pleth" as const,
@@ -609,6 +673,7 @@ export function VitalMonitorScreen({
       sub: d.spo2 === "--" ? "nabız yok" : d.spo2 + "%",
       crit: lv.spo2 === "crit",
       speed: 165,
+      active: ch.spo2,
     },
     {
       kind: "co2" as const,
@@ -617,6 +682,7 @@ export function VitalMonitorScreen({
       sub: "EtCO₂ " + d.etco2,
       crit: lv.etco2 === "crit",
       speed: 110,
+      active: ch.etco2,
     },
     {
       kind: "art" as const,
@@ -626,6 +692,7 @@ export function VitalMonitorScreen({
       crit: lv.sbp === "crit",
       speed: 165,
       optional: true,
+      active: true,
     },
   ].filter((ln) => !ln.optional || showArt);
 
@@ -644,12 +711,12 @@ export function VitalMonitorScreen({
       <TopBar
         patientName={patientName}
         bedLabel={bedLabel}
-        severity={alarms.severity}
+        severity={maskedSeverity}
         clock={clockObj}
         dense={dense}
       />
 
-      <WarningBand text={alarms.bandText} />
+      <WarningBand text={bandText} />
 
       {/* ana alan */}
       <div className={"flex-1 min-h-0 flex " + (dense ? "gap-1.5 p-1.5" : "gap-2 p-2")}>
@@ -664,23 +731,36 @@ export function VitalMonitorScreen({
               }
             >
               <div className="absolute top-1.5 left-2 z-10 flex items-baseline gap-2 pointer-events-none">
-                <span className="text-[12px] font-semibold tracking-wide" style={{ color: ln.color }}>
+                <span
+                  className="text-[12px] font-semibold tracking-wide"
+                  style={{ color: ln.active ? ln.color : "rgba(255,255,255,0.3)" }}
+                >
                   {ln.label}
                 </span>
                 <span className="text-[11px] text-white/45 tabular-nums" style={{ fontFamily: MONO }}>
-                  {ln.sub}
+                  {ln.active ? ln.sub : ""}
                 </span>
               </div>
-              <WaveLane
-                kind={ln.kind}
-                color={ln.color}
-                getVitals={getVitals}
-                speed={ln.speed}
-                glow={9}
-                lineWidth={1.9}
-                critical={ln.crit}
-                ariaLabel={ln.label + " dalga formu"}
-              />
+              {ln.active ? (
+                <WaveLane
+                  kind={ln.kind}
+                  color={ln.color}
+                  getVitals={getVitals}
+                  speed={ln.speed}
+                  glow={9}
+                  lineWidth={1.9}
+                  critical={ln.crit}
+                  ariaLabel={ln.label + " dalga formu"}
+                />
+              ) : (
+                <div
+                  data-testid={`lane-inactive-${ln.kind}`}
+                  className="h-full flex items-center justify-center text-[11px] uppercase tracking-[0.18em] text-white/25"
+                  style={{ fontFamily: MONO }}
+                >
+                  bağlı değil
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -692,11 +772,11 @@ export function VitalMonitorScreen({
               label="HR"
               unit="bpm"
               color={PARAM.hr.color}
-              value={d.hr}
+              value={ch.ekg ? d.hr : "--"}
               level={lv.hr}
               low={LIMITS.hr.critLo}
               high={LIMITS.hr.critHi}
-              trend={trendArr("hr")}
+              trend={ch.ekg ? trendArr("hr") : []}
               icon={<Heart size={15} color={PARAM.hr.color} />}
               big
               k={k}
@@ -707,11 +787,11 @@ export function VitalMonitorScreen({
               label="SpO₂"
               unit="%"
               color={PARAM.spo2.color}
-              value={d.spo2}
+              value={ch.spo2 ? d.spo2 : "--"}
               level={lv.spo2}
               low={LIMITS.spo2.critLo}
               high={LIMITS.spo2.critHi}
-              trend={trendArr("spo2")}
+              trend={ch.spo2 ? trendArr("spo2") : []}
               icon={<Droplet size={15} color={PARAM.spo2.color} />}
               k={k}
             />
@@ -719,12 +799,13 @@ export function VitalMonitorScreen({
           <div className="flex gap-2" style={{ flexBasis: "0", flexGrow: 1.1, minHeight: 0 }}>
             <div className={showArt ? "flex-1 min-w-0" : "w-full"}>
               <NibpBox
-                sbp={d.sbp == null ? 0 : d.sbp}
-                dbp={d.dbp == null ? 0 : d.dbp}
+                sbp={ch.nibp && d.sbp != null ? d.sbp : 0}
+                dbp={ch.nibp && d.dbp != null ? d.dbp : 0}
                 level={lv.sbp}
-                trend={trendArr("sbp")}
+                trend={ch.nibp ? trendArr("sbp") : []}
                 accent={accent}
                 k={k}
+                active={ch.nibp}
               />
             </div>
             {showArt && (
@@ -739,11 +820,11 @@ export function VitalMonitorScreen({
                 label="RR"
                 unit="/dk"
                 color={PARAM.rr.color}
-                value={d.rr}
+                value={ch.rr ? d.rr : "--"}
                 level={lv.rr}
                 low={LIMITS.rr.critLo}
                 high={LIMITS.rr.critHi}
-                trend={trendArr("rr")}
+                trend={ch.rr ? trendArr("rr") : []}
                 icon={<Wind size={15} color={PARAM.rr.color} />}
                 k={k}
                 slim
@@ -754,11 +835,11 @@ export function VitalMonitorScreen({
                 label="EtCO₂"
                 unit="mmHg"
                 color={PARAM.etco2.color}
-                value={d.etco2}
+                value={ch.etco2 ? d.etco2 : "--"}
                 level={lv.etco2}
                 low={LIMITS.etco2.critLo}
                 high={LIMITS.etco2.critHi}
-                trend={trendArr("etco2")}
+                trend={ch.etco2 ? trendArr("etco2") : []}
                 icon={<Activity size={15} color={PARAM.etco2.color} />}
                 k={k}
                 slim
@@ -769,7 +850,7 @@ export function VitalMonitorScreen({
                 label="Temp"
                 unit="°C"
                 color={PARAM.temp.color}
-                value={d.temp}
+                value={ch.temp ? d.temp : "--"}
                 level={lv.temp}
                 low={LIMITS.temp.critLo}
                 high={LIMITS.temp.critHi}
