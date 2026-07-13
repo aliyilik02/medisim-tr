@@ -20,8 +20,14 @@ export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 // build'de VITE_E2E tanımsız → gerçek auth akışı (güvenlik etkilenmez).
 // MODE !== "test": vitest unit testleri GERÇEK auth akışını test eder — env'e
 // sızan VITE_E2E bypass'ı testte devre dışı (yalnız tarayıcı dev/e2e'de aktif).
+//
+// VITE_AUTH_BYPASS (13 Tem 2026, Ali Bey isteği): SADECE auth'u atlar —
+// VITE_E2E'nin görsel yan etkileri (3d mod, hafif canvas) YOK. import.meta.env.DEV
+// guard'ı: prod build'e env sızsa bile bypass asla derlenmez.
 const E2E_BYPASS =
-  import.meta.env.VITE_E2E === "1" && import.meta.env.MODE !== "test";
+  (import.meta.env.VITE_E2E === "1" ||
+    (import.meta.env.DEV && import.meta.env.VITE_AUTH_BYPASS === "1")) &&
+  import.meta.env.MODE !== "test";
 const E2E_USER: UserPublic = {
   id: "e2e-instructor",
   role: "instructor",
