@@ -241,6 +241,9 @@ interface Props {
       additive kemik ofsetleri: tremor (rigor titremesi), restlessness
       (ağrı kıpırdanması). Verilmezse katman kapalı. */
   agitation?: { tremor: number; restlessness: number };
+  /** Yalnız aday karşılaştırma (/dev/hasta-aday): varyant metadata'sı aynı
+      kalır, GLB bu adresten yüklenir. Canlı oyunda VERİLMEZ. */
+  modelUrlOverride?: string;
 }
 
 export const AnimatedPatientModel = forwardRef<Group, Props>(
@@ -258,16 +261,26 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
       position = [0, -0.243, 0],
       visualState,
       agitation,
+      modelUrlOverride,
     },
     ref,
   ) => {
     const model = resolveModel(variant);
-    const { scene, animations } = useGLTF(model.url) as unknown as {
+    const { scene, animations } = useGLTF(modelUrlOverride ?? model.url) as unknown as {
       scene: Group;
       animations: AnimationClip[];
     };
     // SkinnedMesh + iskelet birlikte klonlanmalı → SkeletonUtils
-    const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+    // frustumCulled=false: enjekte parçaların (göz/kaş/kirpik/saç) görünürlük
+    // küresi bind-pozda yanlış hesaplanıyor → kamera yaklaşınca KESİLİYORLARDI
+    // (10 Kas 2026 ölçümü, /dev/hasta-aday?cull=0). Tek hasta, maliyet ihmal.
+    const clone = useMemo(() => {
+      const c = SkeletonUtils.clone(scene);
+      c.traverse((o) => {
+        if ((o as { isMesh?: boolean }).isMesh) o.frustumCulled = false;
+      });
+      return c;
+    }, [scene]);
     const { actions } = useAnimations(animations, clone);
 
     // Cilt tonu × vital tint → material baseColor (çarpımsal). Ayrıca base
@@ -281,7 +294,14 @@ export const AnimatedPatientModel = forwardRef<Group, Props>(
     const gownShadersRef = useRef<{ uniforms: Record<string, { value: unknown }> }[]>([]);
     const zoneBoxRef = useRef<{ yMin: number; height: number } | null>(null);
     useMemo(() => {
-      const [sr, sg, sb] = SKIN_TONE_PRESETS[skinTone];
+      // realAssets (dokulu cilt): ten rengi ZATEN dokuda → mutlak çarpan
+      // çift boyuyordu (turuncu ten, 10 Kas 2026 ölçümü). Varsayılan tona
+      // GÖRELİ çarpan: varsayılan → doku aynen; başka ten → oransal kayma.
+      const [sr, sg, sb] = model.realAssets
+        ? SKIN_TONE_PRESETS[skinTone].map(
+            (v, i) => Math.min(1.25, v / SKIN_TONE_PRESETS[DEFAULT_SKIN_TONE][i]),
+          ) as [number, number, number]
+        : SKIN_TONE_PRESETS[skinTone];
       const [tr, tg, tb] = SKIN_TINT_PRESETS[skinTint];
       const base: [number, number, number] = [sr * tr, sg * tg, sb * tb];
       baseSkinRef.current = base;
