@@ -35,6 +35,7 @@ import {
 } from "./props/SketchfabProps";
 import { WasteBin } from "./props/WasteBin";
 import { TubingLayer } from "./props/TubingLayer";
+import { ExamHotspotLayer, type ExamHotspot } from "./ExamHotspotLayer";
 import {
   CeilingLightPanel,
   WallClock,
@@ -106,9 +107,10 @@ const BED_ROT: [number, number, number] = [0, Math.PI, 0]; // baş başlık ucun
 
 // Kamera presetleri. Hasta supine Z ekseninde: baş ≈ -Z (-0.47), ayak ≈ +Z,
 // gövde-sırt Y 0.19, göğüs Y 0.39. Pozlar hasta bbox'ından kalibre.
-export type CameraPreset = "onden" | "genel" | "bas_ucu" | "yan";
+export type CameraPreset = "onden" | "tum_beden" | "genel" | "bas_ucu" | "yan";
 export const CAMERA_PRESET_LABELS: Record<CameraPreset, string> = {
   onden: "Önden",
+  tum_beden: "Tüm beden",
   genel: "Genel",
   bas_ucu: "Baş ucu",
   yan: "Yan",
@@ -119,6 +121,11 @@ const CAMERA_PRESETS: Record<CameraPreset, { pos: [number, number, number]; targ
   // Karşıdan/anterior — yüksekten tepe-anterior bakış (Body Interact).
   // Kullanıcının elle orbit edip verdiği değer (canlı okuyucu).
   onden: { pos: [0.01, 1.78, 0.2], target: [0.01, 0.25, 0.31] },
+  // Tepeden, baştan ayağa tüm beden — muayene görünümü ("Önden" bacakları
+  // kadraj dışında bırakıyordu → bacak muayene noktası görünmüyordu).
+  // Kamera tavanın (y≈1.39) üstünde → bu açıda tavan panelleri çizilmez.
+  // Ölçüm (ekran görüntüsü, 554 px/birim): beden ekseni z≈-0.5…+0.5.
+  tum_beden: { pos: [0.01, 2.45, -0.16], target: [0.01, 0.25, -0.1] },
   // 3/4 genel görünüm (tüm yatak + hasta)
   genel: { pos: [2.0, 1.4, -1.1], target: [0, 0.25, 0] },
   // Baş bölgesi yakın 3/4 (genel tarzı, baş-odaklı; güvenilir)
@@ -330,6 +337,14 @@ interface Props {
   onVentilatorActivate?: () => void;
   /** Ventilatör çalışıyor mu (ekran/LED durumu). */
   ventilatorActive?: boolean;
+  /** Bedende tıklanır muayene noktaları (kemik-bağlı). Verilmezse katman yok. */
+  examHotspots?: ExamHotspot[];
+  /** Seçili muayene noktası (vurgulanır). */
+  selectedExamId?: string | null;
+  /** Muayene noktasına tıklanınca. */
+  onExamSelect?: (id: string) => void;
+  /** Muayene noktası etiketleri hep görünsün mü (false → üstüne gelince). */
+  examLabels?: boolean;
   className?: string;
 }
 
@@ -352,6 +367,10 @@ function PatientRoomSceneImpl({
   showVentilator = false,
   onVentilatorActivate,
   ventilatorActive = true,
+  examHotspots,
+  selectedExamId = null,
+  onExamSelect,
+  examLabels = true,
   className,
 }: Props) {
   const controlsRef = useRef<{ target: Vector3; update: () => void } | null>(null);
@@ -363,7 +382,9 @@ function PatientRoomSceneImpl({
   const [activePreset, setActivePreset] = useState<CameraPreset>(cameraPreset);
   useEffect(() => setActivePreset(cameraPreset), [cameraPreset]);
   return (
-    <div className={`relative w-full h-full ${className ?? ""}`}>
+    /* isolate: muayene noktalarının (Html) z-index'i sahne içinde kalır —
+       sayfadaki monitör/kart katmanlarının üstüne taşmaz. */
+    <div className={`relative isolate w-full h-full ${className ?? ""}`}>
       <Canvas
         data-testid="patient-room-canvas"
         frameloop="always"
@@ -435,8 +456,12 @@ function PatientRoomSceneImpl({
           {/* ── Oda demirbaşları (RoomFixtures — Hat B oda tamamlama) ──
               Tavan ≈ y 1.39; kamera preset ışın hatları boş bırakıldı
               ("önden" tepeden iner: x≈0, z 0.2-0.31 — paneller z=-0.55/0.75). */}
-          <CeilingLightPanel position={[0, 1.38, -0.55]} />
-          <CeilingLightPanel position={[0, 1.38, 0.75]} />
+          {activePreset !== "tum_beden" && (
+            <>
+              <CeilingLightPanel position={[0, 1.38, -0.55]} />
+              <CeilingLightPanel position={[0, 1.38, 0.75]} />
+            </>
+          )}
           {/* Duvar saati — ayak ucu duvarı, kadran odaya (-Z) bakar */}
           <WallClock position={[0.35, 1.0, 1.26]} rotation={[-Math.PI / 2, 0, 0]} />
           {/* Lavabo — sol (-X) duvar, crash cart ile atık kovası arası */}
@@ -452,6 +477,16 @@ function PatientRoomSceneImpl({
           {/* Hortumlar — IV hattı (askı→ön kol) + O₂ (duvar paneli→maske/kanül),
               catenary sarkma + yumuşatılmış uç takibi (hasta hareketinde doğal) */}
           <TubingLayer equipment={equipment} />
+          {/* Muayene noktaları — kemik-bağlı, hasta hareketini takip eder */}
+          {examHotspots && examHotspots.length > 0 && (
+            <ExamHotspotLayer
+              hotspots={examHotspots}
+              selectedId={selectedExamId}
+              onSelect={onExamSelect}
+              resetKey={variant}
+              showLabels={examLabels}
+            />
+          )}
           {/* Yatak başı 3D ventilatör cihazı — tıklanınca panel açar */}
           {showVentilator && (
             <VentilatorDevice onActivate={onVentilatorActivate} active={ventilatorActive} />

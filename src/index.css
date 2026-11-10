@@ -64,6 +64,56 @@
     @apply bg-ink-900/80 border border-ink-700 rounded-md;
   }
 
+  /* ── Bedendeki muayene noktası (ExamHotspotLayer) ──────────────
+     Durum data-state ile: todo (nabız gibi atan halka) · done · abnormal
+     (patolojik bulgu yakalandı) · selected. */
+  .exam-hotspot {
+    @apply relative flex items-center gap-1.5 cursor-pointer select-none
+           focus:outline-none;
+  }
+  .exam-hotspot-dot {
+    @apply relative flex items-center justify-center w-[22px] h-[22px] rounded-full
+           border-2 border-brand-light bg-brand/35 text-ink-950
+           transition-transform duration-150;
+    box-shadow: 0 0 10px -1px rgba(45, 212, 191, 0.7);
+  }
+  .exam-hotspot[data-state="todo"] .exam-hotspot-dot::after {
+    content: "";
+    @apply absolute inset-[-2px] rounded-full border-2 border-brand-light;
+    animation: exam-hotspot-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .exam-hotspot:hover .exam-hotspot-dot,
+  .exam-hotspot:focus-visible .exam-hotspot-dot {
+    transform: scale(1.25);
+  }
+  .exam-hotspot[data-state="done"] .exam-hotspot-dot {
+    @apply bg-brand-light border-brand-light;
+    box-shadow: none;
+  }
+  .exam-hotspot[data-state="abnormal"] .exam-hotspot-dot {
+    @apply bg-clinical-warning border-clinical-warning;
+    box-shadow: none;
+  }
+  .exam-hotspot[data-state="selected"] .exam-hotspot-dot {
+    @apply bg-white border-white;
+    transform: scale(1.3);
+    box-shadow: 0 0 14px 1px rgba(255, 255, 255, 0.75);
+  }
+  .exam-hotspot-label {
+    @apply absolute left-[28px] top-1/2 -translate-y-1/2 whitespace-nowrap
+           px-1.5 py-0.5 rounded bg-ink-950/85 border border-ink-600
+           font-mono text-[10px] text-ink-100 pointer-events-none
+           transition-opacity duration-150;
+  }
+  .exam-hotspot[data-side="left"] .exam-hotspot-label {
+    left: auto;
+    right: 28px;
+  }
+  /* Kalabalık görünümde (Tümü) etiket yalnız üstüne gelince/seçilince */
+  .exam-hotspot[data-labels="hover"]:not(:hover):not(:focus-visible):not([data-state="selected"]) .exam-hotspot-label {
+    opacity: 0;
+  }
+
   /* Buton — primary */
   .btn-primary {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-md
@@ -284,4 +334,13 @@
   .neon-card:hover {
     transform: none;
   }
+}
+
+/* Muayene noktası — "buraya dokun" halkası. Hareket azaltma tercihinde kapalı. */
+@keyframes exam-hotspot-ping {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exam-hotspot[data-state="todo"] .exam-hotspot-dot::after { animation: none; opacity: 0; }
 }

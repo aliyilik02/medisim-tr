@@ -22,6 +22,7 @@ import {
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { AIDebriefPanel } from "@/components/AIDebriefPanel";
+import { ExamDebrief } from "@/components/exam/ExamDebrief";
 import { saveSession } from "@/storage/sessionHistory";
 import { sessionToFhirBundle } from "@/clinical/fhir";
 import { submitAttempt } from "@/api/attempts";
@@ -632,6 +633,9 @@ export function DebriefScreen({ scenario, session, onRestart }: Props) {
 
         {/* Kılavuz karşılaştırması — aksiyonun / beklenen / kılavuz yan yana */}
         <GuidelineComparisonTable scenario={scenario} session={session} />
+
+        {/* ── Fizik muayene özeti (ABCDE kapsamı, cezasız) ── */}
+        <ExamDebrief scenario={scenario} session={session} />
 
         {/* ── Klinik Muhakeme (egitim modu, öğretici/cezasız) ── */}
         <ReasoningDebrief scenario={scenario} session={session} />

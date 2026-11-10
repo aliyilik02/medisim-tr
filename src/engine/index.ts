@@ -57,6 +57,27 @@ export {
 } from "./teaching";
 export { matchReasoningPrompt, isReasoningCorrect } from "./reasoning";
 export {
+  resolveExamFinding,
+  interpolateExamText,
+  examCoverage,
+  nextAbcdeCategory,
+  ABCDE_ORDER,
+  ABCDE_LABEL,
+  EXAM_TECHNIQUE_LABEL,
+  type AbcdeCategory,
+  type ExamTechnique,
+  type ExamSite,
+  type ExamVisual,
+  type ExamSound,
+  type ExamFinding,
+  type ExamPointSpec,
+  type ScenarioExam,
+  type ExamLogEntry,
+  type ResolvedExamFinding,
+  type ExamPhaseContext,
+  type ExamCoverageRow,
+} from "./exam";
+export {
   buildGuidelineComparison,
   extractGuidelineTags,
   describeActionRef,

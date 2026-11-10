@@ -15,6 +15,9 @@ export function getVisualMode(): VisualMode {
   // e2e motion-guard'ları (__bedMetrics/__animDecision) 3D'ye özgü — açık
   // seçim yoksa Playwright'ta eski davranış korunur.
   if (import.meta.env.VITE_E2E === "1") return "3d";
-  // Pilot varsayılanı 2D (Ali Bey kararı, 12 Tem 2026).
-  return "2d";
+  // Varsayılan 3B (Ali Bey kararı, 10 Kas 2026): hedef "bedende muayene"
+  // (Body Interact tarzı) — tıklanır muayene noktaları 3B hastaya bağlı.
+  // 12 Tem 2026 pilotundaki 2B varsayılanı geri alındı; 2B yolu silinmedi,
+  // ?visual=2d veya VITE_VISUAL_MODE=2d ile açılır.
+  return "3d";
 }

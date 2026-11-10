@@ -821,6 +821,10 @@ export interface SessionState {
   // Klinik muhakeme cevapları (SADECE egitim modu) — CEZASIZ.
   // ⚠️ Skor/grade hesabına GİRMEZ; yalnız debrief öğretici gösterimi için.
   reasoning_answers?: ReasoningAnswer[];
+
+  // Fizik muayene kaydı (bedende dokunulan noktalar) — CEZASIZ.
+  // ⚠️ Skor/grade hesabına GİRMEZ; debrief'te ABCDE kapsamı için.
+  exam_log?: import("./exam").ExamLogEntry[];
 }
 
 // ------------------------------------------------------------

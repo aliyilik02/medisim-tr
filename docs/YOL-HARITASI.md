@@ -23,6 +23,19 @@ Son güncelleme: **12 Temmuz 2026** (2D pivot pilotu canlı + kilitli kararlar b
 | Yan sistemler | Ventilatör demo, TTS (tr-TR) + STT (Whisper tarayıcı-içi, KVKK), FHIR R4 tipleri, NeuroKit EKG |
 | Sağlık | tsc 0 hata · **889 vitest pass (60 dosya)** · GLB optimize (168MB→16.7MB) |
 
+## 🧭 Yön kararı (10 Kas 2026) — "bedende muayene"
+
+Hedef: Body Interact'in Türkiye muadili. His görüntü teknolojisinden değil etkileşimden gelir: bedene dokun → faza göre bulgu → karar → hasta tepkisi.
+
+- **Varsayılan görünüm yeniden 3B** (12 Tem 2B pilot varsayılanı geri alındı; 2B/fotoğraf yolu silinmedi, donduruldu).
+- **Donduruldu:** yeni senaryo, eğitmen paneli, ventilatör, 2B/fotoğraf yolu, demo sayfaları. Tek vaka (STEMI) "bir daha" dedirtene kadar genişleme yok.
+- [x] Muayene sistemi v1 (STEMI): 14 kemik-bağlı nokta, ABCDE çubuğu + süre, faza göre bulgu kartı (ses / göz bebeği ışık yanıtı / kapiller dolum sayacı), sonuç ekranında muayene özeti. Veri `src/data/exam/stemi-exam.ts` — **klinik DRAFT**.
+- [ ] Ali Bey: muayene bulguları klinik onayı (DRAFT → ACTIVE) + oynanış testi
+- [ ] S3 galo / derinden kalp sesi / normal solunum sesi için lisanslı ses kaydı (şu an yer tutucu ya da sessiz)
+- [ ] Oynama ekranı sadeleştirme (sağ panel + ventilatör düğmesi; muayene merkezde)
+- [ ] Muayene için e2e testi (Playwright; şu an yalnız birim test + elle ekran görüntüsü turu)
+- [ ] Bitti ölçüsü: 5 öğrenci, açıklama yapılmadan 10 dk oynuyor
+
 ## ⏳ Ali Bey'de bekleyen kararlar
 
 1. **Klinik ACTIVE onayları:** anaflaksi deterioration/auscultation, STEMI paketi, opioid pilot, ekipman kataloğu, muhakeme promptları — hepsi DRAFT/REVIEWED, ACTIVE'e sadece Ali Bey geçirir.

@@ -16,6 +16,11 @@ import { VentilatorScreen } from "@/components/ventilator/VentilatorScreen";
 import { DEFAULT_REGIONS } from "@/components/patient-3d/regions";
 import { buildScenarioRegions } from "@/components/patient-3d/scenarioRegions";
 import { AuscultationOverlay } from "@/components/patient-3d/AuscultationOverlay";
+import { heartSoundFile, playAuscultation, stopAuscultation } from "@/components/patient-3d/auscultationAudio";
+import type { ExamHotspot } from "@/components/patient-3d/ExamHotspotLayer";
+import { AbcdeBar, type ExamFilter } from "@/components/exam/AbcdeBar";
+import { ExamFindingCard } from "@/components/exam/ExamFindingCard";
+import { getScenarioExam } from "@/data/exam";
 import {
   VENT_PRESETS,
   VENT_PARAM,
@@ -42,11 +47,14 @@ import { useStableValue } from "@/hooks/useStableValue";
 import { vitalsToAgitation } from "@/clinical/agitation-mapping";
 import { medicationRouteGesture } from "@/engine/animation-director";
 import { getExtendedMedication } from "@/data/medications-extended";
-import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration, matchReasoningPrompt, isReasoningCorrect } from "@/engine";
+import { getVisibleOptions, PEDAGOGY_ORDER, getPedagogy, pickTeachingAction, teachingNarration, phaseTransitionNarration, matchReasoningPrompt, isReasoningCorrect, resolveExamFinding, examCoverage, nextAbcdeCategory } from "@/engine";
 import { seededShuffle } from "@/lib/shuffle";
 import { useScenarioRunner } from "@/hooks/useScenarioRunner";
 import { cn } from "@/lib/cn";
-import type { ActionRef, PlayMode, ReasoningPrompt } from "@/engine";
+import type { ActionRef, PlayMode, ReasoningPrompt, ResolvedExamFinding } from "@/engine";
+
+// Muayenede dinleme süresi (ms) — kalp/akciğer sesi bu kadar çalar.
+const EXAM_LISTEN_MS = 6000;
 
 // ?mod= query → pedagojik mod (egitim=öğretici, klinik=uygulama, sinav=sınav).
 // Geçersiz/yoksa varsayılan "klinik" (interaktif — e2e auto-start davranışı korunur,
@@ -150,6 +158,18 @@ export function ScenarioBedPlayPage() {
   const [reasoningQueue, setReasoningQueue] = useState<ReasoningPrompt[]>([]);
   const reasoningShownRef = useRef<Set<string>>(new Set());
 
+  // ── Fizik muayene arayüz durumu (bedende dokun → faza göre bulgu) ──
+  // Hangi noktaların muayene edildiği oturumda (session.exam_log) tutulur;
+  // burada yalnız görünüm: seçili ABCDE basamağı + açık bulgu kartı.
+  const [examFilter, setExamFilter] = useState<ExamFilter>("A");
+  const [examFinding, setExamFinding] = useState<ResolvedExamFinding | null>(null);
+  const resetExamUi = () => {
+    stopAuscultation();
+    setExamFinding(null);
+    setExamFilter("A");
+  };
+  useEffect(() => () => stopAuscultation(), []);
+
   const triggerReasoning = (triggerId: string) => {
     // matchReasoningPrompt: SADECE egitim modunda eşleşir (klinik/sinav → null).
     const p = matchReasoningPrompt(rs.reasoning_prompts, triggerId, playMode);
@@ -201,6 +221,7 @@ export function ScenarioBedPlayPage() {
     teachingHandledRef.current = null; // öğretici sürücü baştan anlatsın
     reasoningShownRef.current = new Set(); // tekrar oynamada muhakeme yeniden çıksın
     setReasoningQueue([]);
+    resetExamUi();
     runner.restart();
   };
 
@@ -213,6 +234,8 @@ export function ScenarioBedPlayPage() {
     teachingHandledRef.current = null;
     reasoningShownRef.current = new Set(); // senaryo değişince muhakeme durumu temizlen
     setReasoningQueue([]);
+    resetExamUi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenarioId]);
 
   // ── Öğretici (teaching/egitim) otomatik sürücü ──
@@ -352,6 +375,74 @@ export function ScenarioBedPlayPage() {
   // memo'lu PatientRoomScene'i kırıyordu.
   const openVentilator = useCallback(() => setVentOpen(true), []);
 
+  // ── Fizik muayene — veri + türetilmiş durum ──
+  // Kaydı olmayan senaryoda exam undefined → katman kapalı, eski oskültasyon
+  // paneli görünür (geriye uyum).
+  const exam = useMemo(() => getScenarioExam(rs.id), [rs.id]);
+  const examLog = session?.exam_log;
+  // nokta id → son muayenede patolojik miydi (anahtar varlığı = muayene edildi)
+  const examState = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const e of examLog ?? []) m.set(e.point_id, e.abnormal);
+    return m;
+  }, [examLog]);
+  const examCoverageRows = useMemo(
+    () => (exam ? examCoverage(exam, examState.keys()) : []),
+    [exam, examState],
+  );
+  const examHotspots = useMemo<ExamHotspot[] | undefined>(
+    () =>
+      exam?.points
+        .filter((p) => examFilter === "all" || p.category === examFilter)
+        .map((p) => ({
+          id: p.id,
+          site: p.site,
+          label: p.label,
+          done: examState.has(p.id),
+          abnormal: examState.get(p.id),
+        })),
+    [exam, examFilter, examState],
+  );
+  // Tıklama anında TAZE faz/vital okunur (ref) → callback kimliği sabit kalır,
+  // memo'lu sahne her tick yeniden çizilmez.
+  const examCtxRef = useRef({ exam, phaseSignal: runner.phaseSignal, vitals: liveVitals, examState });
+  examCtxRef.current = { exam, phaseSignal: runner.phaseSignal, vitals: liveVitals, examState };
+  const playExamSound = (f: ResolvedExamFinding) => {
+    if (f.soundFile) playAuscultation(f.soundFile, EXAM_LISTEN_MS);
+    else stopAuscultation(); // sessiz bulgu ya da ses kaydı yok → önceki ses sussun
+  };
+  const onExamSelect = useCallback((pointId: string) => {
+    const ctx = examCtxRef.current;
+    const point = ctx.exam?.points.find((p) => p.id === pointId);
+    if (!ctx.exam || !point) return;
+    const f = resolveExamFinding(point, ctx.phaseSignal, ctx.vitals, heartSoundFile);
+    setExamFinding(f);
+    if (f.soundFile) playAuscultation(f.soundFile, EXAM_LISTEN_MS);
+    else stopAuscultation();
+    // CEZASIZ kayıt (functional setSession; skor/grade DEĞİŞMEZ)
+    teachingApi.current.runner.setSession((s) =>
+      s
+        ? {
+            ...s,
+            exam_log: [
+              ...(s.exam_log ?? []),
+              { point_id: point.id, phase_id: f.phaseId, abnormal: f.abnormal, at: Date.now() },
+            ],
+          }
+        : s,
+    );
+    // Basamağın SON eksiği yeni tamamlandıysa sıradaki basamağa geç (ABCDE
+    // akışı). Önceden bakılmış noktaya yeniden bakmak (faz değişti) geçirmez.
+    if (!ctx.examState.has(point.id)) {
+      const after = examCoverage(ctx.exam, [...ctx.examState.keys(), point.id]);
+      const row = after.find((r) => r.category === point.category);
+      const next = nextAbcdeCategory(after);
+      if (row && row.done >= row.total && next) {
+        setExamFilter((cur) => (cur === point.category ? next : cur));
+      }
+    }
+  }, []);
+
   // Karar seçenekleri — render içinde seededShuffle her tick yeniden
   // karıştırıyordu (aynı seed = aynı sonuç ama yeni dizi kimliği + boşa iş).
   // Deps bilinçli İLKEL (session objesi değil): session her tick yeni kimlik
@@ -471,10 +562,14 @@ export function ScenarioBedPlayPage() {
                 speaking={speaking}
                 speechText={speechText}
                 equipment={equipment}
-                cameraPreset="onden"
+                cameraPreset={exam ? "tum_beden" : "onden"}
                 showVentilator={ventEligible}
                 ventilatorActive
                 onVentilatorActivate={openVentilator}
+                examHotspots={examHotspots}
+                selectedExamId={examFinding?.point.id ?? null}
+                onExamSelect={onExamSelect}
+                examLabels={examFilter !== "all"}
               />
             ) : (
               <Patient2DVisual visualState={visualState} />
@@ -506,10 +601,39 @@ export function ScenarioBedPlayPage() {
           )}
           {/* Oskültasyon noktaları — faz-senkron kalp/akciğer sesi (Yol-3'ten
               taşındı). Sol kenar, başucu monitörünün altı. */}
-          <AuscultationOverlay
-            regions={auscultationRegions}
-            className="absolute top-1/2 -translate-y-1/2 left-3"
-          />
+          {exam ? (
+            <>
+              {/* Bulgu kartı — başucu monitörünün altı (sol kenar) */}
+              {examFinding && (
+                <ExamFindingCard
+                  finding={examFinding}
+                  onClose={() => {
+                    stopAuscultation();
+                    setExamFinding(null);
+                  }}
+                  onReplaySound={() => playExamSound(examFinding)}
+                  className="absolute left-3 top-[398px] z-10"
+                />
+              )}
+              {/* ABCDE çubuğu + süre — sahnenin alt ortası. 2B görünümde
+                  bedende nokta yok → basamağın noktaları düğme olarak listelenir. */}
+              <AbcdeBar
+                coverage={examCoverageRows}
+                active={examFilter}
+                onChange={setExamFilter}
+                suggested={nextAbcdeCategory(examCoverageRows)}
+                elapsedSec={session ? (Date.now() - session.started_at) / 1000 : 0}
+                chips={VISUAL_MODE === "3d" ? undefined : examHotspots}
+                onChipSelect={onExamSelect}
+                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10"
+              />
+            </>
+          ) : (
+            <AuscultationOverlay
+              regions={auscultationRegions}
+              className="absolute top-1/2 -translate-y-1/2 left-3"
+            />
+          )}
           {/* Ventilatör erişim butonu — 3D cihaz tıklamasının DOM eşdeğeri
               (erişilebilirlik + e2e). Pediatrik senaryoda gizli (ventEligible). */}
           {ventEligible && (
@@ -529,7 +653,10 @@ export function ScenarioBedPlayPage() {
           {pedagogy.narration && narration && (
             <div
               data-testid="teaching-narration"
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[78%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-glow-sm neon-teal animate-fade-in flex items-start gap-2.5"
+              className={cn(
+                "absolute left-1/2 -translate-x-1/2 max-w-[78%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-glow-sm neon-teal animate-fade-in flex items-start gap-2.5",
+                exam ? "bottom-24" : "bottom-4", // ABCDE çubuğunun üstünde kalsın
+              )}
             >
               <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-brand/30 flex items-center justify-center font-mono text-[10px] text-brand-light">
                 ⊕
