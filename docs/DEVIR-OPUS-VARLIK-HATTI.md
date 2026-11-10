@@ -13,14 +13,41 @@ Senin işin **3B varlıkları toplamak**: ekipman, oda, hareket klipleri. Kod ya
 
 - `src/engine/`, `src/data/` (klinik), `src/components/exam/`, `ExamHotspotLayer.tsx`, `examAnchors.ts`, `ScenarioBedPlayPage.tsx` — Fable dönünce devam edecek.
 - Canlı sahneyi (`PatientRoomScene.tsx`) DEĞİŞTİRME. Yeni oda ayrı bileşen + bayrak arkasında gelir (aşağıda).
-- Hasta gövde modelini DEĞİŞTİRME (aşağıda "Hasta modeli" kararı).
+- Yeni hasta/oda canlı sahneye BAĞLANMAZ; aday olarak ayrı dosyada bırakılır (Hat 0).
 - Klinik içerik yazma. Prod deploy yok. Ödeme/kredi harcaması aşağıdaki bütçe kuralına bağlı.
 
-## Üç karar (gerekçeli — yeniden tartışma)
+## Karar güncellemesi (Ali Bey, 10 Kas 2026 akşam) — SIFIRDAN
 
-1. **Hasta gövdesi Meshy'den GELMEZ.** Mevcut MPFB2 hasta (CC0) 52 yüz şekli taşıyor: göz kırpma, dudak senkronu, mimik. Meshy insanında bunlar yok; değiştirirsek konuşan hasta ölür. Ayrıca muayene noktaları ve ekipman Mixamo kemik adlarına bağlı. Meshy **eşya ve oda** için kullanılır.
-2. **Hareketler Mixamo'dan.** Hastanın iskeleti zaten Mixamo (65 kemik) → klipler dönüştürme gerektirmeden oturur. Meshy hareketleri kendi iskeletine göre; aktarım işi ve bozulma riski getirir. Mixamo'da bulunamayan hareket olursa listele, zorlama.
-3. **Önce STEMI'nin ihtiyacı.** Genişleme donduruldu. Aşağıdaki listeler önceliklidir; P1 bitmeden P2'ye geçme.
+Ali Bey mevcut hastayı beğenmiyor ("insana benzemiyor"), hareketler arada sapıtıyor, oda tasarımı yanlış. **Hasta, hareket seti ve oda sıfırdan yapılacak.** Önceki "hasta gövdesine dokunma" kararı KALKTI.
+
+Değişmeyen teknik sınırlar (bunlar olmadan muayene sistemi kırılır):
+- İskelet **Mixamo kemik adlarıyla** olmalı (`mixamorigHead`, `Spine`, `Spine2`, `Neck`, `RightForeArm`, `RightHand`, `LeftLeg` …). Muayene noktaları ve ekipman bu adlara bağlı. Meshy modeli Mixamo otomatik iskeletinden geçirilir.
+- Hareketler Mixamo'dan (aynı iskelet, dönüştürme yok).
+- Önce STEMI hastası: 62 yaş erkek. Diğer varyantlar sonra.
+
+## Hat 0 — Yeni hasta (EN ÖNCE, iki aday yan yana)
+
+Kimse tahminle seçmesin; iki aday üret, Ali Bey gözle seçsin.
+
+| Aday | Nasıl | Artı | Eksi |
+|------|-------|------|------|
+| A — Meshy | 62 yaş erkek, hasta önlüğü, A-poz, gerçekçi → Mixamo otomatik iskelet | daha insan görünür | yüz hareket etmez (göz kırpma + dudak senkronu YOK) |
+| B — MPFB2 yenileme | mevcut hat + gerçek cilt dokusu, yaşlılık detayı, saç/sakal, göz | yüz hareketleri kalır, CC0 | manken hissi tam gitmeyebilir |
+
+Teslim: iki aday da yatakta, aynı ışık ve kamerada ("Tüm beden" + yüz yakın) ekran görüntüsü; `/dev/props` benzeri karşılaştırma sayfası. Canlı sahneye bağlama YOK — seçim Ali Bey'de.
+A adayında yüz için ara çözüm dene ve raporla: Blender'da en az `jawOpen` + `eyeBlinkLeft/Right` şekil anahtarı elle eklenebiliyor mu?
+
+## Hareket seti — sıfırdan, az ve temiz
+
+"Sapıtma"nın olası kaynağı (DOĞRULANMADI): ayakta çekilmiş kliplerin yatan hastaya karıştırılması + ağrı katmanı + titreme katmanının üst üste binmesi. Bu yüzden:
+- Yalnız **yatar / yarı oturur** klipler. Ayakta klip alınmaz.
+- Her klip yerinde (kök hareketi yok), aynı başlangıç pozundan, döngüsü dikişsiz.
+- Her klibi **tek başına** 30 sn oynatıp kaydet; sıçrama/kıvrılma görüleni listele ve ele.
+- Karıştırma/katman kodu (`animation-director`) Fable'da; sen yalnız temiz klip bırak.
+
+## Oda — önce kroki, sonra üretim
+
+Mevcut yerleşim yanlış kabul edildi. Üretmeden önce gerçek bir acil resusitasyon odasını örnek alıp **kuşbakışı kroki** çıkar (sedye ortada, baş ucunda gaz paneli + monitör, sağda acil arabası, solda çalışma alanı, ayak ucunda kapı) ve `docs/` altına kaydet. Kroki Ali Bey'e gösterilmeden oda parçası üretme; o sırada Hat 1 ekipmanla ilerle.
 
 ## Meshy kredi bütçesi
 
