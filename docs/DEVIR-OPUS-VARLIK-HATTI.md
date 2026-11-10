@@ -45,6 +45,8 @@ A adayında yüz için ara çözüm dene ve raporla: Blender'da en az `jawOpen` 
 - **B — MPFB2 yenileme:** yüz şekilleri zaten var; eksik olan görünüm (doku, yaş detayı, saç, göz, cilt ışığı).
 - **C — Hazır karakter aracı (yalnız ARAŞTIR, satın alma yok):** Character Creator 4 ve MetaHuman gerçekçi insan + hazır yüz şekli verir. Raporla: web'e (GLB, ≤ 5 MB) inebiliyor mu, lisans tarayıcı oyununda gömülü dağıtıma izin veriyor mu, maliyet. Karar Ali Bey'de.
 
+**KARAR (Ali Bey, 10 Kas 2026): önce B.** MPFB2 yenilemeyle başla. B kabul ölçüsünü geçemezse ya da Ali Bey görünce beğenmezse A+'ya geçilir. A+ ve C'ye şimdilik emek/kredi harcama (C için kısa lisans notu yeter).
+
 Kabul ölçüsü (her aday için kısa video): göz kırpıyor · "Göğsüm ağrıyor" cümlesinde dudak oynuyor · acı ifadesi (kaş + göz kısma) · ilaç içme klibi · bilinç kaybında yüz gevşiyor.
 
 ## Hareket seti — sıfırdan, az ve temiz
