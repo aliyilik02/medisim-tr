@@ -37,6 +37,16 @@ Kimse tahminle seçmesin; iki aday üret, Ali Bey gözle seçsin.
 Teslim: iki aday da yatakta, aynı ışık ve kamerada ("Tüm beden" + yüz yakın) ekran görüntüsü; `/dev/props` benzeri karşılaştırma sayfası. Canlı sahneye bağlama YOK — seçim Ali Bey'de.
 A adayında yüz için ara çözüm dene ve raporla: Blender'da en az `jawOpen` + `eyeBlinkLeft/Right` şekil anahtarı elle eklenebiliyor mu?
 
+### Hedef netleşti (Ali Bey): yüzü DE oynayan, gövdesi DE hareket eden hasta
+
+İstenen: ağız/yüz/göz oynatan, ilaç içen, tedaviye tepki veren hasta. Yani aday "yüzsüz" kalamaz — **52 ARKit yüz şekli şart** (kod hazır: dudak senkronu, göz kırpma, mimik bu adlarla çalışıyor). Bu yüzden A adayı tek başına yetmez; şu yollar denenir, sonuç yan yana konur:
+
+- **A+ — Meshy gövde + yüz şekli üretimi:** Meshy modeline Blender'da 52 ARKit şekli üret (Faceit eklentisi bunu yapar — ücretli; lisansını doğrula). Meshy yüz örgüsü dağınıksa önce baş bölgesini yeniden ör. Ağız içi (diş/dil) ve göz küresi ayrı parça olmalı.
+- **B — MPFB2 yenileme:** yüz şekilleri zaten var; eksik olan görünüm (doku, yaş detayı, saç, göz, cilt ışığı).
+- **C — Hazır karakter aracı (yalnız ARAŞTIR, satın alma yok):** Character Creator 4 ve MetaHuman gerçekçi insan + hazır yüz şekli verir. Raporla: web'e (GLB, ≤ 5 MB) inebiliyor mu, lisans tarayıcı oyununda gömülü dağıtıma izin veriyor mu, maliyet. Karar Ali Bey'de.
+
+Kabul ölçüsü (her aday için kısa video): göz kırpıyor · "Göğsüm ağrıyor" cümlesinde dudak oynuyor · acı ifadesi (kaş + göz kısma) · ilaç içme klibi · bilinç kaybında yüz gevşiyor.
+
 ## Hareket seti — sıfırdan, az ve temiz
 
 "Sapıtma"nın olası kaynağı (DOĞRULANMADI): ayakta çekilmiş kliplerin yatan hastaya karıştırılması + ağrı katmanı + titreme katmanının üst üste binmesi. Bu yüzden:
