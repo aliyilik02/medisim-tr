@@ -48,6 +48,10 @@ const PropsDebugPage = lazy(() =>
 );
 
 // Görselli vaka akışı (PİLOT) — rol + durum/aksiyon görselleri, temiz 2D bölüm.
+// Dev-only: hasta modeli aday karşılaştırması (/dev/hasta-aday).
+const PatientCandidatePage = lazy(() =>
+  import("@/pages/PatientCandidatePage").then((m) => ({ default: m.PatientCandidatePage }))
+);
 const VisualCasePlayPage = lazy(() =>
   import("@/pages/VisualCasePlayPage").then((m) => ({
     default: m.VisualCasePlayPage,
@@ -239,6 +243,16 @@ export function App() {
               element={
                 <Suspense fallback={null}>
                   <PropsDebugPage />
+                </Suspense>
+              }
+            />
+          )}
+          {import.meta.env.DEV && (
+            <Route
+              path="/dev/hasta-aday"
+              element={
+                <Suspense fallback={null}>
+                  <PatientCandidatePage />
                 </Suspense>
               }
             />
