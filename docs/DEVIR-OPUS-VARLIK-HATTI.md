@@ -1,5 +1,7 @@
 # Devir — Varlık Hattı (Opus için)
 
+> **GEÇERSİZ (16 Kas 2026):** oda artık acil resusitasyon değil **poliklinik muayene odası**; eski hasta modelleri kapatıldı. Güncel karar ve hat: `docs/ARASTIRMA-HASTA-POLIKLINIK-2026-11.md` + `docs/YOL-HARITASI.md`. Bu dosya tarihçe olarak duruyor.
+
 > Tarih: 10 Kas 2026 · Devreden: Fable 5.2 · Devralan: Opus
 > Önce oku: `CLAUDE.md`, `docs/CALISMA-BICIMI.md`, `docs/YOL-HARITASI.md` ("Yön kararı" bölümü).
 > Skill'ler: `blender-medical-modeling`, `meshy-3d-agent:meshy-3d-generation`, `r3f-medical`.

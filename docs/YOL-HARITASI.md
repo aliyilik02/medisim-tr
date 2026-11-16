@@ -4,7 +4,7 @@
 > Diğer durum dosyaları (`DURUM-BRIEF.md`, arşivdekiler) anlık fotoğraftır, harita değildir.
 > Eski v1 harita: `docs/arsiv/YOL-HARITASI-v1-2026-05.md` (20 Mayıs, tamamı aşıldı).
 
-Son güncelleme: **16 Kasım 2026** (oynama ekranı sadeleştirildi — "muayene merkezde")
+Son güncelleme: **16 Kasım 2026** (sıfırdan kararı: poliklinik odası canlı, eski hasta/oda kapatıldı, yeni hasta seçimi Ali Bey'de)
 
 ---
 
@@ -37,12 +37,25 @@ Hedef: Body Interact'in Türkiye muadili. His görüntü teknolojisinden değil 
 - [ ] **Öneri — yatay hasta kadrajı:** hasta şu an ekranda dikey duruyor, boyu sahne yüksekliğiyle sınırlı (1366×768'de gövde ≈150 px, 14 nokta sıkışık). Body Interact gibi yatay kadraj (baş solda/sağda, kamera yatak yanında) hastayı ≈1.6× büyütür, noktaları ayırır. Monitör/kart konumu ve etiket yönleri birlikte ele alınmalı — ayrı tur.
 - [ ] Bitti ölçüsü: 5 öğrenci, açıklama yapılmadan 10 dk oynuyor
 
+## 🆕 Sıfırdan kararı (16 Kas 2026) — hasta modeli + alan
+
+Ali Bey: model ve alan baştan tasarlanacak; mevcut hasta modelleri ve hastane alanları kapatılsın. Araştırma + karar: `docs/ARASTIRMA-HASTA-POLIKLINIK-2026-11.md`.
+
+- [x] **Poliklinik muayene odası** canlı (`PolyclinicScene` + `patient-3d/polyclinic/`): gerçek metre, 18.7 m², mevzuat donanım listesine göre; dosya indirmez. Oynama ekranı artık bunu kullanır.
+- [x] **Eski alan kapatıldı:** acil odası sahnesi (`PatientRoomScene`) + 2 ölü demo sayfası silindi; `er-room.glb` ve eski oda eşyaları artık yüklenmiyor.
+- [x] **Eski hasta modelleri kapatıldı:** kadın / çocuk / yaşlı / v2 erkek kayıttan çıktı. Tek **geçici yer tutucu** kaldı (MPFB2 v3 erkek) — oyun döngüsü ve muayene noktaları kemiğe bağlı, hastasız çalışmaz. Yeni model gelince `ANIMATED_MODELS` içindeki tek kayıt değişir.
+- [x] Ölçümle bulunan eski hata düzeldi: hasta baş +Z yönünde kalibre, eski odada yastık ayak ucundaydı.
+- [ ] **Ali Bey: yeni hasta yolu seçimi** (araştırma §2.5) — hedef MetaHuman (bu dizüstü yetmiyor: GTX 1650 4 GB, 16 GB RAM, 63 GB boş) · hızlı yol Character Creator (lisans + şifreli dağıtım + yazılı onay) · ücretsiz zemin MPFB2.
+- [ ] Yeni hasta gelince: kemik adları Mixamo adlarına çevrilir, kabul ölçüsü (`/dev/hasta-aday`), yarı oturur duruş + göğsünü tutma pozu (elle), kodla soluma/bakış/irkilme katmanı.
+- [ ] Oda görsel yükseltme (isteğe bağlı): ışık pişirme, CC0 doku/ortam ışığı (araştırma §4.3).
+- [ ] Eski GLB dosyaları (`public/3d/patient-*.glb`, `er-room.glb`) diskte duruyor — silme/arşive taşıma Ali Bey onayıyla.
+
 ## ⏳ Ali Bey'de bekleyen kararlar
 
 1. **Klinik ACTIVE onayları:** anaflaksi deterioration/auscultation, STEMI paketi, opioid pilot, ekipman kataloğu, muhakeme promptları — hepsi DRAFT/REVIEWED, ACTIVE'e sadece Ali Bey geçirir.
-2. **Model lisansı:** `patient-mimikli.glb` Daz kökenli — lisans netleşmeden commit yok; kalıcı çözüm MPFB2 (CC0) yeniden üretim.
+2. **Model lisansı:** `patient-mimikli.glb` **Character Creator 4 çıkışı** (16 Kas dosya içinden doğrulandı; "Daz" notu yanlıştı). Reallusion sözleşmesi düz GLB'ye izin vermiyor → lisans sahipliği + şifreli dağıtım + yazılı onay olmadan commit/yayın yok.
 3. ~~Push kararı~~ — çözüldü (6 Tem 2026): push açık, `feat/backend-cf-worker` GitHub ile eşit.
-4. **Hasta/oda varlıkları (10 Kas devir raporu — `docs/DEVIR-OPUS-RAPOR.md`):** v3 erkek hasta adayı seçimi (`/dev/hasta-aday`) · oda krokisi onayı (`docs/oda-kroki.svg`) · yeni Mixamo klipleri (Adobe girişi) · Meshy ekipman (kurulum izni ya da web'den elle indirme).
+4. **Yeni hasta yolu (16 Kas araştırması §2.5):** Character Creator lisansın var mı? · daha güçlü bilgisayara erişim var mı (MetaHuman için)? · yeni Mixamo klipleri (Adobe girişi). Eski acil odası krokisi (`docs/oda-kroki.svg`) ve v3 aday seçimi poliklinik kararıyla geçersiz.
 5. **Öncelik seçimi:** aşağıdaki A–E hatlarından hangisi önce (öneri: A+B paralel, bkz. gerekçe).
 
 ## 📌 Kilitli kararlar (ürün-sahibi — DEĞİŞTİRME)
