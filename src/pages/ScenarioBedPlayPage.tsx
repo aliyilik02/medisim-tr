@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ClipboardList, MessageCircle, Activity as ActivityIcon, Wind, X, AlertTriangle } from "lucide-react";
-import { PatientRoomScene } from "@/components/patient-3d/PatientRoomScene";
+import { PolyclinicScene } from "@/components/patient-3d/PolyclinicScene";
 import { Patient2DVisual } from "@/components/patient-2d/Patient2DVisual";
 import { getVisualMode } from "@/components/patient-2d/visualMode";
 
 // URL/env oturum boyunca değişmez → modül seviyesinde bir kez çözülür.
 const VISUAL_MODE = getVisualMode();
 import { patientToVariant, patientToSkinTone } from "@/components/patient-3d/patientModels";
-import { ANIMATED_MODELS, NON_SUPINE_CLIPS } from "@/components/patient-3d/AnimatedPatientModel";
+import { resolveAnimatedModel, NON_SUPINE_CLIPS } from "@/components/patient-3d/AnimatedPatientModel";
 import type { EquipmentKind } from "@/components/patient-3d/equipmentMeshes";
 import { VitalMonitorScreen } from "@/components/monitor/VitalMonitorScreen";
 import { patientVitalsToMonitor } from "@/components/monitor/adapter";
@@ -80,8 +80,8 @@ function parsePlayMode(raw: string | null): PlayMode {
 // ScenarioBedPlayPage — TAM senaryo motoru + supine yatak hastası
 // ============================================================
 // PatientDialog3DPage'in (ayakta + diyalog) yatak versiyonu: aynı tam motor
-// (useScenarioRunner — adım/aksiyon/lab/karar/skor/debrief) ama hasta acil
-// servis yatağında supine + animasyonlu (PatientRoomScene). Vital → klip
+// (useScenarioRunner — adım/aksiyon/lab/karar/skor/debrief) ama hasta
+// poliklinik muayene sedyesinde sırtüstü + animasyonlu (PolyclinicScene). Vital → klip
 // (vitalsToClip) + ten tonu (vitalsToVisual) otomatik. useVitalsTick zaman-bazlı
 // deterioration sürer. Ekipman aksiyonları hastada görünür (kemik-bağlı).
 // Route: /senaryo-yatak
@@ -344,7 +344,7 @@ export function ScenarioBedPlayPage() {
     speaking,
     // Supine sahne: ayakta çekilmiş klipler (talk_* dahil) yönetmene
     // VERİLMEZ — konuşma lipsync ile, gövde laying_idle'da kalır.
-    availableClips: (ANIMATED_MODELS[variant]?.clips ?? []).filter(
+    availableClips: resolveAnimatedModel(variant).clips.filter(
       (c) => !NON_SUPINE_CLIPS.includes(c),
     ),
   });
@@ -383,7 +383,7 @@ export function ScenarioBedPlayPage() {
   );
 
   // R4: kararlı callback — inline arrow her render'da yeni kimlik üretip
-  // memo'lu PatientRoomScene'i kırıyordu.
+  // memo'lu sahneyi (PolyclinicScene) kırıyordu.
   const openVentilator = useCallback(() => setVentOpen(true), []);
 
   // ── Fizik muayene — veri + türetilmiş durum ──
@@ -570,7 +570,7 @@ export function ScenarioBedPlayPage() {
                 SİLİNMEDİ — dondurulmuş, ?visual=3d veya VITE_VISUAL_MODE=3d
                 ile aynen döner (geri dönüş sigortası + satış demosu). */}
             {VISUAL_MODE === "3d" ? (
-              <PatientRoomScene
+              <PolyclinicScene
                 variant={variant}
                 decision={animDecision}
                 skinTint={skinTint}
@@ -611,7 +611,7 @@ export function ScenarioBedPlayPage() {
                   runner.phaseSignal?.ekg ?? scenario.ekg_pattern,
                 )}
                 patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
-                bedLabel="Yatak 1 · Acil Servis"
+                bedLabel="Muayene Odası · Poliklinik"
                 showArt={false}
               />
             </div>
@@ -916,7 +916,7 @@ export function ScenarioBedPlayPage() {
                 onPickPreset={ventPickPreset}
                 activePreset={ventPreset}
                 patientName={`${scenario.patient.age} yaş ${scenario.patient.sex === "M" ? "Erkek" : "Kadın"}`}
-                bedLabel="Yatak 1 · Acil Servis"
+                bedLabel="Muayene Odası · Poliklinik"
                 patientWeightKg={rs.patient.weight_kg}
               />
             </div>

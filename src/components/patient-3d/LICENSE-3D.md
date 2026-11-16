@@ -5,6 +5,21 @@ Yeni model eklerken bu dosyaya da bir bölüm ekleyin.
 
 ---
 
+## Durum — 16 Kasım 2026 ("sıfırdan" kararı)
+
+| Varlık | Durum | Lisans |
+|--------|-------|--------|
+| Poliklinik odası (`polyclinic/`) | **CANLI** — kodla üretilir, dosya yok | Proje kodu (üçüncü taraf varlık yok) |
+| `candidates/patient-v3-male.glb` | **CANLI — geçici yer tutucu** | MPFB2/MakeHuman CC0 + Mixamo iskelet/klip (gömülü kullanım) |
+| `props/vitals-monitor.glb` | CANLI | CC-BY 4.0 — atıf `/atiflar` |
+| `patient-v2-*.glb`, `patient-animated*.glb`, `patient-{female-adult,male-adult,child,elderly}.glb` | **KAPATILDI** — yüklenmiyor, diskte | CC0 (aşağıda) |
+| `er-room.glb`, `props/{iv-pole,bedside-table,hospital-chair,wheelchair}.glb` | **KAPATILDI** — yüklenmiyor (yalnız `/dev/props`) | aşağıda / CC-BY 4.0 |
+| `patient-mimikli.glb` (gitignore) | **YAYINLANAMAZ** | Character Creator 4 çıkışı — dosya içinden doğrulandı (`Std_Skin_*`, `A01_Brow_Inner_Up`, Rigify). Reallusion içerik sözleşmesi §6.3 (1 Kas 2026) düz GLB'yi yasaklar: şifreli kap + yazılı onay gerekir. Eski "Daz kökenli" notu yanlıştı. |
+
+Yeni hasta modeli seçimi ve lisans kanıtları: `docs/ARASTIRMA-HASTA-POLIKLINIK-2026-11.md`.
+
+---
+
 ## patient-{female-adult,male-adult,child,elderly}.glb (CC0 — TEMİZ HAT, AKTİF)
 
 **Eser:** MediSim TR sanal hasta seti — 4 varyant (MPFB2 ile prosedürel üretim)

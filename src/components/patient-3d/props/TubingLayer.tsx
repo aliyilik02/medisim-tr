@@ -47,9 +47,9 @@ const TUBE_SPECS: Partial<Record<EquipmentKind, TubeSpec>> = {
   },
 };
 
-const FLOOR_Y = -0.26; // oda zemini -0.27 + pay
+const FLOOR_Y = -0.26; // eski sahne zemini -0.27 + pay (varsayılan)
 
-function SaggingTube({ spec }: { spec: TubeSpec }) {
+function SaggingTube({ spec, floorY }: { spec: TubeSpec; floorY: number }) {
   const meshRef = useRef<Mesh>(null);
   const { scene } = useThree();
   // Yumuşatılmış hedef uç — hasta hareketini hafif gecikmeyle izler (rope hissi)
@@ -81,7 +81,7 @@ function SaggingTube({ spec }: { spec: TubeSpec }) {
     smoothEnd.current.lerp(target.current, 1 - Math.exp(-8 * delta));
 
     const end: Vec3Tuple = [smoothEnd.current.x, smoothEnd.current.y, smoothEnd.current.z];
-    const pts = buildTubePoints(spec.source, end, { floorY: FLOOR_Y });
+    const pts = buildTubePoints(spec.source, end, { floorY });
     const curve = new CatmullRomCurve3(pts.map((p) => new Vector3(p[0], p[1], p[2])));
     const geo = new TubeGeometry(curve, 24, spec.radius, 6, false);
     mesh.geometry.dispose();
@@ -92,12 +92,32 @@ function SaggingTube({ spec }: { spec: TubeSpec }) {
   return <mesh ref={meshRef} material={material} frustumCulled={false} />;
 }
 
-export function TubingLayer({ equipment }: { equipment?: EquipmentKind[] }) {
-  const active = (equipment ?? []).filter((k) => TUBE_SPECS[k]);
+interface TubingLayerProps {
+  equipment?: EquipmentKind[];
+  /** Kaynak uçları sahneye göre değiştir (dünya koordinatı). Verilmeyen
+      ekipman varsayılan (eski sahne) kaynağını kullanır. */
+  sources?: Partial<Record<EquipmentKind, Readonly<Vec3Tuple>>>;
+  /** Hortumun altına inmeyeceği zemin yüksekliği (dünya). */
+  floorY?: number;
+}
+
+export function TubingLayer({ equipment, sources, floorY = FLOOR_Y }: TubingLayerProps) {
+  // Kaynak değişince spec kimliği değişmesin diye bir kez türetilir
+  // (SaggingTube malzemesi spec'e bağlı).
+  const specs = useMemo(() => {
+    const out: Partial<Record<EquipmentKind, TubeSpec>> = {};
+    for (const k of Object.keys(TUBE_SPECS) as EquipmentKind[]) {
+      const base = TUBE_SPECS[k]!;
+      const src = sources?.[k];
+      out[k] = src ? { ...base, source: [src[0], src[1], src[2]] } : base;
+    }
+    return out;
+  }, [sources]);
+  const active = (equipment ?? []).filter((k) => specs[k]);
   return (
     <>
       {active.map((k) => (
-        <SaggingTube key={k} spec={TUBE_SPECS[k]!} />
+        <SaggingTube key={k} spec={specs[k]!} floorY={floorY} />
       ))}
     </>
   );

@@ -163,50 +163,37 @@ export interface AnimatedModelMeta {
   realAssets?: boolean;
 }
 
+// ── 16 Kas 2026 — "sıfırdan" kararı (Ali Bey): ESKİ HASTA MODELLERİ KAPATILDI ──
+// Kadın / çocuk / yaşlı varyantları ve v2 erkek kayıttan çıkarıldı; dosyaları
+// artık yüklenmez (public/3d altında duruyor, silme kararı Ali Bey'de).
+// Yeni hasta modeli (seçim + hat: docs/ARASTIRMA-HASTA-POLIKLINIK-2026-11.md)
+// gelene kadar TEK geçici yer tutucu kalır: oyun döngüsü, muayene noktaları ve
+// ekipman kemiğe bağlı — hasta olmadan hiçbiri çalışmaz ve test edilemez.
+// Her senaryo hastası (yaş/cinsiyet ne olursa olsun) bu yer tutucuya çözülür.
+// Yeni model geldiğinde: bu tek kaydı değiştir, gerekirse varyant ekle.
+export const INTERIM_PATIENT_VARIANT: PatientVariant = "male-adult";
 export const ANIMATED_MODELS: Partial<Record<PatientVariant, AnimatedModelMeta>> = {
-  "female-adult": {
-    url: "/3d/patient-v2-female-adult.glb", // v2 varlık hattı (6 Tem)
-    label: "Kadın",
-    clips: ["laying_idle", "idle", "talk_gesture", "talk_shrug", "pain", "cough_mild", "cough_severe"],
-    bedScale: 0.62,
-    bedPosY: -0.337, // objektif ölçüm + ayak yükseltme nudge (scripts/measure-bed-place.mjs)
-    realAssets: true,
-  },
   "male-adult": {
-    // v2 (6 Tem): MPFB CC0 varlık-ekleme turu — gerçek cilt dokusu (UV
-    // DataTransfer ile kurtarıldı), göz/kaş/kirpik/saç mesh, tunik→önlük.
-    // 10 klip + 52 morph korunarak Blender'dan yeniden export (2.2MB meshopt).
-    url: "/3d/patient-v2-male.glb",
-    label: "Erkek",
+    // v3 aday (10 Kas): MPFB2 CC0 — 52 ARKit, diş/dil, yüksek poligon göz,
+    // kır saç/kaş, hastane önlüğü. Gövde mesh'i v2 ile aynı → aynı kalibrasyon.
+    url: "/3d/candidates/patient-v3-male.glb",
+    label: "Erkek (geçici)",
     clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
     bedScale: 0.62,
-    bedPosY: -0.505, // gövde mesh değişmedi → aynı kalibrasyon
-    realAssets: true,
-  },
-  child: {
-    url: "/3d/patient-animated-child.glb", // v2.2 DENendi (yetişkin-oran) — saç yine görünmedi + önlük kırpık; çocuk mesh özel analiz istiyor (v2.3)
-    label: "Çocuk",
-    clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "take_pill", "use_inhaler"],
-    bedScale: 0.5, // çocuk küçük (kullanıcı: fazla uzundu)
-    bedPosY: -0.113, // objektif ölçüm + çocuk yatak-içi yükseltme (+0.035)
-  },
-  elderly: {
-    url: "/3d/patient-v2-elderly.glb", // v2 varlık hattı
-    label: "Yaşlı",
-    clips: ["laying_idle", "laying_breathless", "talk_gesture", "talk_shrug", "cough_mild", "cough_severe", "moaning", "vomiting", "take_pill", "use_inhaler"],
-    bedScale: 0.62,
-    bedPosY: -0.446, // objektif ölçüm + ayak yükseltme nudge
+    bedPosY: -0.505,
     realAssets: true,
   },
 };
 export const ANIMATED_VARIANTS = Object.keys(ANIMATED_MODELS) as PatientVariant[];
-const DEFAULT_ANIMATED_VARIANT: PatientVariant = "female-adult";
+const DEFAULT_ANIMATED_VARIANT: PatientVariant = INTERIM_PATIENT_VARIANT;
 
-function resolveModel(variant: PatientVariant) {
+/** Varyantın model kaydı — kaydı olmayan varyant geçici yer tutucuya düşer. */
+export function resolveAnimatedModel(variant: PatientVariant): AnimatedModelMeta {
   return ANIMATED_MODELS[variant] ?? ANIMATED_MODELS[DEFAULT_ANIMATED_VARIANT]!;
 }
+const resolveModel = resolveAnimatedModel;
 
-// Tüm animasyonlu varyantları preload et — varyant değişiminde anlık geçiş.
+// Kayıtlı modeli önden yükle (tek dosya).
 ANIMATED_VARIANTS.forEach((v) => useGLTF.preload(ANIMATED_MODELS[v]!.url));
 
 interface Props {

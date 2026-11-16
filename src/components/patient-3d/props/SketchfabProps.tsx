@@ -139,8 +139,7 @@ export function VitalsMonitorProp(p: Omit<PropGLBProps, "file">) {
   return <PropGLB file="vitals-monitor.glb" scale={0.213} {...p} />;
 }
 
-useGLTF.preload(`${PROP_BASE}/iv-pole.glb`);
-useGLTF.preload(`${PROP_BASE}/bedside-table.glb`);
-useGLTF.preload(`${PROP_BASE}/hospital-chair.glb`);
+// Önden yükleme: yalnız poliklinik sahnesinde kullanılan monitör. Diğer dört
+// eşya eski acil odasına aitti (16 Kas 2026'da kapatıldı) — artık önden
+// yüklenmez; /dev/props açılınca istek üzerine gelir.
 useGLTF.preload(`${PROP_BASE}/vitals-monitor.glb`);
-useGLTF.preload(`${PROP_BASE}/wheelchair.glb`);

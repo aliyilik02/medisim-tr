@@ -56,14 +56,18 @@ test.describe("dikey dilim — /hasta/:id", () => {
     await expect(page.locator("header select")).toHaveCount(0);
   });
 
-  test("animasyonlu hasta GLB 200 + makul boyut (truncate/master guard)", async ({
+  test("hasta GLB 200 + makul boyut; kapatılan eski model ve oda dosyaları yüklenmez", async ({
     page,
   }) => {
-    // /3d-demo emekli oldu; model-bütünlük guard'ı canonical route'a taşındı.
-    // Anafilaksi hastası 35 y kadın → v2 varlık hattı dosyası (6 Tem'de
-    // patient-animated.glb'nin yerini aldı; test eski adı bekleyip kırıktı).
+    // 16 Kas 2026 "sıfırdan" kararı: eski hasta varyantları + acil odası kapatıldı.
+    // Her senaryo hastası (burada 35 y kadın) tek geçici yer tutucuya çözülür.
+    // Yeni hasta modeli gelince aşağıdaki dosya adını güncelle.
+    const requested: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("/3d/")) requested.push(r.url());
+    });
     const responsePromise = page.waitForResponse(
-      (r) => r.url().endsWith("/3d/patient-v2-female-adult.glb") && r.status() === 200,
+      (r) => r.url().endsWith("/3d/candidates/patient-v3-male.glb") && r.status() === 200,
       { timeout: 15_000 }
     );
     await page.goto(`/hasta/${ANAFLAKSI}`);
@@ -71,10 +75,16 @@ test.describe("dikey dilim — /hasta/:id", () => {
     expect(response.status()).toBe(200);
     const contentLength = response.headers()["content-length"];
     if (contentLength) {
-      // ~1.6 MB (v2, meshopt). Alt sınır: 0-byte/truncate; üst: ham master.
+      // ~2.7 MB (meshopt). Alt sınır: 0-byte/truncate; üst: ham master.
       expect(Number(contentLength)).toBeGreaterThan(100_000);
       expect(Number(contentLength)).toBeLessThan(5_000_000);
     }
+    // Kapatılan varlıklar oynama ekranında İSTENMEMELİ (sessiz geri dönüş bekçisi).
+    await page.waitForTimeout(2500);
+    const retired = requested.filter((u) =>
+      /patient-(v2|animated|female-adult|male-adult|child|elderly)|er-room\.glb|props\/(iv-pole|bedside-table|hospital-chair|wheelchair)\.glb/.test(u),
+    );
+    expect(retired).toEqual([]);
   });
 
   test("ventilatör — buton paneli açar, preset değişir, kapanır", async ({

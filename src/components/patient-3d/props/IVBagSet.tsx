@@ -20,9 +20,12 @@ interface Props {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  /** Haznenin altından sarkan sabit hat parçası çizilsin mi. Hortum katmanı
+      (TubingLayer) hattı kendisi çiziyorsa false ver — çift hat olmasın. */
+  line?: boolean;
 }
 
-export function IVBagSet({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1 }: Props) {
+export function IVBagSet({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, line = true }: Props) {
   return (
     <group position={position} rotation={rotation} scale={scale}>
       {/* askı kancası — kol ile torba arasında ince halka boynu */}
@@ -42,9 +45,11 @@ export function IVBagSet({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1
         <cylinderGeometry args={[0.012, 0.012, 0.05, 10]} />
       </mesh>
       {/* IV hattı — hazneden hastaya doğru inen ince hortum */}
-      <mesh position={[0, -0.45, 0]} material={MAT_TUBE}>
-        <cylinderGeometry args={[0.0028, 0.0028, 0.36, 6]} />
-      </mesh>
+      {line && (
+        <mesh position={[0, -0.45, 0]} material={MAT_TUBE}>
+          <cylinderGeometry args={[0.0028, 0.0028, 0.36, 6]} />
+        </mesh>
+      )}
     </group>
   );
 }
