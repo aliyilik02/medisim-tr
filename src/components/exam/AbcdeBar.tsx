@@ -7,7 +7,7 @@
 // görünür kılar; hastanın kötüleşmesi zaten arka planda akıyor.
 // ============================================================
 
-import { Timer, Check } from "lucide-react";
+import { Timer, Check, Hand } from "lucide-react";
 import {
   ABCDE_LABEL,
   type AbcdeCategory,
@@ -35,6 +35,9 @@ interface Props {
       (bedende nokta gösterilemeyen 2B görünümde yedek yol). */
   chips?: Chip[];
   onChipSelect?: (id: string) => void;
+  /** Çubuğun üstünde tek satır yönlendirme (ör. henüz hiç muayene yapılmadıysa
+      "noktaya dokun"). Boşsa çizilmez. */
+  hint?: string | null;
   className?: string;
 }
 
@@ -51,6 +54,7 @@ export function AbcdeBar({
   elapsedSec,
   chips,
   onChipSelect,
+  hint,
   className,
 }: Props) {
   return (
@@ -61,6 +65,16 @@ export function AbcdeBar({
         className,
       )}
     >
+      {hint && (
+        <div
+          data-testid="exam-hint"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-ink-900/85 border border-brand/40 backdrop-blur-md shadow-lg text-[11px] text-ink-100 animate-fade-in"
+        >
+          <Hand className="w-3.5 h-3.5 text-brand-light" />
+          {hint}
+        </div>
+      )}
+
       {chips && chips.length > 0 && (
         <div className="flex flex-wrap justify-center gap-1 pointer-events-auto max-w-[520px]">
           {chips.map((c) => (

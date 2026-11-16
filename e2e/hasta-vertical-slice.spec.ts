@@ -60,8 +60,10 @@ test.describe("dikey dilim — /hasta/:id", () => {
     page,
   }) => {
     // /3d-demo emekli oldu; model-bütünlük guard'ı canonical route'a taşındı.
+    // Anafilaksi hastası 35 y kadın → v2 varlık hattı dosyası (6 Tem'de
+    // patient-animated.glb'nin yerini aldı; test eski adı bekleyip kırıktı).
     const responsePromise = page.waitForResponse(
-      (r) => r.url().endsWith("/3d/patient-animated.glb") && r.status() === 200,
+      (r) => r.url().endsWith("/3d/patient-v2-female-adult.glb") && r.status() === 200,
       { timeout: 15_000 }
     );
     await page.goto(`/hasta/${ANAFLAKSI}`);
@@ -69,7 +71,7 @@ test.describe("dikey dilim — /hasta/:id", () => {
     expect(response.status()).toBe(200);
     const contentLength = response.headers()["content-length"];
     if (contentLength) {
-      // ~890 KB Mixamo+meshopt. Alt sınır: 0-byte/truncate; üst: ham master.
+      // ~1.6 MB (v2, meshopt). Alt sınır: 0-byte/truncate; üst: ham master.
       expect(Number(contentLength)).toBeGreaterThan(100_000);
       expect(Number(contentLength)).toBeLessThan(5_000_000);
     }

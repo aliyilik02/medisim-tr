@@ -12,7 +12,8 @@ import { Suspense, memo, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, ContactShadows } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette, Noise } from "@react-three/postprocessing";
-import { Box3, Vector3, PMREMGenerator, type Group, type Object3D, type SkinnedMesh, type Mesh } from "three";
+import { Box3, Vector3, PMREMGenerator, type Group, type Object3D, type PerspectiveCamera, type SkinnedMesh, type Mesh } from "three";
+import { sceneViewShiftPx } from "./sceneLayout";
 import { RoomEnvironment } from "three-stdlib";
 import { AnimatedPatientModel, ANIMATED_MODELS, type PatientClip, type ClipDecision } from "./AnimatedPatientModel";
 import type { VisualState } from "@/clinical/clinicalVisualMapping";
@@ -169,6 +170,30 @@ function StudioEnvironment() {
       pmrem.dispose();
     };
   }, [gl, scene]);
+  return null;
+}
+
+// Görüş kaydırma — sahneyi ekranda yatayda kaydırır; dünya ve kamera
+// presetleri DEĞİŞMEZ. Sol kenardaki katmanın (başucu monitörü) kapattığı
+// şerit verilir, hasta kalan boş alanın ortasına gelir (kural: sceneLayout).
+// Projeksiyon matrisi üzerinden çalışır → Html muayene noktaları ve tıklama
+// ışınları kendiliğinden tutarlı kalır. Boyut değişince yeniden hesaplanır.
+function ViewShift({ leftInsetPx }: { leftInsetPx: number }) {
+  const camera = useThree((s) => s.camera);
+  const width = useThree((s) => s.size.width);
+  const height = useThree((s) => s.size.height);
+  useEffect(() => {
+    const cam = camera as PerspectiveCamera;
+    if (!cam.isPerspectiveCamera) return;
+    const shift = sceneViewShiftPx(width, leftInsetPx);
+    if (shift === 0) {
+      cam.clearViewOffset();
+      return;
+    }
+    // Alt-pencere sola kayar → içerik ekranda SAĞA kayar.
+    cam.setViewOffset(width, height, -shift, 0, width, height);
+    return () => cam.clearViewOffset();
+  }, [camera, width, height, leftInsetPx]);
   return null;
 }
 
@@ -345,6 +370,9 @@ interface Props {
   onExamSelect?: (id: string) => void;
   /** Muayene noktası etiketleri hep görünsün mü (false → üstüne gelince). */
   examLabels?: boolean;
+  /** Sahnenin sol kenarında başka katmanın (başucu monitörü) kapattığı şerit
+      (px). Verilirse hasta kalan boş alanın ortasına kaydırılır. */
+  leftInsetPx?: number;
   className?: string;
 }
 
@@ -371,6 +399,7 @@ function PatientRoomSceneImpl({
   selectedExamId = null,
   onExamSelect,
   examLabels = true,
+  leftInsetPx = 0,
   className,
 }: Props) {
   const controlsRef = useRef<{ target: Vector3; update: () => void } | null>(null);
@@ -521,12 +550,14 @@ function PatientRoomSceneImpl({
 
         <OrbitControls ref={controlsRef as never} target={[0, 0.2, 0]} minDistance={0.6} maxDistance={4} enablePan />
         <CameraRig preset={activePreset} controlsRef={controlsRef} />
+        <ViewShift leftInsetPx={leftInsetPx} />
         {cameraDebug && <CameraReadout controlsRef={controlsRef} onUpdate={setCamLive} />}
       </Canvas>
 
       {/* Kamera açısı toggle — tepeden "Önden" oda/IV/sedyeyi göstermez; kullanıcı
-          "Genel"/"Yan" ile zengin sahneyi görebilsin. Sağ-üst (monitör sol-üstte). */}
-      <div className="absolute top-3 right-3 flex gap-1 bg-ink-900/80 border border-ink-700/70 rounded-lg p-1 backdrop-blur-md">
+          "Genel"/"Yan" ile zengin sahneyi görebilsin. Sağ-üst (monitör sol-üstte).
+          İkincil kontrol: soluk durur, üstüne gelince/odakta belirginleşir. */}
+      <div className="absolute top-3 right-3 flex gap-1 bg-ink-900/80 border border-ink-700/70 rounded-lg p-1 backdrop-blur-md opacity-50 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
         {(Object.keys(CAMERA_PRESET_LABELS) as CameraPreset[]).map((p) => (
           <button
             key={p}

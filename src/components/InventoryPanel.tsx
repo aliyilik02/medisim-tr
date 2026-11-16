@@ -25,6 +25,9 @@ interface Props {
   onOrderLab?: (panelId: string) => void;
   onViewLab?: (panelId: string) => void;
   onViewImaging?: (imagingId: string) => void;
+  /** Sıkı yerleşim — yatak-başı oynama ekranı: başlık satırı kalkar (sayılar
+      sekmelere taşınır), boşluklar daralır → listeye daha çok satır sığar. */
+  compact?: boolean;
 }
 
 const MODALITY_LABEL: Record<string, string> = {
@@ -42,6 +45,11 @@ const TAB_TONE_CLASS: Record<Tab, string> = {
 
 /** Liste girişi kademeli parlar; uzun listede gecikme 240ms'de kapanır. */
 const staggerStyle = (i: number) => ({ animationDelay: `${Math.min(i * 28, 240)}ms` });
+
+/** Sekme içi adet (sıkı yerleşimde başlık satırının yerine geçer). */
+function TabCount({ n }: { n: number }) {
+  return <span className="font-mono text-[10px] opacity-60 tabular-nums">{n}</span>;
+}
 
 function TabButton({
   tone,
@@ -89,6 +97,7 @@ export function InventoryPanel({
   onOrderLab,
   onViewLab,
   onViewImaging,
+  compact = false,
 }: Props) {
   const hasTetkik = (labPanels && Object.keys(labPanels).length > 0) || imagingResults.length > 0;
 
@@ -133,21 +142,23 @@ export function InventoryPanel({
 
   return (
     <div className="panel flex flex-col h-full">
-      <div className="p-4 border-b border-ink-700">
-        <div className="flex items-center justify-between mb-3">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
-            Envanter
+      <div className={cn("border-b border-ink-700", compact ? "p-2.5" : "p-4")}>
+        {!compact && (
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
+              Envanter
+            </div>
+            <div className="text-xs text-ink-400 font-mono">
+              <span className="neon-pink" style={{ color: "var(--neon)" }}>
+                {availableMedications.length} ilaç
+              </span>
+              {" · "}
+              <span className="neon-cyan" style={{ color: "var(--neon)" }}>
+                {availableEquipment.length} ekipman
+              </span>
+            </div>
           </div>
-          <div className="text-xs text-ink-400 font-mono">
-            <span className="neon-pink" style={{ color: "var(--neon)" }}>
-              {availableMedications.length} ilaç
-            </span>
-            {" · "}
-            <span className="neon-cyan" style={{ color: "var(--neon)" }}>
-              {availableEquipment.length} ekipman
-            </span>
-          </div>
-        </div>
+        )}
 
         <div className="flex gap-1 p-1 bg-ink-900 rounded-md">
           <TabButton
@@ -157,6 +168,7 @@ export function InventoryPanel({
             icon={Wrench}
           >
             Ekipman
+            {compact && <TabCount n={availableEquipment.length} />}
           </TabButton>
           <TabButton
             tone={TAB_TONE_CLASS.ilac}
@@ -165,6 +177,7 @@ export function InventoryPanel({
             icon={Pill}
           >
             İlaç
+            {compact && <TabCount n={availableMedications.length} />}
           </TabButton>
           {hasTetkik && (
             <TabButton
@@ -178,7 +191,7 @@ export function InventoryPanel({
           )}
         </div>
 
-        <div className={cn("mt-3 relative transition-all duration-200", TAB_TONE_CLASS[tab])}>
+        <div className={cn("relative transition-all duration-200", compact ? "mt-2" : "mt-3", TAB_TONE_CLASS[tab])}>
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
           <input
             type="text"
@@ -196,7 +209,7 @@ export function InventoryPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+      <div className={cn("flex-1 overflow-y-auto space-y-1", compact ? "p-2" : "p-3")}>
         {/* İlaç tab */}
         {tab === "ilac" &&
           medsFiltered.map((m, i) => (

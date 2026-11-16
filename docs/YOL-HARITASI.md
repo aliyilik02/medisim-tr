@@ -4,7 +4,7 @@
 > Diğer durum dosyaları (`DURUM-BRIEF.md`, arşivdekiler) anlık fotoğraftır, harita değildir.
 > Eski v1 harita: `docs/arsiv/YOL-HARITASI-v1-2026-05.md` (20 Mayıs, tamamı aşıldı).
 
-Son güncelleme: **12 Temmuz 2026** (2D pivot pilotu canlı + kilitli kararlar bölümü eklendi)
+Son güncelleme: **16 Kasım 2026** (oynama ekranı sadeleştirildi — "muayene merkezde")
 
 ---
 
@@ -32,16 +32,18 @@ Hedef: Body Interact'in Türkiye muadili. His görüntü teknolojisinden değil 
 - [x] Muayene sistemi v1 (STEMI): 14 kemik-bağlı nokta, ABCDE çubuğu + süre, faza göre bulgu kartı (ses / göz bebeği ışık yanıtı / kapiller dolum sayacı), sonuç ekranında muayene özeti. Veri `src/data/exam/stemi-exam.ts` — **klinik DRAFT**.
 - [ ] Ali Bey: muayene bulguları klinik onayı (DRAFT → ACTIVE) + oynanış testi
 - [ ] S3 galo / derinden kalp sesi / normal solunum sesi için lisanslı ses kaydı (şu an yer tutucu ya da sessiz)
-- [ ] Oynama ekranı sadeleştirme (sağ panel + ventilatör düğmesi; muayene merkezde)
-- [ ] Muayene için e2e testi (Playwright; şu an yalnız birim test + elle ekran görüntüsü turu)
+- [x] **Oynama ekranı sadeleştirme** (16 Kas): yerleşim artık [bilgi sütunu | hasta | aksiyon paneli]. Hasta, monitörün sağındaki boş alana ortalanır (`patient-3d/sceneLayout` — sağ kol/etiketler monitörün altında kalıyordu); muayene katmanlı vakada ventilatör cihazı + düğmesi gizli; sağ panel dizüstünde 400 px, adım kartı sıkı, envanter kalan yüksekliğin tamamını alır (1366×768'de görünür satır 2 → 4+); ilk dokunuş ipucu; "eğitim amaçlıdır" rozeti sahnenin sol-altına. Kamera açı düğmeleri soluk (üstüne gelince belirir).
+- [~] Muayene için e2e testi: **yerleşim güvencesi var** (`e2e/muayene-yerlesim.spec.ts` — her ABCDE basamağında nokta/etiket hiçbir katmanın altında değil, dokunuş bulgu kartını açar, envanter sığar). KALAN: faza göre bulgunun değiştiğini doğrulayan oynanış testi.
+- [ ] **Öneri — yatay hasta kadrajı:** hasta şu an ekranda dikey duruyor, boyu sahne yüksekliğiyle sınırlı (1366×768'de gövde ≈150 px, 14 nokta sıkışık). Body Interact gibi yatay kadraj (baş solda/sağda, kamera yatak yanında) hastayı ≈1.6× büyütür, noktaları ayırır. Monitör/kart konumu ve etiket yönleri birlikte ele alınmalı — ayrı tur.
 - [ ] Bitti ölçüsü: 5 öğrenci, açıklama yapılmadan 10 dk oynuyor
 
 ## ⏳ Ali Bey'de bekleyen kararlar
 
 1. **Klinik ACTIVE onayları:** anaflaksi deterioration/auscultation, STEMI paketi, opioid pilot, ekipman kataloğu, muhakeme promptları — hepsi DRAFT/REVIEWED, ACTIVE'e sadece Ali Bey geçirir.
 2. **Model lisansı:** `patient-mimikli.glb` Daz kökenli — lisans netleşmeden commit yok; kalıcı çözüm MPFB2 (CC0) yeniden üretim.
-3. **Push kararı:** ~50 lokal commit `feat/backend-cf-worker`'da ("en nihai halde pushlarız").
-4. **Öncelik seçimi:** aşağıdaki A–E hatlarından hangisi önce (öneri: A+B paralel, bkz. gerekçe).
+3. ~~Push kararı~~ — çözüldü (6 Tem 2026): push açık, `feat/backend-cf-worker` GitHub ile eşit.
+4. **Hasta/oda varlıkları (10 Kas devir raporu — `docs/DEVIR-OPUS-RAPOR.md`):** v3 erkek hasta adayı seçimi (`/dev/hasta-aday`) · oda krokisi onayı (`docs/oda-kroki.svg`) · yeni Mixamo klipleri (Adobe girişi) · Meshy ekipman (kurulum izni ya da web'den elle indirme).
+5. **Öncelik seçimi:** aşağıdaki A–E hatlarından hangisi önce (öneri: A+B paralel, bkz. gerekçe).
 
 ## 📌 Kilitli kararlar (ürün-sahibi — DEĞİŞTİRME)
 
@@ -129,7 +131,7 @@ Denetim bulgusu: 3D katman olgun (ref-tabanlı state, memoization, shader guard'
 
 1. **Test boşluğu motorun kalbinde** (fizyoloji/farmakoloji) — Hat A bunun için önce.
 2. **Klinik DRAFT birikimi:** ACTIVE bekleyen içerik çoğalıyor; review hattı tıkanırsa içerik ölçeklemesi (Hat C) anlamsızlaşır.
-3. **Push edilmemiş ~50 commit** — tek makine riski. Lisans sorunu sadece `patient-mimikli.glb`'de; o dosya gitignore'lanıp gerisi push edilebilir (Ali Bey kararı).
+3. ~~Push edilmemiş ~50 commit~~ — kapandı (6 Tem 2026): dal GitHub ile eşit; `patient-mimikli.glb` gitignore'lu (Daz lisansı netleşmeden commit edilmez).
 4. **CI lint kırık** (eslint devDep yok) — bilinen, düşük öncelik.
 5. Eski tuzaklar geçerli: her şeyi birden yapma · sayı değil kalite (20 mükemmel senaryo) · Unity'ye kaçma yok · fiyat baştan net.
 

@@ -15,6 +15,9 @@ interface Props {
   decisionAnswered?: { optionId: string; feedback: string } | null;
   decisionMultiAnswered?: { optionIds: string[]; feedback: string } | null;
   visibleOptions?: DecisionOption[];
+  /** Sıkı yerleşim — yatak-başı oynama ekranının dar yan paneli için: küçük
+      başlık/boşluk, envanter panelin ALTINDA durur (yönlendirme metni buna göre). */
+  compact?: boolean;
 }
 
 export function StepDisplay({
@@ -29,6 +32,7 @@ export function StepDisplay({
   decisionAnswered,
   decisionMultiAnswered,
   visibleOptions,
+  compact = false,
 }: Props) {
   const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
 
@@ -47,9 +51,9 @@ export function StepDisplay({
   };
 
   return (
-    <div className="neon-panel neon-teal p-6 md:p-7 animate-fade-in">
+    <div className={cn("neon-panel neon-teal animate-fade-in", compact ? "p-4" : "p-6 md:p-7")}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className={cn("flex items-center justify-between", compact ? "mb-2" : "mb-4")}>
         <div className="font-mono text-[10px] uppercase tracking-[0.2em] neon-text">
           /{" "}
           {step.kind === "action"
@@ -65,33 +69,60 @@ export function StepDisplay({
         )}
       </div>
 
-      <h2 className="font-display text-2xl md:text-3xl text-ink-50 mb-2">
+      <h2
+        className={cn(
+          "font-display text-ink-50",
+          compact ? "text-xl leading-snug mb-1.5" : "text-2xl md:text-3xl mb-2",
+        )}
+      >
         {step.title}
       </h2>
-      <p className="text-ink-200 leading-relaxed mb-6">{step.prompt}</p>
+      <p className={cn("text-ink-200 leading-relaxed", compact ? "text-sm mb-3" : "mb-6")}>
+        {step.prompt}
+      </p>
 
       {step.narrative && (
-        <div className="panel-inset p-4 mb-6 italic text-ink-300 text-sm leading-relaxed">
+        <div
+          className={cn(
+            "panel-inset italic text-ink-300 leading-relaxed",
+            compact ? "p-3 mb-3 text-[13px]" : "p-4 mb-6 text-sm",
+          )}
+        >
           {step.narrative}
         </div>
       )}
 
       {/* Aksiyon adımı */}
       {step.kind === "action" && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-ink-400">
-            <AlertCircle className="w-4 h-4" />
-            <span>
-              Sağdaki envanterden aksiyon seç.{" "}
-              {step.min_actions && (
-                <>
-                  En az{" "}
-                  <b className="text-ink-100">{step.min_actions}</b> aksiyon
-                  gerekli ·{" "}
-                  <b className="text-brand-light">{actionsThisStep}</b> yapıldı.
-                </>
-              )}
-            </span>
+        <div className={compact ? "space-y-3" : "space-y-4"}>
+          <div className={cn("flex items-center gap-2 text-ink-400", compact ? "text-[13px]" : "text-sm")}>
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {compact ? (
+              /* Tek satır — dar panelde iki satıra kırılıp envanterden yer yemesin */
+              <span>
+                {step.min_actions ? (
+                  <>
+                    Aşağıdan en az{" "}
+                    <b className="text-ink-100">{step.min_actions}</b> aksiyon seç ·{" "}
+                    <b className="text-brand-light">{actionsThisStep}</b> yapıldı
+                  </>
+                ) : (
+                  "Aşağıdaki envanterden aksiyon seç."
+                )}
+              </span>
+            ) : (
+              <span>
+                Sağdaki envanterden aksiyon seç.{" "}
+                {step.min_actions && (
+                  <>
+                    En az{" "}
+                    <b className="text-ink-100">{step.min_actions}</b> aksiyon
+                    gerekli ·{" "}
+                    <b className="text-brand-light">{actionsThisStep}</b> yapıldı.
+                  </>
+                )}
+              </span>
+            )}
           </div>
           {canContinue && (
             <button

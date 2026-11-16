@@ -18,6 +18,7 @@ import { buildScenarioRegions } from "@/components/patient-3d/scenarioRegions";
 import { AuscultationOverlay } from "@/components/patient-3d/AuscultationOverlay";
 import { heartSoundFile, playAuscultation, stopAuscultation } from "@/components/patient-3d/auscultationAudio";
 import type { ExamHotspot } from "@/components/patient-3d/ExamHotspotLayer";
+import { leftInsetCss } from "@/components/patient-3d/sceneLayout";
 import { AbcdeBar, type ExamFilter } from "@/components/exam/AbcdeBar";
 import { ExamFindingCard } from "@/components/exam/ExamFindingCard";
 import { getScenarioExam } from "@/data/exam";
@@ -55,6 +56,16 @@ import type { ActionRef, PlayMode, ReasoningPrompt, ResolvedExamFinding } from "
 
 // Muayenede dinleme süresi (ms) — kalp/akciğer sesi bu kadar çalar.
 const EXAM_LISTEN_MS = 6000;
+
+// ── Sahne yerleşimi: [bilgi sütunu | hasta | aksiyon paneli] ──
+// Başucu monitörü tam tasarım boyutunda (560×520) çizilir, CSS ile küçültülür
+// (orantı korunur, net kalır). Monitör + altında açılan bulgu kartı sahnenin
+// sol "bilgi sütunu"dur; hasta ve muayene çubuğu bu sütunun sağında kalan boş
+// alana ortalanır (kural: patient-3d/sceneLayout).
+const MONITOR_SCALE = 0.72;
+const MONITOR_W = 560;
+const SCENE_PAD = 12; // monitörün sahne kenarına boşluğu (top-3/left-3)
+const INFO_COL_PX = SCENE_PAD + Math.round(MONITOR_W * MONITOR_SCALE); // 415
 
 // ?mod= query → pedagojik mod (egitim=öğretici, klinik=uygulama, sinav=sınav).
 // Geçersiz/yoksa varsayılan "klinik" (interaktif — e2e auto-start davranışı korunur,
@@ -379,6 +390,13 @@ export function ScenarioBedPlayPage() {
   // Kaydı olmayan senaryoda exam undefined → katman kapalı, eski oskültasyon
   // paneli görünür (geriye uyum).
   const exam = useMemo(() => getScenarioExam(rs.id), [rs.id]);
+  // Sadeleştirme (yön kararı 10 Kas 2026 — "bedende muayene"): muayene katmanı
+  // olan vakada ventilatör (3B cihaz + düğme) gösterilmez. Ayarları hastanın
+  // vitallerini etkilemiyor, özellik dondurulmuş; sahnede yalnız dikkat dağıtıyor.
+  // Muayene katmanı olmayan senaryolarda davranış aynen sürer.
+  const ventVisible = ventEligible && !exam;
+  // 2B görünümde hasta görseli sahneye ortalı durur → kaydırma yalnız 3B'de.
+  const sceneLeftInset = VISUAL_MODE === "3d" ? INFO_COL_PX : 0;
   const examLog = session?.exam_log;
   // nokta id → son muayenede patolojik miydi (anahtar varlığı = muayene edildi)
   const examState = useMemo(() => {
@@ -563,13 +581,14 @@ export function ScenarioBedPlayPage() {
                 speechText={speechText}
                 equipment={equipment}
                 cameraPreset={exam ? "tum_beden" : "onden"}
-                showVentilator={ventEligible}
+                showVentilator={ventVisible}
                 ventilatorActive
                 onVentilatorActivate={openVentilator}
                 examHotspots={examHotspots}
                 selectedExamId={examFinding?.point.id ?? null}
                 onExamSelect={onExamSelect}
                 examLabels={examFilter !== "all"}
+                leftInsetPx={sceneLeftInset}
               />
             ) : (
               <Patient2DVisual visualState={visualState} />
@@ -580,7 +599,11 @@ export function ScenarioBedPlayPage() {
           {/* Neon sahne çerçevesi — dekoratif, tıklama yutmaz (pointer-events-none).
               Monitör İÇİNE glow girmez (IEC alarm ringi — DESIGN-TOKENS.md sınır 2). */}
           <div className="absolute inset-0 pointer-events-none neon-teal neon-scene-frame" aria-hidden />
-          <div className="absolute top-3 left-3 origin-top-left" style={{ transform: "scale(0.72)" }}>
+          <div
+            className="absolute top-3 left-3 origin-top-left"
+            style={{ transform: `scale(${MONITOR_SCALE})` }}
+            data-testid="bedside-monitor"
+          >
             <div className="w-[560px] h-[520px] rounded-lg overflow-hidden border border-ink-700/70 shadow-2xl ring-1 ring-black/50 neon-teal shadow-glow-sm">
               <VitalMonitorScreen
                 vitals={patientVitalsToMonitor(
@@ -594,7 +617,7 @@ export function ScenarioBedPlayPage() {
             </div>
           </div>
           {speaking && (
-            <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-brand-light shadow-lg">
+            <div className="absolute bottom-10 left-4 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 backdrop-blur-md flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-brand-light shadow-lg">
               <span className="w-2 h-2 bg-brand rounded-full animate-pulse" />
               Hasta konuşuyor
             </div>
@@ -602,21 +625,49 @@ export function ScenarioBedPlayPage() {
           {/* Oskültasyon noktaları — faz-senkron kalp/akciğer sesi (Yol-3'ten
               taşındı). Sol kenar, başucu monitörünün altı. */}
           {exam ? (
-            <>
-              {/* Bulgu kartı — başucu monitörünün altı (sol kenar) */}
-              {examFinding && (
-                <ExamFindingCard
-                  finding={examFinding}
-                  onClose={() => {
-                    stopAuscultation();
-                    setExamFinding(null);
-                  }}
-                  onReplaySound={() => playExamSound(examFinding)}
-                  className="absolute left-3 top-[398px] z-10"
-                />
-              )}
-              {/* ABCDE çubuğu + süre — sahnenin alt ortası. 2B görünümde
-                  bedende nokta yok → basamağın noktaları düğme olarak listelenir. */}
+            /* Bulgu kartı — başucu monitörünün altı (sol bilgi sütunu) */
+            examFinding && (
+              <ExamFindingCard
+                finding={examFinding}
+                onClose={() => {
+                  stopAuscultation();
+                  setExamFinding(null);
+                }}
+                onReplaySound={() => playExamSound(examFinding)}
+                className="absolute left-3 top-[398px] z-10"
+              />
+            )
+          ) : (
+            <AuscultationOverlay
+              regions={auscultationRegions}
+              className="absolute top-1/2 -translate-y-1/2 left-3"
+            />
+          )}
+
+          {/* Alt şerit — hastanın altında, bilgi sütununun sağındaki boş alana
+              ortalı: (öğretici anlatım) + (ilk dokunuş ipucu) + ABCDE çubuğu.
+              Tek dikey yığın → katmanlar birbirinin üstüne binmez. */}
+          <div
+            className="absolute bottom-3 right-0 z-10 px-3 flex flex-col items-center gap-2 pointer-events-none"
+            style={{ left: leftInsetCss(sceneLeftInset) }}
+          >
+            {/* Öğretici (teaching) anlatım — sistem doğru adımı uygularken
+                açıklar. Yalnız egitim modunda (pedagogy.narration). */}
+            {pedagogy.narration && narration && (
+              <div
+                data-testid="teaching-narration"
+                className="pointer-events-auto max-w-[560px] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-glow-sm neon-teal animate-fade-in flex items-start gap-2.5"
+              >
+                <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-brand/30 flex items-center justify-center font-mono text-[10px] text-brand-light">
+                  ⊕
+                </span>
+                <p className="text-[12px] leading-relaxed text-ink-100">{narration}</p>
+              </div>
+            )}
+            {/* ABCDE çubuğu + süre. 2B görünümde bedende nokta yok → basamağın
+                noktaları düğme olarak listelenir. Henüz hiç muayene yapılmadıysa
+                bedene yönlendiren tek satır ipucu (ilk dokunuşla kaybolur). */}
+            {exam && (
               <AbcdeBar
                 coverage={examCoverageRows}
                 active={examFilter}
@@ -625,18 +676,19 @@ export function ScenarioBedPlayPage() {
                 elapsedSec={session ? (Date.now() - session.started_at) / 1000 : 0}
                 chips={VISUAL_MODE === "3d" ? undefined : examHotspots}
                 onChipSelect={onExamSelect}
-                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10"
+                hint={
+                  VISUAL_MODE === "3d" && examState.size === 0
+                    ? "Bedendeki parlayan noktaya dokun, muayene et"
+                    : null
+                }
               />
-            </>
-          ) : (
-            <AuscultationOverlay
-              regions={auscultationRegions}
-              className="absolute top-1/2 -translate-y-1/2 left-3"
-            />
-          )}
+            )}
+          </div>
+
           {/* Ventilatör erişim butonu — 3D cihaz tıklamasının DOM eşdeğeri
-              (erişilebilirlik + e2e). Pediatrik senaryoda gizli (ventEligible). */}
-          {ventEligible && (
+              (erişilebilirlik + e2e). Pediatrik senaryoda ve muayene katmanlı
+              vakada gizli (ventVisible). */}
+          {ventVisible && (
             <button
               type="button"
               onClick={() => setVentOpen(true)}
@@ -647,27 +699,12 @@ export function ScenarioBedPlayPage() {
               Ventilatör
             </button>
           )}
-
-          {/* Öğretici (teaching) narration paneli — sistem doğru adımı uygularken
-              açıklar. Yalnız egitim modunda (pedagogy.narration). TTS'e hazır yapı. */}
-          {pedagogy.narration && narration && (
-            <div
-              data-testid="teaching-narration"
-              className={cn(
-                "absolute left-1/2 -translate-x-1/2 max-w-[78%] px-4 py-2.5 rounded-lg bg-brand/15 border border-brand/40 backdrop-blur-md shadow-glow-sm neon-teal animate-fade-in flex items-start gap-2.5",
-                exam ? "bottom-24" : "bottom-4", // ABCDE çubuğunun üstünde kalsın
-              )}
-            >
-              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-brand/30 flex items-center justify-center font-mono text-[10px] text-brand-light">
-                ⊕
-              </span>
-              <p className="text-[12px] leading-relaxed text-ink-100">{narration}</p>
-            </div>
-          )}
         </div>
 
-        {/* Sağ panel: Vaka Akışı | Diyalog */}
-        <div className="w-[460px] shrink-0 flex flex-col bg-ink-950/50 min-h-0">
+        {/* Sağ panel: Vaka Akışı | Diyalog. Dizüstü genişliğinde daralır (sahne
+            büyür). "Eğitim amaçlıdır" rozeti bu ekranda sahnenin sol-alt
+            köşesinde (App.tsx) → panelin altı tamamen içeriğe kalır. */}
+        <div className="w-[400px] 2xl:w-[460px] shrink-0 flex flex-col bg-ink-950/50 min-h-0">
           <div className="flex gap-1 p-2 border-b border-ink-700/50 shrink-0">
             <button
               type="button"
@@ -699,13 +736,16 @@ export function ScenarioBedPlayPage() {
             </button>
           </div>
 
+          {/* Adım kartı sıkı (compact), envanter kalan yüksekliğin TAMAMINI alır
+              — eski sabit 420 px kutu dizüstünde yalnız 2 satır gösteriyordu. */}
           <div
-            className={cn("flex-1 min-h-0 overflow-y-auto p-3 space-y-3", rightTab !== "vaka" && "hidden")}
+            className={cn("flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3", rightTab !== "vaka" && "hidden")}
             data-testid="vaka-panel"
           >
             {currentStep ? (
               <>
                 <StepDisplay
+                  compact
                   step={currentStep}
                   mode={session?.mode ?? "egitim"}
                   actionsThisStep={runner.scoredActionsThisStep}
@@ -722,8 +762,9 @@ export function ScenarioBedPlayPage() {
                   visibleOptions={visibleDecisionOptions}
                 />
                 {currentStep.kind === "action" && (
-                  <div className="h-[420px]">
+                  <div className="flex-1 min-h-[300px]">
                     <InventoryPanel
+                      compact
                       availableMedications={rs.available_medications}
                       availableEquipment={rs.available_equipment}
                       onAction={onAction}

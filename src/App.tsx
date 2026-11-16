@@ -270,8 +270,15 @@ export function App() {
       </main>
       {!immersive && !isLoginPage && <Footer />}
       {/* Disclaimer: immersive sayfalarda footer gizli → sabit köşe rozeti.
-          Login kendi disclaimer'ını gösterir. */}
-      {immersive && <EducationalDisclaimer variant="fixed" />}
+          Login kendi disclaimer'ını gösterir. Yatak-başı oynama ekranında sağ
+          alt köşe aksiyon panelidir (rozet envanter satırlarının üstüne
+          biniyordu) → rozet sahnenin boş sol-alt köşesine alınır. */}
+      {immersive && (
+        <EducationalDisclaimer
+          variant="fixed"
+          className={isBedPlay || isHasta ? "right-auto left-2" : undefined}
+        />
+      )}
     </div>
   );
 }
